@@ -41,6 +41,25 @@ Copy `.env.example` to `.env` and set the following:
 | `AI_INTEGRATIONS_OPENAI_API_KEY` | No | OpenAI API key for AI features |
 | `AI_INTEGRATIONS_OPENAI_BASE_URL` | No | Custom OpenAI base URL (optional) |
 
+## Configuration Map
+
+Canonical app configuration (used by root `npm` scripts):
+
+- Runtime/env: `server/index.ts` (loads `.env` via `dotenv`)
+- Scripts/dependencies: `package.json`
+- Frontend bundler: `vite.config.ts`
+- TypeScript: `tsconfig.json`
+- Tailwind/PostCSS: `tailwind.config.js`, `postcss.config.cjs`
+- Linting: `eslint.config.js`
+- Database migrations: `drizzle.config.ts`
+- Deployment: `render.yaml`
+
+Notes:
+
+- Root `npm run dev` / `npm run build` uses the root config files above.
+- `backend/src/modules/*` is imported by the root server (`server/routes.ts`) and is part of the active runtime.
+- `frontend/package.json` and `backend/package.json` define standalone subproject workflows; they are not used by root npm scripts.
+
 ## Build for Production
 
 ```bash
