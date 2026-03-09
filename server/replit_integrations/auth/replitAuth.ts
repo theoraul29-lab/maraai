@@ -180,12 +180,31 @@ export async function setupAuth(app: Express) {
       }
     });
 
-    app.get("/api/login", (_req, res) => {
-      res.redirect("/");
+    async function signInLocalGuest(req: any, res: any) {
+      let guestUser = await authStorage.getUserByEmail("local@mara.ai");
+
+      if (!guestUser) {
+        const guestPasswordHash = await bcrypt.hash("local-guest-password", 10);
+        guestUser = await authStorage.createLocalUserAccount({
+          email: "local@mara.ai",
+          passwordHash: guestPasswordHash,
+          firstName: "Local",
+          lastName: "Guest",
+        });
+      }
+
+      req.session.localUserId = guestUser.id;
+      req.session.save(() => {
+        res.redirect("/");
+      });
+    }
+
+    app.get("/api/login", async (req, res) => {
+      await signInLocalGuest(req, res);
     });
 
-    app.get("/api/callback", (_req, res) => {
-      res.redirect("/");
+    app.get("/api/callback", async (req, res) => {
+      await signInLocalGuest(req, res);
     });
 
     app.get("/api/logout", (req, res) => {
