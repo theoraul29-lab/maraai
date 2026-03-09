@@ -53,6 +53,14 @@ jobs:
                 HEALTHY_PORT="$port"
                 break
               fi
+              if curl -fsS "http://localhost:${port}/health" >/dev/null; then
+                HEALTHY_PORT="$port"
+                break
+              fi
+              if curl -fsS "http://localhost:${port}/api/runtime" >/dev/null; then
+                HEALTHY_PORT="$port"
+                break
+              fi
             done
             if [ -n "$HEALTHY_PORT" ]; then
               break
