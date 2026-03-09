@@ -2,15 +2,14 @@ import dotenv from "dotenv";
 dotenv.config();
 import express from "express";
 import { logError } from "./logger.js";
-import session from "express-session";
 import type { Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes.js";
 import { serveStatic } from "./static.js";
 import { createServer } from "http";
 import net from "net";
-import { randomBytes } from "crypto";
 import { MaraBrainCycle, generateMarketingPost } from "./ai.js";
 import { storage } from "./storage.js";
+import { getSession } from "./replit_integrations/auth/replitAuth.js";
 
 const app = express();
 
@@ -28,32 +27,7 @@ const runtimeState: RuntimeState = {
   startedAt: null,
 };
 
-// Session configuration
-let sessionSecret = process.env.SESSION_SECRET;
-if (!sessionSecret) {
-  if (process.env.NODE_ENV === "production") {
-    throw new Error(
-      "SESSION_SECRET environment variable must be set in production.",
-    );
-  }
-  // In development, generate a random ephemeral secret and warn
-  sessionSecret = randomBytes(32).toString("hex");
-  console.warn(
-    "[session] SESSION_SECRET not set — using ephemeral secret (sessions will not persist across restarts). Set SESSION_SECRET in .env for stable dev sessions.",
-  );
-}
-app.use(
-  session({
-    secret: sessionSecret,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: process.env.NODE_ENV === "production",
-      httpOnly: true,
-      maxAge: 1000 * 60 * 60 * 24, // 1 day
-    },
-  }),
-);
+app.use(getSession());
 const httpServer = createServer(app);
 
 declare module "http" {
