@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mara AI Trading Academy</title>
+<style>
+body { font-family: Arial; margin:0; background:#111; color:white; }
+#topBar { display:flex; padding:10px; background:#222; }
+#maraBtn, #tradingBtn { padding:8px 12px; margin-left:5px; cursor:pointer; }
+#maraInput { flex:1; padding:8px; font-size:16px; }
+#output { margin:20px; padding:10px; background:#222; border-radius:8px; max-height:500px; overflow-y:auto; }
+#chartContainer { margin:20px auto; width:90%; height:400px; }
+button.explainBtn { padding:5px 8px; margin-top:5px; cursor:pointer; }
+</style>
+<!-- Include Chart.js for interactive charts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<div id="topBar">
+  <input type="text" id="maraInput" placeholder="Ask Mara about trading...">
+  <button id="maraBtn">Activate Mara</button>
+  <button id="tradingBtn">Trading Tutorial</button>
+</div>
+
+<div id="output">
+  <p>Mara is inactive. Press "Activate Mara" to start learning trading.</p>
+</div>
+
+<div id="chartContainer">
+  <canvas id="tradingChart"></canvas>
+</div>
+
+<script>
+const maraBtn = document.getElementById('maraBtn');
+const tradingBtn = document.getElementById('tradingBtn');
+const output = document.getElementById('output');
+const maraInput = document.getElementById('maraInput');
+let maraActive = false;
+
+maraBtn.addEventListener('click', ()=>{
+    maraActive = true;
+    output.innerHTML = "<p>Mara is now active! Press 'Trading Tutorial' to start learning or ask questions below.</p>";
+    maraInput.focus();
+});
+
+// Trading Tutorial Button
+tradingBtn.addEventListener('click', ()=>{
+    if(!maraActive){
+        alert("Activate Mara first!");
+        return;
+    }
+
+    output.innerHTML = `
+    <h3>Welcome to Mara AI Trading Academy</h3>
+    <p><strong>1. What is Trading?</strong> Buying and selling assets (crypto, stocks, NFTs, DeFi tokens) to earn profits. A seasoned trader studies charts, trends, volume, and risk.</p>
+    <p><strong>2. Understanding Charts:</strong> Price charts show candlesticks, volume, and indicators. Mara shows a demo below with live interactive features.</p>
+    <p><strong>3. Trading Types:</strong> Spot, Futures, DeFi protocols, NFT assets. Each has unique strategies and risk profiles.</p>
+    <p><strong>4. Advanced Tips:</strong> Always manage risk, diversify, use stop-loss, take-profit. Analyze indicators like RSI, MACD, and moving averages.</p>
+    <p><strong>5. Interactive Learning:</strong> Click the "Explain" buttons below to learn about each indicator and trend.</p>
+    <button class="explainBtn" onclick="explain('RSI')">RSI Explanation</button>
+    <button class="explainBtn" onclick="explain('MACD')">MACD Explanation</button>
+    <button class="explainBtn" onclick="explain('Support/Resistance')">Support/Resistance Explanation</button>
+    `;
+});
+
+// Example Interactive Chart with Chart.js
+const ctx = document.getElementById('tradingChart').getContext('2d');
+const demoChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul'],
+        datasets: [{
+            label: 'Demo Asset Price',
+            data: [50,55,53,60,58,62,65],
+            borderColor: 'rgba(0, 200, 255,1)',
+            backgroundColor: 'rgba(0,200,255,0.2)',
+            fill: true,
+            tension: 0.3
+        }]
+    },
+    options: {
+        responsive:true,
+        plugins: {
+            legend: { display:true, labels:{color:'white'} }
+        },
+        scales: {
+            x: { ticks:{color:'white'} },
+            y: { ticks:{color:'white'} }
+        }
+    }
+});
+
+// Explain indicators
+function explain(topic){
+    let msg = '';
+    switch(topic){
+        case 'RSI':
+            msg = "RSI (Relative Strength Index) shows overbought/oversold conditions. Values >70 = overbought, <30 = oversold.";
+            break;
+        case 'MACD':
+            msg = "MACD (Moving Average Convergence Divergence) indicates trend strength. When MACD crosses signal line, it's a buy/sell signal.";
+            break;
+        case 'Support/Resistance':
+            msg = "Support is a price level where demand is strong; Resistance is where supply is strong. Prices often bounce between these levels.";
+            break;
+    }
+    output.innerHTML += `<p><strong>Mara explains ${topic}:</strong> ${msg}</p>`;
+    output.scrollTop = output.scrollHeight;
+}
+
+// Respond to user questions
+maraInput.addEventListener('keypress', (e)=>{
+    if(e.key==='Enter' && maraActive){
+        const question = maraInput.value;
+        maraInput.value='';
+        output.innerHTML += `<p><strong>You asked:</strong> ${question}</p>`;
+        output.innerHTML += `<p><strong>Mara answers:</strong> As a trader with 30 years of experience, always start with understanding charts, indicators, and risk management. For DeFi/NFT, study the contract or rarity carefully before investing.</p>`;
+        output.scrollTop = output.scrollHeight;
+    }
+});
+</script>
+
+</body>
+</html>

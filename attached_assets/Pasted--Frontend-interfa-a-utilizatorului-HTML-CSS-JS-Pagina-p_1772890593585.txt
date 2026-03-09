@@ -1,0 +1,89 @@
+. Frontend (interfața utilizatorului)
+
+HTML/CSS/JS: Pagina principală, chat, profil, feed video, animații tip reels.
+
+Reels engine: Infinite scroll, autoplay video, like/comment/share.
+
+Avatar AI + animații: Mara are avatar animat și reacționează vizual la utilizatori.
+
+Tema personalizabilă: Culori care se schimbă în funcție de personalitatea utilizatorului (“efect cameleon”).
+
+Multilingual: Selector de limbă și traduceri (RO, EN, DE, RU).
+
+Live feed interactiv: Utilizatorul vede video-uri generate de AI și video reale.
+
+B. Backend (serverul aplicației)
+
+Server Node.js / Express cu API-uri: /login, /chat, /reels, /upload, /profile.
+
+Gestionare utilizatori: Autentificare, sesiuni, profiluri.
+
+Upload video & moderare: Uploader + verificare conținut.
+
+Sistem notificări și statistici.
+
+Integrare AI Mara: Rute pentru interacțiune chat, recomandări feed, personalizare feed.
+
+C. Sistem AI Mara
+
+Motor AI principal: Analizează mesajele utilizatorilor, adaptează răspunsurile, personalitate flexibilă.
+
+Memorie temporară 24h: Memorare preferințe, emoții, interacțiuni, reset zilnic pentru a nu suprasolicita memoria.
+
+Analiză emoțională: Detectează starea utilizatorului din text / interacțiuni.
+
+Generare conținut: Video AI, sugestii feed, text și răspunsuri.
+
+Acces la internet: Crawlere, motoare multiple de căutare pentru informații, doar cu scopuri “bune”.
+
+Feed personalizat: Recomandări bazate pe istoricul și preferințele utilizatorului.
+
+D. Reels engine
+
+Algoritm de recomandare și trending video.
+
+Video reale + AI generate (tip Solo Leveling / animații 2D/3D).
+
+Infinite scroll și autoplay.
+
+E. Sistem creators / fans
+
+Profil creatori, abonări, statistici, monetizare.
+
+Gestionare interacțiuni fan-creatori.
+
+F. Voice AI
+
+Text-to-speech și voice input.
+
+Sincronizare voce + avatar Mara.
+
+G. Bază de date
+
+Tabele: users, messages, videos, followers, likes, subscriptions.
+
+Memorare temporară și permanentă date (memoria AI se resetează la 24h).
+
+H. Security system
+
+Anti-spam, anti-bot, criptare, protecție API.
+
+I. AI learning system
+
+Învață preferințele utilizatorilor, ajustează feedul și comportamentul lui Mara.
+
+J. Admin panel
+
+Moderare conținut, statistici platformă, ban utilizatori.
+
+Flux general
+
+User se loghează → backend validează → feed personalizat.
+
+User interacționează cu Mara → AI analizează emoții, preferințe → generează răspuns și video.
+
+Feed-ul și culorile interfeței se adaptează la utilizator (“cameleon”).
+
+Toate datele memorate sunt stocate temporar și resetate la 24h.
+
+Mara poate căuta online pentru informații și pentru a îmbunătăți feed-ul, folosind mai multe motoare de căutare.

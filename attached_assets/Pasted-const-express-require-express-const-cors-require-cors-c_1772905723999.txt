@@ -1,0 +1,139 @@
+const express = require('express');
+const cors = require('cors');
+const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
+
+const app = express();
+app.use(cors());
+app.use(bodyParser.json());
+
+// ===== DB Setup =====
+mongoose.connect('mongodb://localhost:27017/maraAI', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+});
+
+// ===== Schemas =====
+const UserSchema = new mongoose.Schema({
+    username: String,
+    subscription: { type: String, default: 'free' }, // free / premium
+    ttsUsed: { type: Number, default: 0 }
+});
+
+const ReelSchema = new mongoose.Schema({
+    creatorId: mongoose.Schema.Types.ObjectId,
+    title: String,
+    url: String,
+    views: { type: Number, default: 0 },
+    comments: [String]
+});
+
+const CreatorSchema = new mongoose.Schema({
+    username: String,
+    subscription: { type: String, default: 'free' },
+    reels: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Reel' }]
+});
+
+const User = mongoose.model('User', UserSchema);
+const Reel = mongoose.model('Reel', ReelSchema);
+const Creator = mongoose.model('Creator', CreatorSchema);
+
+// ===== Routes =====
+
+// Create user / creator
+app.post('/api/user', async (req, res) => {
+    const { username, subscription } = req.body;
+    const newUser = new User({ username, subscription });
+    await newUser.save();
+    res.send({status:"User created", userId: newUser._id});
+});
+
+// Add reel
+app.post('/api/reel', async (req, res) => {
+    const { creatorId, title, url } = req.body;
+    const creator = await Creator.findById(creatorId);
+    if (!creator) return res.status(404).send("Creator not found");
+
+    // Limit cont gratuit
+    if(creator.subscription === 'free' && creator.reels.length >= 3)
+        return res.status(403).send("Free account limit reached");
+
+    const reel = new Reel({ creatorId, title, url });
+    await reel.save();
+    creator.reels.push(reel._id);
+    await creator.save();
+
+    res.send({status:"Reel added"});
+});
+
+// Get feed
+app.get('/api/feed', async (req,res)=>{
+    const reels = await Reel.find();
+    res.send(reels);
+});
+
+// Add comment
+app.post('/api/comment', async (req,res)=>{
+    const { reelId, comment } = req.body;
+    const reel = await Reel.findById(reelId);
+    if(!reel) return res.status(404).send("Reel not found");
+    reel.comments.push(comment);
+    await reel.save();
+    res.send({status:"Comment added"});
+});
+
+// Increment view
+app.post('/api/view', async (req,res)=>{
+    const { reelId } = req.body;
+    const reel = await Reel.findById(reelId);
+    if(reel) {
+        reel.views++;
+        await reel.save();
+    }
+    res.send({status:"View counted"});
+});
+
+// Mara AI multi-voice TTS
+app.post('/api/mara-tts', async (req,res)=>{
+    const { userId, text, voice } = req.body;
+    const user = await User.findById(userId);
+    if(!user) return res.status(404).send("User not found");
+
+    // Limit cont gratuit
+    if(user.subscription === 'free' && user.ttsUsed >= 5){
+        return res.status(403).send({error:"Limit of 5 voice requests reached. Upgrade to premium."});
+    }
+
+    // Demo TTS URL (poate fi integrat cu Google / ElevenLabs)
+    const audioURL = `https://api.fake-tts.com/speak?text=${encodeURIComponent(text)}&voice=${voice}`;
+
+    if(user.subscription === 'free') {
+        user.ttsUsed += 1;
+        await user.save();
+    }
+
+    res.send({ audioURL });
+});
+
+// Analytics creator
+app.get('/api/analytics/:creatorId', async (req,res)=>{
+    const creator = await Creator.findById(req.params.creatorId).populate('reels');
+    if(!creator) return res.status(404).send("Creator not found");
+
+    const analytics = creator.reels.map(r=>({
+        title:r.title,
+        views:r.views,
+        comments:r.comments.length
+    }));
+    res.send(analytics);
+});
+
+// Moderare text
+app.post('/api/moderate', (req,res)=>{
+    const { text } = req.body;
+    const bannedWords = ['badword1','badword2'];
+    const flagged = bannedWords.filter(w=>text.toLowerCase().includes(w));
+    res.send({ safe: flagged.length===0, flaggedWords: flagged });
+});
+
+app.listen(3000, ()=>console.log("Mara AI backend running on port 3000"));

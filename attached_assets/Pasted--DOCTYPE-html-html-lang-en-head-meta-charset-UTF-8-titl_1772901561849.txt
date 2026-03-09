@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mara AI Trading Academy</title>
+<style>
+body { font-family: Arial; margin:0; background:#111; color:white; }
+header { display:flex; align-items:center; padding:15px; background:#222; position:sticky; top:0; z-index:100; }
+#logo { font-size:26px; font-weight:bold; color:#0ff; margin-right:20px; cursor:pointer; animation: pulse 2s infinite; }
+@keyframes pulse {
+  0% { transform: scale(1); color:#0ff; }
+  50% { transform: scale(1.1); color:#ff0; }
+  100% { transform: scale(1); color:#0ff; }
+}
+#output { padding:20px; max-height:600px; overflow-y:auto; background:#222; margin:15px; border-radius:10px; }
+button { padding:8px 12px; margin-right:10px; cursor:pointer; }
+img { max-width:100%; border-radius:8px; margin:10px 0; }
+.toggleBtn { margin-top:10px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div id="logo">✨MaraAI✨</div>
+  <button id="startBtn">Start Trading Tutorial</button>
+  <button id="voiceBtn">Voice Mode: OFF</button>
+</header>
+
+<div id="output">
+  <p>Welcome! Press "Start Trading Tutorial" to begin learning trading with Mara AI.</p>
+</div>
+
+<script>
+// Mara activation
+let voiceMode = false;
+document.getElementById('voiceBtn').addEventListener('click', ()=>{
+    voiceMode = !voiceMode;
+    document.getElementById('voiceBtn').innerText = "Voice Mode: " + (voiceMode ? "ON" : "OFF");
+});
+
+// Tutorial content
+const tutorialContent = [
+    {
+        title: "What is Trading?",
+        text: "Trading is the process of buying and selling financial assets such as cryptocurrencies, stocks, commodities, and NFTs to earn profits. A professional trader studies market trends, charts, and risk management techniques.",
+        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Stock_chart_example.png/640px-Stock_chart_example.png"
+    },
+    {
+        title: "Spot vs Futures",
+        text: "Spot trading involves buying or selling the actual asset. Futures trading involves contracts predicting future prices. Futures allow leverage but carry higher risk.",
+        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Futures_chart_example.png/640px-Futures_chart_example.png"
+    },
+    {
+        title: "DeFi & NFTs",
+        text: "DeFi (Decentralized Finance) allows lending, staking, and yield farming. NFTs are unique digital assets that can be traded based on rarity and demand.",
+        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/NFT_example.png/640px-NFT_example.png"
+    },
+    {
+        title: "Advanced Trading Tips",
+        text: "Always manage risk: use stop-loss, take-profit, diversify your portfolio, analyze volume, and trends. Professional traders study indicators such as RSI, MACD, and moving averages.",
+        img: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Technical_analysis_example.png/640px-Technical_analysis_example.png"
+    }
+];
+
+// Function to display tutorial content
+const output = document.getElementById('output');
+let currentStep = 0;
+
+document.getElementById('startBtn').addEventListener('click', ()=>{
+    currentStep = 0;
+    showStep(currentStep);
+});
+
+// Function to show each step
+function showStep(step){
+    if(step >= tutorialContent.length) {
+        output.innerHTML += "<p>End of tutorial. You can ask Mara more questions below or restart!</p>";
+        return;
+    }
+    const content = tutorialContent[step];
+    output.innerHTML = `
+        <h2>${content.title}</h2>
+        <p>${content.text}</p>
+        <img src="${content.img}" alt="${content.title}">
+        <button class="toggleBtn" id="nextBtn">Next Step</button>
+    `;
+    if(voiceMode) speakText(content.text);
+    document.getElementById('nextBtn').addEventListener('click', ()=>{
+        currentStep++;
+        showStep(currentStep);
+    });
+}
+
+// Text-to-Speech function
+function speakText(text){
+    if(!('speechSynthesis' in window)) return;
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'en-US';
+    speechSynthesis.speak(utterance);
+}
+
+// Infinite live updates simulation (can be replaced with live data API)
+setInterval(()=>{
+    if(currentStep >= tutorialContent.length) return;
+    const randomTip = ["Remember to check charts daily.", "Diversify your assets for lower risk.", "Always set stop-loss orders.", "Research NFTs before buying."];
+    const tip = randomTip[Math.floor(Math.random()*randomTip.length)];
+    output.innerHTML += `<p><em>Live Tip:</em> ${tip}</p>`;
+    output.scrollTop = output.scrollHeight;
+}, 15000);
+</script>
+
+</body>
+</html>

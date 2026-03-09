@@ -1,0 +1,127 @@
+Backend (serverul aplicației)
+≈ 20.000 – 30.000 linii
+Scris de obicei în Python sau Node.
+Conține:
+server API
+gestionare utilizatori
+login / autentificare
+upload video
+gestionare chat
+sistem notificări
+moderare conținut
+statistici
+Exemplu de endpoint:
+Copy code
+
+/api/login
+/api/chat
+/api/reels
+/api/upload
+/api/profile
+2️⃣ Sistem AI (Mara)
+≈ 10.000 – 20.000 linii
+Aici se află:
+integrarea cu OpenAI
+personalitatea Mara
+memorie utilizatori
+analiză emoțională
+adaptare la utilizator
+traducere limbă
+Mara trebuie să știe:
+cine e utilizatorul
+ce îi place
+cum să răspundă diferit fiecăruia.
+3️⃣ Frontend (interfața aplicației)
+≈ 25.000 – 40.000 linii
+Aici este tot ce vede utilizatorul:
+design
+animații
+avatar
+chat UI
+feed reels
+profiluri
+De obicei scris în:
+React
+HTML
+CSS
+JavaScript
+4️⃣ Reels engine (feed tip TikTok)
+≈ 10.000 – 20.000 linii
+Acesta este unul dintre cele mai complexe sisteme.
+Include:
+infinite scroll
+autoplay video
+algoritm recomandare
+like / comment / share
+Similar cu sistemul folosit de
+TikTok.
+5️⃣ Sistem creators / fans
+≈ 10.000 – 15.000 linii
+Aici se gestionează:
+profil creator
+abonări
+statistici
+monetizare
+moderare conținut
+6️⃣ Voice AI
+≈ 5.000 – 10.000 linii
+Include:
+text-to-speech
+voice input
+sincronizare voce + avatar
+7️⃣ Bază de date
+≈ 5.000 – 10.000 linii
+Gestionarea datelor:
+utilizatori
+conversații
+video
+statistici
+Tabele:
+Copy code
+
+users
+messages
+videos
+followers
+likes
+subscriptions
+8️⃣ Security system
+≈ 5.000 – 8.000 linii
+Protecție:
+anti spam
+anti bot
+criptare
+protecție API
+9️⃣ AI learning system
+≈ 10.000 – 15.000 linii
+Aici Mara începe să:
+învețe preferințele utilizatorilor
+personalizeze feedul
+își adapteze personalitatea
+🔟 Admin panel
+≈ 5.000 – 8.000 linii
+Pentru administratori:
+moderare video
+ban utilizatori
+statistici aplicație
+Structura totală
+Așa ar arăta proiectul:
+Copy code
+
+mara-ai
+│
+├── backend
+├── ai_engine
+├── reels_engine
+├── creator_system
+├── voice_system
+├── frontend
+├── database
+├── security
+└── admin_panel
+Total aproximativ:
+120.000 – 180.000 linii cod
+Ce este interesant la ideea ta
+Proiectul tău combină două concepte foarte puternice:
+AI companion ca Replika
+feed video ca TikTok

@@ -1,0 +1,89 @@
+// server.js (Node.js + Express backend)
+const express = require('express');
+const fs = require('fs');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+
+const app = express();
+app.use(bodyParser.json());
+app.use(cors());
+
+let creators = []; // {id, name, subscription, reels: [{title, url, views, comments}]}
+let feed = [];     // To display public feed
+
+// Create new creator
+app.post('/api/creator', (req,res)=>{
+    const {id,name,subscription} = req.body;
+    if(!id || !name) return res.status(400).send("Missing fields");
+    creators.push({id,name,subscription: subscription || 'free', reels: []});
+    res.send({status:"creator created"});
+});
+
+// Add reel
+app.post('/api/reel', (req,res)=>{
+    const {creatorId,title,url} = req.body;
+    const creator = creators.find(c=>c.id===creatorId);
+    if(!creator) return res.status(404).send("Creator not found");
+
+    // Limit for free accounts
+    if(creator.subscription==='free' && creator.reels.length>=3)
+        return res.status(403).send("Free account limit reached");
+
+    const newReel = {title,url,views:0,comments:[]};
+    creator.reels.push(newReel);
+    feed.push({creatorId,title,url,views:0,comments:[]});
+    res.send({status:"reel added"});
+});
+
+// Get public feed
+app.get('/api/feed', (req,res)=>{
+    res.send(feed);
+});
+
+// Add comment to reel
+app.post('/api/comment', (req,res)=>{
+    const {creatorId,title,comment} = req.body;
+    const reel = feed.find(r=>r.creatorId===creatorId && r.title===title);
+    if(!reel) return res.status(404).send("Reel not found");
+    reel.comments.push(comment);
+    res.send({status:"comment added"});
+});
+
+// Increment view
+app.post('/api/view', (req,res)=>{
+    const {creatorId,title} = req.body;
+    const reel = feed.find(r=>r.creatorId===creatorId && r.title===title);
+    if(reel) reel.views++;
+    res.send({status:"view counted"});
+});
+
+// Analytics for creators
+app.get('/api/analytics/:creatorId', (req,res)=>{
+    const creator = creators.find(c=>c.id===req.params.creatorId);
+    if(!creator) return res.status(404).send("Creator not found");
+    const analytics = creator.reels.map(r=>({
+        title:r.title,
+        views:r.views,
+        comments:r.comments.length
+    }));
+    res.send(analytics);
+});
+
+// Mara AI voice TTS demo (uses any TTS API, e.g. Google TTS)
+app.post('/api/mara-speak', (req,res)=>{
+    const {text} = req.body;
+    if(!text) return res.status(400).send("Missing text");
+    // Demo: return a URL to TTS audio (in real system integrate Google/ElevenLabs API)
+    const audioURL = `https://api.fake-tts.com/speak?text=${encodeURIComponent(text)}`;
+    res.send({audioURL});
+});
+
+// Moderation demo (filter bad words)
+app.post('/api/moderate', (req,res)=>{
+    const {text} = req.body;
+    const bannedWords = ['badword1','badword2'];
+    const found = bannedWords.filter(w=>text.toLowerCase().includes(w));
+    res.send({safe: found.length===0, flaggedWords: found});
+});
+
+app.listen(3000, ()=>console.log("Mara AI backend running on port 3000"));

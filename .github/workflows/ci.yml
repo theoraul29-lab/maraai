@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+
+jobs:
+  build-and-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NODE_ENV: development
+      AUTH_MODE: local
+      SESSION_SECRET: ci-session-secret
+      PORT: 3001
+      MARAAI_BASE_URL: http://localhost:3001
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Start backend
+        run: |
+          nohup npm run start:backend > backend.log 2>&1 &
+          echo $! > backend.pid
+
+      - name: Wait for backend health
+        run: |
+          for i in {1..60}; do
+            if curl -fsS http://localhost:3001/api/health >/dev/null; then
+              echo "Backend is healthy"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Backend did not become healthy in time"
+          exit 1
+
+      - name: Runtime smoke tests
+        run: npm run smoke:runtime
+
+      - name: Print backend logs on failure
+        if: failure()
+        run: |
+          echo "===== backend.log ====="
+          cat backend.log || true
+
+      - name: Stop backend
+        if: always()
+        run: |
+          if [ -f backend.pid ]; then
+            kill $(cat backend.pid) || true
+          fi

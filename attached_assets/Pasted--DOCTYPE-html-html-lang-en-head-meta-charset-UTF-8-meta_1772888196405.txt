@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mara AI - Demo</title>
+<style>
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        transition: background-color 0.5s, color 0.5s;
+    }
+    #chatContainer {
+        position: fixed;
+        right: 20px;
+        bottom: 20px;
+        width: 300px;
+        max-height: 400px;
+        background: rgba(255,255,255,0.9);
+        border-radius: 10px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+    #chatMessages {
+        flex: 1;
+        padding: 10px;
+        overflow-y: auto;
+    }
+    #chatInput {
+        display: flex;
+    }
+    #chatInput input {
+        flex: 1;
+        padding: 10px;
+        border: none;
+        outline: none;
+        border-top: 1px solid #ccc;
+    }
+    #chatInput button {
+        padding: 10px;
+        border: none;
+        background: #4b79ff;
+        color: #fff;
+        cursor: pointer;
+    }
+    #feed {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        padding: 20px;
+    }
+    .videoCard {
+        width: 300px;
+        margin: 10px;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        transition: transform 0.3s;
+    }
+    .videoCard:hover {
+        transform: scale(1.05);
+    }
+    video {
+        width: 100%;
+        display: block;
+    }
+</style>
+</head>
+<body>
+
+<div id="feed"></div>
+
+<div id="chatContainer">
+    <div id="chatMessages"></div>
+    <div id="chatInput">
+        <input type="text" id="messageInput" placeholder="Type your message...">
+        <button id="sendBtn">Send</button>
+    </div>
+</div>
+
+<script>
+    // Connect to Mara backend WebSocket
+    const ws = new WebSocket('ws://localhost:3000');
+
+    const chatMessages = document.getElementById('chatMessages');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const feed = document.getElementById('feed');
+
+    ws.onopen = () => {
+        console.log('Connected to Mara backend');
+    };
+
+    ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+
+        // --- Update theme based on personality ---
+        document.body.style.backgroundColor = data.personality.bg;
+        document.body.style.color = data.personality.accent;
+
+        // --- Display video feed ---
+        feed.innerHTML = '';
+        data.feedVideo.forEach(v => {
+            const card = document.createElement('div');
+            card.className = 'videoCard';
+            const video = document.createElement('video');
+            video.src = v.url;
+            video.controls = true;
+            card.appendChild(video);
+            feed.appendChild(card);
+        });
+
+        // --- Display AI message ---
+        const aiMsg = document.createElement('div');
+        aiMsg.textContent = data.AIContent.text;
+        aiMsg.style.margin = '5px 0';
+        aiMsg.style.fontWeight = 'bold';
+        chatMessages.appendChild(aiMsg);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    };
+
+    // Send message on button click or Enter key
+    function sendMessage() {
+        const msg = messageInput.value.trim();
+        if(msg) {
+            ws.send(JSON.stringify({ type: 'chat', value: msg }));
+            const userMsg = document.createElement('div');
+            userMsg.textContent = `You: ${msg}`;
+            userMsg.style.margin = '5px 0';
+            userMsg.style.color = '#333';
+            chatMessages.appendChild(userMsg);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            messageInput.value = '';
+        }
+    }
+    sendBtn.addEventListener('click', sendMessage);
+    messageInput.addEventListener('keydown', (e) => {
+        if(e.key === 'Enter') sendMessage();
+    });
+
+    // Send scroll event as demo for personality detection
+    window.addEventListener('scroll', () => {
+        ws.send(JSON.stringify({ type: 'scroll', value: window.scrollY }));
+    });
+</script>
+
+</body>
+</html>
+app.listen(port, () => {
+    console.log(`Mara backend running at http://localhost:${port}`);
+});
+# Setează calea către folderul backend
+$backendPath = "C:\Users\admin\Desktop\tikitaka\backend"
+
+# Navighează în folder
+Set-Location $backendPath
+
+# Pornește Mara în fundal
+Start-Process powershell -ArgumentList "node mara_backend.js"
+
+# Așteaptă câteva secunde să pornească serverul
+Start-Sleep -Seconds 5
+
+# Deschide browser-ul implicit la localhost
+Start-Process "http://localhost:3000"
+
+Write-Host "Mara este pornită și browser-ul s-a deschis la localhost:3000"
+<script>
+// === Extensie Avansată pentru Mara AI ===
+const engines = [
+    { name: "DuckDuckGo", url: "https://api.duckduckgo.com/?q=" },
+    { name: "Bing", url: "https://api.bing.microsoft.com/v7.0/search?q=" },
+    { name: "GoogleSafe", url: "https://customsearch.googleapis.com/customsearch/v1?key=YOUR_KEY&cx=YOUR_CX&q=" }
+];
+
+// Memorie locală chat + feed
+let advancedMemory = [];
+
+// Interacțiune avansată chat
+async function advancedChat(msg) {
+    // Salvare în memorie
+    advancedMemory.push({ msg, timestamp: Date.now() });
+
+    // Caută info pe internet (demo)
+    let results = [];
+    for (let engine of engines) {
+        try {
+            const res = await fetch(engine.url + encodeURIComponent(msg));
+            const data = await res.json();
+            if (data.AbstractText) results.push(`${engine.name}: ${data.AbstractText}`);
+            else if (data.webPages && data.webPages.value) results.push(`${engine.name}: ${data.webPages.value[0].snippet}`);
+        } catch(e) { results.push(`${engine.name}: eroare la căutare`); }
+    }
+
+    // Recomandări feed
+    loadAdvancedFeed(msg);
+
+    return results.join("\n");
+}
+
+// Extinderea butonului send
+sendBtn.addEventListener('click', async () => {
+    const msg = input.value;
+    if(!msg) return;
+    addMessage('Tu: ' + msg);
+
+    const response = await advancedChat(msg);
+    addMessage('Mara: ' + response);
+
+    input.value = '';
+});
+
+// Feed avansat: mix video real + AI + trending
+async function loadAdvancedFeed(topic = '') {
+    // Simulăm feed AI + real
+    const feed = [
+        { url: 'https://www.w3schools.com/html/mov_bbb.mp4', type: 'real' },
+        { url: 'https://sample-videos.com/video123/mp4/480/asdasdas.mp4', type: 'AI' },
+        { url: 'https://sample-videos.com/video123/mp4/480/big_buck_bunny.mp4', type: 'real' }
+    ];
+
+    // Filtrare după topic (demo)
+    let filtered = feed.filter(v => topic === '' || v.type === 'AI');
+
+    videoFeed.innerHTML = '';
+    filtered.forEach(v => {
+        const vid = document.createElement('video');
+        vid.src = v.url;
+        vid.autoplay = true;
+        vid.loop = true;
+        vid.muted = true;
+        vid.width = 300;
+        videoFeed.appendChild(vid);
+    });
+}
+
+// Refresh feed la interval
+setInterval(() => loadAdvancedFeed(''), 20000);
+loadAdvancedFeed('');
+</script>
+<script>
+// === Continuare Mara AI: feed avansat + video real + AI + chat + memorie 24h ===
+
+// Lista motoarelor de cautare demo
+const engines = [
+    { name: "DuckDuckGo", url: "https://api.duckduckgo.com/?q=" },
+    { name: "Bing", url: "https://api.bing.microsoft.com/v7.0/search?q=" },
+    { name: "GoogleSafe", url: "https://customsearch.googleapis.com/customsearch/v1?key=YOUR_KEY&cx=YOUR_CX&q=" },
+    { name: "Yahoo", url: "https://api.search.yahoo.com/search?p=" },
+    { name: "Qwant", url: "https://api.qwant.com/api/search/web?q=" },
+    { name: "Startpage", url: "https://www.startpage.com/sp/search?query=" }
+];
+
+// Memorie interactivă a chatului și feed-ului (24h)
+let advancedMemory = [];
+
+// Funcție care curăță memoria mai veche de 24h
+function cleanupMemory() {
+    const now = Date.now();
+    const dayInMs = 24 * 60 * 60 * 1000;
+    advancedMemory = advancedMemory.filter(entry => (now - entry.timestamp) <= dayInMs);
+}
+
+// Rulează cleanup automat la fiecare 1 oră
+setInterval(cleanupMemory, 60 * 60 * 1000);
+
+// Funcție avansată chat + analiza mesajului
+async function advancedChat(msg) {
+    const timestamp = Date.now();
+    // Salvează mesajul în memorie locală
+    advancedMemory.push({ msg, timestamp });
+
+    // Curăță memoria mai veche
+    cleanupMemory();
+
+    let results = [];
+    for (let engine of engines) {
+        try {
+            const res = await fetch(engine.url + encodeURIComponent(msg));
+            const data = await res.json();
+            if (data.AbstractText) results.push(`${engine.name}: ${data.AbstractText}`);
+            else if (data.webPages && data.webPages.value) results.push(`${engine.name}: ${data.webPages.value[0].snippet}`);
+            else results.push(`${engine.name}: rezultate limitate`);
+        } catch(e) {
+            results.push(`${engine.name}: eroare la căutare`);
+        }
+    }
+
+    // Actualizează feed-ul AI + real
+    loadAdvancedFeed(msg);
+
+    return results.join("\n");
+}
+
+// Conectează butonul de trimitere la funcția avansată
+if(typeof sendBtn !== 'undefined' && typeof input !== 'undefined') {
+    sendBtn.addEventListener('click', async () => {
+        const msg = input.value;
+        if(!msg) return;
+        addMessage('Tu: ' + msg);
+
+        const response = await advancedChat(msg);
+        addMessage('Mara: ' + response);
+
+        input.value = '';
+    });
+}
+
+// Feed avansat: AI + video real + trending
+async function loadAdvancedFeed(topic = '') {
+    const feed = [
+        { url: 'https://www.w3schools.com/html/mov_bbb.mp4', type: 'real', title: 'Big Buck Bunny' },
+        { url: 'https://sample-videos.com/video123/mp4/480/asdasdas.mp4', type: 'AI', title: 'AI Generated Clip 1' },
+        { url: 'https://sample-videos.com/video123/mp4/480/big_buck_bunny.mp4', type: 'real', title: 'Big Buck Bunny Repeat' },
+        { url: 'https://sample-videos.com/video123/mp4/480/asdasdas2.mp4', type: 'AI', title: 'AI Generated Clip 2' }
+    ];
+
+    // Filtrare demo: topic AI
+    let filtered = feed.filter(v => topic === '' || v.type === 'AI');
+
+    if(typeof videoFeed !== 'undefined') {
+        videoFeed.innerHTML = '';
+        filtered.forEach(v => {
+            const vidContainer = document.createElement('div');
+            vidContainer.style.margin = '10px';
+            vidContainer.style.display = 'inline-block';
+            vidContainer.style.textAlign = 'center';
+
+            const vid = document.createElement('video');
+            vid.src = v.url;
+            vid.autoplay = true;
+            vid.loop = true;
+            vid.muted = true;
+            vid.width = 320;
+            vid.height = 180;
+            vid.style.borderRadius = '8px';
+            vid.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
+
+            const title = document.createElement('div');
+            title.innerText = v.title;
+            title.style.color = '#fff';
+            title.style.fontSize = '14px';
+            title.style.marginTop = '4px';
+
+            vidContainer.appendChild(vid);
+            vidContainer.appendChild(title);
+            videoFeed.appendChild(vidContainer);
+        });
+    }
+}
+
+// Refresh automat feed la fiecare 20 secunde
+setInterval(() => loadAdvancedFeed(''), 20000);
+loadAdvancedFeed('');
+
+// === Floating Theme Customizer ===
+const themePanel = document.createElement('div');
+themePanel.style.position = 'fixed';
+themePanel.style.top = '20px';
+themePanel.style.right = '20px';
+themePanel.style.background = 'rgba(0,0,0,0.6)';
+themePanel.style.padding = '10px';
+themePanel.style.borderRadius = '10px';
+themePanel.style.zIndex = '9999';
+themePanel.style.color = '#fff';
+
+themePanel.innerHTML = `
+<label>Background: <input type="color" id="bgColor" value="#000000"></label><br>
+<label>Text: <input type="color" id="textColor" value="#ffffff"></label>
+`;
+
+document.body.appendChild(themePanel);
+
+document.getElementById('bgColor').addEventListener('input', e => {
+    document.body.style.backgroundColor = e.target.value;
+});
+document.getElementById('textColor').addEventListener('input', e => {
+    document.body.style.color = e.target.value;
+});
+
+// === Multilingual Selector Demo ===
+const langSelector = document.createElement('select');
+langSelector.style.position = 'fixed';
+langSelector.style.top = '20px';
+langSelector.style.left = '20px';
+langSelector.style.zIndex = '9999';
+['RO', 'EN', 'DE', 'RU'].forEach(l => {
+    const opt = document.createElement('option'); opt.value = l; opt.innerText = l;
+    langSelector.appendChild(opt);
+});
+document.body.appendChild(langSelector);
+
+langSelector.addEventListener('change', e => {
+    const lang = e.target.value;
+    console.log('Limba schimbată la:', lang);
+});
+</script>
+:root {
+    --primary-bg: #111;
+    --secondary-bg: #1e1e1e;
+    --accent-color: #ff3c00;
+    --text-color: #fff;
+}
+
+body {
+    background-color: var(--primary-bg);
+    color: var(--text-color);
+}
+
+button, .accent {
+    background-color: var(--accent-color);
+}
+// Functie care actualizeaza tema in functie de personalitate
+function updateTheme(personality) {
+    switch(personality) {
+        case 'curious':
+            document.documentElement.style.setProperty('--primary-bg', '#1b1b3a');
+            document.documentElement.style.setProperty('--secondary-bg', '#2a2a5e');
+            document.documentElement.style.setProperty('--accent-color', '#ffb347');
+            break;
+        case 'energetic':
+            document.documentElement.style.setProperty('--primary-bg', '#220022');
+            document.documentElement.style.setProperty('--secondary-bg', '#330033');
+            document.documentElement.style.setProperty('--accent-color', '#ff0066');
+            break;
+        case 'calm':
+            document.documentElement.style.setProperty('--primary-bg', '#0a1f1c');
+            document.documentElement.style.setProperty('--secondary-bg', '#13433b');
+            document.documentElement.style.setProperty('--accent-color', '#00ffaa');
+            break;
+        case 'alert':
+            document.documentElement.style.setProperty('--primary-bg', '#331111');
+            document.documentElement.style.setProperty('--secondary-bg', '#662222');
+            document.documentElement.style.setProperty('--accent-color', '#ff4444');
+            break;
+        default:
+            // default colors
+            document.documentElement.style.setProperty('--primary-bg', '#111');
+            document.documentElement.style.setProperty('--secondary-bg', '#1e1e1e');
+            document.documentElement.style.setProperty('--accent-color', '#ff3c00');
+    }
+}
+
+// Exemplu: schimbare automata in functie de comportament
+function detectBehavior(userStats) {
+    if(userStats.scrollSpeed > 50) return 'energetic';
+    if(userStats.timeOnVideo > 300) return 'curious';
+    if(userStats.chatTone === 'friendly') return 'calm';
+    if(userStats.chatTone === 'aggressive') return 'alert';
+    return 'default';
+}
+
+// Periodic update
+setInterval(() => {
+    const stats = {
+        scrollSpeed: calculateScrollSpeed(), // functie pe care o creezi
+        timeOnVideo: getTimeOnCurrentVideo(),
+        chatTone: analyzeChatTone() // AI analiza simpla
+    };
+    const personality = detectBehavior(stats);
+    updateTheme(personality);
+}, 5000);
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mara AI - Cameleon Digital</title>
+<style>
+    :root {
+        --primary-bg: #111;
+        --secondary-bg: #1e1e1e;
+        --accent-color: #ff3c00;
+        --text-color: #fff;
+    }
+
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background-color: var(--primary-bg);
+        color: var(--text-color);
+        transition: background-color 1s, color 1s;
+    }
+
+    header {
+        padding: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: var(--secondary-bg);
+    }
+
+    .theme-panel {
+        position: fixed;
+        top: 50px;
+        right: 20px;
+        background: var(--secondary-bg);
+        border-radius: 8px;
+        padding: 10px;
+        z-index: 1000;
+    }
+
+    button, select {
+        background-color: var(--accent-color);
+        color: #fff;
+        border: none;
+        padding: 5px 10px;
+        margin: 5px;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: background-color 0.5s;
+    }
+
+    .feed {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 20px;
+        padding: 20px;
+    }
+
+    .video-card {
+        width: 300px;
+        background-color: var(--secondary-bg);
+        border-radius: 8px;
+        overflow: hidden;
+        transition: transform 0.5s;
+    }
+
+    .video-card:hover {
+        transform: scale(1.05);
+    }
+
+    video {
+        width: 100%;
+        height: auto;
+    }
+
+    .chat {
+        position: fixed;
+        bottom: 0;
+        right: 0;
+        width: 300px;
+        max-height: 400px;
+        background-color: var(--secondary-bg);
+        overflow-y: auto;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+
+    .chat-input {
+        width: calc(100% - 20px);
+        padding: 10px;
+        border: none;
+        border-radius: 0 0 8px 8px;
+    }
+
+    .message {
+        padding: 5px 10px;
+        margin: 5px;
+        border-radius: 4px;
+        background-color: var(--accent-color);
+        color: #fff;
+    }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>Mara AI - Cameleon Digital</h1>
+    <select id="language-selector">
+        <option value="ro">RO</option>
+        <option value="en">EN</option>
+        <option value="de">DE</option>
+        <option value="ru">RU</option>
+    </select>
+</header>
+
+<div class="theme-panel">
+    <button onclick="setDefaultTheme()">Reset Theme</button>
+</div>
+
+<div class="feed" id="video-feed">
+    <!-- Video cards populate aici -->
+</div>
+
+<div class="chat" id="chat-box">
+    <div id="messages"></div>
+    <input class="chat-input" type="text" placeholder="Scrie un mesaj..." id="chat-input">
+</div>
+
+<script>
+// --- Multilingual setup ---
+const translations = {
+    ro: { welcome: "Bine ai venit!" },
+    en: { welcome: "Welcome!" },
+    de: { welcome: "Willkommen!" },
+    ru: { welcome: "Добро пожаловать!" }
+};
+
+const langSelector = document.getElementById('language-selector');
+langSelector.addEventListener('change', () => {
+    const lang = langSelector.value;
+    alert(translations[lang].welcome);
+});
+
+// --- Video Feed ---
+const feedContainer = document.getElementById('video-feed');
+
+// Functie demo: video real + AI generat
+const videos = [
+    { src: "https://www.w3schools.com/html/mov_bbb.mp4", type: "real" },
+    { src: "https://www.w3schools.com/html/movie.mp4", type: "ai" }
+];
+
+videos.forEach(v => {
+    const card = document.createElement('div');
+    card.className = 'video-card';
+    const vid = document.createElement('video');
+    vid.src = v.src;
+    vid.controls = true;
+    vid.autoplay = false;
+    card.appendChild(vid);
+    feedContainer.appendChild(card);
+});
+
+// --- Chat ---
+const chatInput = document.getElementById('chat-input');
+const messages = document.getElementById('messages');
+chatInput.addEventListener('keydown', e => {
+    if(e.key === 'Enter' && chatInput.value.trim() !== '') {
+        const msg = document.createElement('div');
+        msg.className = 'message';
+        msg.innerText = chatInput.value;
+        messages.appendChild(msg);
+        chatInput.value = '';
+        messages.scrollTop = messages.scrollHeight;
+    }
+});
+
+// --- Cameleon Personality Theme ---
+function updateTheme(personality) {
+    switch(personality) {
+        case 'curious':
+            document.documentElement.style.setProperty('--primary-bg', '#1b1b3a');
+            document.documentElement.style.setProperty('--secondary-bg', '#2a2a5e');
+            document.documentElement.style.setProperty('--accent-color', '#ffb347');
+            break;
+        case 'energetic':
+            document.documentElement.style.setProperty('--primary-bg', '#220022');
+            document.documentElement.style.setProperty('--secondary-bg', '#330033');
+            document.documentElement.style.setProperty('--accent-color', '#ff0066');
+            break;
+        case 'calm':
+            document.documentElement.style.setProperty('--primary-bg', '#0a1f1c');
+            document.documentElement.style.setProperty('--secondary-bg', '#13433b');
+            document.documentElement.style.setProperty('--accent-color', '#00ffaa');
+            break;
+        case 'alert':
+            document.documentElement.style.setProperty('--primary-bg', '#331111');
+            document.documentElement.style.setProperty('--secondary-bg', '#662222');
+            document.documentElement.style.setProperty('--accent-color', '#ff4444');
+            break;
+        default:
+            document.documentElement.style.setProperty('--primary-bg', '#111');
+            document.documentElement.style.setProperty('--secondary-bg', '#1e1e1e');
+            document.documentElement.style.setProperty('--accent-color', '#ff3c00');
+    }
+}
+
+// Detecteaza comportament user
+function detectBehavior(stats) {
+    if(stats.scrollSpeed > 50) return 'energetic';
+    if(stats.timeOnVideo > 300) return 'curious';
+    if(stats.chatTone === 'friendly') return 'calm';
+    if(stats.chatTone === 'aggressive') return 'alert';
+    return 'default';
+}
+
+// Simulare metrici (trebuie legate de Mara backend pentru analiza reala)
+function calculateScrollSpeed(){ return Math.floor(Math.random()*100); }
+function getTimeOnCurrentVideo(){ return Math.floor(Math.random()*600); }
+function analyzeChatTone(){ return ['friendly','aggressive','neutral'][Math.floor(Math.random()*3)]; }
+
+// Update periodic tema
+setInterval(() => {
+    const stats = {
+        scrollSpeed: calculateScrollSpeed(),
+        timeOnVideo: getTimeOnCurrentVideo(),
+        chatTone: analyzeChatTone()
+    };
+    const personality = detectBehavior(stats);
+    updateTheme(personality);
+}, 5000);
+
+// Reset theme
+function setDefaultTheme() {
+    updateTheme('default');
+}
+</script>
+
+</body>
+</html>
+<script>
+// --- Memorie Mara 24h ---
+let userInteractions = []; // memoreaza fiecare interactiune user
+
+// Functie pentru a adauga interactiuni
+function addInteraction(type, data) {
+    const timestamp = new Date().getTime();
+    userInteractions.push({ type, data, timestamp });
+}
+
+// Functie pentru a curata memoria mai veche de 24h
+function cleanOldMemory() {
+    const now = new Date().getTime();
+    const cutoff = now - (24 * 60 * 60 * 1000); // 24 ore in ms
+    userInteractions = userInteractions.filter(i => i.timestamp > cutoff);
+}
+
+// Functie pentru analiza personalitate pe baza memoriei actualizate
+function analyzePersonalityFromMemory() {
+    cleanOldMemory(); // curata memoria veche
+    // aici se face analiza in functie de interactiuni
+    // demo simplu: calculam "statistici"
+    let scrollSpeed = 0;
+    let timeOnVideo = 0;
+    let chatToneCounts = { friendly:0, aggressive:0, neutral:0 };
+
+    userInteractions.forEach(i => {
+        if(i.type === 'scroll') scrollSpeed += i.data;
+        if(i.type === 'videoTime') timeOnVideo += i.data;
+        if(i.type === 'chatTone') chatToneCounts[i.data] = (chatToneCounts[i.data] || 0) + 1;
+    });
+
+    // Determinam dominant personality
+    let dominantTone = Object.keys(chatToneCounts).reduce((a,b)=> chatToneCounts[a] > chatToneCounts[b]?a:b);
+    return detectBehavior({ scrollSpeed, timeOnVideo, chatTone: dominantTone });
+}
+
+// --- Modificam intervalul de update tema ---
+setInterval(() => {
+    // Adaugam interactiuni random demo (trebuie legat la backend Mara real)
+    addInteraction('scroll', calculateScrollSpeed());
+    addInteraction('videoTime', getTimeOnCurrentVideo());
+    addInteraction('chatTone', analyzeChatTone());
+
+    const personality = analyzePersonalityFromMemory();
+    updateTheme(personality);
+}, 5000);
+
+</script>
+<script>
+// --- Setup WebSocket catre Mara backend ---
+const socket = new WebSocket('ws://localhost:3000'); // portul backend
+
+socket.addEventListener('open', () => {
+    console.log('Conexiune cu Mara AI stabilita');
+});
+
+socket.addEventListener('message', (event) => {
+    const data = JSON.parse(event.data);
+    // data poate contine: feed video, AI content, personalitate
+    if(data.personality) updateTheme(data.personality);
+    if(data.feedVideo) updateFeed(data.feedVideo); // functie deja existenta din cod anterior
+    if(data.AIContent) displayAIContent(data.AIContent); // functie display animatii sau text
+});
+
+// --- Trimite date catre backend ---
+function sendInteractionToMara(type, value) {
+    if(socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ type, value, timestamp: new Date().getTime() }));
+    }
+}
+
+// --- Interactiuni demo ---
+setInterval(() => {
+    const scrollSpeed = calculateScrollSpeed();
+    const videoTime = getTimeOnCurrentVideo();
+    const chatTone = analyzeChatTone();
+
+    sendInteractionToMara('scroll', scrollSpeed);
+    sendInteractionToMara('videoTime', videoTime);
+    sendInteractionToMara('chatTone', chatTone);
+
+}, 5000);
+</script>
+// mara_backend.js
+const WebSocket = require('ws');
+const fs = require('fs');
+const path = require('path');
+
+// --- Configurare server WebSocket ---
+const wss = new WebSocket.Server({ port: 3000 }, () => {
+    console.log('Mara backend running on ws://localhost:3000');
+});
+
+// --- Memorie temporara 24h ---
+let memory = []; // stocheaza interactiuni
+const MEMORY_FILE = path.join(__dirname, 'memory.json');
+
+// --- Incarca memoria existenta daca exista ---
+if (fs.existsSync(MEMORY_FILE)) {
+    memory = JSON.parse(fs.readFileSync(MEMORY_FILE));
+}
+
+// --- Functie pentru curatare memorie peste 24h ---
+function cleanMemory() {
+    const cutoff = Date.now() - 24*60*60*1000;
+    memory = memory.filter(item => item.timestamp >= cutoff);
+    fs.writeFileSync(MEMORY_FILE, JSON.stringify(memory));
+}
+
+// Curata la fiecare 1h
+setInterval(cleanMemory, 60*60*1000);
+
+// --- Functie demo analiza personalitate ---
+function analyzePersonality(memory) {
+    // demo: daca user e mai activ la scroll -> "energetic", altfel "calm"
+    let scrollSum = memory.reduce((acc, m) => acc + (m.type === 'scroll' ? m.value : 0), 0);
+    return scrollSum > 50 ? 'energetic' : 'calm';
+}
+
+// --- Functie demo feed video ---
+function generateFeed(memory) {
+    // demo feed mix: real + AI generat
+    return [
+        { type: 'real', url: 'https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4' },
+        { type: 'AI', url: 'https://example.com/ai_generated_video.mp4' }
+    ];
+}
+
+// --- Functie tema cameleon ---
+function getThemeByPersonality(personality) {
+    if(personality === 'energetic') return { bg: '#fffae3', accent: '#ff4b5c' };
+    if(personality === 'calm') return { bg: '#e3f6ff', accent: '#4b79ff' };
+    return { bg: '#ffffff', accent: '#333333' };
+}
+
+// --- WebSocket handling ---
+wss.on('connection', ws => {
+    console.log('Frontend conectat');
+
+    ws.on('message', message => {
+        const data = JSON.parse(message);
+        data.timestamp = Date.now();
+        memory.push(data);
+        fs.writeFileSync(MEMORY_FILE, JSON.stringify(memory));
+
+        // --- Analiza provizorie si raspuns ---
+        const personality = analyzePersonality(memory);
+        const feedVideo = generateFeed(memory);
+        const theme = getThemeByPersonality(personality);
+
+        const response = {
+            personality: theme,
+            feedVideo,
+            AIContent: { text: `Hello! Personalitate detectata: ${personality}` }
+        };
+
+        ws.send(JSON.stringify(response));
+    });
+
+    ws.on('close', () => console.log('Frontend deconectat'));
+});
+mara-ai/
+│
+├── index.html
+├── mara_backend.js
+│
+├── modules/
+│   ├── search_module.js
+│   ├── crawler_module.js
+│   ├── memory_module.js
+│   ├── personality_module.js
+│   └── video_module.js
+│
+├── data/
+│   └── memory.json
+│
+└── package.json
+{
+  "name": "mara-ai",
+  "version": "1.0.0",
+  "main": "mara_backend.js",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "cheerio": "^1.0.0",
+    "ws": "^8.15.0",
+    "playwright": "^1.40.0"
+  }
+}
+npm install
+const fs = require("fs");
+
+const MEMORY_FILE = "./data/memory.json";
+
+let memory = [];
+
+if (fs.existsSync(MEMORY_FILE)) {
+    memory = JSON.parse(fs.readFileSync(MEMORY_FILE));
+}
+
+function addMemory(data) {
+    memory.push(data);
+    fs.writeFileSync(MEMORY_FILE, JSON.stringify(memory));
+}
+
+function cleanMemory() {
+
+    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+
+    memory = memory.filter(m => m.timestamp > cutoff);
+
+    fs.writeFileSync(MEMORY_FILE, JSON.stringify(memory));
+}
+
+setInterval(cleanMemory, 60 * 60 * 1000);
+
+function getMemory() {
+    return memory;
+}
+
+module.exports = { addMemory, getMemory };
+const axios = require("axios");
+
+const engines = [
+
+"https://api.duckduckgo.com/?q=",
+"https://en.wikipedia.org/w/api.php?action=opensearch&format=json&search=",
+"https://api.github.com/search/repositories?q=",
+
+];
+
+async function searchWeb(query){
+
+let results = [];
+
+for(const engine of engines){
+
+try{
+
+const res = await axios.get(engine + encodeURIComponent(query));
+
+results.push(res.data);
+
+}catch(err){
+
+console.log("search error");
+
+}
+
+}
+
+return results;
+
+}
+
+module.exports = { searchWeb };
+const axios = require("axios");
+const cheerio = require("cheerio");
+
+async function crawl(url){
+
+try{
+
+const { data } = await axios.get(url);
+
+const $ = cheerio.load(data);
+
+let title = $("title").text();
+
+let links = [];
+
+$("a").each((i,el)=>{
+
+links.push($(el).attr("href"));
+
+});
+
+return {title,links};
+
+}catch(e){
+
+return null;
+
+}
+
+}
+
+module.exports = { crawl };
+function detectPersonality(memory){
+
+let scroll = memory.filter(m=>m.type==="scroll").length;
+
+if(scroll > 20){
+
+return "energetic";
+
+}
+
+return "calm";
+
+}
+
+function getTheme(personality){
+
+if(personality==="energetic"){
+
+return {bg:"#fff0c2",accent:"#ff4b5c"};
+
+}
+
+return {bg:"#e3f6ff",accent:"#4b79ff"};
+
+}
+
+module.exports = { detectPersonality, getTheme };
+function generateFeed(){
+
+return [
+
+{
+type:"real",
+url:"https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4"
+},
+
+{
+type:"ai",
+url:"https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
+}
+
+];
+
+}
+
+module.exports = { generateFeed };
+const WebSocket = require("ws");
+
+const {addMemory,getMemory} = require("./modules/memory_module");
+const {searchWeb} = require("./modules/search_module");
+const {detectPersonality,getTheme} = require("./modules/personality_module");
+const {generateFeed} = require("./modules/video_module");
+
+const wss = new WebSocket.Server({port:3000});
+
+console.log("Mara AI running on ws://localhost:3000");
+
+wss.on("connection",(ws)=>{
+
+ws.on("message",async(msg)=>{
+
+let data = JSON.parse(msg);
+
+data.timestamp = Date.now();
+
+addMemory(data);
+
+let memory = getMemory();
+
+let personality = detectPersonality(memory);
+
+let theme = getTheme(personality);
+
+let feed = generateFeed();
+
+let webResults = [];
+
+if(data.type==="chat"){
+
+webResults = await searchWeb(data.value);
+
+}
+
+ws.send(JSON.stringify({
+
+personality:theme,
+feedVideo:feed,
+AIContent:{
+text:"Mara analiză completă realizată",
+web:webResults
+}
+
+}));
+
+});
+
+});

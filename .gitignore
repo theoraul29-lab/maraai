@@ -137,3 +137,16 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Project-specific artifacts
+.DS_Store
+server/public
+vite.config.ts.*
+*.tar.gz
+.env
+.env.*
+*.sqlite
+*.sqlite3
+maraai.sqlite
+logs/
+.config/replit/.semgrep/

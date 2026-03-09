@@ -1,0 +1,124 @@
+Perfect! Acum trecem la nivelul profesional – un sistem Mara AI Hub + Creator Suite. Vom crea o arhitectură și funcționalități care să permită unui creator să:
+
+Posteze și gestioneze reels/video-feed.
+
+Modifice videoclipuri și fotografii.
+
+Creeze videoclipuri din poze (slideshow) și să adauge muzică de fundal.
+
+Să aibă unele funcționalități gratuite și altele premium (pentru abonament).
+
+Să fie integrat în aceeași aplicație, cu Mara AI care ajută la automatizare, culori dinamice și răspunsuri.
+
+1️⃣ Structura sistemului pentru Creator
+A. Dashboard Creator
+
+Upload media: video și imagini.
+
+Edit video: tăiere, unire, adăugare text, filtre.
+
+Slideshow: din imagini + muzică de fundal.
+
+Preview: vizualizare reel înainte de postare.
+
+Export / Post: direct pe feed-ul Mara AI Hub.
+
+Funcționalități gratuite: tăiere simplă video, slideshow scurt, muzică gratuită.
+
+Funcționalități premium: filtre avansate, efecte speciale, export full HD, muzică premium, template-uri profesionale.
+
+B. Feed / TikTok-Style
+
+Clipuri Mara AI + creatorii.
+
+Scroll vertical, autoplay clip vizibil, stop clip anterior.
+
+Click → fullscreen + sunet, back → feed continuă.
+
+C. Mara AI
+
+Sugerează culori și stiluri video.
+
+Poate genera descrieri pentru clipuri sau titluri.
+
+Activează numai la bara de scriere / buton Mara AI.
+
+2️⃣ Funcționalități pentru un creator profesionist
+
+Editor video integrat:
+
+Cut, merge, resize, rotate.
+
+Adăugare text și stickere.
+
+Suport multiple formate (MP4, MOV).
+
+Slideshow maker:
+
+Poze → video.
+
+Alegere durata slide + efect tranziție.
+
+Adăugare muzică de fundal (gratuite + premium).
+
+Sound / Music library:
+
+Funcții gratuite: 5-10 piese de fundal gratuite.
+
+Funcții premium: biblioteci extinse + efecte sonore.
+
+Export / Postare:
+
+Export video pentru feed Mara AI.
+
+Postare direct pe feed cu autoplay + sunet.
+
+Template-uri și preset-uri:
+
+Gratuite: 2-3 template-uri simple.
+
+Premium: efecte complexe, color grading, animații speciale.
+
+Analytics de baza:
+
+Vizualizări, like-uri, interacțiuni.
+
+Funcționalități avansate premium (export rapoarte).
+
+3️⃣ Monetizare / Abonamente
+
+Unele funcționalități sunt gratuite → atrag user-ul să folosească platforma.
+
+Funcții premium (full HD export, muzică premium, template-uri profesionale) → necesită abonament.
+
+Posibilitate de trial pentru funcționalități premium limitate.
+
+4️⃣ Tehnologii recomandate
+
+Frontend: React sau Vue + HTML5/CSS3.
+
+Video processing:
+
+JS: ffmpeg.wasm (video editing direct în browser)
+
+Python backend: moviepy, OpenCV pentru funcții mai complexe.
+
+Audio / Music: HTML5 Audio API + biblioteci gratuite / premium.
+
+Storage: Firebase / S3 / server propriu pentru upload media.
+
+AI: GPT sau alte modele pentru titluri, descrieri, recomandări stil.
+
+5️⃣ Next steps pentru dezvoltare
+
+Creăm Feed + Reels vertical scroll + autoplay (TikTok-style).
+
+Adăugăm Mara AI activă la bara de scriere.
+
+Implementăm Creator Dashboard simplificat: upload poze/video, creare slideshow + muzică, editare de bază.
+
+Adăugăm export și postare în feed.
+
+Configurăm limitări gratuite / premium.
+
+(Opțional) Backend pentru management cont, stocare media, abonamente și analytics.

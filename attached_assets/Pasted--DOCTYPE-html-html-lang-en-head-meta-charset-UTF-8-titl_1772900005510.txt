@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mara AI TikTok-Style Reels</title>
+<style>
+body { font-family: Arial; margin:0; background:#111; color:white; overflow-x:hidden; }
+#maraBar { display:flex; padding:10px; background:#222; }
+#maraInput { flex:1; padding:8px; font-size:16px; }
+#maraBtn { padding:8px 12px; margin-left:5px; cursor:pointer; }
+#reelsContainer { height:90vh; overflow-y:scroll; background:#000; display:flex; flex-direction:column; align-items:center; scroll-behavior:smooth; }
+.reel { margin:10px auto; width:360px; height:640px; border:1px solid #555; pointer-events:none; } /* pointer-events:none permite scroll fără interferențe */
+</style>
+</head>
+<body>
+
+<div id="maraBar">
+  <input type="text" id="maraInput" placeholder="Type here to activate Mara...">
+  <button id="maraBtn">Activate Mara</button>
+</div>
+
+<div id="reelsContainer"></div>
+
+<script>
+// List of YouTube Shorts IDs
+const youtubeShorts = [
+  "SHORT_VIDEO_ID1",
+  "SHORT_VIDEO_ID2",
+  "SHORT_VIDEO_ID3",
+  "SHORT_VIDEO_ID4"
+];
+
+const reelsContainer = document.getElementById('reelsContainer');
+
+// Mara posts reels into feed
+function maraPostReel(videoId){
+    const iframe = document.createElement("iframe");
+    iframe.className = "reel";
+    iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=0&mute=1&controls=1&loop=1&rel=0`;
+    iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+    iframe.allowFullscreen = true;
+    reelsContainer.appendChild(iframe);
+}
+
+// Activate Mara
+document.getElementById('maraBtn').addEventListener('click', ()=>{
+    alert("Mara is active! Reels are ready.");
+    document.getElementById('maraInput').focus();
+    youtubeShorts.forEach(id => maraPostReel(id));
+});
+
+// Intersection Observer to autoplay visible reel
+const observer = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+        const iframe = entry.target;
+        const videoId = iframe.src.split('/embed/')[1].split('?')[0];
+        if(entry.isIntersecting){
+            iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0&controls=1&loop=1`;
+        } else {
+            iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=0&mute=1&controls=1&loop=1`;
+        }
+    });
+}, { threshold: 0.75 }); // 75% vizibil → play
+
+// Observe each reel when added
+const reelsObserver = new MutationObserver((mutations)=>{
+    mutations.forEach(m=>{
+        m.addedNodes.forEach(node=>{
+            if(node.classList && node.classList.contains('reel')){
+                observer.observe(node);
+            }
+        });
+    });
+});
+reelsObserver.observe(reelsContainer, { childList:true });
+
+// Optional: Post reel when user types something
+document.getElementById('maraInput').addEventListener('keypress', (e)=>{
+    if(e.key === 'Enter'){
+        const text = e.target.value;
+        e.target.value = '';
+        const randomId = youtubeShorts[Math.floor(Math.random()*youtubeShorts.length)];
+        maraPostReel(randomId);
+        console.log(`Mara posted a reel in response to: "${text}"`);
+    }
+});
+</script>
+
+</body>
+</html>

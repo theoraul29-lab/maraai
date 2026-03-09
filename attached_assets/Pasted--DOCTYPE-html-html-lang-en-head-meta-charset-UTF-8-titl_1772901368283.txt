@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mara AI Hub</title>
+<style>
+body { font-family: Arial; margin:0; background:#111; color:white; }
+header { display:flex; align-items:center; padding:15px; background:#222; position:sticky; top:0; z-index:100; }
+#logo { font-size:26px; font-weight:bold; color:#0ff; margin-right:20px; animation: pulse 2s infinite; cursor:pointer; }
+@keyframes pulse {
+  0% { transform: scale(1); color:#0ff; }
+  50% { transform: scale(1.1); color:#ff0; }
+  100% { transform: scale(1); color:#0ff; }
+}
+#maraInput { flex:1; padding:8px; font-size:16px; margin-right:10px; }
+button { padding:8px 12px; cursor:pointer; }
+
+.container { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:15px; padding:20px; }
+.card { background:#222; padding:15px; border-radius:12px; transition: transform 0.2s, background 0.2s; cursor:pointer; }
+.card:hover { transform: translateY(-5px); background:#333; }
+.card h3 { margin-top:0; color:#0ff; }
+
+#output { margin-top:10px; padding:10px; background:#333; border-radius:8px; max-height:250px; overflow-y:auto; }
+
+/* Reels feed */
+#reelsContainer { height:400px; overflow-y:scroll; display:flex; flex-direction:column; gap:10px; }
+.reel { width:100%; height:250px; border-radius:10px; background:#555; display:flex; align-items:center; justify-content:center; font-size:24px; color:#fff; transition: transform 0.3s; }
+.reel.active { transform: scale(1.03); background:#666; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<header>
+  <div id="logo">✨MaraAI✨</div>
+  <input type="text" id="maraInput" placeholder="Ask Mara anything about trading or fun...">
+  <button id="maraBtn">Activate Mara</button>
+</header>
+
+<div class="container">
+  <div class="card" id="tradingCard"><h3>Trading Academy</h3><p>Learn crypto, DeFi, NFT with interactive charts!</p>
+    <canvas id="tradingChart" style="margin-top:15px;"></canvas>
+  </div>
+  <div class="card" id="reelsCard"><h3>Reels Feed</h3><p>Scroll videos in vertical feed!</p><div id="reelsContainer"></div></div>
+  <div class="card" id="creatorCard"><h3>Creator Dashboard</h3><p>Upload, edit videos & slideshows with music!</p></div>
+  <div class="card" id="funCard"><h3>Fun Zone</h3><p>Mini quizzes, tips & interactive learning!</p></div>
+  <div class="card" id="premiumCard"><h3>Premium Features</h3><p>Unlimited posting & advanced tools for subscribers!</p></div>
+</div>
+
+<div id="output"><p>Mara is inactive. Press "Activate Mara" to start!</p></div>
+
+<script>
+// Mara AI activation
+let maraActive = false;
+document.getElementById('maraBtn').addEventListener('click', ()=>{
+    maraActive = true;
+    document.getElementById('output').innerHTML = "<p>Mara is now active! Ask questions or explore the cards!</p>";
+});
+
+// Reels feed demo
+const reelsContainer = document.getElementById('reelsContainer');
+for(let i=1;i<=7;i++){
+    const div = document.createElement('div');
+    div.className='reel';
+    div.innerText = 'Reel #' + i;
+    reelsContainer.appendChild(div);
+}
+
+// Auto highlight active reel on scroll
+reelsContainer.addEventListener('scroll', ()=>{
+    const reels = document.querySelectorAll('.reel');
+    reels.forEach(r=>r.classList.remove('active'));
+    let middle = reelsContainer.scrollTop + reelsContainer.clientHeight/2;
+    reels.forEach(r=>{
+        let offset = r.offsetTop + r.offsetHeight/2;
+        if(Math.abs(offset - middle) < r.offsetHeight/2){
+            r.classList.add('active');
+        }
+    });
+});
+
+// Card clicks
+document.getElementById('tradingCard').addEventListener('click', ()=> alert('Open Trading Academy with charts & tutorials!'));
+document.getElementById('creatorCard').addEventListener('click', ()=> alert('Open Creator Dashboard!'));
+document.getElementById('funCard').addEventListener('click', ()=> alert('Open Fun Zone!'));
+document.getElementById('premiumCard').addEventListener('click', ()=> alert('Show Premium Features & subscription options!'));
+
+// Input response
+const maraInput = document.getElementById('maraInput');
+maraInput.addEventListener('keypress', (e)=>{
+    if(e.key==='Enter' && maraActive){
+        const question = maraInput.value;
+        maraInput.value='';
+        const output = document.getElementById('output');
+        output.innerHTML += `<p><strong>You asked:</strong> ${question}</p>`;
+        output.innerHTML += `<p><strong>Mara answers:</strong> Here's guidance from a 30-year experienced trader: Always analyze charts and manage risk carefully. For NFTs or DeFi, study rarity, contracts, and demand before investing.</p>`;
+        output.scrollTop = output.scrollHeight;
+    }
+});
+
+// Trading Chart (Chart.js)
+const ctx = document.getElementById('tradingChart').getContext('2d');
+const demoChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul'],
+        datasets: [{
+            label: 'Demo Asset Price',
+            data: [50,55,53,60,58,62,65],
+            borderColor: 'rgba(0, 200, 255,1)',
+            backgroundColor: 'rgba(0,200,255,0.2)',
+            fill: true,
+            tension: 0.3
+        }]
+    },
+    options: {
+        responsive:true,
+        plugins: { legend: { display:true, labels:{color:'white'} } },
+        scales: { x: { ticks:{color:'white'} }, y: { ticks:{color:'white'} } }
+    }
+});
+</script>
+
+</body>
+</html>

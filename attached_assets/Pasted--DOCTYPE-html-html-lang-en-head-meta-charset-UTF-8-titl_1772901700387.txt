@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mara AI Trading Academy</title>
+<style>
+body { font-family: Arial; margin:0; background:#111; color:white; }
+header { display:flex; align-items:center; padding:15px; background:#222; position:sticky; top:0; z-index:100; }
+#logo { font-size:26px; font-weight:bold; color:#0ff; margin-right:20px; cursor:pointer; animation: pulse 2s infinite; }
+@keyframes pulse { 0%{transform:scale(1);color:#0ff;}50%{transform:scale(1.1);color:#ff0;}100%{transform:scale(1);color:#0ff;} }
+button { padding:8px 12px; margin-right:10px; cursor:pointer; }
+#output { padding:20px; margin:15px; background:#222; border-radius:10px; max-height:600px; overflow-y:auto; }
+img { max-width:100%; border-radius:8px; margin:10px 0; }
+.card { background:#222; padding:15px; border-radius:12px; margin-bottom:15px; cursor:pointer; transition:0.2s; }
+.card:hover { transform: translateY(-5px); background:#333; }
+</style>
+</head>
+<body>
+
+<header>
+  <div id="logo">✨MaraAI✨</div>
+  <button id="startBtn">Start Tutorial</button>
+  <button id="subscribeBtn">Subscribe for Full Access</button>
+</header>
+
+<div id="output">
+  <p>Welcome! Press "Start Tutorial" to preview what you will learn.</p>
+</div>
+
+<script>
+// Flag for subscription
+let isSubscribed = false;
+document.getElementById('subscribeBtn').addEventListener('click', ()=>{
+    isSubscribed = true;
+    alert("Subscription activated! Now you have full access to Mara AI Trading Academy.");
+});
+
+// Tutorial content
+const tutorialSteps = [
+  { title: "What is Trading?", preview:"Learn the basics of trading and its goals.", full:"Trading is buying/selling assets to earn profits. Spot, futures, indicators, risk management..." , img:"https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Stock_chart_example.png/640px-Stock_chart_example.png" },
+  { title: "Spot vs Futures", preview:"Understand the difference between spot and futures trading.", full:"Spot trading = actual assets. Futures = contracts predicting future prices. Leverage, risk, hedging..." , img:"https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Futures_chart_example.png/640px-Futures_chart_example.png" },
+  { title: "DeFi & NFTs", preview:"Introduction to Decentralized Finance and NFTs.", full:"DeFi = lending, staking, yield farming. NFTs = unique digital assets traded by rarity and demand..." , img:"https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/NFT_example.png/640px-NFT_example.png" },
+  { title: "Advanced Trading Tips", preview:"Tips for professional trading and risk management.", full:"Always manage risk: stop-loss, take-profit, diversify, analyze volume/trends, use RSI, MACD..." , img:"https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Technical_analysis_example.png/640px-Technical_analysis_example.png" }
+];
+
+const output = document.getElementById('output');
+document.getElementById('startBtn').addEventListener('click', ()=>{
+    output.innerHTML = "";
+    tutorialSteps.forEach((step,index)=>{
+        const div = document.createElement('div');
+        div.className = 'card';
+        if(isSubscribed){
+            div.innerHTML = `<h3>${step.title}</h3><p>${step.full}</p><img src="${step.img}" alt="${step.title}">`;
+        }else{
+            div.innerHTML = `<h3>${step.title}</h3><p>${step.preview}</p><p><em>Subscribe to unlock full lesson.</em></p>`;
+        }
+        output.appendChild(div);
+    });
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+
+    "strict": true,
+    "skipLibCheck": true,
+    "ignoreDeprecations": "6.0",
+    "forceConsistentCasingInFileNames": true,
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["client/src/*"],
+      "@shared/*": ["shared/*"],
+      "@assets/*": ["attached_assets/*"]
+    }
+  },
+  "include": ["client/src/**/*", "server/**/*", "shared/**/*"],
+  "exclude": ["node_modules", "build", "dist", "**/*.test.ts"],
+  "dependencies": {
+    "pg": "^8.1.0"
+  },
+  "scripts": {
+    "start:backend": "node server.js"
+  }
+}

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mara AI Hub</title>
+<style>
+body { font-family: Arial; margin:0; background:#111; color:white; }
+header { display:flex; align-items:center; padding:15px; background:#222; position:sticky; top:0; z-index:100; }
+#logo { font-size:24px; font-weight:bold; color:#0ff; margin-right:20px; animation: pulse 2s infinite; cursor:pointer; }
+@keyframes pulse {
+  0% { transform: scale(1); color:#0ff; }
+  50% { transform: scale(1.1); color:#ff0; }
+  100% { transform: scale(1); color:#0ff; }
+}
+#maraInput { flex:1; padding:8px; font-size:16px; margin-right:10px; }
+button { padding:8px 12px; cursor:pointer; }
+
+.container { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:15px; padding:20px; }
+.card { background:#222; padding:15px; border-radius:12px; transition: transform 0.2s, background 0.2s; cursor:pointer; }
+.card:hover { transform: translateY(-5px); background:#333; }
+.card h3 { margin-top:0; color:#0ff; }
+
+#output { margin-top:10px; padding:10px; background:#333; border-radius:8px; max-height:200px; overflow-y:auto; }
+
+/* Simple reels feed */
+#reelsContainer { height:400px; overflow-y:scroll; display:flex; flex-direction:column; gap:10px; }
+.reel { width:100%; height:250px; border-radius:10px; background:#555; display:flex; align-items:center; justify-content:center; font-size:24px; color:#fff; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<header>
+  <div id="logo">✨MaraAI✨</div>
+  <input type="text" id="maraInput" placeholder="Ask Mara something fun or trading...">
+  <button id="maraBtn">Activate Mara</button>
+</header>
+
+<div class="container">
+  <div class="card" id="tradingCard"><h3>Trading Academy</h3><p>Learn crypto, DeFi, NFT with interactive charts!</p></div>
+  <div class="card" id="reelsCard"><h3>Reels Feed</h3><p>Scroll fun videos like TikTok!</p><div id="reelsContainer"></div></div>
+  <div class="card" id="creatorCard"><h3>Creator Dashboard</h3><p>Upload, edit videos & slideshows!</p></div>
+  <div class="card" id="funCard"><h3>Fun Zone</h3><p>Mini quizzes, tips & interactive learning!</p></div>
+  <div class="card" id="premiumCard"><h3>Premium Features</h3><p>Upgrade for unlimited posting & advanced tools.</p></div>
+</div>
+
+<div id="output"><p>Mara is inactive. Press "Activate Mara" to start!</p></div>
+
+<script>
+// Mara activation
+let maraActive = false;
+document.getElementById('maraBtn').addEventListener('click', ()=>{
+    maraActive = true;
+    document.getElementById('output').innerHTML = "<p>Mara is now active! Ask questions or explore the cards!</p>";
+});
+
+// Example fun / reels feed
+const reelsContainer = document.getElementById('reelsContainer');
+for(let i=1;i<=5;i++){
+    const div = document.createElement('div');
+    div.className='reel';
+    div.innerText = 'Reel #' + i;
+    reelsContainer.appendChild(div);
+}
+
+// Card click example
+document.getElementById('tradingCard').addEventListener('click', ()=> alert('Open Trading Academy with charts & tutorials!'));
+document.getElementById('creatorCard').addEventListener('click', ()=> alert('Open Creator Dashboard!'));
+document.getElementById('funCard').addEventListener('click', ()=> alert('Open Fun Zone!'));
+document.getElementById('premiumCard').addEventListener('click', ()=> alert('Show Premium Features & subscription options!'));
+
+// Example input response
+const maraInput = document.getElementById('maraInput');
+maraInput.addEventListener('keypress', (e)=>{
+    if(e.key==='Enter' && maraActive){
+        const question = maraInput.value;
+        maraInput.value='';
+        const output = document.getElementById('output');
+        output.innerHTML += `<p><strong>You asked:</strong> ${question}</p>`;
+        output.innerHTML += `<p><strong>Mara answers:</strong> Here’s a fun fact or tip from a 30-year experienced trader: Always check the chart trend before investing!</p>`;
+        output.scrollTop = output.scrollHeight;
+    }
+});
+</script>
+
+</body>
+</html>
