@@ -1,13 +1,91 @@
 import OpenAI from "openai";
 import { hasCyrillic, detectCyrillicLang } from "./cyrillic.js";
 
+function hasUsableOpenAIKey(): boolean {
+  const key = process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
+  return !!key && key !== "missing-key";
+}
+
+function getProviderBaseUrl(): string | undefined {
+  const configured = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
+  if (configured) return configured;
+
+  const key = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || "";
+  // Groq API keys typically start with gsk_ and use OpenAI-compatible endpoints.
+  if (key.startsWith("gsk_")) {
+    return "https://api.groq.com/openai/v1";
+  }
+
+  return undefined;
+}
+
+function getModelName(): string {
+  if (process.env.AI_INTEGRATIONS_OPENAI_MODEL) {
+    return process.env.AI_INTEGRATIONS_OPENAI_MODEL;
+  }
+
+  const key = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || "";
+  if (key.startsWith("gsk_")) {
+    return "llama-3.1-8b-instant";
+  }
+
+  return "gpt-4o-mini";
+}
+
+function detectFallbackMood(userMessage: string): string {
+  const text = userMessage.toLowerCase();
+  if (/(great|awesome|love|amazing|yes!|excited)/.test(text)) return "excited";
+  if (/(sad|down|tired|lonely|depressed|bad)/.test(text)) return "sad";
+  if (/(angry|frustrated|annoyed|stuck|hate)/.test(text)) return "frustrated";
+  if (/(help|how|why|what|explain|learn)/.test(text)) return "curious";
+  return "neutral";
+}
+
+function buildFallbackResponse(
+  userMessage: string,
+  module?: string,
+): { response: string; detectedMood: string } {
+  const mood = detectFallbackMood(userMessage);
+  const text = userMessage.trim();
+
+  if (module === "trading") {
+    return {
+      response:
+        "Here is a practical starting point: define your risk per trade first (for example 1% max), then choose entries only when your setup is clear and your stop-loss level is already planned. Keep a simple trade journal with entry, exit, and reason for each trade so you can improve decisions over time. If you share your exact market or setup, I can give a tighter step-by-step framework.",
+      detectedMood: mood,
+    };
+  }
+
+  if (module === "writers") {
+    return {
+      response:
+        "A strong writing pass is: first clarify the core emotion of the piece in one sentence, then tighten each paragraph so every line supports that emotion. Replace generic verbs with specific actions, and cut one sentence from each section to improve rhythm. If you paste a short excerpt, I can give line-level edits.",
+      detectedMood: mood,
+    };
+  }
+
+  if (module === "reels") {
+    return {
+      response:
+        "For short-form content, focus on a 3-part structure: hook in the first 2 seconds, one clear value point, then a clean close with next action. Keep one message per reel and avoid stacking too many ideas in one clip. Share your topic and I can draft a ready-to-record script.",
+      detectedMood: mood,
+    };
+  }
+
+  return {
+    response:
+      `I can still help right now. Based on your message, start with one clear goal and break it into the next 2 concrete actions you can do in the next 15 minutes. Then send me what you are trying to solve${text ? ` (for example: "${text.slice(0, 120)}")` : ""}, and I will give you a focused step-by-step plan.`,
+    detectedMood: mood,
+  };
+}
+
 // Lazily create the OpenAI client so the server starts even if the key is absent.
 let _openai: OpenAI | null = null;
 function getOpenAI(): OpenAI {
   if (!_openai) {
     _openai = new OpenAI({
       apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY || "missing-key",
-      baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+      baseURL: getProviderBaseUrl(),
     });
   }
   return _openai;
@@ -79,6 +157,10 @@ export async function getMaraResponse(
   userPrefs?: { personality?: string; language?: string },
   module?: string,
 ): Promise<{ response: string; detectedMood: string }> {
+  if (!hasUsableOpenAIKey()) {
+    return buildFallbackResponse(userMessage, module);
+  }
+
   try {
     let systemPrompt =
       module && MODULE_PROMPTS[module]
@@ -116,7 +198,7 @@ export async function getMaraResponse(
     messages.push({ role: "user", content: userMessage });
 
     const completion = await getOpenAI().chat.completions.create({
-      model: "gpt-4o-mini",
+      model: getModelName(),
       messages,
       max_tokens: 1024,
     });
@@ -132,11 +214,7 @@ export async function getMaraResponse(
     return { response, detectedMood };
   } catch (error) {
     console.error("Mara AI error:", error);
-    return {
-      response:
-        "I'm experiencing a brief connection issue. Let me try again in a moment.",
-      detectedMood: "neutral",
-    };
+    return buildFallbackResponse(userMessage, module);
   }
 }
 
@@ -145,7 +223,7 @@ export async function analyzeUserPreferences(
 ): Promise<{ topics: string[]; mood: string; interests: string[] }> {
   try {
     const response = await getOpenAI().chat.completions.create({
-      model: "gpt-4o-mini",
+      model: getModelName(),
       messages: [
         {
           role: "system",
@@ -208,7 +286,7 @@ export async function generateImprovementIdeas(context: {
 }): Promise<string> {
   try {
     const completion = await getOpenAI().chat.completions.create({
-      model: "gpt-4o-mini",
+      model: getModelName(),
       messages: [
         {
           role: "system",
@@ -262,7 +340,7 @@ export async function ResearchAgent(): Promise<any[]> {
 export async function ProductAgent(researchData: any[]): Promise<string> {
   try {
     const completion = await getOpenAI().chat.completions.create({
-      model: "gpt-4o-mini",
+      model: getModelName(),
       messages: [
         {
           role: "system",
@@ -288,7 +366,7 @@ export async function ProductAgent(researchData: any[]): Promise<string> {
 export async function DeveloperAgent(productIdeas: string): Promise<string> {
   try {
     const completion = await getOpenAI().chat.completions.create({
-      model: "gpt-4o-mini",
+      model: getModelName(),
       messages: [
         {
           role: "system",
@@ -313,7 +391,7 @@ export async function DeveloperAgent(productIdeas: string): Promise<string> {
 export async function GrowthAgent(productIdeas: string): Promise<string> {
   try {
     const completion = await getOpenAI().chat.completions.create({
-      model: "gpt-4o-mini",
+      model: getModelName(),
       messages: [
         {
           role: "system",
@@ -358,7 +436,7 @@ export async function generateMarketingPost(): Promise<{
   const categories = ["tech", "creative", "trending", "fun"];
   try {
     const response = await getOpenAI().chat.completions.create({
-      model: "gpt-4o-mini",
+      model: getModelName(),
       messages: [
         {
           role: "system",
