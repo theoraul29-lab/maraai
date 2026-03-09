@@ -8,6 +8,7 @@ import { registerRoutes } from "./routes.js";
 import { serveStatic } from "./static.js";
 import { createServer } from "http";
 import net from "net";
+import { randomBytes } from "crypto";
 import { MaraBrainCycle, generateMarketingPost } from "./ai.js";
 import { storage } from "./storage.js";
 
@@ -36,7 +37,7 @@ if (!sessionSecret) {
     );
   }
   // In development, generate a random ephemeral secret and warn
-  sessionSecret = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+  sessionSecret = randomBytes(32).toString("hex");
   console.warn(
     "[session] SESSION_SECRET not set — using ephemeral secret (sessions will not persist across restarts). Set SESSION_SECRET in .env for stable dev sessions.",
   );
