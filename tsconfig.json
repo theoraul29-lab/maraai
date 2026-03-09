@@ -8,7 +8,6 @@
 
     "strict": true,
     "skipLibCheck": true,
-    "ignoreDeprecations": "6.0",
     "forceConsistentCasingInFileNames": true,
     "types": ["node"],
     "baseUrl": ".",
@@ -19,11 +18,5 @@
     }
   },
   "include": ["client/src/**/*", "server/**/*", "shared/**/*"],
-  "exclude": ["node_modules", "build", "dist", "**/*.test.ts"],
-  "dependencies": {
-    "pg": "^8.1.0"
-  },
-  "scripts": {
-    "start:backend": "node server.js"
-  }
+  "exclude": ["node_modules", "build", "dist", "**/*.test.ts"]
 }

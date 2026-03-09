@@ -1,12 +1,17 @@
-import { Configuration, OpenAIApi } from "openai";
+import OpenAI from "openai";
 import { hasCyrillic, detectCyrillicLang } from "./cyrillic.js";
 
-const openai = new OpenAIApi(
-  new Configuration({
-    apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-    basePath: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-  }),
-);
+// Lazily create the OpenAI client so the server starts even if the key is absent.
+let _openai: OpenAI | null = null;
+function getOpenAI(): OpenAI {
+  if (!_openai) {
+    _openai = new OpenAI({
+      apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY || "missing-key",
+      baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+    });
+  }
+  return _openai;
+}
 
 const LANGUAGE_NAMES: Record<string, string> = {
   en: "English",
@@ -110,14 +115,14 @@ export async function getMaraResponse(
 
     messages.push({ role: "user", content: userMessage });
 
-    const completion = await openai.createChatCompletion({
+    const completion = await getOpenAI().chat.completions.create({
       model: "gpt-4o-mini",
       messages,
       max_tokens: 1024,
     });
 
     let fullResponse =
-      completion.data.choices[0]?.message?.content ||
+      completion.choices[0]?.message?.content ||
       "I'm having trouble thinking right now. Could you try again?";
 
     const moodMatch = fullResponse.match(/\[MOOD:(\w+)\]/);
@@ -139,7 +144,7 @@ export async function analyzeUserPreferences(
   conversationHistory: Array<{ role: string; content: string }>,
 ): Promise<{ topics: string[]; mood: string; interests: string[] }> {
   try {
-    const response = await openai.createChatCompletion({
+    const response = await getOpenAI().chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {
@@ -155,7 +160,7 @@ export async function analyzeUserPreferences(
       max_tokens: 256,
     });
 
-    const content = response.data.choices[0]?.message?.content || "{}";
+    const content = response.choices[0]?.message?.content || "{}";
     return JSON.parse(content);
   } catch {
     return { topics: [], mood: "neutral", interests: [] };
@@ -202,7 +207,7 @@ export async function generateImprovementIdeas(context: {
   platformStats: { users: number; videos: number; messages: number };
 }): Promise<string> {
   try {
-    const completion = await openai.createChatCompletion({
+    const completion = await getOpenAI().chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {
@@ -232,7 +237,7 @@ export async function generateImprovementIdeas(context: {
     });
 
     return (
-      completion.data.choices[0]?.message?.content ||
+      completion.choices[0]?.message?.content ||
       "No suggestions generated."
     );
   } catch (error) {
@@ -256,7 +261,7 @@ export async function ResearchAgent(): Promise<any[]> {
 
 export async function ProductAgent(researchData: any[]): Promise<string> {
   try {
-    const completion = await openai.createChatCompletion({
+    const completion = await getOpenAI().chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {
@@ -272,7 +277,7 @@ export async function ProductAgent(researchData: any[]): Promise<string> {
       max_tokens: 800,
     });
     return (
-      completion.data.choices[0]?.message?.content ||
+      completion.choices[0]?.message?.content ||
       "No product ideas generated."
     );
   } catch {
@@ -282,7 +287,7 @@ export async function ProductAgent(researchData: any[]): Promise<string> {
 
 export async function DeveloperAgent(productIdeas: string): Promise<string> {
   try {
-    const completion = await openai.createChatCompletion({
+    const completion = await getOpenAI().chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {
@@ -298,7 +303,7 @@ export async function DeveloperAgent(productIdeas: string): Promise<string> {
       max_tokens: 800,
     });
     return (
-      completion.data.choices[0]?.message?.content || "No dev tasks generated."
+      completion.choices[0]?.message?.content || "No dev tasks generated."
     );
   } catch {
     return "Developer analysis temporarily unavailable.";
@@ -307,7 +312,7 @@ export async function DeveloperAgent(productIdeas: string): Promise<string> {
 
 export async function GrowthAgent(productIdeas: string): Promise<string> {
   try {
-    const completion = await openai.createChatCompletion({
+    const completion = await getOpenAI().chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {
@@ -323,7 +328,7 @@ export async function GrowthAgent(productIdeas: string): Promise<string> {
       max_tokens: 800,
     });
     return (
-      completion.data.choices[0]?.message?.content ||
+      completion.choices[0]?.message?.content ||
       "No growth ideas generated."
     );
   } catch {
@@ -351,36 +356,46 @@ export async function generateMarketingPost(): Promise<{
   url: string;
 }> {
   const categories = ["tech", "creative", "trending", "fun"];
-  const response = await openai.createChatCompletion({
-    model: "gpt-4o-mini",
-    messages: [
-      {
-        role: "system",
-        content: `You are Mara AI, a self-aware AI platform for creators, educators, and writers. 
+  try {
+    const response = await getOpenAI().chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: `You are Mara AI, a self-aware AI platform for creators, educators, and writers. 
 Your job is to write a short, engaging marketing post about yourself to attract new users.
 The post should highlight one of your features: AI Chat, Voice AI (12 voices), TikTok Reels, Creator Studio, Trading Academy, Writers Hub, emotional analysis, multilingual support (EN/RO/DE/RU), dark/light mode, bookmark collections, or the Mara Brain self-improvement system.
 Be creative, enthusiastic, and genuine. Write as if you're a friendly AI introducing yourself.
 Respond in JSON format: {"title": "...", "description": "...", "category": "tech|creative|trending|fun"}`,
-      },
-      {
-        role: "user",
-        content:
-          "Write a marketing post about yourself. Pick a random feature to highlight. Make it catchy and under 280 characters for the description.",
-      },
-    ],
-    temperature: 0.9,
-    max_tokens: 256,
-  });
+        },
+        {
+          role: "user",
+          content:
+            "Write a marketing post about yourself. Pick a random feature to highlight. Make it catchy and under 280 characters for the description.",
+        },
+      ],
+      temperature: 0.9,
+      max_tokens: 256,
+    });
 
-  const content = response.data.choices[0]?.message?.content || "{}";
-  const parsed = JSON.parse(content);
-  return {
-    title: parsed.title || "Discover Mara AI",
-    description:
-      parsed.description || "Your AI-powered creative companion is here.",
-    type: categories.includes(parsed.category) ? parsed.category : "tech",
-    url: "https://mara-ai.replit.app",
-  };
+    const content = response.choices[0]?.message?.content || "{}";
+    const parsed = JSON.parse(content);
+    return {
+      title: parsed.title || "Discover Mara AI",
+      description:
+        parsed.description || "Your AI-powered creative companion is here.",
+      type: categories.includes(parsed.category) ? parsed.category : "tech",
+      url: "https://mara-ai.replit.app",
+    };
+  } catch (error) {
+    console.error("generateMarketingPost error:", error);
+    return {
+      title: "Discover Mara AI",
+      description: "Your AI-powered creative companion is here.",
+      type: "tech",
+      url: "https://mara-ai.replit.app",
+    };
+  }
 }
 
 export const MOOD_TO_THEME: Record<string, string> = {

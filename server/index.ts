@@ -23,19 +23,27 @@ type RuntimeState = {
 const runtimeState: RuntimeState = {
   requestedPort: null,
   boundPort: null,
-  host: process.env.HOST || "localhost",
+  host: process.env.HOST || "0.0.0.0",
   startedAt: null,
 };
 
 // Session configuration
-if (!process.env.SESSION_SECRET) {
-  throw new Error(
-    "SESSION_SECRET environment variable must be set for security.",
+let sessionSecret = process.env.SESSION_SECRET;
+if (!sessionSecret) {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "SESSION_SECRET environment variable must be set in production.",
+    );
+  }
+  // In development, generate a random ephemeral secret and warn
+  sessionSecret = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+  console.warn(
+    "[session] SESSION_SECRET not set — using ephemeral secret (sessions will not persist across restarts). Set SESSION_SECRET in .env for stable dev sessions.",
   );
 }
 app.use(
   session({
-    secret: process.env.SESSION_SECRET,
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -251,5 +259,5 @@ app.use((req, res, next) => {
   }
 
   const boundPort = await resolveAvailablePort(requestedPort);
-  httpServer.listen(boundPort, () => onServerReady(boundPort));
+  httpServer.listen(boundPort, runtimeState.host, () => onServerReady(boundPort));
 })();

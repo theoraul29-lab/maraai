@@ -154,3 +154,9 @@ vite.config.ts.*
 maraai.sqlite
 logs/
 .config/replit/.semgrep/
+
+# Compiled JS files alongside TypeScript source (prefer .ts source of truth)
+# server/logger.js is kept – it has no .ts counterpart
+server/*.js
+!server/logger.js
+server/replit_integrations/**/*.js

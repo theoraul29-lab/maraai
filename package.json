@@ -7,10 +7,11 @@
   "scripts": {
     "dev": "concurrently -k -n backend,frontend -c green,cyan \"npm:dev:backend\" \"npm:dev:frontend\"",
     "dev:frontend": "vite",
-    "dev:backend": "ts-node server/index.ts",
+    "dev:backend": "tsx server/index.ts",
     "build": "vite build",
+    "start": "NODE_ENV=production tsx server/index.ts",
+    "start:backend": "tsx server/index.ts",
     "preview": "vite preview",
-    "start:backend": "npm run dev:backend",
     "autonomy:report": "node script/autonomy-report.cjs",
     "autonomy:deps": "node script/safe-deps.cjs",
     "autonomy:deps:apply": "node script/safe-deps.cjs --apply",
@@ -52,7 +53,7 @@
     "lucide-react": "^0.577.0",
     "memoizee": "^0.4.17",
     "nodemailer": "^8.0.1",
-    "openai": "^3.2.1",
+    "openai": "^4.104.0",
     "openid-client": "^6.8.2",
     "passport": "^0.7.0",
     "pg": "^8.20.0",
@@ -82,6 +83,7 @@
     "tailwindcss": "^3.4.3",
     "tailwindcss-animate": "^1.0.7",
     "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vite": "^4.0.0"
   }
