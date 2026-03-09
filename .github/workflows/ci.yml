@@ -32,37 +32,45 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Start backend
+      - name: Start backend and run smoke tests
         run: |
+          set -euo pipefail
+
+          cleanup() {
+            if [ -f backend.pid ]; then
+              kill "$(cat backend.pid)" || true
+            fi
+          }
+          trap cleanup EXIT
+
           nohup npm run start:backend > backend.log 2>&1 &
           echo $! > backend.pid
 
-      - name: Wait for backend health
-        run: |
+          HEALTHY_PORT=""
           for i in {1..90}; do
             for port in $(seq 3001 3021); do
               if curl -fsS "http://localhost:${port}/api/health" >/dev/null; then
-                echo "Backend is healthy on port ${port}"
-                echo "MARAAI_BASE_URL=http://localhost:${port}" >> "$GITHUB_ENV"
-                exit 0
+                HEALTHY_PORT="$port"
+                break
               fi
             done
+            if [ -n "$HEALTHY_PORT" ]; then
+              break
+            fi
             sleep 2
           done
 
-          echo "Backend did not become healthy in time"
-          if [ -f backend.log ]; then
+          if [ -z "$HEALTHY_PORT" ]; then
+            echo "Backend did not become healthy in time"
             echo "===== backend.log (tail) ====="
             tail -n 200 backend.log || true
+            exit 1
           fi
-          exit 1
 
-      - name: Print runtime endpoint
-        run: |
+          export MARAAI_BASE_URL="http://localhost:${HEALTHY_PORT}"
+          echo "Backend is healthy on port ${HEALTHY_PORT}"
           curl -fsS "$MARAAI_BASE_URL/api/runtime" || true
 
-      - name: Runtime smoke tests
-        run: |
           echo "Using MARAAI_BASE_URL=$MARAAI_BASE_URL"
           npm run smoke:runtime
 
