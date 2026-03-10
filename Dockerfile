@@ -8,8 +8,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 	g++ \
 	&& rm -rf /var/lib/apt/lists/*
 
-COPY package*.json ./
-RUN npm install
+COPY package*.json .npmrc ./
+RUN npm ci
 
 COPY . .
 RUN npm run build
