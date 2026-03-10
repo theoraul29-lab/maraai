@@ -524,6 +524,7 @@ def parse_selector_args(selector_args: List[str]) -> Dict[str, str]:
 def resolve_llm_config(
     explicit_base_url: Optional[str] = None,
     explicit_api_key: Optional[str] = None,
+    allow_prompt: bool = True,
 ) -> Tuple[str, Optional[str], str]:
     """
     Resolve API key and base URL.
@@ -583,7 +584,7 @@ def resolve_llm_config(
         return groq_key, base_url, "groq-compatible"
 
     # Final fallback for manual local runs: secure prompt in interactive terminal.
-    if sys.stdin.isatty():
+    if allow_prompt and sys.stdin.isatty():
         entered = getpass("Enter API key (OpenAI or Groq gsk_): ").strip()
         if entered:
             if entered.startswith("gsk_"):
@@ -621,14 +622,33 @@ def main() -> None:
         default=[],
         help="Optional selector extraction: key=css_selector (repeatable).",
     )
+    parser.add_argument(
+        "--json-output",
+        action="store_true",
+        help="Print a single JSON payload for programmatic consumption.",
+    )
+    parser.add_argument(
+        "--non-interactive",
+        action="store_true",
+        help="Disable interactive key prompt and fail fast if key is unavailable.",
+    )
 
     args = parser.parse_args()
 
     api_key, api_base_url, provider_label = resolve_llm_config(
         explicit_base_url=args.api_base_url,
         explicit_api_key=args.api_key,
+        allow_prompt=(not args.non_interactive),
     )
-    print(f"[setup] LLM provider mode: {provider_label}")
+    effective_model = args.model
+    if provider_label == "groq-compatible" and effective_model == "gpt-4o-mini":
+        # Groq OpenAI-compatible API doesn't provide GPT models; use a reliable Groq model.
+        effective_model = "llama-3.1-8b-instant"
+
+    if not args.json_output:
+        print(f"[setup] LLM provider mode: {provider_label}")
+        if effective_model != args.model:
+            print(f"[setup] Model override: {args.model} -> {effective_model}")
 
     selectors = parse_selector_args(args.selector)
 
@@ -636,7 +656,7 @@ def main() -> None:
         openai_api_key=api_key,
         openai_base_url=api_base_url,
         db_path=args.db,
-        model=args.model,
+        model=effective_model,
         browser=args.browser,
         headless=(not args.headed),
     )
@@ -648,20 +668,42 @@ def main() -> None:
             selectors=selectors,
         )
 
+        output_payload = {
+            "interaction_id": result["interaction_id"],
+            "fetch_ok": result["fetch_ok"],
+            "http_status": result["http_status"],
+            "fetch_error": result["fetch_error"],
+            "extracted_data": result["extracted_data"],
+            "ai_response": result["ai_response"],
+            "provider": provider_label,
+        }
+
+        if args.json_output:
+            print(json.dumps(output_payload, ensure_ascii=False))
+            return
+
         print("\n=== MaraAI Result ===")
-        print(json.dumps(
-            {
-                "interaction_id": result["interaction_id"],
-                "fetch_ok": result["fetch_ok"],
-                "http_status": result["http_status"],
-                "fetch_error": result["fetch_error"],
-                "title": result["extracted_data"].get("title") if result["extracted_data"] else None,
-                "prices_found": len(result["extracted_data"].get("prices", [])) if result["extracted_data"] else 0,
-                "tables_found": len(result["extracted_data"].get("tables", [])) if result["extracted_data"] else 0,
-            },
-            ensure_ascii=False,
-            indent=2,
-        ))
+        print(
+            json.dumps(
+                {
+                    "interaction_id": result["interaction_id"],
+                    "fetch_ok": result["fetch_ok"],
+                    "http_status": result["http_status"],
+                    "fetch_error": result["fetch_error"],
+                    "title": result["extracted_data"].get("title")
+                    if result["extracted_data"]
+                    else None,
+                    "prices_found": len(result["extracted_data"].get("prices", []))
+                    if result["extracted_data"]
+                    else 0,
+                    "tables_found": len(result["extracted_data"].get("tables", []))
+                    if result["extracted_data"]
+                    else 0,
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
 
         print("\n=== AI Response ===")
         print(result["ai_response"])

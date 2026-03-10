@@ -20,6 +20,7 @@ import * as profileModule from "../backend/src/modules/profile.js";
 import * as ordersModule from "../backend/src/modules/orders.js";
 import * as adminOrdersModule from "../backend/src/modules/adminOrders.js";
 import * as paymentsModule from "../backend/src/modules/payments.js";
+import * as pythonBridgeModule from "../backend/src/modules/pythonBridge.js";
 import {
   StripeProvider,
   PayPalProvider,
@@ -164,6 +165,9 @@ export async function registerRoutes(
 
   // STT endpoint
   app.post("/api/stt", sttModule.stt);
+
+  // Python bridge endpoint (Playwright + SQLite + GPT flow)
+  app.post("/api/maraai/python-fetch", pythonBridgeModule.fetchWithPython);
 
   // User preferences endpoints
   app.get("/api/user/language", userPrefsModule.getUserLanguage);
