@@ -233,6 +233,50 @@ app.use((req, res, next) => {
     );
   }
 
-  const boundPort = await resolveAvailablePort(requestedPort);
-  httpServer.listen(boundPort, runtimeState.host, () => onServerReady(boundPort));
+  const preferredPort = await resolveAvailablePort(requestedPort);
+
+  async function listenWithRetry(startPort: number): Promise<void> {
+    for (let attempt = 0; attempt <= MAX_PORT_RETRIES; attempt += 1) {
+      const candidate = startPort + attempt;
+
+      try {
+        await new Promise<void>((resolve, reject) => {
+          const onError = (error: NodeJS.ErrnoException) => {
+            httpServer.off("listening", onListening);
+            reject(error);
+          };
+
+          const onListening = () => {
+            httpServer.off("error", onError);
+            resolve();
+          };
+
+          httpServer.once("error", onError);
+          httpServer.once("listening", onListening);
+          httpServer.listen(candidate, runtimeState.host);
+        });
+
+        if (candidate !== requestedPort) {
+          log(
+            `Port ${requestedPort} unavailable at bind time, using fallback port ${candidate}`,
+            "express",
+          );
+        }
+
+        onServerReady(candidate);
+        return;
+      } catch (error) {
+        const err = error as NodeJS.ErrnoException;
+        if (err.code !== "EADDRINUSE") {
+          throw err;
+        }
+      }
+    }
+
+    throw new Error(
+      `No available port found in range ${startPort}-${startPort + MAX_PORT_RETRIES}`,
+    );
+  }
+
+  await listenWithRetry(preferredPort);
 })();
