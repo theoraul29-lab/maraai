@@ -3,6 +3,9 @@
   "name": "maraai-task-manager",
   "version": "1.0.0",
   "description": "A task manager web application with add, delete, and complete features.",
+  "engines": {
+    "node": ">=20"
+  },
   "main": "index.js",
   "scripts": {
     "dev": "concurrently -k -n backend,frontend -c green,cyan \"npm:dev:backend\" \"npm:dev:frontend\"",
@@ -16,7 +19,8 @@
     "autonomy:deps": "node script/safe-deps.cjs",
     "autonomy:deps:apply": "node script/safe-deps.cjs --apply",
     "autonomy:run": "npm run autonomy:report && npm run autonomy:deps",
-    "smoke:runtime": "node script/smoke-runtime.cjs"
+    "smoke:runtime": "node script/smoke-runtime.cjs",
+    "smoke:learning": "node script/smoke-learning.cjs"
   },
   "keywords": [
     "task",
@@ -29,6 +33,7 @@
     "@radix-ui/react-avatar": "^1.1.11",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
     "@radix-ui/react-scroll-area": "^1.2.10",
+    "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-slot": "^1.2.4",
     "@radix-ui/react-tabs": "^1.1.13",
     "@radix-ui/react-toast": "^1.2.15",
@@ -69,6 +74,8 @@
     "@tailwindcss/typography": "^0.5.19",
     "@types/express": "^5.0.6",
     "@types/node": "^25.3.5",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^8.56.1",
     "@typescript-eslint/parser": "^8.56.1",
     "@vitejs/plugin-react": "^4.0.0",

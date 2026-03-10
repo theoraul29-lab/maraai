@@ -87,6 +87,7 @@ npm start       # starts the backend serving the built frontend
 	- Build command: `npm ci && npm run build`
 	- Start command: `npm start`
 	- Health check: `/api/health`
+	Runtime is pinned via `nixpacks.toml` to Node 20.
 4. Add a **Volume** in Railway and mount it to `/data`.
 5. Set environment variables in Railway:
 	- `NODE_ENV=production`
