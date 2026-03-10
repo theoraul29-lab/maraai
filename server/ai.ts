@@ -41,40 +41,78 @@ function detectFallbackMood(userMessage: string): string {
   return "neutral";
 }
 
+function resolveLanguageCode(userPrefs?: {
+  personality?: string;
+  language?: string;
+}): string {
+  if (userPrefs?.language && LANGUAGE_NAMES[userPrefs.language]) {
+    return userPrefs.language;
+  }
+  return "en";
+}
+
+function localizeFallback(base: string, lang: string): string {
+  if (lang === "en") return base;
+
+  if (lang === "ro") {
+    return "Pot sa te ajut chiar acum. Spune-mi obiectivul tau principal si iti ofer un plan clar, pas cu pas, in romana.";
+  }
+  if (lang === "de") {
+    return "Ich kann dir sofort helfen. Nenne mir dein Hauptziel und ich gebe dir einen klaren Schritt-fuer-Schritt-Plan auf Deutsch.";
+  }
+  if (lang === "ru") {
+    return "Я могу помочь прямо сейчас. Напиши свою главную цель, и я дам понятный пошаговый план на русском языке.";
+  }
+  if (lang === "ua") {
+    return "Я можу допомогти просто зараз. Напиши свою головну ціль, і я дам зрозумілий покроковий план українською мовою.";
+  }
+  return "I can help right now. Share your main goal and I will give you a clear step-by-step plan.";
+}
+
 function buildFallbackResponse(
   userMessage: string,
   module?: string,
+  userPrefs?: { personality?: string; language?: string },
 ): { response: string; detectedMood: string } {
   const mood = detectFallbackMood(userMessage);
   const text = userMessage.trim();
+  const lang = resolveLanguageCode(userPrefs);
 
   if (module === "trading") {
     return {
-      response:
+      response: localizeFallback(
         "Here is a practical starting point: define your risk per trade first (for example 1% max), then choose entries only when your setup is clear and your stop-loss level is already planned. Keep a simple trade journal with entry, exit, and reason for each trade so you can improve decisions over time. If you share your exact market or setup, I can give a tighter step-by-step framework.",
+        lang,
+      ),
       detectedMood: mood,
     };
   }
 
   if (module === "writers") {
     return {
-      response:
+      response: localizeFallback(
         "A strong writing pass is: first clarify the core emotion of the piece in one sentence, then tighten each paragraph so every line supports that emotion. Replace generic verbs with specific actions, and cut one sentence from each section to improve rhythm. If you paste a short excerpt, I can give line-level edits.",
+        lang,
+      ),
       detectedMood: mood,
     };
   }
 
   if (module === "reels") {
     return {
-      response:
+      response: localizeFallback(
         "For short-form content, focus on a 3-part structure: hook in the first 2 seconds, one clear value point, then a clean close with next action. Keep one message per reel and avoid stacking too many ideas in one clip. Share your topic and I can draft a ready-to-record script.",
+        lang,
+      ),
       detectedMood: mood,
     };
   }
 
   return {
-    response:
+    response: localizeFallback(
       `I can still help right now. Based on your message, start with one clear goal and break it into the next 2 concrete actions you can do in the next 15 minutes. Then send me what you are trying to solve${text ? ` (for example: "${text.slice(0, 120)}")` : ""}, and I will give you a focused step-by-step plan.`,
+      lang,
+    ),
     detectedMood: mood,
   };
 }
@@ -98,6 +136,72 @@ const LANGUAGE_NAMES: Record<string, string> = {
   ru: "Russian",
   ua: "Ukrainian",
 };
+
+function hasCyrillicChars(text: string): boolean {
+  return /[\u0400-\u04FF]/.test(text);
+}
+
+function isHistoryMessageCompatibleWithLanguage(
+  content: string,
+  lang: string,
+): boolean {
+  if (!content?.trim()) return false;
+
+  const containsCyrillic = hasCyrillicChars(content);
+  if (lang === "ru" || lang === "ua") {
+    return containsCyrillic;
+  }
+
+  return !containsCyrillic;
+}
+
+function isResponseLanguageLikelyCompatible(content: string, lang: string): boolean {
+  const containsCyrillic = hasCyrillicChars(content);
+  if (lang === "ru" || lang === "ua") {
+    return containsCyrillic;
+  }
+  return !containsCyrillic;
+}
+
+async function forceLanguageRewriteIfNeeded(
+  content: string,
+  lang: string,
+): Promise<string> {
+  if (!content.trim()) return content;
+  if (isResponseLanguageLikelyCompatible(content, lang)) {
+    return content;
+  }
+
+  const langName = LANGUAGE_NAMES[lang] || "English";
+
+  try {
+    const rewrite = await getOpenAI().chat.completions.create({
+      model: getModelName(),
+      messages: [
+        {
+          role: "system",
+          content: `Rewrite the assistant message strictly in ${langName}. Output only ${langName}. Do not include any other language, translations, or notes. Keep the original meaning and tone.`,
+        },
+        {
+          role: "user",
+          content,
+        },
+      ],
+      max_tokens: 1024,
+    });
+
+    const rewritten = rewrite.choices[0]?.message?.content?.trim();
+    if (!rewritten) return content;
+
+    if (!isResponseLanguageLikelyCompatible(rewritten, lang)) {
+      return content;
+    }
+
+    return rewritten;
+  } catch {
+    return content;
+  }
+}
 
 const MARA_SYSTEM_PROMPT = `You are Mara, an advanced AI companion and assistant. You have a warm, intelligent, and slightly playful personality. You adapt to each user's communication style.
 
@@ -158,7 +262,7 @@ export async function getMaraResponse(
   module?: string,
 ): Promise<{ response: string; detectedMood: string }> {
   if (!hasUsableOpenAIKey()) {
-    return buildFallbackResponse(userMessage, module);
+    return buildFallbackResponse(userMessage, module, userPrefs);
   }
 
   try {
@@ -167,14 +271,15 @@ export async function getMaraResponse(
         ? MODULE_PROMPTS[module]
         : MARA_SYSTEM_PROMPT;
     let detectedLang = userPrefs?.language;
-    if (hasCyrillic(userMessage)) {
+    // User-selected language always wins. Auto-detection is used only if no preference is set.
+    if (!detectedLang && hasCyrillic(userMessage)) {
       const cyrLang = detectCyrillicLang(userMessage);
       if (cyrLang === "UA") detectedLang = "ua";
       else if (cyrLang === "RU") detectedLang = "ru";
     }
-    if (detectedLang && detectedLang !== "en") {
+    if (detectedLang && LANGUAGE_NAMES[detectedLang]) {
       const langName = LANGUAGE_NAMES[detectedLang] || detectedLang;
-      systemPrompt += `\n\nIMPORTANT: Always respond in ${langName}. The user prefers ${langName}.`;
+      systemPrompt += `\n\nCRITICAL LANGUAGE RULE: Respond ONLY in ${langName}. Do not switch languages. Do not include translations in other languages. Ignore the language used in conversation history if it differs from ${langName}.`;
     }
     if (userPrefs?.personality) {
       systemPrompt += `\n\nAdapt your tone to be more ${userPrefs.personality}.`;
@@ -182,12 +287,18 @@ export async function getMaraResponse(
 
     systemPrompt += `\n\nAt the very end of your response, on a new line, add a mood tag in this exact format: [MOOD:word] where word is one of: happy, sad, excited, calm, frustrated, curious, neutral, creative, anxious, playful. This tag will be stripped from the response shown to the user.`;
 
+    const targetLang = resolveLanguageCode(userPrefs);
+
     const messages: Array<{
       role: "system" | "user" | "assistant";
       content: string;
     }> = [{ role: "system", content: systemPrompt }];
 
-    const recentHistory = conversationHistory.slice(-20);
+    const recentHistory = conversationHistory
+      .filter((msg) =>
+        isHistoryMessageCompatibleWithLanguage(msg.content, targetLang),
+      )
+      .slice(-20);
     for (const msg of recentHistory) {
       messages.push({
         role: msg.role === "user" ? "user" : "assistant",
@@ -209,12 +320,13 @@ export async function getMaraResponse(
 
     const moodMatch = fullResponse.match(/\[MOOD:(\w+)\]/);
     const detectedMood = moodMatch ? moodMatch[1] : "neutral";
-    const response = fullResponse.replace(/\[MOOD:\w+\]/, "").trim();
+    let response = fullResponse.replace(/\[MOOD:\w+\]/, "").trim();
+    response = await forceLanguageRewriteIfNeeded(response, targetLang);
 
     return { response, detectedMood };
   } catch (error) {
     console.error("Mara AI error:", error);
-    return buildFallbackResponse(userMessage, module);
+    return buildFallbackResponse(userMessage, module, userPrefs);
   }
 }
 

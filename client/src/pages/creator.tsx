@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { useAuth } from "@/hooks/use-auth";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import type { Video } from "@shared/schema";
@@ -20,7 +19,6 @@ import {
   LayoutGrid,
   Palette,
   TrendingUp,
-  Image,
 } from "lucide-react";
 
 type PostStatus = {
@@ -31,7 +29,6 @@ type PostStatus = {
 };
 
 export default function CreatorDashboard() {
-  const { user } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<"dashboard" | "editor">(
     "dashboard",

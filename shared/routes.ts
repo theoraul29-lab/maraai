@@ -62,6 +62,7 @@ export const api = {
       input: z.object({
         message: z.string(),
         module: z.enum(["trading", "writers", "reels"]).optional(),
+        language: z.enum(["en", "ro", "de", "ru", "ua"]).optional(),
       }),
       responses: {
         200: z.object({
