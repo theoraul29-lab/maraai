@@ -16,7 +16,7 @@
     "dev:frontend": "vite",
     "dev:backend": "tsx server/index.ts",
     "build": "vite build",
-    "start": "NODE_ENV=production tsx server/index.ts",
+    "start": "cross-env NODE_ENV=production tsx server/index.ts",
     "start:backend": "tsx server/index.ts",
     "preview": "vite preview",
     "autonomy:report": "node script/autonomy-report.cjs",
@@ -24,7 +24,8 @@
     "autonomy:deps:apply": "node script/safe-deps.cjs --apply",
     "autonomy:run": "npm run autonomy:report && npm run autonomy:deps",
     "smoke:runtime": "node script/smoke-runtime.cjs",
-    "smoke:learning": "node script/smoke-learning.cjs"
+    "smoke:learning": "node script/smoke-learning.cjs",
+    "smoke:all": "npm run smoke:runtime && npm run smoke:learning"
   },
   "keywords": [
     "task",
@@ -119,6 +120,7 @@
     "@vitejs/plugin-react": "^4.0.0",
     "autoprefixer": "^10.4.19",
     "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
     "eslint": "^9.39.4",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-import": "^2.32.0",

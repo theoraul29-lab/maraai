@@ -2,6 +2,7 @@ const { spawn } = require("child_process");
 
 const BASE_URL = process.env.MARAAI_BASE_URL || "http://localhost:5000";
 const STARTUP_TIMEOUT_MS = Number(process.env.MARAAI_STARTUP_TIMEOUT_MS || 45000);
+const REQUEST_TIMEOUT_MS = Number(process.env.MARAAI_LEARNING_TIMEOUT_MS || 180000);
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -71,76 +72,57 @@ function stopIfStartedBySmoke(controller) {
   }
 }
 
-const checks = [
-  { name: "health", path: "/api/health", expected: [200] },
-  { name: "runtime", path: "/api/runtime", expected: [200] },
-  { name: "auth-user", path: "/api/auth/user", expected: [200, 401] },
-  { name: "videos", path: "/api/videos", expected: [200] },
-  { name: "feed", path: "/api/mara-feed", expected: [200] },
-  { name: "trading", path: "/api/trading/access", expected: [200, 401] },
-  { name: "premium", path: "/api/premium/status", expected: [200, 401] },
-  { name: "writers", path: "/api/writers/published", expected: [200] },
-  {
-    name: "notifications",
-    path: "/api/notifications",
-    expected: [200, 401],
-  },
-];
-
 async function run() {
   let backendController = null;
   try {
     backendController = await ensureBackendRunning(BASE_URL);
+
+    const body = {
+      url: process.env.MARAAI_LEARNING_URL || "https://example.com",
+      prompt:
+        process.env.MARAAI_LEARNING_PROMPT ||
+        "Give a short summary and 3 key facts.",
+      browser: process.env.MARAAI_LEARNING_BROWSER || "chromium",
+    };
+
+    const timeoutController = new AbortController();
+    const timeoutId = setTimeout(() => timeoutController.abort(), REQUEST_TIMEOUT_MS);
+
+    const response = await fetch(`${BASE_URL}/api/maraai/python-fetch`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(body),
+      signal: timeoutController.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    const json = await response.json().catch(() => ({}));
+
+    if (response.status !== 200) {
+      console.error(`[smoke-learning] HTTP ${response.status}: ${JSON.stringify(json)}`);
+      stopIfStartedBySmoke(backendController);
+      process.exit(1);
+    }
+
+    const ok = json && json.ok === true && json.result;
+    if (!ok) {
+      console.error(`[smoke-learning] Unexpected response shape: ${JSON.stringify(json)}`);
+      stopIfStartedBySmoke(backendController);
+      process.exit(1);
+    }
+
+    const title = json.result.extracted_data?.title || "(no title)";
+    console.log(`[smoke-learning] PASS title=\"${title}\" source=${body.url}`);
+    stopIfStartedBySmoke(backendController);
   } catch (error) {
-    console.error(`[smoke] Failed to prepare backend: ${String(error)}`);
-    process.exit(1);
-  }
-
-  const summary = [];
-
-  for (const check of checks) {
-    const url = `${BASE_URL}${check.path}`;
-    try {
-      const response = await fetch(url, {
-        method: "GET",
-        headers: { Accept: "application/json" },
-      });
-      const body = await response.text();
-      const expectedStatuses = check.expected || [200];
-      summary.push({
-        name: check.name,
-        status: response.status,
-        ok: expectedStatuses.includes(response.status),
-        bodyPreview: body.slice(0, 200),
-      });
-    } catch (error) {
-      summary.push({
-        name: check.name,
-        status: 0,
-        ok: false,
-        bodyPreview: String(error),
-      });
-    }
-  }
-
-  const failed = summary.filter((item) => !item.ok);
-
-  console.log(`[smoke] Base URL: ${BASE_URL}`);
-  for (const item of summary) {
-    console.log(`[smoke] ${item.name}: ${item.status} ${item.ok ? "OK" : "FAIL"}`);
-  }
-
-  if (failed.length > 0) {
-    console.log("[smoke] Failures:");
-    for (const item of failed) {
-      console.log(`- ${item.name}: ${item.bodyPreview}`);
-    }
+    console.error(`[smoke-learning] FAIL ${String(error)}`);
     stopIfStartedBySmoke(backendController);
     process.exit(1);
   }
-
-  console.log("[smoke] All runtime checks passed.");
-  stopIfStartedBySmoke(backendController);
 }
 
 run();
