@@ -4,7 +4,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const logFile = path.join(__dirname, "../../logs/maraai.log");
+const logFile = path.join(__dirname, "../../logs/mara.log");
 const suggestionFile = path.join(__dirname, "../../logs/suggestions.json");
 
 function readErrorLog() {
@@ -12,11 +12,11 @@ function readErrorLog() {
   const lines = fs.readFileSync(logFile, "utf8").split("\n").filter(Boolean);
   return lines
     .map((line) => {
-      try {
-        return JSON.parse(line);
-      } catch {
-        return null;
-      }
+    try {
+      return JSON.parse(line);
+    } catch {
+      return null;
+    }
     })
     .filter(Boolean);
 }
