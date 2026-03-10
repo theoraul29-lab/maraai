@@ -29,6 +29,7 @@ import sqlite3
 import subprocess
 import sys
 import traceback
+from getpass import getpass
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
@@ -65,9 +66,11 @@ def ensure_package(import_name: str, pip_name: Optional[str] = None) -> None:
 ensure_package("playwright")
 ensure_package("openai")
 ensure_package("bs4", "beautifulsoup4")
+ensure_package("dotenv", "python-dotenv")
 
 from bs4 import BeautifulSoup  # noqa: E402
 from openai import OpenAI  # noqa: E402
+from dotenv import load_dotenv  # noqa: E402
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError  # noqa: E402
 from playwright.sync_api import sync_playwright  # noqa: E402
 
@@ -218,6 +221,27 @@ def utc_now_iso() -> str:
 
 def normalize_text(value: str) -> str:
     return re.sub(r"\s+", " ", value or "").strip()
+
+
+def build_local_fallback_response(user_prompt: str, live_data: Dict[str, Any], api_error: str) -> str:
+    """Build a deterministic local response when external LLM call fails."""
+    title = live_data.get("title") or "(no title found)"
+    prices = live_data.get("prices", [])
+    tables = live_data.get("tables", [])
+    text_preview = normalize_text(live_data.get("text_preview", ""))
+
+    preview = text_preview[:500] if text_preview else "No visible text extracted."
+    prices_line = ", ".join(prices[:10]) if prices else "No explicit prices found."
+
+    return (
+        "MaraAI fallback response (LLM API unavailable).\n"
+        f"User request: {user_prompt}\n"
+        f"Page title: {title}\n"
+        f"Prices: {prices_line}\n"
+        f"Tables found: {len(tables)}\n"
+        f"Text preview: {preview}\n"
+        f"LLM error: {api_error}"
+    )
 
 
 def extract_tables_from_html(soup: BeautifulSoup, max_tables: int = 5) -> List[List[List[str]]]:
@@ -429,9 +453,10 @@ class MaraAIPlaywrightAgent:
             )
             text = completion.choices[0].message.content or "No response generated."
         except Exception as exc:
-            text = (
-                "I could not generate a GPT response at this moment. "
-                f"Underlying error: {exc}"
+            text = build_local_fallback_response(
+                user_prompt=user_prompt,
+                live_data=live_data_summary,
+                api_error=str(exc),
             )
 
         self.db.save_ai_response(
@@ -498,6 +523,7 @@ def parse_selector_args(selector_args: List[str]) -> Dict[str, str]:
 
 def resolve_llm_config(
     explicit_base_url: Optional[str] = None,
+    explicit_api_key: Optional[str] = None,
 ) -> Tuple[str, Optional[str], str]:
     """
     Resolve API key and base URL.
@@ -507,9 +533,33 @@ def resolve_llm_config(
     2) GROQ_API_KEY (+ optional explicit --api-base-url)
     3) If OPENAI_API_KEY starts with gsk_, auto-route to Groq-compatible OpenAI endpoint
     """
-    openai_key = os.getenv("OPENAI_API_KEY")
-    groq_key = os.getenv("GROQ_API_KEY")
+    # Load .env if present so local runs work without manually exporting vars each session.
+    load_dotenv(override=False)
+
+    openai_key = (explicit_api_key or os.getenv("OPENAI_API_KEY") or "").strip()
+    groq_key = (os.getenv("GROQ_API_KEY") or "").strip()
     env_base_url = os.getenv("OPENAI_BASE_URL")
+
+    # Windows convenience: pull key from user-level environment if current shell is missing it.
+    if not openai_key and os.name == "nt":
+        user_openai_key = os.environ.get("OPENAI_API_KEY") or ""
+        if not user_openai_key:
+            user_openai_key = (
+                os.popen('powershell -NoProfile -Command "[Environment]::GetEnvironmentVariable(\"OPENAI_API_KEY\",\"User\")"')
+                .read()
+                .strip()
+            )
+        if user_openai_key:
+            openai_key = user_openai_key
+
+    if not groq_key and os.name == "nt":
+        user_groq_key = (
+            os.popen('powershell -NoProfile -Command "[Environment]::GetEnvironmentVariable(\"GROQ_API_KEY\",\"User\")"')
+            .read()
+            .strip()
+        )
+        if user_groq_key:
+            groq_key = user_groq_key
 
     if openai_key:
         if openai_key.strip() in {"YOUR_NEW_KEY", "YOUR_API_KEY", "sk-your-key-here"}:
@@ -532,6 +582,15 @@ def resolve_llm_config(
         base_url = explicit_base_url or "https://api.groq.com/openai/v1"
         return groq_key, base_url, "groq-compatible"
 
+    # Final fallback for manual local runs: secure prompt in interactive terminal.
+    if sys.stdin.isatty():
+        entered = getpass("Enter API key (OpenAI or Groq gsk_): ").strip()
+        if entered:
+            if entered.startswith("gsk_"):
+                base_url = explicit_base_url or "https://api.groq.com/openai/v1"
+                return entered, base_url, "groq-compatible"
+            return entered, explicit_base_url or env_base_url, "openai"
+
     raise RuntimeError(
         "No API key found. Set OPENAI_API_KEY (or GROQ_API_KEY). "
         "PowerShell example: $env:OPENAI_API_KEY='your_real_key'"
@@ -547,6 +606,11 @@ def main() -> None:
     parser.add_argument("--db", default="maraai.sqlite", help="SQLite DB file path.")
     parser.add_argument("--model", default="gpt-4o-mini", help="OpenAI model name.")
     parser.add_argument(
+        "--api-key",
+        default=None,
+        help="Optional API key override (prefer env vars or prompt for better security).",
+    )
+    parser.add_argument(
         "--api-base-url",
         default=None,
         help="Optional custom OpenAI-compatible API base URL.",
@@ -560,7 +624,10 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    api_key, api_base_url, provider_label = resolve_llm_config(args.api_base_url)
+    api_key, api_base_url, provider_label = resolve_llm_config(
+        explicit_base_url=args.api_base_url,
+        explicit_api_key=args.api_key,
+    )
     print(f"[setup] LLM provider mode: {provider_label}")
 
     selectors = parse_selector_args(args.selector)
