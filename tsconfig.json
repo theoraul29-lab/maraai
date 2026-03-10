@@ -10,6 +10,7 @@
 
     "strict": true,
     "skipLibCheck": true,
+    "ignoreDeprecations": "6.0",
     "forceConsistentCasingInFileNames": true,
     "types": ["node", "vite/client", "react", "react-dom"],
     "baseUrl": ".",

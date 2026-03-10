@@ -17,7 +17,7 @@ async function getStats(req, res) {
       totalMessages,
       totalLikes,
     });
-  } catch (err) {
+  } catch {
     res.status(500).json({ message: "Failed to fetch admin stats" });
   }
 }
@@ -26,7 +26,7 @@ async function getUsers(req, res) {
   try {
     const allUsers = await storage.getAllUsers();
     res.json(allUsers);
-  } catch (err) {
+  } catch {
     res.status(500).json({ message: "Failed to fetch users" });
   }
 }
@@ -35,7 +35,7 @@ async function getVideos(req, res) {
   try {
     const allVideos = await storage.getVideos();
     res.json(allVideos);
-  } catch (err) {
+  } catch {
     res.status(500).json({ message: "Failed to fetch videos" });
   }
 }
