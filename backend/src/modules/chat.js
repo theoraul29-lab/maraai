@@ -1,3 +1,4 @@
+// cspell:words prefs userPrefs
 // Chat module: handles chat history, sending messages, and chat-related logic
 // Modularized from server/routes.ts
 
