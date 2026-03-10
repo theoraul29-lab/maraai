@@ -79,6 +79,36 @@ npm start       # starts the backend serving the built frontend
 
 > SQLite data is stored on a persistent 1 GB disk mounted at `/var/data/maraai.sqlite`.
 
+## Deploy to Railway
+
+1. Push this repo to GitHub.
+2. In Railway, create a new project and choose **Deploy from GitHub repo**.
+3. Railway will detect [railway.json](railway.json) and use:
+	- Build command: `npm ci && npm run build`
+	- Start command: `npm start`
+	- Health check: `/api/health`
+4. Add a **Volume** in Railway and mount it to `/data`.
+5. Set environment variables in Railway:
+	- `NODE_ENV=production`
+	- `PORT=5000` (Railway also injects `PORT`; keeping this explicit is fine)
+	- `AUTH_MODE=local`
+	- `SESSION_SECRET=<long-random-secret>`
+	- `DATABASE_URL=sqlite:///data/maraai.sqlite`
+	- `AI_INTEGRATIONS_OPENAI_API_KEY=<optional>`
+6. Deploy and open your Railway service URL.
+
+Quick verify after deploy:
+
+```bash
+curl https://<your-railway-domain>/api/health
+```
+
+Expected response:
+
+```json
+{"status":"ok"}
+```
+
 ## Smoke Tests
 
 ```bash
