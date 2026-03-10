@@ -290,7 +290,7 @@ class MaraAIPlaywrightAgent:
     def __init__(
         self,
         *,
-        openai_api_key: str,
+        openai_api_key: Optional[str],
         openai_base_url: Optional[str] = None,
         db_path: str = "maraai.sqlite",
         model: str = "gpt-4o-mini",
@@ -304,7 +304,7 @@ class MaraAIPlaywrightAgent:
         self.timeout_ms = timeout_ms
 
         self.db = MaraAIDatabase(db_path=db_path)
-        self.client = OpenAI(api_key=openai_api_key, base_url=openai_base_url)
+        self.client = OpenAI(api_key=openai_api_key, base_url=openai_base_url) if openai_api_key else None
 
         ensure_playwright_browser(browser_name=self.browser)
 
@@ -443,6 +443,9 @@ class MaraAIPlaywrightAgent:
         }
 
         try:
+            if self.client is None:
+                raise RuntimeError("No API key configured; using local fallback response.")
+
             completion = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
@@ -525,7 +528,7 @@ def resolve_llm_config(
     explicit_base_url: Optional[str] = None,
     explicit_api_key: Optional[str] = None,
     allow_prompt: bool = True,
-) -> Tuple[str, Optional[str], str]:
+) -> Tuple[Optional[str], Optional[str], str]:
     """
     Resolve API key and base URL.
 
@@ -541,24 +544,35 @@ def resolve_llm_config(
     groq_key = (os.getenv("GROQ_API_KEY") or "").strip()
     env_base_url = os.getenv("OPENAI_BASE_URL")
 
+    def read_windows_user_env(var_name: str) -> str:
+        if os.name != "nt":
+            return ""
+        try:
+            result = subprocess.run(
+                [
+                    "powershell",
+                    "-NoProfile",
+                    "-Command",
+                    f'[Environment]::GetEnvironmentVariable("{var_name}","User")',
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            return (result.stdout or "").strip()
+        except Exception:
+            return ""
+
     # Windows convenience: pull key from user-level environment if current shell is missing it.
     if not openai_key and os.name == "nt":
         user_openai_key = os.environ.get("OPENAI_API_KEY") or ""
         if not user_openai_key:
-            user_openai_key = (
-                os.popen('powershell -NoProfile -Command "[Environment]::GetEnvironmentVariable(\"OPENAI_API_KEY\",\"User\")"')
-                .read()
-                .strip()
-            )
+            user_openai_key = read_windows_user_env("OPENAI_API_KEY")
         if user_openai_key:
             openai_key = user_openai_key
 
     if not groq_key and os.name == "nt":
-        user_groq_key = (
-            os.popen('powershell -NoProfile -Command "[Environment]::GetEnvironmentVariable(\"GROQ_API_KEY\",\"User\")"')
-            .read()
-            .strip()
-        )
+        user_groq_key = read_windows_user_env("GROQ_API_KEY")
         if user_groq_key:
             groq_key = user_groq_key
 
@@ -592,10 +606,7 @@ def resolve_llm_config(
                 return entered, base_url, "groq-compatible"
             return entered, explicit_base_url or env_base_url, "openai"
 
-    raise RuntimeError(
-        "No API key found. Set OPENAI_API_KEY (or GROQ_API_KEY). "
-        "PowerShell example: $env:OPENAI_API_KEY='your_real_key'"
-    )
+    return None, explicit_base_url or env_base_url, "local-fallback"
 
 
 def main() -> None:
