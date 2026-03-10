@@ -5,7 +5,7 @@ import path from "path";
 function forceRootIndexPlugin() {
   return {
     name: "force-root-index",
-    configureServer(server: { middlewares: { use: (fn: (req: { method?: string; url?: string }, _res: unknown, next: () => void) => void) => void } }) {
+    configureServer(server) {
       server.middlewares.use((req, _res, next) => {
         if (req.method === "GET" && (req.url === "/" || req.url?.startsWith("/?"))) {
           req.url = "/index.html";
