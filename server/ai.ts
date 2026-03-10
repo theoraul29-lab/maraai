@@ -1,3 +1,4 @@
+// cspell:disable
 import OpenAI from "openai";
 import { hasCyrillic, detectCyrillicLang } from "./cyrillic.js";
 
