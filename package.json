@@ -6,6 +6,10 @@
   "engines": {
     "node": ">=20"
   },
+  "volta": {
+    "node": "20.19.0",
+    "npm": "10.8.2"
+  },
   "main": "index.js",
   "scripts": {
     "dev": "concurrently -k -n backend,frontend -c green,cyan \"npm:dev:backend\" \"npm:dev:frontend\"",
