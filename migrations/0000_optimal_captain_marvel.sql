@@ -1,4 +1,4 @@
-CREATE TABLE `ai_improvements` (
+CREATE TABLE IF NOT EXISTS `ai_improvements` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`type` text DEFAULT 'product-improvement' NOT NULL,
 	`title` text NOT NULL,
@@ -8,7 +8,7 @@ CREATE TABLE `ai_improvements` (
 	`created_at` integer DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE `brain_logs` (
+CREATE TABLE IF NOT EXISTS `brain_logs` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`research` text DEFAULT '{}' NOT NULL,
 	`product_ideas` text NOT NULL,
@@ -17,7 +17,7 @@ CREATE TABLE `brain_logs` (
 	`created_at` integer DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE `chat_messages` (
+CREATE TABLE IF NOT EXISTS `chat_messages` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`content` text NOT NULL,
 	`sender` text NOT NULL,
@@ -25,21 +25,21 @@ CREATE TABLE `chat_messages` (
 	`created_at` integer DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE `collection_videos` (
+CREATE TABLE IF NOT EXISTS `collection_videos` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`collection_id` integer NOT NULL,
 	`video_id` integer NOT NULL,
 	`created_at` integer DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE `collections` (
+CREATE TABLE IF NOT EXISTS `collections` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` text NOT NULL,
 	`name` text NOT NULL,
 	`created_at` integer DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE `comments` (
+CREATE TABLE IF NOT EXISTS `comments` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` text NOT NULL,
 	`video_id` integer NOT NULL,
@@ -47,28 +47,28 @@ CREATE TABLE `comments` (
 	`created_at` integer DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE `creator_posts` (
+CREATE TABLE IF NOT EXISTS `creator_posts` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` text NOT NULL,
 	`video_id` integer NOT NULL,
 	`created_at` integer DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE `followers` (
+CREATE TABLE IF NOT EXISTS `followers` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`follower_id` text NOT NULL,
 	`following_id` text NOT NULL,
 	`created_at` integer DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE `likes` (
+CREATE TABLE IF NOT EXISTS `likes` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` text NOT NULL,
 	`video_id` integer NOT NULL,
 	`created_at` integer DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE `notifications` (
+CREATE TABLE IF NOT EXISTS `notifications` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` text NOT NULL,
 	`type` text DEFAULT 'system' NOT NULL,
@@ -79,7 +79,7 @@ CREATE TABLE `notifications` (
 	`created_at` integer DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE `premium_orders` (
+CREATE TABLE IF NOT EXISTS `premium_orders` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` text NOT NULL,
 	`amount` text NOT NULL,
@@ -94,7 +94,7 @@ CREATE TABLE `premium_orders` (
 	`expires_at` integer
 );
 --> statement-breakpoint
-CREATE TABLE `saved_videos` (
+CREATE TABLE IF NOT EXISTS `saved_videos` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` text NOT NULL,
 	`video_id` integer NOT NULL,
@@ -102,7 +102,7 @@ CREATE TABLE `saved_videos` (
 	`created_at` integer DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE `user_feedback` (
+CREATE TABLE IF NOT EXISTS `user_feedback` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` text NOT NULL,
 	`message` text NOT NULL,
@@ -110,7 +110,7 @@ CREATE TABLE `user_feedback` (
 	`created_at` integer DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE `user_preferences` (
+CREATE TABLE IF NOT EXISTS `user_preferences` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` text NOT NULL,
 	`preferences` text DEFAULT '{}' NOT NULL,
@@ -119,7 +119,7 @@ CREATE TABLE `user_preferences` (
 	`updated_at` integer DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE `videos` (
+CREATE TABLE IF NOT EXISTS `videos` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`url` text NOT NULL,
 	`type` text NOT NULL,
@@ -131,7 +131,7 @@ CREATE TABLE `videos` (
 	`created_at` integer DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE `writer_pages` (
+CREATE TABLE IF NOT EXISTS `writer_pages` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` text NOT NULL,
 	`pen_name` text NOT NULL,
