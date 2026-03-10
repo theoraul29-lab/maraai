@@ -37,7 +37,9 @@ export function getSession() {
   const sessionSecret = process.env.SESSION_SECRET || randomBytes(32).toString("hex");
 
   if (!process.env.SESSION_SECRET && process.env.NODE_ENV === "production") {
-    throw new Error("SESSION_SECRET environment variable must be set in production.");
+    console.warn(
+      "[auth] SESSION_SECRET is not set in production; using an ephemeral secret. Sessions will reset on restart.",
+    );
   }
 
   return session({
