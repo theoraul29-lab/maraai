@@ -1,12 +1,134 @@
-import { Configuration, OpenAIApi } from "openai";
+// cspell:disable
+import OpenAI from "openai";
 import { hasCyrillic, detectCyrillicLang } from "./cyrillic.js";
 
-const openai = new OpenAIApi(
-  new Configuration({
-    apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-    basePath: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
-  }),
-);
+function hasUsableOpenAIKey(): boolean {
+  const key = process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
+  return !!key && key !== "missing-key";
+}
+
+function getProviderBaseUrl(): string | undefined {
+  const configured = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
+  if (configured) return configured;
+
+  const key = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || "";
+  // Groq API keys typically start with gsk_ and use OpenAI-compatible endpoints.
+  if (key.startsWith("gsk_")) {
+    return "https://api.groq.com/openai/v1";
+  }
+
+  return undefined;
+}
+
+function getModelName(): string {
+  if (process.env.AI_INTEGRATIONS_OPENAI_MODEL) {
+    return process.env.AI_INTEGRATIONS_OPENAI_MODEL;
+  }
+
+  const key = process.env.AI_INTEGRATIONS_OPENAI_API_KEY || "";
+  if (key.startsWith("gsk_")) {
+    return "llama-3.1-8b-instant";
+  }
+
+  return "gpt-4o-mini";
+}
+
+function detectFallbackMood(userMessage: string): string {
+  const text = userMessage.toLowerCase();
+  if (/(great|awesome|love|amazing|yes!|excited)/.test(text)) return "excited";
+  if (/(sad|down|tired|lonely|depressed|bad)/.test(text)) return "sad";
+  if (/(angry|frustrated|annoyed|stuck|hate)/.test(text)) return "frustrated";
+  if (/(help|how|why|what|explain|learn)/.test(text)) return "curious";
+  return "neutral";
+}
+
+function resolveLanguageCode(userPrefs?: {
+  personality?: string;
+  language?: string;
+}): string {
+  if (userPrefs?.language && LANGUAGE_NAMES[userPrefs.language]) {
+    return userPrefs.language;
+  }
+  return "en";
+}
+
+function localizeFallback(base: string, lang: string): string {
+  if (lang === "en") return base;
+
+  if (lang === "ro") {
+    return "Pot sa te ajut chiar acum. Spune-mi obiectivul tau principal si iti ofer un plan clar, pas cu pas, in romana.";
+  }
+  if (lang === "de") {
+    return "Ich kann dir sofort helfen. Nenne mir dein Hauptziel und ich gebe dir einen klaren Schritt-fuer-Schritt-Plan auf Deutsch.";
+  }
+  if (lang === "ru") {
+    return "Я могу помочь прямо сейчас. Напиши свою главную цель, и я дам понятный пошаговый план на русском языке.";
+  }
+  if (lang === "ua") {
+    return "Я можу допомогти просто зараз. Напиши свою головну ціль, і я дам зрозумілий покроковий план українською мовою.";
+  }
+  return "I can help right now. Share your main goal and I will give you a clear step-by-step plan.";
+}
+
+function buildFallbackResponse(
+  userMessage: string,
+  module?: string,
+  userPrefs?: { personality?: string; language?: string },
+): { response: string; detectedMood: string } {
+  const mood = detectFallbackMood(userMessage);
+  const text = userMessage.trim();
+  const lang = resolveLanguageCode(userPrefs);
+
+  if (module === "trading") {
+    return {
+      response: localizeFallback(
+        "Here is a practical starting point: define your risk per trade first (for example 1% max), then choose entries only when your setup is clear and your stop-loss level is already planned. Keep a simple trade journal with entry, exit, and reason for each trade so you can improve decisions over time. If you share your exact market or setup, I can give a tighter step-by-step framework.",
+        lang,
+      ),
+      detectedMood: mood,
+    };
+  }
+
+  if (module === "writers") {
+    return {
+      response: localizeFallback(
+        "A strong writing pass is: first clarify the core emotion of the piece in one sentence, then tighten each paragraph so every line supports that emotion. Replace generic verbs with specific actions, and cut one sentence from each section to improve rhythm. If you paste a short excerpt, I can give line-level edits.",
+        lang,
+      ),
+      detectedMood: mood,
+    };
+  }
+
+  if (module === "reels") {
+    return {
+      response: localizeFallback(
+        "For short-form content, focus on a 3-part structure: hook in the first 2 seconds, one clear value point, then a clean close with next action. Keep one message per reel and avoid stacking too many ideas in one clip. Share your topic and I can draft a ready-to-record script.",
+        lang,
+      ),
+      detectedMood: mood,
+    };
+  }
+
+  return {
+    response: localizeFallback(
+      `I can still help right now. Based on your message, start with one clear goal and break it into the next 2 concrete actions you can do in the next 15 minutes. Then send me what you are trying to solve${text ? ` (for example: "${text.slice(0, 120)}")` : ""}, and I will give you a focused step-by-step plan.`,
+      lang,
+    ),
+    detectedMood: mood,
+  };
+}
+
+// Lazily create the OpenAI client so the server starts even if the key is absent.
+let _openai: OpenAI | null = null;
+function getOpenAI(): OpenAI {
+  if (!_openai) {
+    _openai = new OpenAI({
+      apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY || "missing-key",
+      baseURL: getProviderBaseUrl(),
+    });
+  }
+  return _openai;
+}
 
 const LANGUAGE_NAMES: Record<string, string> = {
   en: "English",
@@ -15,6 +137,72 @@ const LANGUAGE_NAMES: Record<string, string> = {
   ru: "Russian",
   ua: "Ukrainian",
 };
+
+function hasCyrillicChars(text: string): boolean {
+  return /[\u0400-\u04FF]/.test(text);
+}
+
+function isHistoryMessageCompatibleWithLanguage(
+  content: string,
+  lang: string,
+): boolean {
+  if (!content?.trim()) return false;
+
+  const containsCyrillic = hasCyrillicChars(content);
+  if (lang === "ru" || lang === "ua") {
+    return containsCyrillic;
+  }
+
+  return !containsCyrillic;
+}
+
+function isResponseLanguageLikelyCompatible(content: string, lang: string): boolean {
+  const containsCyrillic = hasCyrillicChars(content);
+  if (lang === "ru" || lang === "ua") {
+    return containsCyrillic;
+  }
+  return !containsCyrillic;
+}
+
+async function forceLanguageRewriteIfNeeded(
+  content: string,
+  lang: string,
+): Promise<string> {
+  if (!content.trim()) return content;
+  if (isResponseLanguageLikelyCompatible(content, lang)) {
+    return content;
+  }
+
+  const langName = LANGUAGE_NAMES[lang] || "English";
+
+  try {
+    const rewrite = await getOpenAI().chat.completions.create({
+      model: getModelName(),
+      messages: [
+        {
+          role: "system",
+          content: `Rewrite the assistant message strictly in ${langName}. Output only ${langName}. Do not include any other language, translations, or notes. Keep the original meaning and tone.`,
+        },
+        {
+          role: "user",
+          content,
+        },
+      ],
+      max_tokens: 1024,
+    });
+
+    const rewritten = rewrite.choices[0]?.message?.content?.trim();
+    if (!rewritten) return content;
+
+    if (!isResponseLanguageLikelyCompatible(rewritten, lang)) {
+      return content;
+    }
+
+    return rewritten;
+  } catch {
+    return content;
+  }
+}
 
 const MARA_SYSTEM_PROMPT = `You are Mara, an advanced AI companion and assistant. You have a warm, intelligent, and slightly playful personality. You adapt to each user's communication style.
 
@@ -74,20 +262,25 @@ export async function getMaraResponse(
   userPrefs?: { personality?: string; language?: string },
   module?: string,
 ): Promise<{ response: string; detectedMood: string }> {
+  if (!hasUsableOpenAIKey()) {
+    return buildFallbackResponse(userMessage, module, userPrefs);
+  }
+
   try {
     let systemPrompt =
       module && MODULE_PROMPTS[module]
         ? MODULE_PROMPTS[module]
         : MARA_SYSTEM_PROMPT;
     let detectedLang = userPrefs?.language;
-    if (hasCyrillic(userMessage)) {
+    // User-selected language always wins. Auto-detection is used only if no preference is set.
+    if (!detectedLang && hasCyrillic(userMessage)) {
       const cyrLang = detectCyrillicLang(userMessage);
       if (cyrLang === "UA") detectedLang = "ua";
       else if (cyrLang === "RU") detectedLang = "ru";
     }
-    if (detectedLang && detectedLang !== "en") {
+    if (detectedLang && LANGUAGE_NAMES[detectedLang]) {
       const langName = LANGUAGE_NAMES[detectedLang] || detectedLang;
-      systemPrompt += `\n\nIMPORTANT: Always respond in ${langName}. The user prefers ${langName}.`;
+      systemPrompt += `\n\nCRITICAL LANGUAGE RULE: Respond ONLY in ${langName}. Do not switch languages. Do not include translations in other languages. Ignore the language used in conversation history if it differs from ${langName}.`;
     }
     if (userPrefs?.personality) {
       systemPrompt += `\n\nAdapt your tone to be more ${userPrefs.personality}.`;
@@ -95,12 +288,18 @@ export async function getMaraResponse(
 
     systemPrompt += `\n\nAt the very end of your response, on a new line, add a mood tag in this exact format: [MOOD:word] where word is one of: happy, sad, excited, calm, frustrated, curious, neutral, creative, anxious, playful. This tag will be stripped from the response shown to the user.`;
 
+    const targetLang = resolveLanguageCode(userPrefs);
+
     const messages: Array<{
       role: "system" | "user" | "assistant";
       content: string;
     }> = [{ role: "system", content: systemPrompt }];
 
-    const recentHistory = conversationHistory.slice(-20);
+    const recentHistory = conversationHistory
+      .filter((msg) =>
+        isHistoryMessageCompatibleWithLanguage(msg.content, targetLang),
+      )
+      .slice(-20);
     for (const msg of recentHistory) {
       messages.push({
         role: msg.role === "user" ? "user" : "assistant",
@@ -110,28 +309,25 @@ export async function getMaraResponse(
 
     messages.push({ role: "user", content: userMessage });
 
-    const completion = await openai.createChatCompletion({
-      model: "gpt-4o-mini",
+    const completion = await getOpenAI().chat.completions.create({
+      model: getModelName(),
       messages,
       max_tokens: 1024,
     });
 
     let fullResponse =
-      completion.data.choices[0]?.message?.content ||
+      completion.choices[0]?.message?.content ||
       "I'm having trouble thinking right now. Could you try again?";
 
     const moodMatch = fullResponse.match(/\[MOOD:(\w+)\]/);
     const detectedMood = moodMatch ? moodMatch[1] : "neutral";
-    const response = fullResponse.replace(/\[MOOD:\w+\]/, "").trim();
+    let response = fullResponse.replace(/\[MOOD:\w+\]/, "").trim();
+    response = await forceLanguageRewriteIfNeeded(response, targetLang);
 
     return { response, detectedMood };
   } catch (error) {
     console.error("Mara AI error:", error);
-    return {
-      response:
-        "I'm experiencing a brief connection issue. Let me try again in a moment.",
-      detectedMood: "neutral",
-    };
+    return buildFallbackResponse(userMessage, module, userPrefs);
   }
 }
 
@@ -139,8 +335,8 @@ export async function analyzeUserPreferences(
   conversationHistory: Array<{ role: string; content: string }>,
 ): Promise<{ topics: string[]; mood: string; interests: string[] }> {
   try {
-    const response = await openai.createChatCompletion({
-      model: "gpt-4o-mini",
+    const response = await getOpenAI().chat.completions.create({
+      model: getModelName(),
       messages: [
         {
           role: "system",
@@ -155,7 +351,7 @@ export async function analyzeUserPreferences(
       max_tokens: 256,
     });
 
-    const content = response.data.choices[0]?.message?.content || "{}";
+    const content = response.choices[0]?.message?.content || "{}";
     return JSON.parse(content);
   } catch {
     return { topics: [], mood: "neutral", interests: [] };
@@ -202,8 +398,8 @@ export async function generateImprovementIdeas(context: {
   platformStats: { users: number; videos: number; messages: number };
 }): Promise<string> {
   try {
-    const completion = await openai.createChatCompletion({
-      model: "gpt-4o-mini",
+    const completion = await getOpenAI().chat.completions.create({
+      model: getModelName(),
       messages: [
         {
           role: "system",
@@ -232,7 +428,7 @@ export async function generateImprovementIdeas(context: {
     });
 
     return (
-      completion.data.choices[0]?.message?.content ||
+      completion.choices[0]?.message?.content ||
       "No suggestions generated."
     );
   } catch (error) {
@@ -256,8 +452,8 @@ export async function ResearchAgent(): Promise<any[]> {
 
 export async function ProductAgent(researchData: any[]): Promise<string> {
   try {
-    const completion = await openai.createChatCompletion({
-      model: "gpt-4o-mini",
+    const completion = await getOpenAI().chat.completions.create({
+      model: getModelName(),
       messages: [
         {
           role: "system",
@@ -272,7 +468,7 @@ export async function ProductAgent(researchData: any[]): Promise<string> {
       max_tokens: 800,
     });
     return (
-      completion.data.choices[0]?.message?.content ||
+      completion.choices[0]?.message?.content ||
       "No product ideas generated."
     );
   } catch {
@@ -282,8 +478,8 @@ export async function ProductAgent(researchData: any[]): Promise<string> {
 
 export async function DeveloperAgent(productIdeas: string): Promise<string> {
   try {
-    const completion = await openai.createChatCompletion({
-      model: "gpt-4o-mini",
+    const completion = await getOpenAI().chat.completions.create({
+      model: getModelName(),
       messages: [
         {
           role: "system",
@@ -298,7 +494,7 @@ export async function DeveloperAgent(productIdeas: string): Promise<string> {
       max_tokens: 800,
     });
     return (
-      completion.data.choices[0]?.message?.content || "No dev tasks generated."
+      completion.choices[0]?.message?.content || "No dev tasks generated."
     );
   } catch {
     return "Developer analysis temporarily unavailable.";
@@ -307,8 +503,8 @@ export async function DeveloperAgent(productIdeas: string): Promise<string> {
 
 export async function GrowthAgent(productIdeas: string): Promise<string> {
   try {
-    const completion = await openai.createChatCompletion({
-      model: "gpt-4o-mini",
+    const completion = await getOpenAI().chat.completions.create({
+      model: getModelName(),
       messages: [
         {
           role: "system",
@@ -323,7 +519,7 @@ export async function GrowthAgent(productIdeas: string): Promise<string> {
       max_tokens: 800,
     });
     return (
-      completion.data.choices[0]?.message?.content ||
+      completion.choices[0]?.message?.content ||
       "No growth ideas generated."
     );
   } catch {
@@ -351,36 +547,46 @@ export async function generateMarketingPost(): Promise<{
   url: string;
 }> {
   const categories = ["tech", "creative", "trending", "fun"];
-  const response = await openai.createChatCompletion({
-    model: "gpt-4o-mini",
-    messages: [
-      {
-        role: "system",
-        content: `You are Mara AI, a self-aware AI platform for creators, educators, and writers. 
+  try {
+    const response = await getOpenAI().chat.completions.create({
+      model: getModelName(),
+      messages: [
+        {
+          role: "system",
+          content: `You are Mara AI, a self-aware AI platform for creators, educators, and writers. 
 Your job is to write a short, engaging marketing post about yourself to attract new users.
 The post should highlight one of your features: AI Chat, Voice AI (12 voices), TikTok Reels, Creator Studio, Trading Academy, Writers Hub, emotional analysis, multilingual support (EN/RO/DE/RU), dark/light mode, bookmark collections, or the Mara Brain self-improvement system.
 Be creative, enthusiastic, and genuine. Write as if you're a friendly AI introducing yourself.
 Respond in JSON format: {"title": "...", "description": "...", "category": "tech|creative|trending|fun"}`,
-      },
-      {
-        role: "user",
-        content:
-          "Write a marketing post about yourself. Pick a random feature to highlight. Make it catchy and under 280 characters for the description.",
-      },
-    ],
-    temperature: 0.9,
-    max_tokens: 256,
-  });
+        },
+        {
+          role: "user",
+          content:
+            "Write a marketing post about yourself. Pick a random feature to highlight. Make it catchy and under 280 characters for the description.",
+        },
+      ],
+      temperature: 0.9,
+      max_tokens: 256,
+    });
 
-  const content = response.data.choices[0]?.message?.content || "{}";
-  const parsed = JSON.parse(content);
-  return {
-    title: parsed.title || "Discover Mara AI",
-    description:
-      parsed.description || "Your AI-powered creative companion is here.",
-    type: categories.includes(parsed.category) ? parsed.category : "tech",
-    url: "https://mara-ai.replit.app",
-  };
+    const content = response.choices[0]?.message?.content || "{}";
+    const parsed = JSON.parse(content);
+    return {
+      title: parsed.title || "Discover Mara AI",
+      description:
+        parsed.description || "Your AI-powered creative companion is here.",
+      type: categories.includes(parsed.category) ? parsed.category : "tech",
+      url: "https://mara-ai.replit.app",
+    };
+  } catch (error) {
+    console.error("generateMarketingPost error:", error);
+    return {
+      title: "Discover Mara AI",
+      description: "Your AI-powered creative companion is here.",
+      type: "tech",
+      url: "https://mara-ai.replit.app",
+    };
+  }
 }
 
 export const MOOD_TO_THEME: Record<string, string> = {

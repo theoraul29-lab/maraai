@@ -4,10 +4,15 @@
 - Node.js 20+
 - npm 10+
 
-## Install
+## Install & configure
 ```bash
 npm install
+
+# Copy the example env file and edit as needed
+cp .env.example .env
 ```
+
+The defaults in `.env.example` work out-of-the-box for local development (no API keys required).
 
 ## Run (frontend + backend)
 ```bash
@@ -16,8 +21,8 @@ npm run dev
 
 ## URLs
 - Frontend: `http://localhost:5173`
-- Backend runtime info: `http://localhost:3001/api/runtime` (or fallback port shown in logs)
-- Health check: `http://localhost:3001/api/health` (or fallback port)
+- Backend runtime info: `http://localhost:5000/api/runtime` (or fallback port shown in logs)
+- Health check: `http://localhost:5000/api/health` (or fallback port)
 
 The backend automatically falls back to the next free port if the configured `PORT` is already in use.
 

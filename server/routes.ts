@@ -500,7 +500,10 @@ export async function registerRoutes(
       }));
 
       const prefs = await storage.getUserPreferences(userId);
-      const userPrefs = prefs || undefined;
+      const userPrefs = {
+        ...(prefs || {}),
+        language: input.language || prefs?.language,
+      };
 
       const { response: aiResponseContent, detectedMood } =
         await getMaraResponse(

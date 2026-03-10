@@ -1,8 +1,10 @@
 {
   "compilerOptions": {
     "target": "ESNext",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
 
@@ -10,7 +12,7 @@
     "skipLibCheck": true,
     "ignoreDeprecations": "6.0",
     "forceConsistentCasingInFileNames": true,
-    "types": ["node"],
+    "types": ["node", "vite/client", "react", "react-dom"],
     "baseUrl": ".",
     "paths": {
       "@/*": ["client/src/*"],
@@ -19,11 +21,5 @@
     }
   },
   "include": ["client/src/**/*", "server/**/*", "shared/**/*"],
-  "exclude": ["node_modules", "build", "dist", "**/*.test.ts"],
-  "dependencies": {
-    "pg": "^8.1.0"
-  },
-  "scripts": {
-    "start:backend": "node server.js"
-  }
+  "exclude": ["node_modules", "build", "dist", "**/*.test.ts"]
 }

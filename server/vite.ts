@@ -49,7 +49,7 @@ export async function setupVite(server: Server, app: Express) {
   app.use(vite.middlewares);
 
   // Correct Express catch-all route
-  app.use("*", async (req, res, next) => {
+  app.use("/{*path}", async (req, res, next) => {
     const url = req.originalUrl;
     try {
       const clientTemplate = path.resolve(

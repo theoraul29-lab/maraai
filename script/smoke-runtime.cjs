@@ -1,9 +1,9 @@
-const BASE_URL = process.env.MARAAI_BASE_URL || "http://localhost:3001";
+const BASE_URL = process.env.MARAAI_BASE_URL || "http://localhost:5000";
 
 const checks = [
   { name: "health", path: "/api/health", expected: [200] },
   { name: "runtime", path: "/api/runtime", expected: [200] },
-  { name: "auth-user", path: "/api/auth/user", expected: [200] },
+  { name: "auth-user", path: "/api/auth/user", expected: [200, 401] },
   { name: "videos", path: "/api/videos", expected: [200] },
   { name: "feed", path: "/api/mara-feed", expected: [200] },
   { name: "trading", path: "/api/trading/access", expected: [200, 401] },

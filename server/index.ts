@@ -2,7 +2,6 @@ import dotenv from "dotenv";
 dotenv.config();
 import express from "express";
 import { logError } from "./logger.js";
-import session from "express-session";
 import type { Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes.js";
 import { serveStatic } from "./static.js";
@@ -10,6 +9,7 @@ import { createServer } from "http";
 import net from "net";
 import { MaraBrainCycle, generateMarketingPost } from "./ai.js";
 import { storage } from "./storage.js";
+import { getSession } from "./replit_integrations/auth/replitAuth.js";
 
 const app = express();
 
@@ -23,28 +23,11 @@ type RuntimeState = {
 const runtimeState: RuntimeState = {
   requestedPort: null,
   boundPort: null,
-  host: process.env.HOST || "localhost",
+  host: process.env.HOST || "0.0.0.0",
   startedAt: null,
 };
 
-// Session configuration
-if (!process.env.SESSION_SECRET) {
-  throw new Error(
-    "SESSION_SECRET environment variable must be set for security.",
-  );
-}
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: process.env.NODE_ENV === "production",
-      httpOnly: true,
-      maxAge: 1000 * 60 * 60 * 24, // 1 day
-    },
-  }),
-);
+app.use(getSession());
 const httpServer = createServer(app);
 
 declare module "http" {
@@ -251,5 +234,5 @@ app.use((req, res, next) => {
   }
 
   const boundPort = await resolveAvailablePort(requestedPort);
-  httpServer.listen(boundPort, () => onServerReady(boundPort));
+  httpServer.listen(boundPort, runtimeState.host, () => onServerReady(boundPort));
 })();

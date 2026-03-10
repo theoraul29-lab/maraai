@@ -353,6 +353,8 @@ export class DatabaseStorage implements IStorage {
     userId: string,
     prefs: Record<string, unknown>,
   ): Promise<void> {
+    const serializedPrefs = JSON.stringify(prefs || {});
+
     const existing = await db
       .select()
       .from(userPreferences)
@@ -360,10 +362,12 @@ export class DatabaseStorage implements IStorage {
     if (existing.length > 0) {
       await db
         .update(userPreferences)
-        .set({ preferences: prefs, updatedAt: new Date() })
+        .set({ preferences: serializedPrefs, updatedAt: new Date() })
         .where(eq(userPreferences.userId, userId));
     } else {
-      await db.insert(userPreferences).values({ userId, preferences: prefs });
+      await db
+        .insert(userPreferences)
+        .values({ userId, preferences: serializedPrefs });
     }
   }
 
@@ -594,7 +598,7 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(writerPages)
-      .where(eq(writerPages.published, true))
+      .where(eq(writerPages.published, 1))
       .orderBy(desc(writerPages.createdAt));
   }
 
@@ -618,9 +622,18 @@ export class DatabaseStorage implements IStorage {
       .from(writerPages)
       .where(and(eq(writerPages.id, id), eq(writerPages.userId, userId)));
     if (!existing) return null;
+    const updateData: Record<string, unknown> = {
+      ...data,
+      updatedAt: new Date(),
+    };
+
+    if (typeof data.published === "boolean") {
+      updateData.published = data.published ? 1 : 0;
+    }
+
     const [updated] = await db
       .update(writerPages)
-      .set({ ...data, updatedAt: new Date() })
+      .set(updateData)
       .where(eq(writerPages.id, id))
       .returning();
     return updated;

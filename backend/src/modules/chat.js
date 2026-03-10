@@ -1,3 +1,4 @@
+// cspell:words prefs userPrefs
 // Chat module: handles chat history, sending messages, and chat-related logic
 // Modularized from server/routes.ts
 
@@ -19,7 +20,7 @@ async function getChatHistory(req, res) {
     await storage.clearOldMessages(24);
     const messages = await storage.getChatMessages(userId);
     res.json(messages.reverse());
-  } catch (err) {
+  } catch {
     res.status(500).json({ message: "Failed to fetch chat history" });
   }
 }
@@ -51,7 +52,10 @@ async function sendChatMessage(req, res) {
     }));
 
     const prefs = await storage.getUserPreferences(userId);
-    const userPrefs = prefs || undefined;
+    const userPrefs = {
+      ...(prefs || {}),
+      language: input.language || prefs?.language,
+    };
 
     const { response: aiResponseContent, detectedMood } = await getMaraResponse(
       input.message,

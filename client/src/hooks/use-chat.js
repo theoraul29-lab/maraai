@@ -13,10 +13,16 @@ export function useSendMessage() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data) => {
+      const selectedLanguage =
+        data?.language || localStorage.getItem("mara-language") || "en";
+
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          language: selectedLanguage,
+        }),
         credentials: "include",
       });
       if (!res.ok) {

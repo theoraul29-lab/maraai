@@ -33,7 +33,7 @@ async function getPremiumStatus(req, res) {
       tradingExpiresAt: tradingAccess.expiresAt,
       orders,
     });
-  } catch (err) {
+  } catch {
     res.status(500).json({ message: "Failed to fetch premium status" });
   }
 }
@@ -51,7 +51,7 @@ async function getTradingAccess(req, res) {
       expiresAt: tradingAccess.expiresAt,
       hasPending: pendingOrders.length > 0,
     });
-  } catch (err) {
+  } catch {
     res.status(500).json({ message: "Failed to check trading access" });
   }
 }
@@ -81,7 +81,7 @@ async function createPremiumOrder(req, res) {
       subscriptionPeriod: period,
     });
     res.json(order);
-  } catch (err) {
+  } catch {
     res.status(500).json({ message: "Failed to create order" });
   }
 }
