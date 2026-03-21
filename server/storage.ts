@@ -39,8 +39,8 @@ import {
   type CollectionVideo,
   type BrainLog,
   type InsertBrainLog,
-} from "../shared/schema.ts";
-import { eq, desc, and, sql, lt, gte, ilike, or, count } from "drizzle-orm";
+} from "../shared/schema";
+import { eq, desc, and, sql, lt, gte, like, or, count, inArray } from "drizzle-orm";
 import type { User } from "../shared/models/auth";
 
 export interface IStorage {
@@ -168,31 +168,6 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  private writerPagesInitialized = false;
-
-  private async ensureWriterPagesTable() {
-    if (this.writerPagesInitialized) return;
-
-    await db.run(sql`
-      CREATE TABLE IF NOT EXISTS writer_pages (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id TEXT NOT NULL,
-        pen_name TEXT NOT NULL,
-        title TEXT NOT NULL,
-        content TEXT NOT NULL,
-        cover_image TEXT,
-        category TEXT NOT NULL DEFAULT 'story',
-        published INTEGER NOT NULL DEFAULT 0,
-        likes INTEGER NOT NULL DEFAULT 0,
-        views INTEGER NOT NULL DEFAULT 0,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    this.writerPagesInitialized = true;
-  }
-
   async getVideos(topic?: string): Promise<Video[]> {
     if (topic && topic !== "") {
       return await db
@@ -573,13 +548,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createWriterPage(page: InsertWriterPage): Promise<WriterPage> {
-    await this.ensureWriterPagesTable();
     const [created] = await db.insert(writerPages).values(page).returning();
     return created;
   }
 
   async getWriterPages(userId?: string): Promise<WriterPage[]> {
-    await this.ensureWriterPagesTable();
     if (userId) {
       return await db
         .select()
@@ -594,7 +567,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPublishedWriterPages(): Promise<WriterPage[]> {
-    await this.ensureWriterPagesTable();
     return await db
       .select()
       .from(writerPages)
@@ -603,7 +575,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getWriterPageById(id: number): Promise<WriterPage | null> {
-    await this.ensureWriterPagesTable();
     const [page] = await db
       .select()
       .from(writerPages)
@@ -616,7 +587,6 @@ export class DatabaseStorage implements IStorage {
     userId: string,
     data: Partial<InsertWriterPage & { published: boolean }>,
   ): Promise<WriterPage | null> {
-    await this.ensureWriterPagesTable();
     const [existing] = await db
       .select()
       .from(writerPages)
@@ -640,7 +610,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteWriterPage(id: number, userId: string): Promise<boolean> {
-    await this.ensureWriterPagesTable();
     const [existing] = await db
       .select()
       .from(writerPages)
@@ -651,7 +620,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   async likeWriterPage(pageId: number): Promise<{ likes: number }> {
-    await this.ensureWriterPagesTable();
     await db
       .update(writerPages)
       .set({ likes: sql`${writerPages.likes} + 1` })
@@ -664,7 +632,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   async viewWriterPage(pageId: number): Promise<{ views: number }> {
-    await this.ensureWriterPagesTable();
     await db
       .update(writerPages)
       .set({ views: sql`${writerPages.views} + 1` })
@@ -918,9 +885,7 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .select()
       .from(videos)
-      .where(
-        sql`${videos.id} = ANY(${sql.raw(`ARRAY[${videoIds.join(",")}]`)})`,
-      )
+      .where(inArray(videos.id, videoIds))
       .orderBy(desc(videos.createdAt));
     return result;
   }
@@ -949,7 +914,6 @@ export class DatabaseStorage implements IStorage {
   async searchAll(
     query: string,
   ): Promise<{ videos: Video[]; users: User[]; pages: any[] }> {
-    await this.ensureWriterPagesTable();
     const { hasCyrillic, transliterate, detectCyrillicLang } =
       await import("./cyrillic");
     const pattern = `%${query}%`;
@@ -960,8 +924,8 @@ export class DatabaseStorage implements IStorage {
       patterns.push(`%${latinized}%`);
     }
     const videoConditions = patterns.flatMap((p) => [
-      ilike(videos.title, p),
-      ilike(videos.description, p),
+      like(videos.title, p),
+      like(videos.description, p),
     ]);
     const foundVideos = await db
       .select()
@@ -970,10 +934,10 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(videos.views))
       .limit(10);
     const userConditions = patterns.flatMap((p) => [
-      ilike(users.firstName, p),
-      ilike(users.lastName, p),
-      ilike(users.email, p),
-      ilike(users.displayName, p),
+      like(users.firstName, p),
+      like(users.lastName, p),
+      like(users.email, p),
+      like(users.displayName, p),
     ]);
     const foundUsers = await db
       .select()
@@ -981,8 +945,8 @@ export class DatabaseStorage implements IStorage {
       .where(or(...userConditions))
       .limit(10);
     const pageConditions = patterns.flatMap((p) => [
-      ilike(writerPages.title, p),
-      ilike(writerPages.penName, p),
+      like(writerPages.title, p),
+      like(writerPages.penName, p),
     ]);
     const foundPages = await db
       .select()

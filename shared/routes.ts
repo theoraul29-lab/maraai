@@ -1,5 +1,5 @@
-import { z } from "zod";
-import { insertVideoSchema, videos, chatMessages } from "./schema.js";
+import { z } from 'zod';
+import { insertVideoSchema, videos, chatMessages } from './schema.js';
 
 export const errorSchemas = {
   validation: z.object({
@@ -17,16 +17,16 @@ export const errorSchemas = {
 export const api = {
   videos: {
     list: {
-      method: "GET" as const,
-      path: "/api/videos" as const,
+      method: 'GET' as const,
+      path: '/api/videos' as const,
       input: z.object({ topic: z.string().optional() }).optional(),
       responses: {
         200: z.array(z.custom<typeof videos.$inferSelect>()),
       },
     },
     create: {
-      method: "POST" as const,
-      path: "/api/videos" as const,
+      method: 'POST' as const,
+      path: '/api/videos' as const,
       input: insertVideoSchema,
       responses: {
         201: z.custom<typeof videos.$inferSelect>(),
@@ -34,15 +34,15 @@ export const api = {
       },
     },
     like: {
-      method: "POST" as const,
-      path: "/api/videos/:id/like" as const,
+      method: 'POST' as const,
+      path: '/api/videos/:id/like' as const,
       responses: {
         200: z.object({ liked: z.boolean(), likes: z.number() }),
       },
     },
     view: {
-      method: "POST" as const,
-      path: "/api/videos/:id/view" as const,
+      method: 'POST' as const,
+      path: '/api/videos/:id/view' as const,
       responses: {
         200: z.object({ views: z.number() }),
       },
@@ -50,19 +50,19 @@ export const api = {
   },
   chat: {
     list: {
-      method: "GET" as const,
-      path: "/api/chat" as const,
+      method: 'GET' as const,
+      path: '/api/chat' as const,
       responses: {
         200: z.array(z.custom<typeof chatMessages.$inferSelect>()),
       },
     },
     send: {
-      method: "POST" as const,
-      path: "/api/chat" as const,
+      method: 'POST' as const,
+      path: '/api/chat' as const,
       input: z.object({
         message: z.string(),
-        module: z.enum(["trading", "writers", "reels"]).optional(),
-        language: z.enum(["en", "ro", "de", "ru", "ua"]).optional(),
+        module: z.enum(['trading', 'writers', 'reels']).optional(),
+        language: z.enum(['en', 'ro', 'de', 'ru', 'ua']).optional(),
       }),
       responses: {
         200: z.object({
@@ -75,8 +75,8 @@ export const api = {
   },
   profile: {
     get: {
-      method: "GET" as const,
-      path: "/api/profile/:id" as const,
+      method: 'GET' as const,
+      path: '/api/profile/:id' as const,
       responses: {
         200: z.object({
           user: z.any(),
@@ -89,8 +89,8 @@ export const api = {
       },
     },
     follow: {
-      method: "POST" as const,
-      path: "/api/profile/:id/follow" as const,
+      method: 'POST' as const,
+      path: '/api/profile/:id/follow' as const,
       responses: {
         200: z.object({ following: z.boolean() }),
       },

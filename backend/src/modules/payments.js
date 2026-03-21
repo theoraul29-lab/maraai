@@ -1,6 +1,7 @@
 // Payments module: handles payment provider endpoints (Stripe, PayPal)
 
-let stripeProvider, paypalProvider;
+let stripeProvider; let
+  paypalProvider;
 function injectDeps(deps) {
   stripeProvider = deps.stripeProvider;
   paypalProvider = deps.paypalProvider;

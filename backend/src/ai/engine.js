@@ -1,4 +1,4 @@
-const { Configuration, OpenAIApi } = require("openai");
+const { Configuration, OpenAIApi } = require('openai');
 
 class AIEngine {
   constructor(apiKey) {
@@ -6,23 +6,23 @@ class AIEngine {
   }
 
   async chat({ message, history = [], lang }) {
-    if (!message) throw new Error("Message required");
+    if (!message) throw new Error('Message required');
     try {
       const completion = await this.openai.createChatCompletion({
-        model: "gpt-3.5-turbo",
+        model: 'gpt-3.5-turbo',
         messages: [
           ...(Array.isArray(history) ? history : []),
-          { role: "user", content: message },
+          { role: 'user', content: message },
         ],
         ...(lang ? { user: lang } : {}),
       });
-      return completion.data.choices[0]?.message?.content || "";
+      return completion.data.choices[0]?.message?.content || '';
     } catch (err) {
-      const { logEvent } = require("../logger");
-      logEvent("AI_ERROR", {
+      const { logEvent } = require('../logger');
+      logEvent('AI_ERROR', {
         error: err.message,
         stack: err.stack,
-        context: "engine",
+        context: 'engine',
         message,
         history,
         lang,

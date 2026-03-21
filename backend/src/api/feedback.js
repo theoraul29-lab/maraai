@@ -1,14 +1,13 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
 
 // In a real app, use a DB. Here, use a placeholder in-memory store for demo.
 const feedbacks = [];
 
 // POST /api/feedback
-router.post("/", (req, res) => {
+router.post('/', (req, res) => {
   const { user, message, aiResponse, rating, comment } = req.body;
-  if (!message || !aiResponse)
-    return res.status(400).json({ error: "Message and AI response required" });
+  if (!message || !aiResponse) return res.status(400).json({ error: 'Message and AI response required' });
   feedbacks.push({
     user,
     message,
@@ -21,7 +20,7 @@ router.post("/", (req, res) => {
 });
 
 // GET /api/feedback (admin/stats)
-router.get("/", (req, res) => {
+router.get('/', (req, res) => {
   res.json({ feedbacks });
 });
 

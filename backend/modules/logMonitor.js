@@ -1,15 +1,15 @@
-const fs = require("fs");
-const path = require("path");
+const fs = require('fs');
+const path = require('path');
 
-const LOG_DIR = path.join(__dirname, "../../logs");
-const ERROR_LOG = path.join(LOG_DIR, "errors.log");
-const RUNTIME_LOG = path.join(LOG_DIR, "mara.log");
+const LOG_DIR = path.join(__dirname, '../../logs');
+const ERROR_LOG = path.join(LOG_DIR, 'errors.log');
+const RUNTIME_LOG = path.join(LOG_DIR, 'mara.log');
 
 function readLogLines(filePath, limit = 200) {
   if (!fs.existsSync(filePath)) return [];
-  const content = fs.readFileSync(filePath, "utf8");
+  const content = fs.readFileSync(filePath, 'utf8');
   if (!content.trim()) return [];
-  const lines = content.split("\n").filter(Boolean);
+  const lines = content.split('\n').filter(Boolean);
   return lines.slice(Math.max(0, lines.length - limit));
 }
 

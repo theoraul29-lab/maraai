@@ -1,22 +1,22 @@
 // Mara Dev Assistant: AI Error Analyzer
 // Reads error logs, identifies patterns, and suggests fixes
 
-const fs = require("fs");
-const path = require("path");
+const fs = require('fs');
+const path = require('path');
 
-const logFile = path.join(__dirname, "../../logs/mara.log");
-const suggestionFile = path.join(__dirname, "../../logs/suggestions.json");
+const logFile = path.join(__dirname, '../../logs/mara.log');
+const suggestionFile = path.join(__dirname, '../../logs/suggestions.json');
 
 function readErrorLog() {
   if (!fs.existsSync(logFile)) return [];
-  const lines = fs.readFileSync(logFile, "utf8").split("\n").filter(Boolean);
+  const lines = fs.readFileSync(logFile, 'utf8').split('\n').filter(Boolean);
   return lines
     .map((line) => {
-    try {
-      return JSON.parse(line);
-    } catch {
-      return null;
-    }
+      try {
+        return JSON.parse(line);
+      } catch {
+        return null;
+      }
     })
     .filter(Boolean);
 }
@@ -29,17 +29,17 @@ function analyzeErrors(errors) {
     // Example pattern: missing dependency
     if (/Cannot find module/.test(data.message)) {
       suggestions.push({
-        type: "dependency",
+        type: 'dependency',
         message: data.message,
-        fix: "Run npm install for missing module.",
+        fix: 'Run npm install for missing module.',
       });
     }
     // Example pattern: path error
     if (/ENOENT|not found/.test(data.message)) {
       suggestions.push({
-        type: "path",
+        type: 'path',
         message: data.message,
-        fix: "Check file path and existence.",
+        fix: 'Check file path and existence.',
       });
     }
     // Add more patterns as needed

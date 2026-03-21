@@ -1,6 +1,7 @@
 // Profile module: handles user profile and follow endpoints
 
-let storage, authStorage;
+let storage; let
+  authStorage;
 function injectDeps(deps) {
   storage = deps.storage;
   authStorage = deps.authStorage;
@@ -11,7 +12,7 @@ async function getProfile(req, res) {
     const profileId = req.params.id;
     const user = await authStorage.getUser(profileId);
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: 'User not found' });
     }
     const allVideos = await storage.getVideos();
     const creatorVideos = allVideos.filter((v) => v.creatorId === profileId);
@@ -35,7 +36,7 @@ async function getProfile(req, res) {
       totalViews,
     });
   } catch (err) {
-    res.status(500).json({ message: "Failed to fetch profile" });
+    res.status(500).json({ message: 'Failed to fetch profile' });
   }
 }
 
@@ -46,7 +47,7 @@ async function getProfileVideos(req, res) {
     const creatorVideos = allVideos.filter((v) => v.creatorId === profileId);
     res.json(creatorVideos);
   } catch (err) {
-    res.status(500).json({ message: "Failed to fetch creator videos" });
+    res.status(500).json({ message: 'Failed to fetch creator videos' });
   }
 }
 
@@ -55,12 +56,12 @@ async function followUser(req, res) {
     const targetId = req.params.id;
     const userId = req.user?.claims?.sub;
     if (!userId) {
-      return res.status(401).json({ message: "Login required" });
+      return res.status(401).json({ message: 'Login required' });
     }
     const result = await storage.followUser(userId, targetId);
     res.json(result);
   } catch (err) {
-    res.status(500).json({ message: "Failed to follow user" });
+    res.status(500).json({ message: 'Failed to follow user' });
   }
 }
 

@@ -1,8 +1,8 @@
 function summarizeFindings(findings) {
   if (!findings.length) {
     return {
-      status: "healthy",
-      summary: "No recurring high-signal runtime patterns detected.",
+      status: 'healthy',
+      summary: 'No recurring high-signal runtime patterns detected.',
       actions: [],
     };
   }
@@ -12,7 +12,7 @@ function summarizeFindings(findings) {
   );
 
   return {
-    status: "attention_required",
+    status: 'attention_required',
     summary: `Detected ${findings.length} actionable runtime pattern(s).`,
     actions: uniqueActions,
   };

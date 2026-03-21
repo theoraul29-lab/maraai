@@ -10,33 +10,31 @@ async function getOrders(req, res) {
     const orders = await storage.getPremiumOrders();
     res.json(orders);
   } catch (err) {
-    res.status(500).json({ message: "Failed to fetch orders" });
+    res.status(500).json({ message: 'Failed to fetch orders' });
   }
 }
 
 async function confirmOrder(req, res) {
   try {
     const orderId = Number(req.params.id);
-    if (isNaN(orderId))
-      return res.status(400).json({ message: "Invalid order ID" });
+    if (isNaN(orderId)) return res.status(400).json({ message: 'Invalid order ID' });
     const order = await storage.confirmPremiumOrder(orderId);
-    if (!order) return res.status(404).json({ message: "Order not found" });
+    if (!order) return res.status(404).json({ message: 'Order not found' });
     res.json(order);
   } catch (err) {
-    res.status(500).json({ message: "Failed to confirm order" });
+    res.status(500).json({ message: 'Failed to confirm order' });
   }
 }
 
 async function rejectOrder(req, res) {
   try {
     const orderId = Number(req.params.id);
-    if (isNaN(orderId))
-      return res.status(400).json({ message: "Invalid order ID" });
+    if (isNaN(orderId)) return res.status(400).json({ message: 'Invalid order ID' });
     const order = await storage.rejectPremiumOrder(orderId);
-    if (!order) return res.status(404).json({ message: "Order not found" });
+    if (!order) return res.status(404).json({ message: 'Order not found' });
     res.json(order);
   } catch (err) {
-    res.status(500).json({ message: "Failed to reject order" });
+    res.status(500).json({ message: 'Failed to reject order' });
   }
 }
 

@@ -1,6 +1,6 @@
-const fs = require("fs");
-const { Buffer } = require("buffer");
-const { OpenAIApi, Configuration } = require("openai");
+const fs = require('fs');
+const { Buffer } = require('buffer');
+const { OpenAIApi, Configuration } = require('openai');
 
 const openai = new OpenAIApi(
   new Configuration({
@@ -14,14 +14,14 @@ const openai = new OpenAIApi(
  * Uses gpt-image-1 model via Replit AI Integrations.
  */
 
-async function generateImageBuffer(prompt: string, size: string = "1024x1024") {
+async function generateImageBuffer(prompt: string, size = '1024x1024') {
   const response = await openai.images.generate({
-    model: "gpt-image-1",
+    model: 'gpt-image-1',
     prompt,
     size,
   });
-  const base64 = response.data[0]?.b64_json ?? "";
-  return Buffer.from(base64, "base64");
+  const base64 = response.data[0]?.b64_json ?? '';
+  return Buffer.from(base64, 'base64');
 }
 
 /**
@@ -38,18 +38,18 @@ async function editImages(
     imageFiles.map((file: string) => ({
       createReadStream: () => fs.createReadStream(file),
       fileName: file,
-      type: "image/png",
+      type: 'image/png',
     })),
   );
 
   const response = await openai.images.edit({
-    model: "gpt-image-1",
+    model: 'gpt-image-1',
     image: images,
     prompt,
   });
 
-  const imageBase64 = response.data[0]?.b64_json ?? "";
-  const imageBytes = Buffer.from(imageBase64, "base64");
+  const imageBase64 = response.data[0]?.b64_json ?? '';
+  const imageBytes = Buffer.from(imageBase64, 'base64');
 
   if (outputPath) {
     fs.writeFileSync(outputPath, imageBytes);

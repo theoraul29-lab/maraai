@@ -2,7 +2,8 @@
 // Modularized from server/routes.ts
 
 // Import dependencies (to be injected or required in main app)
-let storage, db, api, z, creatorPostRequestSchema, likesTable, eq;
+let storage; let db; let api; let z; let creatorPostRequestSchema; let likesTable; let
+  eq;
 
 function injectDeps(deps) {
   storage = deps.storage;
@@ -18,11 +19,11 @@ function injectDeps(deps) {
 async function listVideos(req, res) {
   try {
     const topic =
-      typeof req.query.topic === "string" ? req.query.topic : undefined;
+      typeof req.query.topic === 'string' ? req.query.topic : undefined;
     const vids = await storage.getVideos(topic);
     res.json(vids);
   } catch (err) {
-    res.status(500).json({ message: "Failed to fetch videos" });
+    res.status(500).json({ message: 'Failed to fetch videos' });
   }
 }
 
@@ -35,14 +36,14 @@ async function maraFeed(req, res) {
       return res.json({ feed: [], page, hasMore: false, totalAvailable: 0 });
     }
     const categories = [
-      { tag: "trending", label: "Trending Now" },
-      { tag: "nature", label: "Nature & Relaxation" },
-      { tag: "action", label: "Action & Adventure" },
-      { tag: "creative", label: "Creative & Art" },
-      { tag: "tech", label: "Tech & Innovation" },
-      { tag: "fun", label: "Fun & Entertainment" },
-      { tag: "cinematic", label: "Cinematic Shorts" },
-      { tag: "mara-pick", label: "Mara's Pick" },
+      { tag: 'trending', label: 'Trending Now' },
+      { tag: 'nature', label: 'Nature & Relaxation' },
+      { tag: 'action', label: 'Action & Adventure' },
+      { tag: 'creative', label: 'Creative & Art' },
+      { tag: 'tech', label: 'Tech & Innovation' },
+      { tag: 'fun', label: 'Fun & Entertainment' },
+      { tag: 'cinematic', label: 'Cinematic Shorts' },
+      { tag: 'mara-pick', label: "Mara's Pick" },
     ];
     const seededRandom = (seed) => {
       let x = Math.sin(seed) * 10000;
@@ -79,7 +80,7 @@ async function maraFeed(req, res) {
           feedId: globalIdx,
           category: cat.tag,
           categoryLabel: cat.label,
-          isMara: cat.tag === "mara-pick",
+          isMara: cat.tag === 'mara-pick',
           isSaved: userSavedIds.has(video.id),
           isLiked: userLikedIds.has(video.id),
         });
@@ -92,7 +93,7 @@ async function maraFeed(req, res) {
       totalAvailable: 50 * limit,
     });
   } catch (err) {
-    res.status(500).json({ message: "Failed to generate feed" });
+    res.status(500).json({ message: 'Failed to generate feed' });
   }
 }
 
@@ -105,21 +106,21 @@ async function createVideo(req, res) {
     if (err instanceof z.ZodError) {
       return res.status(400).json({
         message: err.errors[0].message,
-        field: err.errors[0].path.join("."),
+        field: err.errors[0].path.join('.'),
       });
     }
-    res.status(500).json({ message: "Failed to create video" });
+    res.status(500).json({ message: 'Failed to create video' });
   }
 }
 
 async function likeVideo(req, res) {
   try {
     const videoId = Number(req.params.id);
-    const userId = req.user?.claims?.sub || "anonymous";
+    const userId = req.user?.claims?.sub || 'anonymous';
     const result = await storage.likeVideo(userId, videoId);
     res.json(result);
   } catch (err) {
-    res.status(500).json({ message: "Failed to like video" });
+    res.status(500).json({ message: 'Failed to like video' });
   }
 }
 
@@ -129,72 +130,72 @@ async function viewVideo(req, res) {
     const result = await storage.viewVideo(videoId);
     res.json(result);
   } catch (err) {
-    res.status(500).json({ message: "Failed to record view" });
+    res.status(500).json({ message: 'Failed to record view' });
   }
 }
 
 async function saveVideo(req, res) {
   try {
     const userId = req.user?.claims?.sub;
-    if (!userId) return res.status(401).json({ message: "Login required" });
+    if (!userId) return res.status(401).json({ message: 'Login required' });
     const videoId = Number(req.params.id);
     const note = req.body?.note || undefined;
     const result = await storage.saveVideo(userId, videoId, note);
     res.json(result);
   } catch (err) {
-    res.status(500).json({ message: "Failed to save video" });
+    res.status(500).json({ message: 'Failed to save video' });
   }
 }
 
 async function unsaveVideo(req, res) {
   try {
     const userId = req.user?.claims?.sub;
-    if (!userId) return res.status(401).json({ message: "Login required" });
+    if (!userId) return res.status(401).json({ message: 'Login required' });
     const videoId = Number(req.params.id);
     const result = await storage.unsaveVideo(userId, videoId);
     res.json(result);
   } catch (err) {
-    res.status(500).json({ message: "Failed to unsave video" });
+    res.status(500).json({ message: 'Failed to unsave video' });
   }
 }
 
 async function getSavedVideos(req, res) {
   try {
     const userId = req.user?.claims?.sub;
-    if (!userId) return res.status(401).json({ message: "Login required" });
+    if (!userId) return res.status(401).json({ message: 'Login required' });
     const saved = await storage.getSavedVideos(userId);
     res.json(saved);
   } catch (err) {
-    res.status(500).json({ message: "Failed to fetch saved videos" });
+    res.status(500).json({ message: 'Failed to fetch saved videos' });
   }
 }
 
 async function creatorPostStatus(req, res) {
   try {
     const userId = req.user?.claims?.sub;
-    if (!userId) return res.status(401).json({ message: "Login required" });
+    if (!userId) return res.status(401).json({ message: 'Login required' });
     const status = await storage.canUserPost(userId);
     res.json(status);
   } catch (err) {
-    res.status(500).json({ message: "Failed to check post status" });
+    res.status(500).json({ message: 'Failed to check post status' });
   }
 }
 
 async function creatorMyVideos(req, res) {
   try {
     const userId = req.user?.claims?.sub;
-    if (!userId) return res.status(401).json({ message: "Login required" });
+    if (!userId) return res.status(401).json({ message: 'Login required' });
     const myVideos = await storage.getCreatorVideos(userId);
     res.json(myVideos);
   } catch (err) {
-    res.status(500).json({ message: "Failed to fetch creator videos" });
+    res.status(500).json({ message: 'Failed to fetch creator videos' });
   }
 }
 
 async function creatorPostReel(req, res) {
   try {
     const userId = req.user?.claims?.sub;
-    if (!userId) return res.status(401).json({ message: "Login required" });
+    if (!userId) return res.status(401).json({ message: 'Login required' });
     const parsed = creatorPostRequestSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ message: parsed.error.errors[0].message });
@@ -210,7 +211,7 @@ async function creatorPostReel(req, res) {
     const video = await storage.createVideo({
       url: finalUrl,
       title: parsed.data.title,
-      description: parsed.data.description || "",
+      description: parsed.data.description || '',
       type: parsed.data.type,
       creatorId: userId,
     });
@@ -218,18 +219,18 @@ async function creatorPostReel(req, res) {
     res.status(201).json({
       video,
       message: isPremium
-        ? "Posted successfully! Creator Pro — unlimited access."
-        : "Posted successfully! Your reel is now live on the feed.",
+        ? 'Posted successfully! Creator Pro — unlimited access.'
+        : 'Posted successfully! Your reel is now live on the feed.',
     });
   } catch (err) {
-    res.status(500).json({ message: "Failed to post reel" });
+    res.status(500).json({ message: 'Failed to post reel' });
   }
 }
 
 async function creatorAnalytics(req, res) {
   try {
     const userId = req.user?.claims?.sub;
-    if (!userId) return res.status(401).json({ message: "Login required" });
+    if (!userId) return res.status(401).json({ message: 'Login required' });
     const creatorVideos = await storage.getCreatorVideos(userId);
     const analytics = creatorVideos.map((v) => ({
       id: v.id,
@@ -247,23 +248,22 @@ async function creatorAnalytics(req, res) {
       totalReels: analytics.length,
     });
   } catch (err) {
-    res.status(500).json({ message: "Failed to load analytics" });
+    res.status(500).json({ message: 'Failed to load analytics' });
   }
 }
 
 async function deleteCreatorVideo(req, res) {
   try {
     const userId = req.user?.claims?.sub;
-    if (!userId) return res.status(401).json({ message: "Login required" });
+    if (!userId) return res.status(401).json({ message: 'Login required' });
     const videoId = Number(req.params.id);
     const deleted = await storage.deleteCreatorVideo(videoId, userId);
-    if (!deleted)
-      return res
-        .status(403)
-        .json({ message: "Not authorized or video not found" });
-    res.json({ message: "Video deleted" });
+    if (!deleted) return res
+      .status(403)
+      .json({ message: 'Not authorized or video not found' });
+    res.json({ message: 'Video deleted' });
   } catch (err) {
-    res.status(500).json({ message: "Failed to delete video" });
+    res.status(500).json({ message: 'Failed to delete video' });
   }
 }
 

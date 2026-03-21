@@ -1,22 +1,22 @@
-import { db } from "../../db";
-import { conversations, messages } from "@shared/schema";
-import { eq, desc } from "drizzle-orm";
+import { db } from '../../db';
+import { conversations, messages } from '@shared/schema';
+import { eq, desc } from 'drizzle-orm';
 
 export interface IChatStorage {
-  getConversation(
+  getConversation: (
     id: number,
-  ): Promise<typeof conversations.$inferSelect | undefined>;
-  getAllConversations(): Promise<(typeof conversations.$inferSelect)[]>;
-  createConversation(title: string): Promise<typeof conversations.$inferSelect>;
-  deleteConversation(id: number): Promise<void>;
-  getMessagesByConversation(
+  ) => Promise<typeof conversations.$inferSelect | undefined>;
+  getAllConversations: () => Promise<(typeof conversations.$inferSelect)[]>;
+  createConversation: (title: string) => Promise<typeof conversations.$inferSelect>;
+  deleteConversation: (id: number) => Promise<void>;
+  getMessagesByConversation: (
     conversationId: number,
-  ): Promise<(typeof messages.$inferSelect)[]>;
-  createMessage(
+  ) => Promise<(typeof messages.$inferSelect)[]>;
+  createMessage: (
     conversationId: number,
     role: string,
     content: string,
-  ): Promise<typeof messages.$inferSelect>;
+  ) => Promise<typeof messages.$inferSelect>;
 }
 
 export const chatStorage: IChatStorage = {

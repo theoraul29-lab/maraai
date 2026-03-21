@@ -1,8 +1,8 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
 
 // Admin stats endpoint stub
-router.get("/stats", (req, res) => {
+router.get('/stats', (req, res) => {
   // Example stats (replace with real DB queries in production)
   res.json({
     users: 1234,

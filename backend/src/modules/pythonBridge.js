@@ -1,23 +1,23 @@
 // Python bridge module: invoke maraai_playwright_agent.py and return JSON.
 
-const fs = require("fs");
-const path = require("path");
-const { spawn } = require("child_process");
+const fs = require('fs');
+const path = require('path');
+const { spawn } = require('child_process');
 
-const rootDir = path.resolve(__dirname, "../../..");
-const scriptPath = path.join(rootDir, "maraai_playwright_agent.py");
+const rootDir = path.resolve(__dirname, '../../..');
+const scriptPath = path.join(rootDir, 'maraai_playwright_agent.py');
 
 function resolvePythonExecutable() {
-  const winVenvPython = path.join(rootDir, ".venv", "Scripts", "python.exe");
-  const unixVenvPython = path.join(rootDir, ".venv", "bin", "python");
+  const winVenvPython = path.join(rootDir, '.venv', 'Scripts', 'python.exe');
+  const unixVenvPython = path.join(rootDir, '.venv', 'bin', 'python');
 
-  if (process.platform === "win32" && fs.existsSync(winVenvPython)) {
+  if (process.platform === 'win32' && fs.existsSync(winVenvPython)) {
     return winVenvPython;
   }
   if (fs.existsSync(unixVenvPython)) {
     return unixVenvPython;
   }
-  return process.platform === "win32" ? "python" : "python3";
+  return process.platform === 'win32' ? 'python' : 'python3';
 }
 
 function extractLastJsonObject(stdout) {
@@ -34,13 +34,13 @@ function extractLastJsonObject(stdout) {
     }
   }
 
-  throw new Error("Unable to parse JSON output from Python process.");
+  throw new Error('Unable to parse JSON output from Python process.');
 }
 
 function runPythonAgent({
   url,
   prompt,
-  browser = "chromium",
+  browser = 'chromium',
   selectors = {},
   timeoutMs = 120000,
 }) {
@@ -53,56 +53,56 @@ function runPythonAgent({
     const pythonExec = resolvePythonExecutable();
     const args = [
       scriptPath,
-      "--url",
+      '--url',
       url,
-      "--prompt",
+      '--prompt',
       prompt,
-      "--browser",
+      '--browser',
       browser,
-      "--json-output",
-      "--non-interactive",
+      '--json-output',
+      '--non-interactive',
     ];
 
     Object.entries(selectors || {}).forEach(([key, css]) => {
-      if (typeof key === "string" && typeof css === "string" && key && css) {
-        args.push("--selector", `${key}=${css}`);
+      if (typeof key === 'string' && typeof css === 'string' && key && css) {
+        args.push('--selector', `${key}=${css}`);
       }
     });
 
     const child = spawn(pythonExec, args, {
       cwd: rootDir,
       env: process.env,
-      stdio: ["ignore", "pipe", "pipe"],
+      stdio: ['ignore', 'pipe', 'pipe'],
     });
 
-    let stdout = "";
-    let stderr = "";
+    let stdout = '';
+    let stderr = '';
 
-    child.stdout.on("data", (chunk) => {
+    child.stdout.on('data', (chunk) => {
       stdout += String(chunk);
     });
 
-    child.stderr.on("data", (chunk) => {
+    child.stderr.on('data', (chunk) => {
       stderr += String(chunk);
     });
 
     const timer = setTimeout(() => {
-      child.kill("SIGTERM");
+      child.kill('SIGTERM');
       reject(new Error(`Python process timed out after ${timeoutMs}ms`));
     }, timeoutMs);
 
-    child.on("error", (err) => {
+    child.on('error', (err) => {
       clearTimeout(timer);
       reject(err);
     });
 
-    child.on("close", (code) => {
+    child.on('close', (code) => {
       clearTimeout(timer);
 
       if (code !== 0) {
         reject(
           new Error(
-            `Python process failed with code ${code}. stderr: ${stderr || "(empty)"}`,
+            `Python process failed with code ${code}. stderr: ${stderr || '(empty)'}`,
           ),
         );
         return;
@@ -114,7 +114,7 @@ function runPythonAgent({
       } catch (err) {
         reject(
           new Error(
-            `Failed to parse Python JSON output. stdout: ${stdout || "(empty)"} stderr: ${stderr || "(empty)"}. parseError: ${err.message}`,
+            `Failed to parse Python JSON output. stdout: ${stdout || '(empty)'} stderr: ${stderr || '(empty)'}. parseError: ${err.message}`,
           ),
         );
       }
@@ -126,10 +126,10 @@ async function fetchWithPython(req, res) {
   try {
     const { url, prompt, browser, selectors } = req.body || {};
 
-    if (!url || typeof url !== "string") {
+    if (!url || typeof url !== 'string') {
       return res.status(400).json({ message: "'url' is required and must be a string." });
     }
-    if (!prompt || typeof prompt !== "string") {
+    if (!prompt || typeof prompt !== 'string') {
       return res.status(400).json({ message: "'prompt' is required and must be a string." });
     }
 
@@ -137,17 +137,17 @@ async function fetchWithPython(req, res) {
     try {
       parsedUrl = new URL(url);
     } catch {
-      return res.status(400).json({ message: "Invalid URL format." });
+      return res.status(400).json({ message: 'Invalid URL format.' });
     }
 
-    if (!["http:", "https:"].includes(parsedUrl.protocol)) {
-      return res.status(400).json({ message: "URL must start with http:// or https://" });
+    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+      return res.status(400).json({ message: 'URL must start with http:// or https://' });
     }
 
     const result = await runPythonAgent({
       url: parsedUrl.toString(),
       prompt,
-      browser: browser || "chromium",
+      browser: browser || 'chromium',
       selectors: selectors || {},
       timeoutMs: 180000,
     });
@@ -156,7 +156,7 @@ async function fetchWithPython(req, res) {
   } catch (err) {
     res.status(500).json({
       ok: false,
-      message: "Python bridge request failed",
+      message: 'Python bridge request failed',
       error: err instanceof Error ? err.message : String(err),
     });
   }

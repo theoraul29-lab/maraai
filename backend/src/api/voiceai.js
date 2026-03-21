@@ -1,6 +1,6 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const { Configuration, OpenAIApi } = require("openai");
+const { Configuration, OpenAIApi } = require('openai');
 
 const openai = new OpenAIApi(
   new Configuration({
@@ -9,30 +9,29 @@ const openai = new OpenAIApi(
 );
 
 // VoiceAI endpoint with OpenAI integration
-router.post("/", async (req, res) => {
+router.post('/', async (req, res) => {
   const { transcript } = req.body;
-  if (!transcript)
-    return res.status(400).json({ error: "Transcript required" });
+  if (!transcript) return res.status(400).json({ error: 'Transcript required' });
   try {
     const completion = await openai.createChatCompletion({
-      model: "gpt-3.5-turbo",
+      model: 'gpt-3.5-turbo',
       messages: [
-        { role: "system", content: "You are a helpful voice assistant." },
-        { role: "user", content: transcript },
+        { role: 'system', content: 'You are a helpful voice assistant.' },
+        { role: 'user', content: transcript },
       ],
       ...(req.query.lang ? { user: req.query.lang } : {}),
     });
-    const aiResponse = completion.data.choices[0]?.message?.content || "";
+    const aiResponse = completion.data.choices[0]?.message?.content || '';
     res.json({ response: aiResponse });
   } catch (err) {
-    const { logEvent } = require("../logger");
-    logEvent("AI_ERROR", {
+    const { logEvent } = require('../logger');
+    logEvent('AI_ERROR', {
       error: err.message,
       stack: err.stack,
-      context: "voiceai",
+      context: 'voiceai',
       transcript,
     });
-    res.status(500).json({ error: "AI error", details: err.message });
+    res.status(500).json({ error: 'AI error', details: err.message });
   }
 });
 

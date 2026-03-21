@@ -1,6 +1,6 @@
-const { analyzeRecentErrors } = require("./errorAnalysis");
-const { suggestFixes } = require("./devAssistant");
-const { getRecentLogs } = require("./logMonitor");
+const { analyzeRecentErrors } = require('./errorAnalysis');
+const { suggestFixes } = require('./devAssistant');
+const { getRecentLogs } = require('./logMonitor');
 
 function runFoundationCycle(options = {}) {
   const logs = getRecentLogs({ limit: options.limit || 200 });

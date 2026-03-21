@@ -1,11 +1,11 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
 
-const { StripeProvider, PayPalProvider } = require("../payments/providers");
+const { StripeProvider, PayPalProvider } = require('../payments/providers');
 const stripe = new StripeProvider();
 const paypal = new PayPalProvider();
 
-router.post("/stripe", async (req, res) => {
+router.post('/stripe', async (req, res) => {
   try {
     const result = await stripe.processPayment(req.body);
     res.json(result);
@@ -14,7 +14,7 @@ router.post("/stripe", async (req, res) => {
   }
 });
 
-router.post("/paypal", async (req, res) => {
+router.post('/paypal', async (req, res) => {
   try {
     const result = await paypal.processPayment(req.body);
     res.json(result);

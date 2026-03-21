@@ -215,9 +215,9 @@ sendBtn.addEventListener('click', async () => {
 async function loadAdvancedFeed(topic = '') {
     // Simulăm feed AI + real
     const feed = [
-        { url: 'https://www.w3schools.com/html/mov_bbb.mp4', type: 'real' },
-        { url: 'https://sample-videos.com/video123/mp4/480/asdasdas.mp4', type: 'AI' },
-        { url: 'https://sample-videos.com/video123/mp4/480/big_buck_bunny.mp4', type: 'real' }
+        { url: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', type: 'real' },
+        { url: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4', type: 'AI' },
+        { url: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4', type: 'real' }
     ];
 
     // Filtrare după topic (demo)
@@ -310,10 +310,10 @@ if(typeof sendBtn !== 'undefined' && typeof input !== 'undefined') {
 // Feed avansat: AI + video real + trending
 async function loadAdvancedFeed(topic = '') {
     const feed = [
-        { url: 'https://www.w3schools.com/html/mov_bbb.mp4', type: 'real', title: 'Big Buck Bunny' },
-        { url: 'https://sample-videos.com/video123/mp4/480/asdasdas.mp4', type: 'AI', title: 'AI Generated Clip 1' },
-        { url: 'https://sample-videos.com/video123/mp4/480/big_buck_bunny.mp4', type: 'real', title: 'Big Buck Bunny Repeat' },
-        { url: 'https://sample-videos.com/video123/mp4/480/asdasdas2.mp4', type: 'AI', title: 'AI Generated Clip 2' }
+        { url: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4', type: 'real', title: 'Big Buck Bunny' },
+        { url: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4', type: 'AI', title: 'AI Generated Clip 1' },
+        { url: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4', type: 'real', title: 'For Bigger Blazes' },
+        { url: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4', type: 'AI', title: 'AI Generated Clip 2' }
     ];
 
     // Filtrare demo: topic AI
@@ -826,8 +826,8 @@ function analyzePersonality(memory) {
 function generateFeed(memory) {
     // demo feed mix: real + AI generat
     return [
-        { type: 'real', url: 'https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4' },
-        { type: 'AI', url: 'https://example.com/ai_generated_video.mp4' }
+        { type: 'real', url: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4' },
+        { type: 'AI', url: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4' }
     ];
 }
 
