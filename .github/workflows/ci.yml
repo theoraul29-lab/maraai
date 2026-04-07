@@ -37,10 +37,6 @@ jobs:
         run: |
           set -eo pipefail
 
-          # Health-check-ul încearcă mai multe porturi până când backend-ul devine disponibil.
-          # În mod normal, curl va printa erori (ex: "Failed to connect") pentru porturile
-          # la care nu ascultă nimic încă. Redirecționăm stderr ca să evităm spam în log.
-
           cleanup() {
             if [ -f backend.pid ]; then
               pid="$(cat backend.pid || true)"
@@ -51,38 +47,44 @@ jobs:
           }
           trap cleanup EXIT
 
+          check_port () {
+            local port="$1"
+            curl -fsS "http://localhost:${port}/api/health"  >/dev/null 2>/dev/null && return 0
+            curl -fsS "http://localhost:${port}/health"      >/dev/null 2>/dev/null && return 0
+            curl -fsS "http://localhost:${port}/api/runtime" >/dev/null 2>/dev/null && return 0
+            return 1
+          }
+
           nohup npm run start:backend > backend.log 2>&1 &
           echo $! > backend.pid
 
+          echo "::group::backend health-check"
           HEALTHY_PORT=""
           for i in $(seq 1 90); do
-            if (( i % 10 == 0 )); then
-              echo "Waiting for backend... (attempt ${i}/90)"
-            fi
             for port in $(seq 3001 3021); do
-              if curl -fsS "http://localhost:${port}/api/health" >/dev/null 2>/dev/null; then
-                HEALTHY_PORT="$port"
-                break
-              fi
-              if curl -fsS "http://localhost:${port}/health" >/dev/null 2>/dev/null; then
-                HEALTHY_PORT="$port"
-                break
-              fi
-              if curl -fsS "http://localhost:${port}/api/runtime" >/dev/null 2>/dev/null; then
+              if check_port "$port"; then
                 HEALTHY_PORT="$port"
                 break
               fi
             done
+
             if [ -n "$HEALTHY_PORT" ]; then
               break
             fi
+
+            if (( i % 10 == 0 )); then
+              echo "Waiting for backend... (attempt ${i}/90)"
+            fi
+
             sleep 2
           done
+          echo "::endgroup::"
 
           if [ -z "$HEALTHY_PORT" ]; then
-            echo "Backend did not become healthy in time"
-            echo "===== backend.log (tail) ====="
+            echo "::group::backend.log (tail)"
             tail -n 200 backend.log || true
+            echo "::endgroup::"
+            echo "::error::Backend did not become healthy in time"
             exit 1
           fi
 
@@ -96,8 +98,9 @@ jobs:
       - name: Print backend logs on failure
         if: failure()
         run: |
-          echo "===== backend.log ====="
+          echo "::group::backend.log"
           cat backend.log || true
+          echo "::endgroup::"
 
       - name: Stop backend
         if: always()
