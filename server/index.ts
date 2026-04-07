@@ -13,7 +13,26 @@ import url from 'url';
 import { storage } from './storage.js';
 import { firebaseAuthMiddleware } from './firebaseAuth.js'; // Pregătire pentru Firebase Auth
 import { z } from 'zod';
+import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
+import { db } from './db.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
 dotenv.config();
+
+const __migrationFilename = fileURLToPath(import.meta.url);
+const __migrationDirname = path.dirname(__migrationFilename);
+
+function runMigrations() {
+  const migrationsFolder = path.resolve(__migrationDirname, '..', 'migrations');
+  try {
+    migrate(db, { migrationsFolder });
+    console.log('[migrations] Drizzle migrations applied successfully');
+  } catch (err) {
+    console.error('[migrations] Failed to run migrations:', err);
+    throw err;
+  }
+}
+
 
 const app = express();
 
@@ -156,6 +175,8 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  runMigrations();
+
   await registerRoutes(httpServer, app);
 
   // --- START P2P WEBSOCKET INTEGRATION ---
