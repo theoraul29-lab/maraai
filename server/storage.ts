@@ -16,6 +16,11 @@ import {
   collections,
   collectionVideos,
   brainLogs,
+  maraKnowledgeBase,
+  maraSearchHistory,
+  maraLearningQueue,
+  maraSelfReflection,
+  maraPlatformInsights,
   users,
   type Video,
   type InsertVideo,
@@ -39,6 +44,16 @@ import {
   type CollectionVideo,
   type BrainLog,
   type InsertBrainLog,
+  type KnowledgeEntry,
+  type InsertKnowledgeEntry,
+  type SearchHistoryEntry,
+  type InsertSearchHistoryEntry,
+  type LearningQueueEntry,
+  type InsertLearningQueueEntry,
+  type SelfReflection,
+  type InsertSelfReflection,
+  type PlatformInsight,
+  type InsertPlatformInsight,
 } from "../shared/schema";
 import { eq, desc, and, sql, lt, gte, like, or, count, inArray } from "drizzle-orm";
 import type { User } from "../shared/models/auth";
@@ -965,6 +980,138 @@ export class DatabaseStorage implements IStorage {
       .update(users)
       .set({ ...data, updatedAt: new Date() })
       .where(eq(users.id, userId))
+      .returning();
+    return updated || null;
+  }
+
+  // === MARA KNOWLEDGE BASE ===
+  async createKnowledgeEntry(entry: InsertKnowledgeEntry): Promise<KnowledgeEntry> {
+    const [created] = await db.insert(maraKnowledgeBase).values(entry).returning();
+    return created;
+  }
+
+  async getKnowledgeByCategory(category: string, limit = 50): Promise<KnowledgeEntry[]> {
+    return await db
+      .select()
+      .from(maraKnowledgeBase)
+      .where(eq(maraKnowledgeBase.category, category))
+      .orderBy(desc(maraKnowledgeBase.updatedAt))
+      .limit(limit);
+  }
+
+  async getKnowledgeByTopic(topic: string): Promise<KnowledgeEntry[]> {
+    return await db
+      .select()
+      .from(maraKnowledgeBase)
+      .where(like(maraKnowledgeBase.topic, `%${topic}%`))
+      .orderBy(desc(maraKnowledgeBase.confidence))
+      .limit(20);
+  }
+
+  async getAllKnowledge(limit = 100): Promise<KnowledgeEntry[]> {
+    return await db
+      .select()
+      .from(maraKnowledgeBase)
+      .orderBy(desc(maraKnowledgeBase.updatedAt))
+      .limit(limit);
+  }
+
+  async updateKnowledgeEntry(id: number, data: Partial<InsertKnowledgeEntry>): Promise<KnowledgeEntry | null> {
+    const [updated] = await db
+      .update(maraKnowledgeBase)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(maraKnowledgeBase.id, id))
+      .returning();
+    return updated || null;
+  }
+
+  async incrementKnowledgeAccess(id: number): Promise<void> {
+    await db
+      .update(maraKnowledgeBase)
+      .set({ accessCount: sql`${maraKnowledgeBase.accessCount} + 1` })
+      .where(eq(maraKnowledgeBase.id, id));
+  }
+
+  // === MARA SEARCH HISTORY ===
+  async createSearchHistory(entry: InsertSearchHistoryEntry): Promise<SearchHistoryEntry> {
+    const [created] = await db.insert(maraSearchHistory).values(entry).returning();
+    return created;
+  }
+
+  async getSearchHistory(limit = 50): Promise<SearchHistoryEntry[]> {
+    return await db
+      .select()
+      .from(maraSearchHistory)
+      .orderBy(desc(maraSearchHistory.createdAt))
+      .limit(limit);
+  }
+
+  // === MARA LEARNING QUEUE ===
+  async createLearningTask(entry: InsertLearningQueueEntry): Promise<LearningQueueEntry> {
+    const [created] = await db.insert(maraLearningQueue).values(entry).returning();
+    return created;
+  }
+
+  async getPendingLearningTasks(limit = 20): Promise<LearningQueueEntry[]> {
+    return await db
+      .select()
+      .from(maraLearningQueue)
+      .where(eq(maraLearningQueue.status, 'pending'))
+      .orderBy(desc(maraLearningQueue.createdAt))
+      .limit(limit);
+  }
+
+  async updateLearningTask(id: number, status: string, result?: string): Promise<LearningQueueEntry | null> {
+    const updates: Record<string, unknown> = { status };
+    if (result) updates.result = result;
+    if (status === 'completed') updates.completedAt = new Date();
+    const [updated] = await db
+      .update(maraLearningQueue)
+      .set(updates)
+      .where(eq(maraLearningQueue.id, id))
+      .returning();
+    return updated || null;
+  }
+
+  // === MARA SELF REFLECTION ===
+  async createSelfReflection(entry: InsertSelfReflection): Promise<SelfReflection> {
+    const [created] = await db.insert(maraSelfReflection).values(entry).returning();
+    return created;
+  }
+
+  async getSelfReflections(limit = 20): Promise<SelfReflection[]> {
+    return await db
+      .select()
+      .from(maraSelfReflection)
+      .orderBy(desc(maraSelfReflection.createdAt))
+      .limit(limit);
+  }
+
+  // === MARA PLATFORM INSIGHTS ===
+  async createPlatformInsight(entry: InsertPlatformInsight): Promise<PlatformInsight> {
+    const [created] = await db.insert(maraPlatformInsights).values(entry).returning();
+    return created;
+  }
+
+  async getPlatformInsights(status?: string): Promise<PlatformInsight[]> {
+    if (status) {
+      return await db
+        .select()
+        .from(maraPlatformInsights)
+        .where(eq(maraPlatformInsights.status, status))
+        .orderBy(desc(maraPlatformInsights.createdAt));
+    }
+    return await db
+      .select()
+      .from(maraPlatformInsights)
+      .orderBy(desc(maraPlatformInsights.createdAt));
+  }
+
+  async updatePlatformInsightStatus(id: number, status: string): Promise<PlatformInsight | null> {
+    const [updated] = await db
+      .update(maraPlatformInsights)
+      .set({ status })
+      .where(eq(maraPlatformInsights.id, id))
       .returning();
     return updated || null;
   }

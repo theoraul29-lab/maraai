@@ -1,0 +1,30 @@
+{
+  "hosting": {
+    "public": "dist/public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/api/ai",
+        "run": {
+          "serviceId": "maraai-python-ai",
+          "region": "europe-west3"
+        }
+      },
+      {
+        "source": "/api/**",
+        "run": {
+          "serviceId": "maraai-backend",
+          "region": "europe-west3"
+        }
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}

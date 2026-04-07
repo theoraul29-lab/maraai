@@ -1,11 +1,13 @@
 import dotenv from 'dotenv';
 import express from 'express';
+import cors from 'cors';
 import { logError } from './logger.js';
 import type { Request, Response, NextFunction } from 'express';
 import { registerRoutes } from './routes.js';
 import { serveStatic } from './static.js';
 import { createServer } from 'http';
-import { MaraBrainCycle, generateMarketingPost } from './ai.js';
+import { runBrainCycle, runInitialLearning } from './mara-brain/index.js';
+import { getMaraResponse, generateMarketingPost } from './ai.js';
 import { WebSocketServer } from 'ws';
 import url from 'url';
 import { storage } from './storage.js';
@@ -53,6 +55,28 @@ const checkRateLimit = (
   return { allowed: true };
 };
 // --- END RATE LIMITER LOGIC ---
+
+// --- CORS configuration ---
+const allowedOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',')
+  : [];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (server-to-server, curl, etc.)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.length === 0 && process.env.NODE_ENV !== 'production') {
+        return callback(null, true); // Allow all in dev if no origins configured
+      }
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error('CORS not allowed'), false);
+    },
+    credentials: true,
+  }),
+);
 
 app.use(firebaseAuthMiddleware); // Înlocuim Replit Auth cu noul middleware
 const httpServer = createServer(app);
@@ -135,7 +159,20 @@ app.use((req, res, next) => {
   await registerRoutes(httpServer, app);
 
   // --- START P2P WEBSOCKET INTEGRATION ---
-  const wss = new WebSocketServer({ server: httpServer });
+  const wss = new WebSocketServer({
+    server: httpServer,
+    verifyClient: (info, done) => {
+      const origin = info.origin || info.req.headers.origin;
+      if (process.env.NODE_ENV !== 'production' && allowedOrigins.length === 0) {
+        return done(true); // Allow all in dev if no origins configured
+      }
+      if (!origin || allowedOrigins.includes(origin)) {
+        return done(true);
+      }
+      log(`WebSocket connection rejected from origin: ${origin}`, 'p2p-ws');
+      return done(false, 403, 'Origin not allowed');
+    },
+  });
   const userConnections = new Map<string, any>();
 
   wss.on('connection', (ws: any, req: any) => {
@@ -228,6 +265,7 @@ app.use((req, res, next) => {
                 conversationHistory,
                 userPrefs,
                 input.module,
+                ws.userId,
               );
 
               const aiMsg = await storage.createChatMessage({
@@ -270,7 +308,6 @@ app.use((req, res, next) => {
       status,
       message,
       stack: err.stack,
-      body: req.body,
       query: req.query,
     };
     logError(err, errorLog);
@@ -296,7 +333,6 @@ app.use((req, res, next) => {
   // It is the only port that is not firewalled.
   const requestedPort = parseInt(process.env.PORT || '5000', 10);
   runtimeState.requestedPort = requestedPort;
-  log(`Using DATABASE_URL: ${process.env.DATABASE_URL}`);
 
   function onServerReady(boundPort: number) {
     runtimeState.boundPort = boundPort;
@@ -315,14 +351,14 @@ app.use((req, res, next) => {
     async function runAutoBrainCycle() {
       try {
         log('Auto brain cycle starting...', 'mara-brain');
-        const result = await MaraBrainCycle();
+        const result = await runBrainCycle();
         await storage.createBrainLog({
           research: result.research,
           productIdeas: result.productIdeas,
           devTasks: result.devTasks,
           growthIdeas: result.growthIdeas,
         });
-        log('Auto brain cycle completed', 'mara-brain');
+        log(`Auto brain cycle completed. Learned ${result.knowledgeLearned} new pieces of knowledge.`, 'mara-brain');
       } catch (err) {
         log(`Auto brain cycle failed: ${err}`, 'mara-brain');
       }
@@ -331,16 +367,16 @@ app.use((req, res, next) => {
     async function runAutoSelfPost() {
       try {
         log('Auto self-marketing post starting...', 'mara-marketing');
-        const post = await generateMarketingPost();
+        const postContent = await generateMarketingPost();
         await storage.createVideo({
-          url: post.url,
-          type: post.type,
-          title: post.title,
-          description: post.description,
+          url: '#',
+          type: 'creator',
+          title: 'Mara AI Insight',
+          description: postContent,
           creatorId: 'mara-ai',
         });
         log(
-          `Auto self-marketing post published: ${post.title}`,
+          `Auto self-marketing post published`,
           'mara-marketing',
         );
       } catch (err) {
@@ -348,8 +384,15 @@ app.use((req, res, next) => {
       }
     }
 
+    // Run initial learning bootstrap (non-blocking)
+    runInitialLearning().catch((err) => {
+      log(`Initial learning failed: ${err}`, 'mara-brain');
+    });
+
     // Rulează task-urile AI costisitoare doar dacă este activat explicit
     if (process.env.PROCESS_AI_TASKS === 'true') {
+      // Run first brain cycle after 30 seconds (let server fully start)
+      setTimeout(runAutoBrainCycle, 30 * 1000);
       setInterval(runAutoBrainCycle, BRAIN_INTERVAL);
       setInterval(runAutoSelfPost, SELF_POST_INTERVAL);
       log(

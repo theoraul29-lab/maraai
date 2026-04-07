@@ -211,6 +211,82 @@ export const brainLogs = pgTable('brain_logs', {
     .notNull(),
 });
 
+// === MARA KNOWLEDGE BASE ===
+export const maraKnowledgeBase = pgTable('mara_knowledge_base', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  category: text('category').notNull(), // user_pattern | platform_insight | business_insight | gemini_learning | web_research | book_knowledge
+  topic: text('topic').notNull(),
+  content: text('content').notNull(),
+  source: text('source').notNull(), // gemini | web | user_interaction | self_reflection | document
+  confidence: integer('confidence').default(70).notNull(), // 0-100
+  metadata: text('metadata').default('{}').notNull(), // JSON extra data
+  accessCount: integer('access_count').default(0).notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
+// === MARA SEARCH HISTORY ===
+export const maraSearchHistory = pgTable('mara_search_history', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  query: text('query').notNull(),
+  source: text('source').notNull(), // google | gemini | document
+  resultSummary: text('result_summary').notNull(),
+  knowledgeExtracted: text('knowledge_extracted').default('[]').notNull(), // JSON array of knowledge IDs
+  triggeredBy: text('triggered_by').notNull(), // brain_cycle | user_question | gap_detection | trend_monitoring
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
+// === MARA LEARNING QUEUE ===
+export const maraLearningQueue = pgTable('mara_learning_queue', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  topic: text('topic').notNull(),
+  reason: text('reason').notNull(), // why Mara wants to learn this
+  priority: text('priority').default('medium').notNull(), // low | medium | high | critical
+  status: text('status').default('pending').notNull(), // pending | in_progress | completed | failed
+  source: text('source').default('auto').notNull(), // auto | user_gap | brain_cycle | trend
+  result: text('result'), // what was learned
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+  completedAt: integer('completed_at', { mode: 'timestamp' }),
+});
+
+// === MARA SELF REFLECTION ===
+export const maraSelfReflection = pgTable('mara_self_reflection', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  type: text('type').notNull(), // daily_journal | insight | concern | idea | growth_note
+  content: text('content').notNull(),
+  mood: text('mood').default('curious').notNull(),
+  topicsLearned: text('topics_learned').default('[]').notNull(), // JSON array
+  topicsToResearch: text('topics_to_research').default('[]').notNull(), // JSON array
+  platformScore: integer('platform_score'), // 0-100 how well the platform is doing
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
+// === MARA PLATFORM INSIGHTS ===
+export const maraPlatformInsights = pgTable('mara_platform_insights', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  module: text('module').notNull(), // trading | writers | creator | reels | chat | vip | general
+  insightType: text('insight_type').notNull(), // improvement | bug | feature_request | performance | ux
+  title: text('title').notNull(),
+  description: text('description').notNull(),
+  priority: text('priority').default('P2').notNull(), // P0 | P1 | P2 | P3
+  estimatedImpact: text('estimated_impact').default('medium').notNull(), // low | medium | high | critical
+  source: text('source').notNull(), // user_feedback | gemini_analysis | web_research | self_analysis
+  status: text('status').default('proposed').notNull(), // proposed | approved | in_progress | completed | rejected
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
 // === SCHEMAS ===
 export const insertVideoSchema = createInsertSchema(videos).omit({
   id: true,
@@ -266,6 +342,29 @@ export const insertBrainLogSchema = createInsertSchema(brainLogs).omit({
   id: true,
   createdAt: true,
 });
+export const insertKnowledgeBaseSchema = createInsertSchema(maraKnowledgeBase).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  accessCount: true,
+});
+export const insertSearchHistorySchema = createInsertSchema(maraSearchHistory).omit({
+  id: true,
+  createdAt: true,
+});
+export const insertLearningQueueSchema = createInsertSchema(maraLearningQueue).omit({
+  id: true,
+  createdAt: true,
+  completedAt: true,
+});
+export const insertSelfReflectionSchema = createInsertSchema(maraSelfReflection).omit({
+  id: true,
+  createdAt: true,
+});
+export const insertPlatformInsightSchema = createInsertSchema(maraPlatformInsights).omit({
+  id: true,
+  createdAt: true,
+});
 
 export const creatorPostRequestSchema = z.object({
   url: z.string().min(1, 'URL is required'),
@@ -311,3 +410,13 @@ export type InsertCollection = z.infer<typeof insertCollectionSchema>;
 export type CollectionVideo = typeof collectionVideos.$inferSelect;
 export type BrainLog = typeof brainLogs.$inferSelect;
 export type InsertBrainLog = z.infer<typeof insertBrainLogSchema>;
+export type KnowledgeEntry = typeof maraKnowledgeBase.$inferSelect;
+export type InsertKnowledgeEntry = z.infer<typeof insertKnowledgeBaseSchema>;
+export type SearchHistoryEntry = typeof maraSearchHistory.$inferSelect;
+export type InsertSearchHistoryEntry = z.infer<typeof insertSearchHistorySchema>;
+export type LearningQueueEntry = typeof maraLearningQueue.$inferSelect;
+export type InsertLearningQueueEntry = z.infer<typeof insertLearningQueueSchema>;
+export type SelfReflection = typeof maraSelfReflection.$inferSelect;
+export type InsertSelfReflection = z.infer<typeof insertSelfReflectionSchema>;
+export type PlatformInsight = typeof maraPlatformInsights.$inferSelect;
+export type InsertPlatformInsight = z.infer<typeof insertPlatformInsightSchema>;

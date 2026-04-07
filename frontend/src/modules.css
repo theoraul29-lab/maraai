@@ -1,0 +1,263 @@
+/* Module-Specific Designs */
+
+/* TRADING ACADEMY - Orange/Red theme */
+.module-trading {
+  background: linear-gradient(135deg, #1a0f0a 0%, #2d1810 50%, #1f0f0a 100%);
+  --module-primary: #f97316;
+  --module-secondary: #ef4444;
+  --module-accent: #fbbf24;
+}
+
+.module-trading .module-header {
+  border-bottom: 3px solid #f97316;
+  background: linear-gradient(90deg, rgba(249, 115, 22, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+}
+
+.module-trading .btn-primary {
+  background: linear-gradient(135deg, #f97316 0%, #ef4444 100%);
+  box-shadow: 0 8px 24px rgba(249, 115, 22, 0.4);
+}
+
+.module-trading .btn-primary:hover {
+  box-shadow: 0 12px 32px rgba(249, 115, 22, 0.6);
+  transform: translateY(-2px);
+}
+
+/* WRITERS HUB - Green/Emerald theme */
+.module-writers {
+  background: linear-gradient(135deg, #0a1f1a 0%, #0f2f25 50%, #0a1a15 100%);
+  --module-primary: #10b981;
+  --module-secondary: #059669;
+  --module-accent: #6ee7b7;
+}
+
+.module-writers .module-header {
+  border-bottom: 3px solid #10b981;
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.05) 100%);
+}
+
+.module-writers .btn-primary {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+}
+
+.module-writers .editor {
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  background: rgba(16, 185, 129, 0.05);
+}
+
+/* CREATOR PANEL - Cyan/Blue theme */
+.module-creator {
+  background: linear-gradient(135deg, #0a1f2e 0%, #0f2a42 50%, #0a1a28 100%);
+  --module-primary: #22d3ee;
+  --module-secondary: #06b6d4;
+  --module-accent: #0ea5e9;
+}
+
+.module-creator .module-header {
+  border-bottom: 3px solid #22d3ee;
+  background: linear-gradient(90deg, rgba(34, 211, 238, 0.1) 0%, rgba(6, 182, 212, 0.05) 100%);
+}
+
+.module-creator .btn-primary {
+  background: linear-gradient(135deg, #22d3ee 0%, #0ea5e9 100%);
+  box-shadow: 0 8px 24px rgba(34, 211, 238, 0.4);
+}
+
+.module-creator .upload-zone {
+  border: 2px dashed rgba(34, 211, 238, 0.3);
+  background: rgba(34, 211, 238, 0.05);
+}
+
+/* VIP MEMBERSHIP - Gold/Yellow theme */
+.module-vip {
+  background: linear-gradient(135deg, #2a2410 0%, #3d3315 50%, #2a1f10 100%);
+  --module-primary: #facc15;
+  --module-secondary: #eab308;
+  --module-accent: #fde047;
+}
+
+.module-vip .module-header {
+  border-bottom: 3px solid #facc15;
+  background: linear-gradient(90deg, rgba(250, 204, 21, 0.1) 0%, rgba(234, 179, 8, 0.05) 100%);
+}
+
+.module-vip .btn-primary {
+  background: linear-gradient(135deg, #facc15 0%, #eab308 100%);
+  box-shadow: 0 8px 24px rgba(250, 204, 21, 0.4);
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+.module-vip .premium-badge {
+  background: linear-gradient(135deg, #facc15 0%, #f59e0b 100%);
+  color: #1a1a1a;
+}
+
+/* REELS - Purple/Pink theme */
+.module-reels {
+  background: linear-gradient(135deg, #1a0f2e 0%, #2d1b4a 50%, #1a0f28 100%);
+  --module-primary: #a855f7;
+  --module-secondary: #ec4899;
+  --module-accent: #d946ef;
+}
+
+.module-reels .module-header {
+  border-bottom: 3px solid #a855f7;
+  background: linear-gradient(90deg, rgba(168, 85, 247, 0.1) 0%, rgba(236, 72, 153, 0.05) 100%);
+}
+
+.module-reels .btn-primary {
+  background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+  box-shadow: 0 8px 24px rgba(168, 85, 247, 0.4);
+}
+
+.module-reels .video-player {
+  border: 1px solid rgba(168, 85, 247, 0.2);
+}
+
+/* YOU / PROFILE - Indigo/Purple theme */
+.module-you {
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1a3f 100%);
+  --module-primary: #818cf8;
+  --module-secondary: #6366f1;
+  --module-accent: #a78bfa;
+}
+
+.module-you .module-header {
+  border-bottom: 3px solid #818cf8;
+  background: linear-gradient(90deg, rgba(129, 140, 248, 0.1) 0%, rgba(99, 102, 241, 0.05) 100%);
+}
+
+.module-you .btn-primary {
+  background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
+  box-shadow: 0 8px 24px rgba(129, 140, 248, 0.4);
+}
+
+.module-you .profile-header {
+  background: linear-gradient(135deg, rgba(129, 140, 248, 0.1) 0%, rgba(99, 102, 241, 0.05) 100%);
+  border: 1px solid rgba(129, 140, 248, 0.2);
+}
+
+/* Generic Module Styles */
+.module-header {
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.3s ease;
+}
+
+.module-header h1 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 800;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.module-header .icon {
+  font-size: 2.5rem;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.btn-primary {
+  padding: 0.8rem 1.6rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-primary:hover {
+  filter: brightness(1.1);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+/* Responsive Module Styles */
+@media (max-width: 768px) {
+  .module-header {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+
+  .module-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .module-header .icon {
+    font-size: 2rem;
+  }
+
+  .btn-primary {
+    padding: 0.7rem 1.4rem;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .module-header {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .module-header h1 {
+    font-size: 1.3rem;
+  }
+
+  .module-header .icon {
+    font-size: 1.8rem;
+  }
+}
+
+/* Animations */
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+.animated-slide {
+  animation: slideInLeft 0.5s ease-out;
+}

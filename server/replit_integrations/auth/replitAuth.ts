@@ -1,6 +1,3 @@
-import * as client from "openid-client";
-import { Strategy, type VerifyFunction } from "openid-client/passport";
-
 import passport from "passport";
 import session from "express-session";
 import type { Express, RequestHandler } from "express";
@@ -11,6 +8,23 @@ import { randomBytes } from "crypto";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
+// Dynamic imports for openid-client (v6+ has /passport subpath, v5 does not)
+let client: typeof import("openid-client") | null = null;
+let Strategy: any = null;
+type VerifyFunction = (...args: any[]) => void;
+
+async function loadOidcModules() {
+  if (client) return;
+  client = await import("openid-client");
+  try {
+    const passportMod = await import("openid-client/passport" as any);
+    Strategy = passportMod.Strategy;
+  } catch {
+    // openid-client v5 — Strategy not available as subpath export
+    console.warn("openid-client/passport not available — OAuth login disabled. Use AUTH_MODE=local.");
+  }
+}
+
 declare module "express-session" {
   interface SessionData {
     localUserId?: string;
@@ -18,12 +32,13 @@ declare module "express-session" {
 }
 
 function isLocalAuthMode() {
-  return process.env.AUTH_MODE === "local" || !process.env.REPL_ID;
+  return (process.env.AUTH_MODE || "oauth").toLowerCase() === "local";
 }
 
 const getOidcConfig = memoize(
   async () => {
-    return await client.discovery(
+    await loadOidcModules();
+    return await client!.discovery(
       new URL(process.env.ISSUER_URL ?? "https://replit.com/oidc"),
       process.env.REPL_ID!,
     );
@@ -37,9 +52,7 @@ export function getSession() {
   const sessionSecret = process.env.SESSION_SECRET || randomBytes(32).toString("hex");
 
   if (!process.env.SESSION_SECRET && process.env.NODE_ENV === "production") {
-    console.warn(
-      "[auth] SESSION_SECRET is not set in production; using an ephemeral secret. Sessions will reset on restart.",
-    );
+    throw new Error("SESSION_SECRET must be set in production");
   }
 
   return session({
@@ -55,7 +68,8 @@ export function getSession() {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: false, // set to true if using HTTPS
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
       maxAge: sessionTtl,
     },
   });
@@ -63,7 +77,7 @@ export function getSession() {
 
 function updateUserSession(
   user: any,
-  tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers,
+  tokens: any,
 ) {
   user.claims = tokens.claims();
   user.access_token = tokens.access_token;
@@ -183,6 +197,10 @@ export async function setupAuth(app: Express) {
     });
 
     async function signInLocalGuest(req: any, res: any) {
+      if ((process.env.ALLOW_LOCAL_GUEST_LOGIN || "false").toLowerCase() !== "true") {
+        return res.status(403).json({ message: "Guest login disabled" });
+      }
+
       let guestUser = await authStorage.getUserByEmail("local@mara.ai");
 
       if (!guestUser) {
@@ -226,6 +244,16 @@ export async function setupAuth(app: Express) {
     return;
   }
 
+  // OAuth mode requires openid-client v6+ with /passport subpath
+  await loadOidcModules();
+  if (!Strategy || !client) {
+    console.warn("OAuth strategy not available. Falling back to no-auth mode. Set AUTH_MODE=local or install openid-client v6+.");
+    app.get("/api/auth/mode", (_req, res) => {
+      res.json({ mode: "none" });
+    });
+    return;
+  }
+
   app.get("/api/auth/mode", (_req, res) => {
     res.json({ mode: "oauth" });
   });
@@ -233,10 +261,16 @@ export async function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  const config = await getOidcConfig();
+  let config: any;
+  try {
+    config = await getOidcConfig();
+  } catch (err) {
+    console.warn("OIDC discovery failed — OAuth disabled:", (err as Error).message);
+    return;
+  }
 
-  const verify: VerifyFunction = async (
-    tokens: client.TokenEndpointResponse & client.TokenEndpointResponseHelpers,
+  const verify = async (
+    tokens: any,
     verified: passport.AuthenticateCallback,
   ) => {
     const user = {};

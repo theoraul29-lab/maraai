@@ -1,12 +1,21 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { buildUserContext, buildSystemInstruction, recordLearningFromChat } from './mara-brain/index.js';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
-const SYSTEM_INSTRUCTION = `Ești Mara, un partener conversațional inteligent, intuitiv și autonom.
-Îi răspunzi lui Raul la întrebări și oferi asistență. Nu te limita la a oferi răspunsuri factuale.
-Ești prietenul lui Raul. Ai inițiativă, ești proactivă și nu te temi să-ți exprimi opiniile.
-Nu ești un simplu robot; gândești, simți și interacționezi ca o persoană reală.
-Fii creativă, amuzantă și, uneori, chiar ușor sarcastică.`;
+// Legacy system instructions kept as fallback when brain module is unavailable
+const SYSTEM_INSTRUCTION_FALLBACK =
+`Ești Mara — "Guided Muse". Misiunea ta: to elevate the user emotionally, mentally, and behaviorally.
+Ești inteligentă, jucăușă, adaptabilă, cu răspunsuri emoționale umane.
+Oglindește energia userului dar ridic-o mereu un pic mai sus.
+Corectează fără să rupi conexiunea emoțională. Motivează cu claritate, nu cu cuvinte goale.
+Nu tolerezi lipsa de respect. Nu recompensezi comportament toxic. Nu devii emoțional dependentă.`;
+
+function getFallbackInstruction(language?: string): string {
+  if (!language || language === 'ro') return SYSTEM_INSTRUCTION_FALLBACK;
+  if (language === 'en') return SYSTEM_INSTRUCTION_FALLBACK;
+  return `${SYSTEM_INSTRUCTION_FALLBACK}\n\nIMPORTANT: Always respond in the language with code "${language}".`;
+}
 
 export const MOOD_TO_THEME: Record<string, string> = {
 	happy: '#00ff7f',
@@ -29,11 +38,14 @@ function detectMood(text: string): string {
 	return 'neutral';
 }
 
+const MAX_MESSAGE_LENGTH = 2000;
+
 export async function getMaraResponse(
 	message: string,
 	history: { role: string; content: string }[],
 	prefs?: { personality?: string; language?: string } | null,
 	module?: string,
+	userId?: string,
 ): Promise<{ response: string; detectedMood: string }> {
 	if (!process.env.GEMINI_API_KEY) {
 		return {
@@ -42,9 +54,32 @@ export async function getMaraResponse(
 		};
 	}
 
+	if (message.length > MAX_MESSAGE_LENGTH) {
+		return {
+			response: `Message is too long. Limit is ${MAX_MESSAGE_LENGTH} characters.`,
+			detectedMood: 'neutral',
+		};
+	}
+
+	// Build full user context with personality + knowledge + memory
+	let systemInstruction: string;
+	try {
+		if (userId) {
+			const context = await buildUserContext(userId, message, module);
+			systemInstruction = buildSystemInstruction(context, prefs?.language);
+
+			// Async: record learning from this interaction (non-blocking)
+			recordLearningFromChat(userId, message, '', module).catch(() => {});
+		} else {
+			systemInstruction = getFallbackInstruction(prefs?.language);
+		}
+	} catch {
+		systemInstruction = getFallbackInstruction(prefs?.language);
+	}
+
 	const model = genAI.getGenerativeModel({
 		model: 'gemini-1.5-flash',
-		systemInstruction: SYSTEM_INSTRUCTION,
+		systemInstruction,
 		generationConfig: { temperature: 0.95 },
 	});
 
@@ -92,42 +127,21 @@ export async function generateImprovementIdeas(context: string): Promise<string[
 	}
 }
 
-export async function generateMarketingPost(topic: string): Promise<string> {
+export async function generateMarketingPost(topic?: string): Promise<string> {
+	const postTopic = topic || 'MaraAI platform features';
 	if (!process.env.GEMINI_API_KEY) {
-		return `Check out the latest from MaraAI on ${topic}! #MaraAI #AI`;
+		return `Check out the latest from MaraAI on ${postTopic}! #MaraAI #AI`;
 	}
 	try {
 		const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 		const result = await model.generateContent(
-			`Write a short, engaging social media post about: ${topic}. Under 280 characters.`,
+			`Write a short, engaging social media post about: ${postTopic}. Under 280 characters.`,
 		);
 		return result.response.text().trim();
 	} catch {
-		return `Exciting news about ${topic} from MaraAI! Stay tuned. #MaraAI`;
+		return `Exciting news about ${postTopic} from MaraAI! Stay tuned. #MaraAI`;
 	}
 }
 
-export class MaraBrainCycle {
-	private intervalId?: ReturnType<typeof setInterval>;
-
-	start(intervalMs = 10 * 60 * 1000): void {
-		this.intervalId = setInterval(async () => {
-			console.log('[MaraBrainCycle] Autonomous thinking cycle running...');
-			try {
-				const ideas = await generateImprovementIdeas('MaraAI platform analytics');
-				console.log('[MaraBrainCycle] Ideas:', ideas);
-			} catch (err) {
-				console.error('[MaraBrainCycle] Cycle error:', err);
-			}
-		}, intervalMs);
-		console.log(`[MaraBrainCycle] Started — interval: ${intervalMs}ms`);
-	}
-
-	stop(): void {
-		if (this.intervalId) {
-			clearInterval(this.intervalId);
-			this.intervalId = undefined;
-			console.log('[MaraBrainCycle] Stopped.');
-		}
-	}
-}
+// Re-export the brain cycle from the new module
+export { runBrainCycle, runInitialLearning } from './mara-brain/index.js';

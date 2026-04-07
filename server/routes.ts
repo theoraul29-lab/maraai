@@ -30,9 +30,9 @@ import {
   MOOD_TO_THEME,
   analyzeFeedbackPatterns,
   generateImprovementIdeas,
-  MaraBrainCycle,
   generateMarketingPost,
 } from './ai';
+import { getLibraryProgress, addAndReadCustomBook, getKnowledgeStats } from './mara-brain/index';
 import {
   setupAuth,
   registerAuthRoutes,
@@ -46,53 +46,40 @@ export async function registerRoutes(
   await setupAuth(app);
   registerAuthRoutes(app);
 
-  // Inject dependencies into modules
-  videoModule.injectDeps({
-    storage,
-    db,
-    api,
-    z,
-      // Middleware: requires a logged-in user; blocks all admin routes from anonymous access.
-      const requireAuth = (req: any, res: any, next: any) => {
-        const userId = req.user?.claims?.sub || req.user?.uid;
-        if (!userId) return res.status(401).json({ message: 'Unauthorized — login required.' });
-        return next();
-      };
+  // Middleware: requires a logged-in user
+  const requireAuth = (req: any, res: any, next: any) => {
+    const userId = req.user?.claims?.sub || req.user?.uid;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized — login required.' });
+    return next();
+  };
 
-      // Admin guard: requires authentication (extend with role check when user roles are added).
-      const requireAdmin = (req: any, res: any, next: any) => {
-        const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map((e) => e.trim()).filter(Boolean);
-        const userEmail: string | undefined = req.user?.email || req.user?.claims?.email;
-        const userId: string | undefined = req.user?.claims?.sub || req.user?.uid;
-        if (!userId) return res.status(401).json({ message: 'Unauthorized.' });
-        if (adminEmails.length > 0 && userEmail && !adminEmails.includes(userEmail)) {
-          return res.status(403).json({ message: 'Forbidden — admin access required.' });
-        }
-        return next();
-      };
-    creatorPostRequestSchema,
-    likesTable,
-      app.get('/api/admin/stats', requireAdmin, adminModule.getStats);
-      app.get('/api/admin/users', requireAdmin, adminModule.getUsers);
-      app.get('/api/admin/videos', requireAdmin, adminModule.getVideos);
-    storage,
-    api,
-      app.get('/api/admin/orders', requireAdmin, adminOrdersModule.getOrders);
-      app.post('/api/admin/orders/:id/confirm', requireAdmin, adminOrdersModule.confirmOrder);
-      app.post('/api/admin/orders/:id/reject', requireAdmin, adminOrdersModule.rejectOrder);
-      classic: 'nova',
-      friendly: 'shimmer',
-      professor: 'onyx',
-      energetic: 'alloy',
-      calm: 'nova',
-      storyteller: 'shimmer',
-      deep: 'onyx',
-      bright: 'alloy',
-      warm: 'nova',
-      serious: 'onyx',
-      playful: 'shimmer',
-      confident: 'alloy',
-    },
+  // Admin guard: ADMIN_EMAILS must be set and user email must be in the list (deny-by-default)
+  const requireAdmin = (req: any, res: any, next: any) => {
+    const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map((e: string) => e.trim()).filter(Boolean);
+    const userEmail: string | undefined = req.user?.email || req.user?.claims?.email;
+    const userId: string | undefined = req.user?.claims?.sub || req.user?.uid;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized.' });
+    if (adminEmails.length === 0 || !userEmail || !adminEmails.includes(userEmail)) {
+      return res.status(403).json({ message: 'Forbidden — admin access required.' });
+    }
+    return next();
+  };
+
+  // Inject dependencies into modules
+  videoModule.injectDeps({ storage, db, api, z, creatorPostRequestSchema, likesTable });
+  ttsModule.injectDeps({
+    classic: 'nova',
+    friendly: 'shimmer',
+    professor: 'onyx',
+    energetic: 'alloy',
+    calm: 'nova',
+    storyteller: 'shimmer',
+    deep: 'onyx',
+    bright: 'alloy',
+    warm: 'nova',
+    serious: 'onyx',
+    playful: 'shimmer',
+    confident: 'alloy',
     importAudioClient: () => import('./replit_integrations/audio/client'),
   });
   sttModule.injectDeps({
@@ -107,63 +94,112 @@ export async function registerRoutes(
     stripeProvider: new StripeProvider(),
     paypalProvider: new PayPalProvider(),
   });
-  // Payment provider endpoints (modularized)
-  app.post('/api/payments/stripe', paymentsModule.processStripePayment);
-  app.post('/api/payments/paypal', paymentsModule.processPayPalPayment);
-  // Admin order management endpoints
-  app.get('/api/admin/orders', adminOrdersModule.getOrders);
-  app.post('/api/admin/orders/:id/confirm', adminOrdersModule.confirmOrder);
-  app.post('/api/admin/orders/:id/reject', adminOrdersModule.rejectOrder);
-  // Orders, premium, and trading endpoints
-  app.get('/api/premium/status', ordersModule.getPremiumStatus);
-  app.get('/api/trading/access', ordersModule.getTradingAccess);
-  app.post('/api/premium/order', ordersModule.createPremiumOrder);
+
+  // Payment endpoints (require auth)
+  app.post('/api/payments/stripe', requireAuth, paymentsModule.processStripePayment);
+  app.post('/api/payments/paypal', requireAuth, paymentsModule.processPayPalPayment);
+
+  // Admin order management (require admin)
+  app.get('/api/admin/orders', requireAdmin, adminOrdersModule.getOrders);
+  app.post('/api/admin/orders/:id/confirm', requireAdmin, adminOrdersModule.confirmOrder);
+  app.post('/api/admin/orders/:id/reject', requireAdmin, adminOrdersModule.rejectOrder);
+
+  // Orders, premium, and trading endpoints (require auth)
+  app.get('/api/premium/status', requireAuth, ordersModule.getPremiumStatus);
+  app.get('/api/trading/access', requireAuth, ordersModule.getTradingAccess);
+  app.post('/api/premium/order', requireAuth, ordersModule.createPremiumOrder);
+
   // Profile endpoints
   app.get('/api/profile/:id', profileModule.getProfile);
   app.get('/api/profile/:id/videos', profileModule.getProfileVideos);
-  app.post('/api/profile/:id/follow', profileModule.followUser);
-  // Admin endpoints (add isAdmin check as needed)
-  app.get('/api/admin/stats', adminModule.getStats);
-  app.get('/api/admin/users', adminModule.getUsers);
-  app.get('/api/admin/videos', adminModule.getVideos);
+  app.post('/api/profile/:id/follow', requireAuth, profileModule.followUser);
 
-  // Feedback/moderation endpoint
-  app.post('/api/moderate', feedbackModule.moderate);
+  // Admin endpoints (require admin)
+  app.get('/api/admin/stats', requireAdmin, adminModule.getStats);
+  app.get('/api/admin/users', requireAdmin, adminModule.getUsers);
+  app.get('/api/admin/videos', requireAdmin, adminModule.getVideos);
+
+  // Feedback/moderation endpoint (require auth)
+  app.post('/api/moderate', requireAuth, feedbackModule.moderate);
 
   // Video and feed endpoints
   app.get(api.videos.list.path, videoModule.listVideos);
   app.get('/api/mara-feed', videoModule.maraFeed);
-  app.post(api.videos.create.path, videoModule.createVideo);
-  app.post('/api/videos/:id/like', videoModule.likeVideo);
+  app.post(api.videos.create.path, requireAuth, videoModule.createVideo);
+  app.post('/api/videos/:id/like', requireAuth, videoModule.likeVideo);
   app.post('/api/videos/:id/view', videoModule.viewVideo);
-  app.post('/api/videos/:id/save', videoModule.saveVideo);
-  app.delete('/api/videos/:id/save', videoModule.unsaveVideo);
-  app.get('/api/videos/saved', videoModule.getSavedVideos);
-  // Creator endpoints
-  app.get('/api/creator/post-status', videoModule.creatorPostStatus);
-  app.get('/api/creator/my-videos', videoModule.creatorMyVideos);
-  app.post('/api/creator/post-reel', videoModule.creatorPostReel);
-  app.get('/api/creator/analytics', videoModule.creatorAnalytics);
-  app.delete('/api/creator/videos/:id', videoModule.deleteCreatorVideo);
+  app.post('/api/videos/:id/save', requireAuth, videoModule.saveVideo);
+  app.delete('/api/videos/:id/save', requireAuth, videoModule.unsaveVideo);
+  app.get('/api/videos/saved', requireAuth, videoModule.getSavedVideos);
 
-  // Chat endpoints
-  app.get(api.chat.list.path, chatModule.getChatHistory);
-  // The POST /api/chat endpoint is now handled by the WebSocket server in index.ts
+  // Creator endpoints (require auth)
+  app.get('/api/creator/post-status', requireAuth, videoModule.creatorPostStatus);
+  app.get('/api/creator/my-videos', requireAuth, videoModule.creatorMyVideos);
+  app.post('/api/creator/post-reel', requireAuth, videoModule.creatorPostReel);
+  app.get('/api/creator/analytics', requireAuth, videoModule.creatorAnalytics);
+  app.delete('/api/creator/videos/:id', requireAuth, videoModule.deleteCreatorVideo);
 
-  // TTS endpoints
+  // Chat endpoints (require auth)
+  app.get(api.chat.list.path, requireAuth, chatModule.getChatHistory);
+  app.post(api.chat.send.path, requireAuth, chatModule.sendChatMessage);
+
+  // TTS/STT endpoints
   app.post('/api/mara-speak', ttsModule.maraSpeak);
   app.post('/api/tts', ttsModule.tts);
-
-  // STT endpoint
   app.post('/api/stt', sttModule.stt);
 
-  // Python bridge endpoint (Playwright + SQLite + GPT flow)
-  app.post('/api/maraai/python-fetch', pythonBridgeModule.fetchWithPython);
+  // Python bridge — requires auth to prevent SSRF abuse
+  app.post('/api/maraai/python-fetch', requireAuth, pythonBridgeModule.fetchWithPython);
 
-  // User preferences endpoints
-  app.get('/api/user/language', userPrefsModule.getUserLanguage);
-  app.post('/api/user/language', userPrefsModule.setUserLanguage);
+  // User preferences endpoints (require auth)
+  app.get('/api/user/language', requireAuth, userPrefsModule.getUserLanguage);
+  app.post('/api/user/language', requireAuth, userPrefsModule.setUserLanguage);
 
+  // === Mara Brain Library & Knowledge endpoints (admin only) ===
+  app.get('/api/admin/mara/library', requireAdmin, async (_req: any, res: any) => {
+    try {
+      const progress = await getLibraryProgress();
+      const stats = await getKnowledgeStats();
+      res.json({ library: progress, knowledge: stats });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to get library status' });
+    }
+  });
+
+  app.post('/api/admin/mara/library/upload', requireAdmin, async (req: any, res: any) => {
+    try {
+      const { title, content, category } = req.body;
+      if (!title || !content) {
+        return res.status(400).json({ error: 'title and content are required' });
+      }
+      if (typeof title !== 'string' || typeof content !== 'string') {
+        return res.status(400).json({ error: 'title and content must be strings' });
+      }
+      if (content.length > 500000) {
+        return res.status(400).json({ error: 'Content too large (max 500KB)' });
+      }
+      const result = await addAndReadCustomBook(title, content, category || 'general');
+      res.json({
+        message: `Mara a citit "${title}" și a extras ${result.totalIdeas} idei`,
+        result: {
+          title: result.title,
+          chunks: result.processedChunks,
+          ideas: result.totalIdeas,
+        },
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to process uploaded book' });
+    }
+  });
+
+  app.get('/api/admin/mara/knowledge', requireAdmin, async (_req: any, res: any) => {
+    try {
+      const stats = await getKnowledgeStats();
+      res.json(stats);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to get knowledge stats' });
+    }
+  });
 
   seedDatabase().catch(console.error);
   return httpServer;

@@ -1,0 +1,244 @@
+/* Auth Button Container */
+.auth-button-login {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 100;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, rgba(157, 78, 221, 0.2), rgba(123, 47, 247, 0.1));
+  border: 1px solid rgba(157, 78, 221, 0.4);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  backdrop-filter: blur(8px);
+}
+
+.auth-button-login:hover {
+  background: linear-gradient(135deg, rgba(157, 78, 221, 0.3), rgba(123, 47, 247, 0.2));
+  border-color: rgba(157, 78, 221, 0.6);
+  box-shadow: 0 4px 12px rgba(157, 78, 221, 0.2);
+}
+
+.auth-button-icon {
+  font-size: 16px;
+}
+
+.auth-button-text {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .auth-button-text {
+    display: inline;
+  }
+}
+
+/* Auth Button Profile */
+.auth-button-profile {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 100;
+}
+
+.auth-button-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, rgba(157, 78, 221, 0.15), rgba(123, 47, 247, 0.08));
+  border: 1px solid rgba(157, 78, 221, 0.3);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+  backdrop-filter: blur(8px);
+}
+
+.auth-button-info:hover {
+  background: linear-gradient(135deg, rgba(157, 78, 221, 0.25), rgba(123, 47, 247, 0.15));
+  border-color: rgba(157, 78, 221, 0.5);
+}
+
+.auth-button-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #9d4edd, #7b2ff7);
+  border: 2px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.auth-button-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.auth-button-name {
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.auth-button-status {
+  display: flex;
+  gap: 4px;
+  font-size: 11px;
+}
+
+.auth-trial-badge {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fcd34d;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.auth-tier-badge {
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  font-weight: 600;
+
+  &.trial {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fcd34d;
+  }
+
+  &.premium {
+    background: rgba(16, 185, 129, 0.2);
+    color: #86efac;
+  }
+
+  &.vip {
+    background: rgba(139, 92, 246, 0.2);
+    color: #d8b4fe;
+  }
+}
+
+.auth-button-dropdown-icon {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 10px;
+  transition: transform 0.3s;
+  flex-shrink: 0;
+}
+
+.auth-button-dropdown-icon.open {
+  transform: rotate(180deg);
+}
+
+/* Dropdown Menu */
+.auth-button-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  border: 1px solid rgba(157, 78, 221, 0.3);
+  border-radius: 12px;
+  min-width: 220px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  z-index: 101;
+  animation: slideDown 0.2s ease-out;
+  backdrop-filter: blur(8px);
+}
+
+.auth-dropdown-item {
+  width: 100%;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.auth-dropdown-item:hover:not(.disabled) {
+  background: rgba(157, 78, 221, 0.15);
+  color: #fff;
+}
+
+.auth-dropdown-item.disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.auth-dropdown-item.logout {
+  color: #ff9999;
+}
+
+.auth-dropdown-item.logout:hover {
+  background: rgba(255, 83, 51, 0.1);
+  color: #ffbbbb;
+}
+
+.earnings-value {
+  color: #86efac;
+  font-weight: 600;
+}
+
+.auth-dropdown-divider {
+  height: 1px;
+  background: rgba(157, 78, 221, 0.2);
+  margin: 0;
+}
+
+/* Animations */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .auth-button-info {
+    padding: 6px 8px;
+  }
+
+  .auth-button-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
+  .auth-button-name {
+    max-width: 80px;
+    font-size: 12px;
+  }
+
+  .auth-button-dropdown {
+    min-width: 180px;
+  }
+
+  .auth-dropdown-item {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+}

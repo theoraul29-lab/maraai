@@ -38,6 +38,7 @@ export default defineConfig({
       },
     },
     port: 5173,
+    fs: {
       strict: true,
       deny: ['**/.*'],
     },

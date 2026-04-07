@@ -1,9 +1,35 @@
-# Ignoră absolut totul la început
-*
+# Environment variables — never commit secrets
+.env
+.env.*
+!.env.example
 
-# Permite (scoate de la ignore) doar fișierele de care avem nevoie
-!app.yaml
-!main.py
-!requirements.txt
-!dist/
-!dist/**
+# Dependencies
+node_modules/
+venv_back/
+__pycache__/
+*.pyc
+*.pyo
+
+# Build outputs
+dist/
+frontend/dist/
+functions/lib/
+client/dist/
+
+# Database files — contain production data
+*.sqlite
+*.sqlite3*.sqlite-shm
+*.sqlite-wal
+*.sqlite-journalinstance/
+
+# Sensitive Kubernetes backup files containing credentials
+backup_k8s_*.yaml
+backup_k8s_.yaml
+
+# Logs
+logs/
+*.log
+
+# Misc
+.DS_Store
+*.local

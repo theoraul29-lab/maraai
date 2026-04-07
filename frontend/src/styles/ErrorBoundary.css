@@ -1,0 +1,348 @@
+/**
+ * Error Boundary Styles
+ * Holographic error UI with accessible fallback states
+ */
+
+.error-boundary-fallback {
+  padding: 20px;
+  background: linear-gradient(135deg, #000000, #0f0f1a, #1a1a2e);
+  color: #ffffff;
+  border-radius: 12px;
+  border: 1px solid rgba(168, 85, 247, 0.2);
+  margin: 20px;
+}
+
+.error-boundary-fallback.page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+}
+
+.error-boundary-fallback.section {
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.error-boundary-fallback.component {
+  min-height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+}
+
+.error-boundary-content {
+  text-align: center;
+  max-width: 500px;
+  width: 100%;
+  animation: slideInUp 0.3s ease;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.error-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  display: block;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.error-title {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 12px;
+  color: #a855f7;
+  background: linear-gradient(135deg, #a855f7, #ec4899);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.error-message {
+  font-size: 16px;
+  margin: 8px 0;
+  color: #e0e0e0;
+  line-height: 1.6;
+}
+
+.error-suggestion {
+  font-size: 14px;
+  margin: 12px 0 16px;
+  color: #b0b0b0;
+  font-style: italic;
+  padding: 12px;
+  background: rgba(168, 85, 247, 0.05);
+  border-left: 3px solid #a855f7;
+  border-radius: 4px;
+}
+
+.error-details {
+  margin: 16px 0;
+  text-align: left;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(168, 85, 247, 0.1);
+}
+
+.error-details summary {
+  cursor: pointer;
+  color: #a855f7;
+  font-size: 12px;
+  padding: 8px;
+  user-select: none;
+  transition: color 0.2s ease;
+}
+
+.error-details summary:hover {
+  color: #ec4899;
+}
+
+.error-stack {
+  font-size: 11px;
+  color: #ff6b6b;
+  overflow-x: auto;
+  padding: 8px;
+  margin: 8px 0 0;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: 'Courier New', monospace;
+  line-height: 1.4;
+}
+
+.error-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.error-button {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  min-height: 44px; /* Mobile touch target size */
+  touch-action: manipulation;
+}
+
+.error-button.primary {
+  background: linear-gradient(135deg, #a855f7, #ec4899);
+  color: white;
+  box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
+}
+
+.error-button.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(168, 85, 247, 0.6);
+}
+
+.error-button.primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 10px rgba(168, 85, 247, 0.4);
+}
+
+.error-button.primary:focus {
+  outline: 2px solid #a855f7;
+  outline-offset: 2px;
+}
+
+.error-button.secondary {
+  background: transparent;
+  color: #a855f7;
+  border: 2px solid #a855f7;
+}
+
+.error-button.secondary:hover {
+  background: rgba(168, 85, 247, 0.1);
+  border-color: #ec4899;
+  color: #ec4899;
+}
+
+.error-button.secondary:active {
+  background: rgba(168, 85, 247, 0.2);
+}
+
+.error-button.secondary:focus {
+  outline: 2px solid #a855f7;
+  outline-offset: 2px;
+}
+
+.error-recovery-count {
+  font-size: 12px;
+  color: #f59e0b;
+  margin-top: 16px;
+  margin-bottom: 0;
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .error-boundary-fallback {
+    padding: 16px;
+  }
+
+  .error-boundary-content {
+    padding: 16px;
+  }
+
+  .error-title {
+    font-size: 20px;
+  }
+
+  .error-message {
+    font-size: 14px;
+  }
+
+  .error-suggestion {
+    font-size: 13px;
+    padding: 10px;
+  }
+
+  .error-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .error-button {
+    width: 100%;
+  }
+
+  .error-icon {
+    font-size: 40px;
+  }
+
+  .error-details summary {
+    font-size: 11px;
+    padding: 6px;
+  }
+
+  .error-stack {
+    font-size: 10px;
+    padding: 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .error-boundary-fallback.page {
+    min-height: auto;
+  }
+
+  .error-boundary-fallback.section {
+    min-height: 250px;
+  }
+
+  .error-boundary-content {
+    padding: 12px;
+  }
+
+  .error-title {
+    font-size: 18px;
+    margin-bottom: 8px;
+  }
+
+  .error-message {
+    font-size: 13px;
+  }
+
+  .error-icon {
+    font-size: 36px;
+    margin-bottom: 12px;
+  }
+
+  .error-actions {
+    gap: 6px;
+    margin-top: 16px;
+  }
+
+  .error-button {
+    padding: 10px 16px;
+    font-size: 13px;
+    border-radius: 6px;
+  }
+}
+
+/* Dark mode (already applied by default) */
+@media (prefers-color-scheme: dark) {
+  .error-boundary-fallback {
+    background: linear-gradient(135deg, #0a0a0f, #0f0f1a, #15151f);
+    border-color: rgba(168, 85, 247, 0.15);
+  }
+
+  .error-suggestion {
+    background: rgba(168, 85, 247, 0.03);
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .error-boundary-content,
+  .error-icon,
+  .error-recovery-count {
+    animation: none;
+  }
+
+  .error-button,
+  .error-details summary {
+    transition: none;
+  }
+
+  .error-button:hover {
+    transform: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: more) {
+  .error-title {
+    color: #ffffff;
+  }
+
+  .error-button.primary {
+    border: 2px solid rgba(255, 255, 255, 0.5);
+  }
+
+  .error-button.secondary {
+    border-width: 3px;
+  }
+}
