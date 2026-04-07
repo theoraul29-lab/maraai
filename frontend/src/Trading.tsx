@@ -8,6 +8,7 @@ interface Strategy {
   id: number;
   level: 'beginner' | 'intermediate' | 'advanced';
   free: boolean;
+  name: string;
 }
 
 const API_URL = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:5000');
@@ -15,56 +16,56 @@ const API_URL = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'ht
 const FREE_LIMIT = 5;
 
 const ALL_STRATEGIES: Strategy[] = [
-  { id: 1, level: 'beginner', free: true },
-  { id: 2, level: 'beginner', free: true },
-  { id: 3, level: 'beginner', free: true },
-  { id: 4, level: 'beginner', free: true },
-  { id: 5, level: 'beginner', free: true },
-  { id: 6, level: 'beginner', free: false },
-  { id: 7, level: 'beginner', free: false },
-  { id: 8, level: 'beginner', free: false },
-  { id: 9, level: 'beginner', free: false },
-  { id: 10, level: 'beginner', free: false },
-  { id: 11, level: 'beginner', free: false },
-  { id: 12, level: 'beginner', free: false },
-  { id: 13, level: 'beginner', free: false },
-  { id: 14, level: 'beginner', free: false },
-  { id: 15, level: 'beginner', free: false },
-  { id: 16, level: 'intermediate', free: false },
-  { id: 17, level: 'intermediate', free: false },
-  { id: 18, level: 'intermediate', free: false },
-  { id: 19, level: 'intermediate', free: false },
-  { id: 20, level: 'intermediate', free: false },
-  { id: 21, level: 'intermediate', free: false },
-  { id: 22, level: 'intermediate', free: false },
-  { id: 23, level: 'intermediate', free: false },
-  { id: 24, level: 'intermediate', free: false },
-  { id: 25, level: 'intermediate', free: false },
-  { id: 26, level: 'intermediate', free: false },
-  { id: 27, level: 'intermediate', free: false },
-  { id: 28, level: 'intermediate', free: false },
-  { id: 29, level: 'intermediate', free: false },
-  { id: 30, level: 'intermediate', free: false },
-  { id: 31, level: 'intermediate', free: false },
-  { id: 32, level: 'intermediate', free: false },
-  { id: 33, level: 'intermediate', free: false },
-  { id: 34, level: 'intermediate', free: false },
-  { id: 35, level: 'intermediate', free: false },
-  { id: 36, level: 'advanced', free: false },
-  { id: 37, level: 'advanced', free: false },
-  { id: 38, level: 'advanced', free: false },
-  { id: 39, level: 'advanced', free: false },
-  { id: 40, level: 'advanced', free: false },
-  { id: 41, level: 'advanced', free: false },
-  { id: 42, level: 'advanced', free: false },
-  { id: 43, level: 'advanced', free: false },
-  { id: 44, level: 'advanced', free: false },
-  { id: 45, level: 'advanced', free: false },
-  { id: 46, level: 'advanced', free: false },
-  { id: 47, level: 'advanced', free: false },
-  { id: 48, level: 'advanced', free: false },
-  { id: 49, level: 'advanced', free: false },
-  { id: 50, level: 'advanced', free: false },
+  { id: 1, level: 'beginner', free: true, name: 'Momentum Spark' },
+  { id: 2, level: 'beginner', free: true, name: 'Trend Basics' },
+  { id: 3, level: 'beginner', free: true, name: 'Support Bounce' },
+  { id: 4, level: 'beginner', free: true, name: 'Resistance Tap' },
+  { id: 5, level: 'beginner', free: true, name: 'Volume Pulse' },
+  { id: 6, level: 'beginner', free: false, name: 'Breakout Scout' },
+  { id: 7, level: 'beginner', free: false, name: 'Pullback Entry' },
+  { id: 8, level: 'beginner', free: false, name: 'Range Rider' },
+  { id: 9, level: 'beginner', free: false, name: 'MA Crossover Lite' },
+  { id: 10, level: 'beginner', free: false, name: 'RSI Reversal' },
+  { id: 11, level: 'beginner', free: false, name: 'MACD Nudge' },
+  { id: 12, level: 'beginner', free: false, name: 'VWAP Anchor' },
+  { id: 13, level: 'beginner', free: false, name: 'Dip Buyer' },
+  { id: 14, level: 'beginner', free: false, name: 'Simple Scalper' },
+  { id: 15, level: 'beginner', free: false, name: 'Candle Confirm' },
+  { id: 16, level: 'intermediate', free: false, name: 'Trend Continuation Pro' },
+  { id: 17, level: 'intermediate', free: false, name: 'Breakout Retest' },
+  { id: 18, level: 'intermediate', free: false, name: 'Mean Reversion' },
+  { id: 19, level: 'intermediate', free: false, name: 'Momentum Ladder' },
+  { id: 20, level: 'intermediate', free: false, name: 'Volatility Squeeze' },
+  { id: 21, level: 'intermediate', free: false, name: 'Channel Trader' },
+  { id: 22, level: 'intermediate', free: false, name: 'Order Flow Peek' },
+  { id: 23, level: 'intermediate', free: false, name: 'Fibonacci Steps' },
+  { id: 24, level: 'intermediate', free: false, name: 'Pivot Point Play' },
+  { id: 25, level: 'intermediate', free: false, name: 'EMA Stack' },
+  { id: 26, level: 'intermediate', free: false, name: 'RSI Divergence' },
+  { id: 27, level: 'intermediate', free: false, name: 'MACD Swing' },
+  { id: 28, level: 'intermediate', free: false, name: 'VWAP Reclaim' },
+  { id: 29, level: 'intermediate', free: false, name: 'Liquidity Sweep' },
+  { id: 30, level: 'intermediate', free: false, name: 'Structure Shift' },
+  { id: 31, level: 'intermediate', free: false, name: 'ATR Risk Model' },
+  { id: 32, level: 'intermediate', free: false, name: 'Multi-Timeframe Map' },
+  { id: 33, level: 'intermediate', free: false, name: 'News Filter' },
+  { id: 34, level: 'intermediate', free: false, name: 'Grid Guard' },
+  { id: 35, level: 'intermediate', free: false, name: 'Session Trend' },
+  { id: 36, level: 'advanced', free: false, name: 'Smart Money Concepts' },
+  { id: 37, level: 'advanced', free: false, name: 'Market Profile' },
+  { id: 38, level: 'advanced', free: false, name: 'Gamma Flow' },
+  { id: 39, level: 'advanced', free: false, name: 'Volatility Skew' },
+  { id: 40, level: 'advanced', free: false, name: 'Stat Arb Signals' },
+  { id: 41, level: 'advanced', free: false, name: 'Options Hedge Overlay' },
+  { id: 42, level: 'advanced', free: false, name: 'Correlation Matrix' },
+  { id: 43, level: 'advanced', free: false, name: 'Regime Detector' },
+  { id: 44, level: 'advanced', free: false, name: 'Risk Parity' },
+  { id: 45, level: 'advanced', free: false, name: 'Event-Driven Edge' },
+  { id: 46, level: 'advanced', free: false, name: 'Liquidity Heatmap' },
+  { id: 47, level: 'advanced', free: false, name: 'Execution Optimizer' },
+  { id: 48, level: 'advanced', free: false, name: 'Stop Hunt Defense' },
+  { id: 49, level: 'advanced', free: false, name: 'Adaptive Positioning' },
+  { id: 50, level: 'advanced', free: false, name: 'AI Signal Fusion' },
 ];
 
 export const Trading: React.FC<{ onClose: () => void }> = ({ onClose }) => {
@@ -177,7 +178,7 @@ export const Trading: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           <div className="trading-filter-row">
             {['all', 'beginner', 'intermediate', 'advanced'].map(lv => (
               <button key={lv} onClick={() => setFilterLevel(lv)}
-                className={`trading-filter-btn ${filterLevel === lv ? 'active' : ''}`}>
+                className={`trading-filter-btn ${filterLevel === lv ? 'active' : ''}`}> 
                 {lv === 'all' ? t('trading.filterAll') : getLevelLabel(lv)}
               </button>
             ))}
@@ -186,7 +187,7 @@ export const Trading: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           <div className="trading-strategies-list">
             {filteredStrategies.map(s => (
               <button key={s.id} onClick={() => selectStrategy(s)}
-                className={`trading-strategy-item ${selectedStrat?.id === s.id ? 'active' : ''} ${!canAccess(s) ? 'locked' : ''}`}>
+                className={`trading-strategy-item ${selectedStrat?.id === s.id ? 'active' : ''} ${!canAccess(s) ? 'locked' : ''}`}> 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '0.7rem', color: getLevelColor(s.level) }}>{getLevelLabel(s.level)}</span>
                   {!canAccess(s) && <span style={{ fontSize: '0.7rem', color: '#ff6b6b' }}>{t('trading.vipLocked')}</span>}
@@ -229,7 +230,7 @@ export const Trading: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               </div>
 
               <div className="trading-ask-section">
-                <input type="text" placeholder={t('trading.askPlaceholder')}
+                <input type="text" placeholder={t('trading.askPlaceholder')} 
                   value={askMaraQ} onChange={e => setAskMaraQ(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && askMara()}
                   className="trading-ask-input" />
