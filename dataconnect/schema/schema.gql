@@ -1,0 +1,5 @@
+type Todo @table {
+  id: UUID! @default(expr: "uuidV4()")
+  text: String!
+  completed: Boolean! @default(value: false)
+}

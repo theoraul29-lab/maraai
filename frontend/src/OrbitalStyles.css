@@ -1,0 +1,674 @@
+/* ===== HOLOGRAPHIC CORE INTERFACE ===== */
+
+.orbital-page {
+  width: 100%;
+  height: 100vh;
+  background: #000000;
+  overflow: hidden;
+  position: relative;
+  margin: 0;
+  padding: 0;
+}
+
+/* ===== COSMIC BACKGROUND ===== */
+
+.matrix-background {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  background: transparent;
+  z-index: 1;
+}
+
+/* Starfield particles */
+.matrix-background::before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(1px 1px at 20% 30%, #fff, rgba(255, 255, 255, 0.2) 1px, transparent 30px),
+    radial-gradient(1px 1px at 60% 70%, #fff, rgba(255, 255, 255, 0.15) 1px, transparent 25px),
+    radial-gradient(0.5px 0.5px at 50% 50%, #fff, rgba(255, 255, 255, 0.1) 1px, transparent 20px);
+  background-repeat: repeat;
+  background-size: 200px 200px, 300px 300px, 150px 150px;
+  opacity: 0.3;
+}
+
+/* Ambient light overlay - Mercedes-style scanning */
+.matrix-background::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(ellipse 600px 600px at center, transparent 0%, rgba(0, 0, 0, 0.5) 100%);
+  pointer-events: none;
+  animation: ambientLightScan 12s ease-in-out infinite;
+}
+
+@keyframes ambientLightScan {
+  0%, 100% {
+    background: radial-gradient(ellipse 600px 600px at center, rgba(147, 51, 234, 0.15), rgba(0, 0, 0, 0.8));
+  }
+  33% {
+    background: radial-gradient(ellipse 600px 600px at center, rgba(239, 68, 68, 0.15), rgba(0, 0, 0, 0.8));
+  }
+  66% {
+    background: radial-gradient(ellipse 600px 600px at center, rgba(34, 197, 94, 0.15), rgba(0, 0, 0, 0.8));
+  }
+}
+
+/* ===== ORBITAL CONTAINER ===== */
+
+.orbital-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  cursor: grab;
+  overflow: hidden;
+  z-index: 10;
+}
+
+.orbital-container:active {
+  cursor: grabbing;
+}
+
+/* ===== ORBITAL BACKGROUND (REMOVED - No rings) ===== */
+
+.orbital-background {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  display: none;
+}
+
+.orbit-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  opacity: 0;
+  pointer-events: none;
+  display: none;
+}
+
+/* ===== CENTRAL MARA ORB ===== */
+
+.orbital-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 100;
+}
+
+/* MARA - THE CORE - Holographic center */
+.mara-orb {
+  width: 300px;
+  height: 300px;
+  border: 3px solid;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, rgba(147, 51, 234, 0.4), rgba(147, 51, 234, 0.1));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: default;
+  animation: maraAmbientGlow 12s ease-in-out infinite;
+  transition: transform 0.3s ease;
+  box-shadow: 
+    0 0 40px rgba(147, 51, 234, 0.5),
+    0 0 80px rgba(147, 51, 234, 0.3),
+    0 0 160px rgba(147, 51, 234, 0.15);
+}
+
+/* Holographic ray effect - Layer 1 */
+.mara-orb::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    rgba(147, 51, 234, 0.8),
+    rgba(147, 51, 234, 0.4),
+    rgba(147, 51, 234, 0.8)
+  );
+  opacity: 0.6;
+  z-index: -1;
+  animation: holographicSpin 8s linear infinite, maraGlowPulse 12s ease-in-out infinite;
+}
+
+/* Holographic aura - Layer 2 */
+.mara-orb::after {
+  content: '';
+  position: absolute;
+  inset: -30px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(147, 51, 234, 0.35), transparent);
+  filter: blur(25px);
+  z-index: -2;
+  animation: maraAuraExpand 12s ease-in-out infinite;
+}
+
+@keyframes holographicSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes maraAmbientGlow {
+  0%, 100% {
+    border-color: rgba(147, 51, 234, 0.8);
+    background: radial-gradient(circle at 35% 35%, rgba(147, 51, 234, 0.4), rgba(147, 51, 234, 0.1));
+    box-shadow: 
+      0 0 40px rgba(147, 51, 234, 0.5),
+      0 0 80px rgba(147, 51, 234, 0.3),
+      0 0 160px rgba(147, 51, 234, 0.15),
+      inset 0 0 30px rgba(147, 51, 234, 0.2);
+  }
+  33% {
+    border-color: rgba(239, 68, 68, 0.8);
+    background: radial-gradient(circle at 35% 35%, rgba(239, 68, 68, 0.4), rgba(239, 68, 68, 0.1));
+    box-shadow: 
+      0 0 40px rgba(239, 68, 68, 0.5),
+      0 0 80px rgba(239, 68, 68, 0.3),
+      0 0 160px rgba(239, 68, 68, 0.15),
+      inset 0 0 30px rgba(239, 68, 68, 0.2);
+  }
+  66% {
+    border-color: rgba(34, 197, 94, 0.8);
+    background: radial-gradient(circle at 35% 35%, rgba(34, 197, 94, 0.4), rgba(34, 197, 94, 0.1));
+    box-shadow: 
+      0 0 40px rgba(34, 197, 94, 0.5),
+      0 0 80px rgba(34, 197, 94, 0.3),
+      0 0 160px rgba(34, 197, 94, 0.15),
+      inset 0 0 30px rgba(34, 197, 94, 0.2);
+  }
+}
+
+@keyframes maraGlowPulse {
+  0%, 100% {
+    background: conic-gradient(
+      from 0deg,
+      rgba(147, 51, 234, 0.8),
+      rgba(147, 51, 234, 0.4),
+      rgba(147, 51, 234, 0.8)
+    );
+  }
+  33% {
+    background: conic-gradient(
+      from 0deg,
+      rgba(239, 68, 68, 0.8),
+      rgba(239, 68, 68, 0.4),
+      rgba(239, 68, 68, 0.8)
+    );
+  }
+  66% {
+    background: conic-gradient(
+      from 0deg,
+      rgba(34, 197, 94, 0.8),
+      rgba(34, 197, 94, 0.4),
+      rgba(34, 197, 94, 0.8)
+    );
+  }
+}
+
+@keyframes maraAuraExpand {
+  0%, 100% {
+    background: radial-gradient(circle, rgba(147, 51, 234, 0.45), rgba(147, 51, 234, 0.2), transparent);
+    box-shadow: inset 0 0 40px rgba(147, 51, 234, 0.3);
+  }
+  33% {
+    background: radial-gradient(circle, rgba(239, 68, 68, 0.45), rgba(239, 68, 68, 0.2), transparent);
+    box-shadow: inset 0 0 40px rgba(239, 68, 68, 0.3);
+  }
+  66% {
+    background: radial-gradient(circle, rgba(34, 197, 94, 0.45), rgba(34, 197, 94, 0.2), transparent);
+    box-shadow: inset 0 0 40px rgba(34, 197, 94, 0.3);
+  }
+}
+
+.mara-inner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border-radius: 50%;
+}
+
+.mara-text {
+  font-family: 'Courier New', monospace;
+  font-size: 36px;
+  font-weight: 900;
+  letter-spacing: 6px;
+  color: #fff;
+  z-index: 10;
+  animation: maraTextIlluminate 12s ease-in-out infinite;
+  text-shadow: 
+    0 0 20px rgba(147, 51, 234, 0.8),
+    0 0 40px rgba(147, 51, 234, 0.5);
+}
+
+@keyframes maraTextIlluminate {
+  0%, 100% {
+    text-shadow: 
+      0 0 20px rgba(147, 51, 234, 0.8),
+      0 0 40px rgba(147, 51, 234, 0.5),
+      0 0 60px rgba(147, 51, 234, 0.3);
+    color: #ffffff;
+  }
+  33% {
+    text-shadow: 
+      0 0 20px rgba(239, 68, 68, 0.8),
+      0 0 40px rgba(239, 68, 68, 0.5),
+      0 0 60px rgba(239, 68, 68, 0.3);
+  }
+  66% {
+    text-shadow: 
+      0 0 20px rgba(34, 197, 94, 0.8),
+      0 0 40px rgba(34, 197, 94, 0.5),
+      0 0 60px rgba(34, 197, 94, 0.3);
+  }
+}
+
+/* ===== MODULE ORBS - HOLOGRAPHIC ILLUMINATION ===== */
+
+.orb {
+  position: absolute;
+  width: 140px;
+  height: 140px;
+  border: 2px solid;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.3s ease;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  z-index: 50;
+  animation: holographicPulse 12s ease-in-out infinite;
+}
+
+/* Holographic ray effect - emanating from MARA */
+.orb::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  background: inherit;
+  border: inherit;
+  z-index: -1;
+  opacity: 0.8;
+  filter: blur(2px);
+  animation: rayGlow 12s ease-in-out infinite;
+}
+
+/* Holographic aura glow */
+.orb::after {
+  content: '';
+  position: absolute;
+  inset: -15px;
+  border-radius: 50%;
+  background: inherit;
+  z-index: -2;
+  opacity: 0.5;
+  filter: blur(15px);
+  animation: haloGlow 12s ease-in-out infinite;
+}
+
+@keyframes holographicPulse {
+  0%, 100% {
+    box-shadow: 
+      0 0 30px currentColor,
+      0 0 60px rgba(147, 51, 234, 0.4),
+      inset 0 0 20px rgba(147, 51, 234, 0.15);
+  }
+  33% {
+    box-shadow: 
+      0 0 30px currentColor,
+      0 0 60px rgba(239, 68, 68, 0.4),
+      inset 0 0 20px rgba(239, 68, 68, 0.15);
+  }
+  66% {
+    box-shadow: 
+      0 0 30px currentColor,
+      0 0 60px rgba(34, 197, 94, 0.4),
+      inset 0 0 20px rgba(34, 197, 94, 0.15);
+  }
+}
+
+@keyframes rayGlow {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(147, 51, 234, 0.6);
+  }
+  33% {
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.6);
+  }
+  66% {
+    box-shadow: 0 0 10px rgba(34, 197, 94, 0.6);
+  }
+}
+
+@keyframes haloGlow {
+  0%, 100% {
+    box-shadow: 0 0 30px rgba(147, 51, 234, 0.3), inset 0 0 30px rgba(147, 51, 234, 0.1);
+  }
+  33% {
+    box-shadow: 0 0 30px rgba(239, 68, 68, 0.3), inset 0 0 30px rgba(239, 68, 68, 0.1);
+  }
+  66% {
+    box-shadow: 0 0 30px rgba(34, 197, 94, 0.3), inset 0 0 30px rgba(34, 197, 94, 0.1);
+  }
+}
+
+.orb-icon {
+  font-size: 36px;
+  margin-bottom: 6px;
+  transition: transform 0.3s ease;
+}
+
+.orb-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #fff;
+  opacity: 0.9;
+  text-align: center;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+/* Default colors for each module - Holographically illuminated */
+.orb[data-module="you"] {
+  border-color: #a855f7;
+  background: radial-gradient(circle at 35% 35%, rgba(168, 85, 247, 0.35), rgba(168, 85, 247, 0.08));
+  color: #e9d5ff;
+  --hologram-color: rgba(168, 85, 247, 0.5);
+}
+
+.orb[data-module="reels"] {
+  border-color: #06b6d4;
+  background: radial-gradient(circle at 35% 35%, rgba(6, 182, 212, 0.35), rgba(6, 182, 212, 0.08));
+  color: #cffafe;
+  --hologram-color: rgba(6, 182, 212, 0.5);
+}
+
+.orb[data-module="trading"] {
+  border-color: #22c55e;
+  background: radial-gradient(circle at 35% 35%, rgba(34, 197, 94, 0.35), rgba(34, 197, 94, 0.08));
+  color: #dcfce7;
+  --hologram-color: rgba(34, 197, 94, 0.5);
+}
+
+.orb[data-module="vip"] {
+  border-color: #ec4899;
+  background: radial-gradient(circle at 35% 35%, rgba(236, 72, 153, 0.35), rgba(236, 72, 153, 0.08));
+  color: #fce7f3;
+  --hologram-color: rgba(236, 72, 153, 0.5);
+}
+
+.orb[data-module="creators"] {
+  border-color: #f59e0b;
+  background: radial-gradient(circle at 35% 35%, rgba(245, 158, 11, 0.35), rgba(245, 158, 11, 0.08));
+  color: #fef3c7;
+  --hologram-color: rgba(245, 158, 11, 0.5);
+}
+
+.orb[data-module="writers"] {
+  border-color: #8b5cf6;
+  background: radial-gradient(circle at 35% 35%, rgba(139, 92, 246, 0.35), rgba(139, 92, 246, 0.08));
+  color: #ede9fe;
+  --hologram-color: rgba(139, 92, 246, 0.5);
+}
+
+/* ===== HOVER STATE ===== */
+
+.orb:hover {
+  transform: scale(1.2) translateY(-8px);
+  box-shadow: 
+    0 0 50px rgba(255, 255, 255, 0.5),
+    0 0 100px rgba(255, 255, 255, 0.3),
+    inset 0 0 30px rgba(255, 255, 255, 0.2);
+  filter: brightness(1.4);
+}
+
+.orb:hover .orb-icon {
+  transform: scale(1.25) rotate(10deg);
+}
+
+/* ===== ACTIVE/CLICK STATE ===== */
+
+.orb.orbiting {
+  animation: orbitalBounce 0.6s ease-out;
+}
+
+@keyframes orbitalBounce {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1.15);
+  }
+}
+
+/* ===== RESPONSIVE ===== */
+
+@media (max-width: 768px) {
+  .mara-orb {
+    width: 200px;
+    height: 200px;
+  }
+
+  .mara-text {
+    font-size: 24px;
+    letter-spacing: 2px;
+  }
+
+  .orb {
+    width: 100px;
+    height: 100px;
+  }
+
+  .orb-icon {
+    font-size: 28px;
+    margin-bottom: 4px;
+  }
+
+  .orb-label {
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 480px) {
+  .mara-orb {
+    width: 160px;
+    height: 160px;
+  }
+
+  .mara-text {
+    font-size: 18px;
+    letter-spacing: 1px;
+  }
+
+  .orb {
+    width: 80px;
+    height: 80px;
+  }
+
+  .orb-icon {
+    font-size: 20px;
+    margin-bottom: 2px;
+  }
+
+  .orb-label {
+    font-size: 8px;
+  }
+}
+
+/* ===== MOBILE VERTICAL ORBIT ===== */
+
+.mobile-orbital {
+  position: relative;
+  overflow: hidden;
+  touch-action: pan-x; /* Allow horizontal pan but capture vertical swipes */
+}
+
+.mobile-orbital-container {
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: grab;
+}
+
+.mobile-orbital-container:active {
+  cursor: grabbing;
+}
+
+.mobile-orbital-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) !important;
+  z-index: 100;
+}
+
+.mobile-orb {
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.mobile-orb:active {
+  transform: scale(1.15) !important;
+  filter: brightness(1.3);
+}
+
+/* Mobile sizes - responsive to screen */
+@media (max-width: 768px) {
+  .mobile-orbital-center .mara-orb {
+    width: 220px;
+    height: 220px;
+  }
+
+  .mobile-orbital-center .mara-text {
+    font-size: 28px;
+  }
+
+  .mobile-orb {
+    width: 110px;
+    height: 110px;
+  }
+
+  .mobile-orb .orb-icon {
+    font-size: 32px;
+    margin-bottom: 4px;
+  }
+
+  .mobile-orb .orb-label {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 600px) {
+  .mobile-orbital-center .mara-orb {
+    width: 180px;
+    height: 180px;
+  }
+
+  .mobile-orbital-center .mara-text {
+    font-size: 22px;
+  }
+
+  .mobile-orb {
+    width: 90px;
+    height: 90px;
+  }
+
+  .mobile-orb .orb-icon {
+    font-size: 26px;
+    margin-bottom: 3px;
+  }
+
+  .mobile-orb .orb-label {
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 480px) {
+  .mobile-orbital-center .mara-orb {
+    width: 160px;
+    height: 160px;
+  }
+
+  .mobile-orbital-center .mara-text {
+    font-size: 18px;
+  }
+
+  .mobile-orb {
+    width: 75px;
+    height: 75px;
+  }
+
+  .mobile-orb .orb-icon {
+    font-size: 20px;
+    margin-bottom: 2px;
+  }
+
+  .mobile-orb .orb-label {
+    font-size: 8px;
+  }
+}
+
+/* Particle burst effect */
+.particle {
+  will-change: transform, opacity;
+  animation: particleFade 1s ease-out forwards;
+}
+
+@keyframes particleFade {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+}
+
+/* Mobile-specific hover disabled, active state emphasized */
+.mobile-orb:hover {
+  transform: none;
+}
+
+.mobile-orb:active {
+  transform: scale(1.2) !important;
+  filter: brightness(1.5) saturate(1.2);
+  box-shadow: 
+    0 0 60px currentColor,
+    0 0 120px rgba(147, 51, 234, 0.6),
+    inset 0 0 30px rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Swipe feedback - glow enhancement */
+.mobile-orbital:active {
+  filter: drop-shadow(0 0 40px rgba(147, 51, 234, 0.4));
+}

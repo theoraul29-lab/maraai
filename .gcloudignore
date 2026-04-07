@@ -1,0 +1,17 @@
+﻿.git/
+.gitignore
+.idea/
+.vscode/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore local dependencies (Cloud Build installs them cleanly)
+node_modules/
+frontend/node_modules/
+venv/
+venv_back/
+
+# Ignore secondary backend/experimental files
+MaraGata/

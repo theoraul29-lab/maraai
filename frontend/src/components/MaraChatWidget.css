@@ -1,0 +1,515 @@
+/* Mara Chat Widget Styles - Mobile First */
+
+.mara-chat-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, #9d4edd, #c77dff);
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  z-index: 400;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(157, 78, 221, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 60px;
+  min-height: 60px;
+  touch-action: manipulation;
+}
+
+.mara-chat-button:hover,
+.mara-chat-button:focus {
+  transform: scale(1.1);
+  box-shadow: 0 6px 25px rgba(157, 78, 221, 0.6);
+  outline: none;
+}
+
+.mara-chat-button:active {
+  transform: scale(0.95);
+}
+
+/* Chat Modal - Mobile Full Screen */
+.mara-chat-modal {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  left: 0;
+  top: auto;
+  width: 100%;
+  height: 90vh;
+  max-height: 90vh;
+  background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+  border: 2px solid #9d4edd;
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -4px 40px rgba(157, 78, 221, 0.3), 0 0 60px rgba(157, 78, 221, 0.1);
+  display: flex;
+  flex-direction: column;
+  z-index: 401;
+  animation: slideUp 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+/* Desktop - Floating Chat */
+@media (min-width: 768px) {
+  .mara-chat-modal {
+    bottom: 100px;
+    right: 30px;
+    left: auto;
+    width: 380px;
+    height: 600px;
+    max-height: 600px;
+    border-radius: 15px;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mara-chat-header {
+  padding: 16px;
+  border-bottom: 2px solid #9d4edd;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, rgba(157, 78, 221, 0.1), rgba(157, 78, 221, 0.05));
+}
+
+.mara-chat-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mara-chat-title h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #c77dff;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.mara-mood-emoji {
+  font-size: 24px;
+}
+
+.mara-close-btn {
+  background: none;
+  border: none;
+  color: #c77dff;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.mara-close-btn:hover {
+  color: #ff6b00;
+}
+
+/* Messages Container */
+.mara-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mara-chat-messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.mara-chat-messages::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.mara-chat-messages::-webkit-scrollbar-thumb {
+  background: rgba(157, 78, 221, 0.3);
+  border-radius: 3px;
+}
+
+.mara-chat-messages::-webkit-scrollbar-thumb:hover {
+  background: rgba(157, 78, 221, 0.5);
+}
+
+/* Welcome Message */
+.mara-welcome {
+  text-align: center;
+  color: #e0e0e0;
+  padding: 20px 0;
+}
+
+.mara-greeting {
+  font-size: 18px;
+  font-weight: 700;
+  color: #c77dff;
+  margin-bottom: 8px;
+}
+
+.mara-welcome p {
+  margin: 8px 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.mara-quick-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.mara-quick-actions button {
+  padding: 10px 12px;
+  background: linear-gradient(135deg, #9d4edd, #c77dff);
+  border: 1px solid #c77dff;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.mara-quick-actions button:hover {
+  background: linear-gradient(135deg, #c77dff, #e0aaff);
+  transform: translateX(2px);
+}
+
+/* Chat Messages */
+.mara-message {
+  display: flex;
+  gap: 8px;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mara-message.user {
+  justify-content: flex-end;
+}
+
+.mara-message.mara {
+  justify-content: flex-start;
+}
+
+.mara-message-content {
+  max-width: 85%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border-left: 3px solid #9d4edd;
+  word-wrap: break-word;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mara-message.user .mara-message-content {
+  background: linear-gradient(135deg, #9d4edd, #a855f7);
+  color: white;
+  border-left-color: #ffffff;
+}
+
+.mara-message.mara .mara-message-content {
+  background: linear-gradient(135deg, rgba(157, 78, 221, 0.2), rgba(157, 78, 221, 0.1));
+  color: #e0e0e0;
+  border-left-color: #c77dff;
+}
+
+.mara-emoji {
+  font-size: 18px;
+  display: flex;
+}
+
+.mara-message-content p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+/* Typing Indicator */
+.mara-typing {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, rgba(157, 78, 221, 0.2), rgba(157, 78, 221, 0.1));
+  border-radius: 10px;
+  border-left: 3px solid #c77dff;
+}
+
+.mara-typing span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #c77dff;
+  animation: bounce 1.4s infinite;
+}
+
+.mara-typing span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.mara-typing span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes bounce {
+  0%, 80%, 100% {
+    opacity: 0.5;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-8px);
+  }
+}
+
+/* Input Area */
+.mara-chat-input {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid rgba(157, 78, 221, 0.3);
+  background: linear-gradient(135deg, rgba(10, 10, 15, 0.8), rgba(26, 26, 46, 0.8));
+}
+
+.mara-chat-input input {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #9d4edd;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.mara-chat-input input:focus {
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 10px rgba(157, 78, 221, 0.3);
+}
+
+.mara-chat-input input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.mara-chat-input input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mara-chat-input button {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #9d4edd, #c77dff);
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.mara-chat-input button:hover:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 0 15px rgba(157, 78, 221, 0.4);
+}
+
+.mara-chat-input button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.mara-chat-input button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ===== MOBILE OPTIMIZATIONS ===== */
+
+/* Mobile Input Area - Larger touch targets */
+@media (max-width: 768px) {
+  .mara-chat-header {
+    padding: 14px;
+    font-size: 16px;
+  }
+
+  .mara-chat-title h3 {
+    font-size: 16px;
+  }
+
+  .mara-close-btn {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    padding: 0;
+  }
+
+  .mara-chat-messages {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .mara-chat-input {
+    padding: 10px 12px;
+    gap: 6px;
+  }
+
+  .mara-chat-input input {
+    min-height: 44px;
+    padding: 10px 12px;
+    font-size: 16px;
+  }
+
+  .mara-chat-input button {
+    min-width: 44px;
+    min-height: 44px;
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+  }
+
+  .mara-message-content {
+    max-width: 90%;
+    padding: 12px 14px;
+    font-size: 15px;
+  }
+
+  .mara-quick-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .mara-quick-actions button {
+    min-height: 44px;
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  .mara-greeting {
+    font-size: 16px;
+  }
+
+  .mara-welcome p {
+    font-size: 13px;
+  }
+}
+
+/* Small phones landscape */
+@media (max-height: 600px) and (max-width: 768px) {
+  .mara-chat-modal {
+    height: 85vh;
+    max-height: 85vh;
+  }
+
+  .mara-chat-messages {
+    padding: 8px;
+  }
+
+  .mara-chat-header {
+    padding: 10px;
+  }
+
+  .mara-chat-input {
+    padding: 8px;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .mara-chat-modal,
+  .mara-message,
+  .mara-quick-actions button {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .mara-chat-modal {
+    width: calc(100% - 30px);
+    height: 500px;
+    bottom: 90px;
+    right: 15px;
+  }
+
+  .mara-chat-button {
+    width: 50px;
+    height: 50px;
+    font-size: 20px;
+    bottom: 20px;
+    right: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .mara-chat-modal {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    bottom: 0;
+    right: 0;
+    border-radius: 0;
+  }
+
+  .mara-chat-button {
+    bottom: 20px;
+    right: 20px;
+  }
+}
+
+/* ===== ACCESSIBILITY ===== */
+
+.mara-chat-button:focus-visible,
+.mara-close-btn:focus-visible,
+.mara-chat-input button:focus-visible,
+.mara-quick-actions button:focus-visible {
+  outline: 2px solid #9d4edd;
+  outline-offset: 2px;
+}
+
+/* ===== SAFE AREA ===== */
+
+@supports (padding: max(0px)) {
+  .mara-chat-modal {
+    padding-bottom: max(0px, env(safe-area-inset-bottom));
+  }
+
+  .mara-chat-button {
+    bottom: max(20px, env(safe-area-inset-bottom));
+    right: max(20px, env(safe-area-inset-right));
+  }
+}

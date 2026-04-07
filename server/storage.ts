@@ -16,6 +16,11 @@ import {
   collections,
   collectionVideos,
   brainLogs,
+  maraKnowledgeBase,
+  maraSearchHistory,
+  maraLearningQueue,
+  maraSelfReflection,
+  maraPlatformInsights,
   users,
   type Video,
   type InsertVideo,
@@ -39,8 +44,18 @@ import {
   type CollectionVideo,
   type BrainLog,
   type InsertBrainLog,
-} from "../shared/schema.ts";
-import { eq, desc, and, sql, lt, gte, ilike, or, count } from "drizzle-orm";
+  type KnowledgeEntry,
+  type InsertKnowledgeEntry,
+  type SearchHistoryEntry,
+  type InsertSearchHistoryEntry,
+  type LearningQueueEntry,
+  type InsertLearningQueueEntry,
+  type SelfReflection,
+  type InsertSelfReflection,
+  type PlatformInsight,
+  type InsertPlatformInsight,
+} from "../shared/schema";
+import { eq, desc, and, sql, lt, gte, like, or, count, inArray } from "drizzle-orm";
 import type { User } from "../shared/models/auth";
 
 export interface IStorage {
@@ -168,31 +183,6 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  private writerPagesInitialized = false;
-
-  private async ensureWriterPagesTable() {
-    if (this.writerPagesInitialized) return;
-
-    await db.run(sql`
-      CREATE TABLE IF NOT EXISTS writer_pages (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id TEXT NOT NULL,
-        pen_name TEXT NOT NULL,
-        title TEXT NOT NULL,
-        content TEXT NOT NULL,
-        cover_image TEXT,
-        category TEXT NOT NULL DEFAULT 'story',
-        published INTEGER NOT NULL DEFAULT 0,
-        likes INTEGER NOT NULL DEFAULT 0,
-        views INTEGER NOT NULL DEFAULT 0,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    this.writerPagesInitialized = true;
-  }
-
   async getVideos(topic?: string): Promise<Video[]> {
     if (topic && topic !== "") {
       return await db
@@ -573,13 +563,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createWriterPage(page: InsertWriterPage): Promise<WriterPage> {
-    await this.ensureWriterPagesTable();
     const [created] = await db.insert(writerPages).values(page).returning();
     return created;
   }
 
   async getWriterPages(userId?: string): Promise<WriterPage[]> {
-    await this.ensureWriterPagesTable();
     if (userId) {
       return await db
         .select()
@@ -594,7 +582,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPublishedWriterPages(): Promise<WriterPage[]> {
-    await this.ensureWriterPagesTable();
     return await db
       .select()
       .from(writerPages)
@@ -603,7 +590,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getWriterPageById(id: number): Promise<WriterPage | null> {
-    await this.ensureWriterPagesTable();
     const [page] = await db
       .select()
       .from(writerPages)
@@ -616,7 +602,6 @@ export class DatabaseStorage implements IStorage {
     userId: string,
     data: Partial<InsertWriterPage & { published: boolean }>,
   ): Promise<WriterPage | null> {
-    await this.ensureWriterPagesTable();
     const [existing] = await db
       .select()
       .from(writerPages)
@@ -640,7 +625,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteWriterPage(id: number, userId: string): Promise<boolean> {
-    await this.ensureWriterPagesTable();
     const [existing] = await db
       .select()
       .from(writerPages)
@@ -651,7 +635,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   async likeWriterPage(pageId: number): Promise<{ likes: number }> {
-    await this.ensureWriterPagesTable();
     await db
       .update(writerPages)
       .set({ likes: sql`${writerPages.likes} + 1` })
@@ -664,7 +647,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   async viewWriterPage(pageId: number): Promise<{ views: number }> {
-    await this.ensureWriterPagesTable();
     await db
       .update(writerPages)
       .set({ views: sql`${writerPages.views} + 1` })
@@ -918,9 +900,7 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .select()
       .from(videos)
-      .where(
-        sql`${videos.id} = ANY(${sql.raw(`ARRAY[${videoIds.join(",")}]`)})`,
-      )
+      .where(inArray(videos.id, videoIds))
       .orderBy(desc(videos.createdAt));
     return result;
   }
@@ -949,7 +929,6 @@ export class DatabaseStorage implements IStorage {
   async searchAll(
     query: string,
   ): Promise<{ videos: Video[]; users: User[]; pages: any[] }> {
-    await this.ensureWriterPagesTable();
     const { hasCyrillic, transliterate, detectCyrillicLang } =
       await import("./cyrillic");
     const pattern = `%${query}%`;
@@ -960,8 +939,8 @@ export class DatabaseStorage implements IStorage {
       patterns.push(`%${latinized}%`);
     }
     const videoConditions = patterns.flatMap((p) => [
-      ilike(videos.title, p),
-      ilike(videos.description, p),
+      like(videos.title, p),
+      like(videos.description, p),
     ]);
     const foundVideos = await db
       .select()
@@ -970,10 +949,10 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(videos.views))
       .limit(10);
     const userConditions = patterns.flatMap((p) => [
-      ilike(users.firstName, p),
-      ilike(users.lastName, p),
-      ilike(users.email, p),
-      ilike(users.displayName, p),
+      like(users.firstName, p),
+      like(users.lastName, p),
+      like(users.email, p),
+      like(users.displayName, p),
     ]);
     const foundUsers = await db
       .select()
@@ -981,8 +960,8 @@ export class DatabaseStorage implements IStorage {
       .where(or(...userConditions))
       .limit(10);
     const pageConditions = patterns.flatMap((p) => [
-      ilike(writerPages.title, p),
-      ilike(writerPages.penName, p),
+      like(writerPages.title, p),
+      like(writerPages.penName, p),
     ]);
     const foundPages = await db
       .select()
@@ -1001,6 +980,138 @@ export class DatabaseStorage implements IStorage {
       .update(users)
       .set({ ...data, updatedAt: new Date() })
       .where(eq(users.id, userId))
+      .returning();
+    return updated || null;
+  }
+
+  // === MARA KNOWLEDGE BASE ===
+  async createKnowledgeEntry(entry: InsertKnowledgeEntry): Promise<KnowledgeEntry> {
+    const [created] = await db.insert(maraKnowledgeBase).values(entry).returning();
+    return created;
+  }
+
+  async getKnowledgeByCategory(category: string, limit = 50): Promise<KnowledgeEntry[]> {
+    return await db
+      .select()
+      .from(maraKnowledgeBase)
+      .where(eq(maraKnowledgeBase.category, category))
+      .orderBy(desc(maraKnowledgeBase.updatedAt))
+      .limit(limit);
+  }
+
+  async getKnowledgeByTopic(topic: string): Promise<KnowledgeEntry[]> {
+    return await db
+      .select()
+      .from(maraKnowledgeBase)
+      .where(like(maraKnowledgeBase.topic, `%${topic}%`))
+      .orderBy(desc(maraKnowledgeBase.confidence))
+      .limit(20);
+  }
+
+  async getAllKnowledge(limit = 100): Promise<KnowledgeEntry[]> {
+    return await db
+      .select()
+      .from(maraKnowledgeBase)
+      .orderBy(desc(maraKnowledgeBase.updatedAt))
+      .limit(limit);
+  }
+
+  async updateKnowledgeEntry(id: number, data: Partial<InsertKnowledgeEntry>): Promise<KnowledgeEntry | null> {
+    const [updated] = await db
+      .update(maraKnowledgeBase)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(maraKnowledgeBase.id, id))
+      .returning();
+    return updated || null;
+  }
+
+  async incrementKnowledgeAccess(id: number): Promise<void> {
+    await db
+      .update(maraKnowledgeBase)
+      .set({ accessCount: sql`${maraKnowledgeBase.accessCount} + 1` })
+      .where(eq(maraKnowledgeBase.id, id));
+  }
+
+  // === MARA SEARCH HISTORY ===
+  async createSearchHistory(entry: InsertSearchHistoryEntry): Promise<SearchHistoryEntry> {
+    const [created] = await db.insert(maraSearchHistory).values(entry).returning();
+    return created;
+  }
+
+  async getSearchHistory(limit = 50): Promise<SearchHistoryEntry[]> {
+    return await db
+      .select()
+      .from(maraSearchHistory)
+      .orderBy(desc(maraSearchHistory.createdAt))
+      .limit(limit);
+  }
+
+  // === MARA LEARNING QUEUE ===
+  async createLearningTask(entry: InsertLearningQueueEntry): Promise<LearningQueueEntry> {
+    const [created] = await db.insert(maraLearningQueue).values(entry).returning();
+    return created;
+  }
+
+  async getPendingLearningTasks(limit = 20): Promise<LearningQueueEntry[]> {
+    return await db
+      .select()
+      .from(maraLearningQueue)
+      .where(eq(maraLearningQueue.status, 'pending'))
+      .orderBy(desc(maraLearningQueue.createdAt))
+      .limit(limit);
+  }
+
+  async updateLearningTask(id: number, status: string, result?: string): Promise<LearningQueueEntry | null> {
+    const updates: Record<string, unknown> = { status };
+    if (result) updates.result = result;
+    if (status === 'completed') updates.completedAt = new Date();
+    const [updated] = await db
+      .update(maraLearningQueue)
+      .set(updates)
+      .where(eq(maraLearningQueue.id, id))
+      .returning();
+    return updated || null;
+  }
+
+  // === MARA SELF REFLECTION ===
+  async createSelfReflection(entry: InsertSelfReflection): Promise<SelfReflection> {
+    const [created] = await db.insert(maraSelfReflection).values(entry).returning();
+    return created;
+  }
+
+  async getSelfReflections(limit = 20): Promise<SelfReflection[]> {
+    return await db
+      .select()
+      .from(maraSelfReflection)
+      .orderBy(desc(maraSelfReflection.createdAt))
+      .limit(limit);
+  }
+
+  // === MARA PLATFORM INSIGHTS ===
+  async createPlatformInsight(entry: InsertPlatformInsight): Promise<PlatformInsight> {
+    const [created] = await db.insert(maraPlatformInsights).values(entry).returning();
+    return created;
+  }
+
+  async getPlatformInsights(status?: string): Promise<PlatformInsight[]> {
+    if (status) {
+      return await db
+        .select()
+        .from(maraPlatformInsights)
+        .where(eq(maraPlatformInsights.status, status))
+        .orderBy(desc(maraPlatformInsights.createdAt));
+    }
+    return await db
+      .select()
+      .from(maraPlatformInsights)
+      .orderBy(desc(maraPlatformInsights.createdAt));
+  }
+
+  async updatePlatformInsightStatus(id: number, status: string): Promise<PlatformInsight | null> {
+    const [updated] = await db
+      .update(maraPlatformInsights)
+      .set({ status })
+      .where(eq(maraPlatformInsights.id, id))
       .returning();
     return updated || null;
   }

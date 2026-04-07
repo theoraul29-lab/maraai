@@ -1,0 +1,977 @@
+{
+  "common": {
+    "close": "Затвори",
+    "save": "Сачувај",
+    "cancel": "Откажи",
+    "delete": "Обриши",
+    "edit": "Уреди",
+    "loading": "Учитавање...",
+    "error": "Грешка",
+    "success": "Успех",
+    "submit": "Пошаљи",
+    "back": "Назад",
+    "next": "Даље",
+    "search": "Претражи",
+    "noResults": "Нема резултата",
+    "retry": "Покушај поново",
+    "confirm": "Потврди",
+    "yes": "Да",
+    "no": "Не",
+    "or": "ИЛИ",
+    "all": "Све"
+  },
+  "nav": {
+    "home": "Почетна",
+    "reels": "Reels",
+    "trading": "Трговање",
+    "vip": "VIP",
+    "creator": "Креатор",
+    "writers": "Писци",
+    "profile": "Профил",
+    "brand": "MARAAI",
+    "brandMobile": "MARA",
+    "toggleMenu": "Мени"
+  },
+  "home": {
+    "title": "MaraAI Home - Orbital Module Navigation",
+    "orbitalNav": "MaraAI Home - Orbital Module Navigation",
+    "mara": "MARA",
+    "maraCenter": "MARA - AI Assistant at Center",
+    "navigateTo": "Navigate to {{module}}",
+    "navigateToModule": "Navigate to module",
+    "moduleLabel": "{{module}} module",
+    "you": "You",
+    "reels": "Reels",
+    "trading": "Trading",
+    "vip": "VIP",
+    "creators": "Creators",
+    "writers": "Writers"
+  },
+  "auth": {
+    "welcomeBack": "Добро дошли назад",
+    "joinMaraAI": "Придружите се MaraAI",
+    "trialInfo": "Start your 1-hour trial instantly",
+    "email": "Имејл",
+    "password": "Лозинка",
+    "yourName": "Your Name",
+    "emailRequired": "Email is required",
+    "emailInvalid": "Please enter a valid email address",
+    "passwordRequired": "Password is required",
+    "passwordMinLength": "Password must be at least 8 characters",
+    "nameRequired": "Name is required",
+    "nameMinLength": "Name must be at least 2 characters",
+    "passwordHint": "✓ Password must be at least 8 characters",
+    "login": "Пријава",
+    "createAccount": "Направи налог",
+    "signingIn": "Signing Account...",
+    "creatingAccount": "Creating Account...",
+    "google": "Google",
+    "facebook": "Facebook",
+    "noAccount": "Немате налог?",
+    "signUp": "Региструјте се",
+    "hasAccount": "Већ имате налог?",
+    "logIn": "Пријавите се",
+    "closeModal": "Close authentication modal",
+    "closeEsc": "Close (Esc)",
+    "socialLogin": "Social login options",
+    "signInWith": "Sign in with {{provider}}",
+    "switchToSignup": "Switch to sign up",
+    "switchToLogin": "Switch to login",
+    "or": "ИЛИ"
+  },
+  "trading": {
+    "title": "TRADING STRATEGY ACADEMY",
+    "exit": "EXIT",
+    "closeLabel": "Close Trading",
+    "strategyHub": "STRATEGY HUB ({{count}})",
+    "liveSignal": "LIVE MARA SIGNAL:",
+    "noSignal": "No signal detected.",
+    "dataUnavailable": "⚠️ Data unavailable.",
+    "connectingEngine": "Connecting to Neural Engine...",
+    "filterAll": "All",
+    "beginner": "Beginner",
+    "intermediate": "Intermediate",
+    "advanced": "Advanced",
+    "vipLocked": "🔒 VIP",
+    "freeLimit": "🔒 The first {{count}} strategies are free.",
+    "upgradeMessage": "Become VIP for full access to all {{count}} strategies.",
+    "upgradeLink": "Upgrade to VIP →",
+    "mentorTitle": "MENTOR MARA AI",
+    "stepsToFollow": "STEPS TO FOLLOW:",
+    "askPlaceholder": "Ask Mara about this strategy...",
+    "askButton": "🧠 Ask",
+    "maraNoResponse": "Mara could not respond.",
+    "maraError": "⚠️ Could not contact Mara AI. Check your connection.",
+    "selectStrategy": "Select a strategy from the left to start analysis on the live chart.",
+    "strategies": {
+      "1": {
+        "name": "Moving Average Intersection (EMA 9/21)",
+        "desc": "The simplest trend strategy. Fast EMA crosses slow EMA.",
+        "steps": [
+          "Wait for EMA 9 to cross above EMA 21 for BUY.",
+          "Confirm with high volume.",
+          "Stop Loss below the last low.",
+          "Take Profit at 1:2 risk/reward ratio."
+        ]
+      },
+      "2": {
+        "name": "RSI Oversold / Overbought",
+        "desc": "Identifying moments when price is oversold or overbought.",
+        "steps": [
+          "RSI below 30 = Oversold → BUY opportunity.",
+          "RSI above 70 = Overbought → SELL opportunity.",
+          "Confirm with a reversal candle.",
+          "Stop Loss below low/above high."
+        ]
+      },
+      "3": {
+        "name": "Support / Resistance Breakout",
+        "desc": "Trading when price breaks a key level.",
+        "steps": [
+          "Identify a level where price bounced 3+ times.",
+          "Wait for a candle that closes clearly above/below the level.",
+          "Enter with Stop Loss at 1% below breakout.",
+          "Target: distance equal to the previous range."
+        ]
+      },
+      "4": {
+        "name": "Double Bottom / Double Top",
+        "desc": "Classic reversal pattern — two lows or highs at the same level.",
+        "steps": [
+          "Identify two lows at a similar level (Double Bottom).",
+          "Wait for the neckline break.",
+          "Enter BUY at breakout with SL below both lows.",
+          "TP = distance from bottom to neckline, projected up."
+        ]
+      },
+      "5": {
+        "name": "MACD Crossover Strategy",
+        "desc": "Signals based on MACD line crossing the signal line.",
+        "steps": [
+          "BUY when MACD line crosses above the signal line.",
+          "SELL when MACD line crosses below the signal line.",
+          "Confirm with positive MACD histogram.",
+          "Avoid signals when the market is flat (tight range)."
+        ]
+      },
+      "6": {
+        "name": "Bollinger Bands Squeeze",
+        "desc": "Bollinger Bands tighten → imminent volatility explosion.",
+        "steps": [
+          "Identify periods when bands tighten.",
+          "Wait for breakout outside the bands.",
+          "Enter in breakout direction with SL at band center.",
+          "TP at 1.5x band width from squeeze moment."
+        ]
+      },
+      "7": {
+        "name": "Engulfing Pattern",
+        "desc": "Powerful candle pattern — current candle 'engulfs' the previous one.",
+        "steps": [
+          "Bullish Engulfing at support = BUY.",
+          "Bearish Engulfing at resistance = SELL.",
+          "Confirm with above-average volume.",
+          "SL below/above the engulfing candle."
+        ]
+      },
+      "8": {
+        "name": "Moving Average 200 Trend",
+        "desc": "MA 200 as a macro trend filter. BUY above MA200, SELL below.",
+        "steps": [
+          "Price above MA200 = bullish trend → look for BUY only.",
+          "Price below MA200 = bearish trend → look for SELL only.",
+          "Enter on retracement toward MA200.",
+          "SL at 2% from MA200."
+        ]
+      },
+      "9": {
+        "name": "Head & Shoulders",
+        "desc": "Classic reversal pattern with 3 peaks — the second being the highest.",
+        "steps": [
+          "Identify left shoulder, head, right shoulder.",
+          "Draw neckline through the 2 lows.",
+          "SHORT at neckline break.",
+          "TP = distance from head to neckline, projected down."
+        ]
+      },
+      "10": {
+        "name": "Pivot Points",
+        "desc": "Daily support/resistance levels calculated from High/Low/Close.",
+        "steps": [
+          "Pivot = central reference (High + Low + Close) / 3.",
+          "Above Pivot → BUY toward R1, R2.",
+          "Below Pivot → SELL toward S1, S2.",
+          "Quick reaction at each pivot level."
+        ]
+      },
+      "11": {
+        "name": "Trendline Trading",
+        "desc": "Connecting lows (uptrend) or highs (downtrend) with a trend line.",
+        "steps": [
+          "Draw trend line on at least 3 points.",
+          "BUY on touch of ascending trend line.",
+          "SL below trendline by 1%.",
+          "Invalidation when price breaks trendline."
+        ]
+      },
+      "12": {
+        "name": "Gap Trading",
+        "desc": "Trading gaps at market open.",
+        "steps": [
+          "Gap Up: price opens significantly above previous close.",
+          "Gap Fill: wait for price to return to close level.",
+          "BUY on gaps that don't fill (continuation gap).",
+          "SL at gap midpoint."
+        ]
+      },
+      "13": {
+        "name": "Volume Price Analysis",
+        "desc": "Combined price and volume analysis — volume confirms the move.",
+        "steps": [
+          "Price increase + high volume = strong trend.",
+          "Price increase + low volume = weakness.",
+          "Price decrease + high volume = selling pressure.",
+          "Price/volume divergence = possible reversal."
+        ]
+      },
+      "14": {
+        "name": "Doji Reversal",
+        "desc": "The Doji candle indicates indecision — possible reversal.",
+        "steps": [
+          "Doji at trend top = possible bearish reversal.",
+          "Doji at trend bottom = possible bullish reversal.",
+          "Confirm with the next candle.",
+          "SL above/below the Doji."
+        ]
+      },
+      "15": {
+        "name": "Three White Soldiers / Three Black Crows",
+        "desc": "3 consecutive large candles → strong trend continuation.",
+        "steps": [
+          "Three White Soldiers: 3 large consecutive bullish candles.",
+          "Three Black Crows: 3 large consecutive bearish candles.",
+          "Enter after the third candle in trend direction.",
+          "SL below the first candle in the series."
+        ]
+      },
+      "16": {
+        "name": "Fibonacci Retracement",
+        "desc": "Retracement levels 38.2%, 50%, 61.8% as dynamic support/resistance.",
+        "steps": [
+          "Draw Fibonacci from the last swing low to swing high.",
+          "Wait for retracement to 50% or 61.8%.",
+          "BUY with SL below 78.6%.",
+          "TP at Fibonacci extension 127.2% or 161.8%."
+        ]
+      },
+      "17": {
+        "name": "Ichimoku Cloud",
+        "desc": "Complete system: trend, support/resistance, signals — all in one indicator.",
+        "steps": [
+          "Price above cloud = bullish trend.",
+          "Tenkan-sen crosses above Kijun-sen = BUY.",
+          "Future green cloud = bull confirmation.",
+          "Chikou Span above price = strong signal."
+        ]
+      },
+      "18": {
+        "name": "Elliott Wave Basic",
+        "desc": "The market moves in 5 impulse waves + 3 corrective waves.",
+        "steps": [
+          "Identify impulse waves 1-2-3-4-5.",
+          "Enter on Wave 3 (the strongest).",
+          "Wave 4 must not enter Wave 1 territory.",
+          "Corrective A-B-C provide re-entry points."
+        ]
+      },
+      "19": {
+        "name": "VWAP Trading",
+        "desc": "Volume Weighted Average Price — used by institutional traders.",
+        "steps": [
+          "Price above VWAP = bullish bias.",
+          "Price returning to VWAP = BUY opportunity.",
+          "Short when price is significantly above VWAP (revert to mean).",
+          "Use VWAP as dynamic SL."
+        ]
+      },
+      "20": {
+        "name": "RSI Divergence",
+        "desc": "Price makes new highs but RSI doesn't confirm → weakness.",
+        "steps": [
+          "Bearish divergence: price Higher High, RSI Lower High.",
+          "Bullish divergence: price Lower Low, RSI Higher Low.",
+          "Confirm with RSI trendline breakout.",
+          "Enter at first reversal confirmation."
+        ]
+      },
+      "21": {
+        "name": "Stochastic + RSI Combo",
+        "desc": "Combining two oscillators for more precise oversold/overbought signals.",
+        "steps": [
+          "Look for both below 20 simultaneously = extreme oversold.",
+          "BUY when both return above 20 simultaneously.",
+          "SELL when both are above 80 and return below.",
+          "Avoid contradictory signals."
+        ]
+      },
+      "22": {
+        "name": "Harmonic Patterns - Gartley",
+        "desc": "Harmonic pattern based on specific Fibonacci ratios.",
+        "steps": [
+          "XA → B retracement at 61.8%.",
+          "AB → BC retracement 38.2%-88.6%.",
+          "BC → CD = 127.2%-161.8% extension.",
+          "Point D = reversal zone (PRZ)."
+        ]
+      },
+      "23": {
+        "name": "Order Block Trading",
+        "desc": "Zones where big players placed orders — institutional levels.",
+        "steps": [
+          "Identify the last bearish candle before a strong bullish move.",
+          "This is the bullish order block.",
+          "BUY when price returns to that zone.",
+          "SL below order block."
+        ]
+      },
+      "24": {
+        "name": "Fair Value Gap (FVG)",
+        "desc": "Price imbalance visible as a gap between candles — price returns to fill it.",
+        "steps": [
+          "FVG = gap between candle 1 and candle 3.",
+          "Price tends to return to the FVG.",
+          "BUY at the upper limit of a bullish FVG.",
+          "SL below FVG."
+        ]
+      },
+      "25": {
+        "name": "Liquidity Sweep",
+        "desc": "Price temporarily passes a key level to collect stop losses.",
+        "steps": [
+          "Identify equal highs/lows (liquidity).",
+          "Wait for price to pass through these levels.",
+          "Enter in the opposite direction after sweep.",
+          "SL above the sweep point."
+        ]
+      },
+      "26": {
+        "name": "Multi-Timeframe Analysis",
+        "desc": "Confirmation across 3 timeframes: macro trend → setup → entry.",
+        "steps": [
+          "Weekly/Daily: identify macro direction.",
+          "4H/1H: find the setup.",
+          "15min/5min: exact entry timing.",
+          "All 3 TFs must confirm direction."
+        ]
+      },
+      "27": {
+        "name": "Mean Reversion",
+        "desc": "Price always returns to the mean — trading extremes.",
+        "steps": [
+          "Identify the mean (MA20, VWAP, or Bollinger middle).",
+          "Wait for deviation of 2+ standard deviations.",
+          "Enter toward the mean.",
+          "TP at moving average, SL at 3 standard deviations."
+        ]
+      },
+      "28": {
+        "name": "Keltner Channel",
+        "desc": "ATR-based channels. Breakout = trend volume, revert = range.",
+        "steps": [
+          "Price above upper channel = strong bullish trend.",
+          "Price returning to channel = BUY opportunity at mid-channel.",
+          "Short when it falls back below the upper channel.",
+          "SL at the opposite edge of the channel."
+        ]
+      },
+      "29": {
+        "name": "ADX Trend Strength",
+        "desc": "ADX above 25 = strong trend. Below 20 = range/consolidation.",
+        "steps": [
+          "ADX > 25 and +DI > -DI = strong bullish trend → BUY.",
+          "ADX > 25 and -DI > +DI = strong bearish trend → SELL.",
+          "ADX < 20 = avoid trend trading, use range.",
+          "Strongest signal: ADX rising from below 20 to above 25."
+        ]
+      },
+      "30": {
+        "name": "Parabolic SAR",
+        "desc": "Stop-and-reverse dots that follow the trend.",
+        "steps": [
+          "Dots below price = bullish trend.",
+          "Dots above price = bearish trend.",
+          "Position change = reversal signal.",
+          "Use as dynamic trailing stop loss."
+        ]
+      },
+      "31": {
+        "name": "Cup and Handle",
+        "desc": "Bullish continuation pattern: cup shape followed by a small consolidation.",
+        "steps": [
+          "Identify the 'cup' — rounded U on chart.",
+          "'Handle' = small consolidation at cup edge.",
+          "BUY at breakout above the handle.",
+          "TP = cup depth projected upward."
+        ]
+      },
+      "32": {
+        "name": "Ascending/Descending Triangle",
+        "desc": "Triangle with one horizontal side and one diagonal — predictable breakout.",
+        "steps": [
+          "Ascending: constant highs, rising lows → BUY.",
+          "Descending: constant lows, falling highs → SELL.",
+          "Enter at breakout with high volume.",
+          "TP = triangle height projected."
+        ]
+      },
+      "33": {
+        "name": "Wedge Pattern (Rising/Falling)",
+        "desc": "Rising wedges → bearish. Falling wedges → bullish. Counterintuitive.",
+        "steps": [
+          "Rising Wedge: converging ascending lines → SHORT at breakdown.",
+          "Falling Wedge: converging descending lines → BUY at breakout.",
+          "Enter on retest of broken line.",
+          "SL inside the wedge."
+        ]
+      },
+      "34": {
+        "name": "Momentum Divergence (MACD)",
+        "desc": "Like RSI divergence, but on MACD — signals trend exhaustion.",
+        "steps": [
+          "Price Higher High + MACD Lower High = bearish divergence.",
+          "Price Lower Low + MACD Higher Low = bullish divergence.",
+          "Confirm with MACD crossover.",
+          "SL above the last swing."
+        ]
+      },
+      "35": {
+        "name": "Supply & Demand Zones",
+        "desc": "Zones (not lines) where institutional supply/demand is concentrated.",
+        "steps": [
+          "Demand Zone: last bearish candles before an explosive bullish move.",
+          "Supply Zone: last bullish candles before a drop.",
+          "BUY at demand zone, SELL at supply zone.",
+          "SL at 1% below/above the zone."
+        ]
+      },
+      "36": {
+        "name": "Smart Money Concepts (SMC)",
+        "desc": "Following institutional money flow. Break of Structure + Change of Character.",
+        "steps": [
+          "Break of Structure (BOS): surpassing a previous HH/LL.",
+          "Change of Character (ChoCH): first break against trend.",
+          "Enter on order block behind BOS.",
+          "SL below order block, TP at next liquidity level."
+        ]
+      },
+      "37": {
+        "name": "Wyckoff Method",
+        "desc": "The 4 phases: Accumulation → Markup → Distribution → Markdown.",
+        "steps": [
+          "Accumulation: range with spring (fakeout) → BUY.",
+          "Markup: ascending trend → hold.",
+          "Distribution: range at top with UTAD → SELL.",
+          "Markdown: descending trend → short or cash."
+        ]
+      },
+      "38": {
+        "name": "Auction Market Theory",
+        "desc": "The market oscillates between value area (fair) and discovery (unfair).",
+        "steps": [
+          "Value Area High (VAH) and Value Area Low (VAL) = reference.",
+          "Price above VAH = bullish price discovery.",
+          "Return to value area = fade opportunity.",
+          "Point of Control (POC) = most traded level."
+        ]
+      },
+      "39": {
+        "name": "Market Profile",
+        "desc": "Time distribution at price. Bell shape = equilibrium, D-shape = trend.",
+        "steps": [
+          "Identify TPO (Time Price Opportunity) profile.",
+          "Single prints = fast move, price will return.",
+          "Excess at extremes = reversal.",
+          "Initial Balance = first hour range → large TF breakout."
+        ]
+      },
+      "40": {
+        "name": "Options Flow + Spot",
+        "desc": "Analyzing options flow to predict spot movements.",
+        "steps": [
+          "Put/Call Ratio extremely low → possible top.",
+          "Put/Call Ratio high → possible bottom.",
+          "High open interest at a strike → price magnet.",
+          "Unusual options flow (high volume) = potential insider info."
+        ]
+      },
+      "41": {
+        "name": "Correlation Trading",
+        "desc": "Trading correlation/decorrelation between assets (BTC vs ETH, EUR vs DXY).",
+        "steps": [
+          "Positive correlation: BTC up → ETH up. Trade the weaker.",
+          "Decorrelation: temporal difference = revert opportunity.",
+          "Short the asset that rose more, Long the weaker.",
+          "SL based on historical spread."
+        ]
+      },
+      "42": {
+        "name": "Delta Volume Analysis",
+        "desc": "Difference between cumulative buying and selling volume at each price.",
+        "steps": [
+          "Large positive delta + price not rising = absorption (strong sellers).",
+          "Negative delta + price not falling = aggressive buying.",
+          "Delta/price divergence = strong reversal signal.",
+          "Use cumulative delta on 1H and 4H."
+        ]
+      },
+      "43": {
+        "name": "Heatmap / Liquidation Levels",
+        "desc": "Visualizing levels where leveraged positions are concentrated.",
+        "steps": [
+          "Liquidation clusters = price magnet.",
+          "Price 'hunts' liquidity in both directions.",
+          "Enter AFTER price has passed through the liquidation zone.",
+          "Cleared liquidity = free space for movement."
+        ]
+      },
+      "44": {
+        "name": "Grid Trading",
+        "desc": "Placing orders at fixed intervals — buy low, sell high automatically.",
+        "steps": [
+          "Define the range: support → resistance.",
+          "Place BUY orders at equal intervals below price.",
+          "Place SELL orders at equal intervals above price.",
+          "Works optimally in range / sideways markets."
+        ]
+      },
+      "45": {
+        "name": "Pairs Trading (Statistical Arbitrage)",
+        "desc": "Trading the spread between 2 correlated assets.",
+        "steps": [
+          "Identify pairs with correlation > 0.8.",
+          "Calculate Z-score of the spread.",
+          "Short the better performer, Long the weaker.",
+          "Close when Z-score returns to 0."
+        ]
+      },
+      "46": {
+        "name": "Anchored VWAP",
+        "desc": "VWAP anchored from a key event (earnings, high, low).",
+        "steps": [
+          "Anchor VWAP from the last major swing.",
+          "Price responds to this VWAP as support/resistance.",
+          "BUY at VWAP in uptrend, SHORT at VWAP in downtrend.",
+          "Use AVWAP from ATH for macro bias."
+        ]
+      },
+      "47": {
+        "name": "Fractal Trading",
+        "desc": "The market is fractal — patterns repeat across all timeframes.",
+        "steps": [
+          "Identify bullish fractal: 2 higher lows → low → 2 higher lows.",
+          "BUY at breakout above fractal high.",
+          "Multi-TF fractal alignment = strong signal.",
+          "SL below fractal low."
+        ]
+      },
+      "48": {
+        "name": "Volume Profile Reversal",
+        "desc": "Combining Volume Profile + reversal patterns at POC or value area edge.",
+        "steps": [
+          "Price at VAH + bearish engulfing = SHORT.",
+          "Price at VAL + bullish engulfing = LONG.",
+          "Confirm with delta volume.",
+          "TP at POC, SL at 1% above/below VA."
+        ]
+      },
+      "49": {
+        "name": "News/Event Trading",
+        "desc": "Trading around major news (CPI, NFP, FOMC, earnings).",
+        "steps": [
+          "DO NOT trade 15min before major news.",
+          "Straddle: BUY orders above range + SELL orders below range.",
+          "After news: enter in direction of initial move on retest.",
+          "High volatility = too risky for beginners."
+        ]
+      },
+      "50": {
+        "name": "AI-Powered Strategy (Mara Neural)",
+        "desc": "Mara AI analyzes 15+ indicators simultaneously and generates weighted signals.",
+        "steps": [
+          "Mara evaluates RSI, MACD, BB, Ichimoku, Volume, OB, FVG simultaneously.",
+          "Confluence score: above 70% = strong signal.",
+          "Enter only on signals with confluence above 80%.",
+          "Monthly review of AI vs manual performance."
+        ]
+      }
+    }
+  },
+  "vip": {
+    "title": "PREMIUM VIP MODULE",
+    "close": "Close VIP",
+    "checking": "Checking status...",
+    "welcomeVip": "WELCOME, VIP!",
+    "fullAccess": "You have full access to all premium features.",
+    "active": "ACTIVE",
+    "expires": "Expires: {{date}}",
+    "benefits": "PREMIUM BENEFITS",
+    "benefitSignals": "Real-Time Trading Signals",
+    "benefitSignalsDesc": "Live notifications for opportunities",
+    "benefitAI": "AI Predictive Analysis",
+    "benefitAIDesc": "Mara Neural Engine forecasts",
+    "benefitChat": "Unlimited Mara Chat",
+    "benefitChatDesc": "No message limit + AI voice",
+    "benefitReports": "Advanced Reports",
+    "benefitReportsDesc": "Complete analysis of all assets",
+    "orderHistory": "📋 Order History",
+    "becomeVip": "BECOME VIP",
+    "unlockFeatures": "Unlock all premium features of the Mara AI platform.",
+    "feature": "Feature",
+    "free": "Free",
+    "vipLabel": "VIP",
+    "chatLimit": "10/day",
+    "unlimited": "♾️ Unlimited",
+    "tradingSignals": "Trading Signals",
+    "tradingStrategies": "Trading Strategies",
+    "aiWriterTips": "AI Writer Tips",
+    "reelsUpload": "Reels Upload",
+    "reelsLimit": "3/day",
+    "aiVoice": "AI Voice",
+    "voices": "5 voices",
+    "ads": "Ads",
+    "adsYes": "Yes",
+    "adsNo": "❌ None",
+    "monthly": "MONTHLY",
+    "yearly": "YEARLY",
+    "monthlyPrice": "9€<span>/month</span>",
+    "yearlyPrice": "89€<span>/year</span>",
+    "monthlyCancelAnytime": "Full access, cancel anytime",
+    "yearlyBestPrice": "7.4€/month — best price",
+    "savings": "SAVE 17%",
+    "continueToPay": "CONTINUE TO PAYMENT — {{price}}€",
+    "bankTransfer": "Bank Transfer",
+    "paypal": "PayPal",
+    "bankDetails": "Bank Details",
+    "accountName": "Account Name",
+    "iban": "IBAN",
+    "bic": "BIC/SWIFT",
+    "reference": "Reference",
+    "transferRef": "Transfer Reference",
+    "transferRefPlaceholder": "Paste reference from transfer...",
+    "submitOrder": "SUBMIT ORDER",
+    "submitting": "⏳ Submitting...",
+    "transferRefRequired": "Please enter the transfer reference.",
+    "payWithPaypal": "PAY WITH PAYPAL — {{price}}€",
+    "paypalRedirect": "You will be redirected to PayPal to complete the payment of {{price}}€.",
+    "backToPlans": "← Back to plans",
+    "orders": "Order History",
+    "noOrders": "No orders registered.",
+    "pending": "Pending",
+    "confirmed": "Confirmed",
+    "rejected": "Rejected",
+    "chatWithMara": "Chat with Mara",
+    "realtime": "✅ Real-time",
+    "amount": "Amount",
+    "paymentTitle": "PAYMENT",
+    "perMonth": "/month",
+    "perYear": "/year",
+    "pendingOrders": "📋 Pending Orders ({{count}})",
+    "back": "← Back",
+    "orderSent": "Order submitted! We'll verify payment and activate within 24h.",
+    "orderError": "Error submitting the order.",
+    "paypalOrderSent": "PayPal order registered. Verifying payment.",
+    "paypalError": "Error processing PayPal."
+  },
+  "creator": {
+    "title": "CREATOR PANEL",
+    "close": "Close Creator",
+    "dashboard": "Dashboard",
+    "upload": "Upload",
+    "manage": "Manage",
+    "welcome": "Welcome, {{name}}!",
+    "welcomeText": "Mara AI is tracking your growth. Today you've published {{today}}/{{max}} posts.",
+    "postReel": "📹 Post Reel",
+    "myVideos": "📁 My Videos",
+    "analytics": "📊 Analytics",
+    "settings": "⚙️ Settings",
+    "trends": "🔥 Trends",
+    "monetize": "💰 Monetize",
+    "stats": "Statistics",
+    "totalReels": "Total Reels",
+    "totalViews": "Views",
+    "totalLikes": "Likes",
+    "followers": "Followers",
+    "engagement": "Engagement Rate",
+    "thisMonth": "This Month",
+    "quickActions": "QUICK ACTIONS",
+    "uploadNew": "UPLOAD NEW REEL",
+    "viewAll": "VIEW ALL VIDEOS",
+    "features": "CREATOR FEATURES",
+    "featureAnalytics": "Advanced Analytics",
+    "featureAnalyticsDesc": "Detailed stats for every video",
+    "featureTrending": "Trending Insights",
+    "featureTrendingDesc": "Find out what's popular now",
+    "featureMonetize": "Monetization",
+    "featureMonetizeDesc": "Earn from your content",
+    "featureAI": "AI Suggestions",
+    "featureAIDesc": "Smart tips to grow",
+    "uploadTitle": "Reel Title",
+    "uploadUrl": "Video URL (Cloudinary, YouTube...)",
+    "uploadDescription": "Description (optional)",
+    "publishReel": "PUBLISH REEL",
+    "publishing": "Publishing...",
+    "titleUrlRequired": "Title and URL are required.",
+    "videoManager": "VIDEO MANAGER",
+    "noVideos": "No videos yet. Upload your first reel!",
+    "views": "views",
+    "likes": "likes",
+    "postsToday": "Posts today: {{count}}/{{max}}",
+    "limitReached": "Daily limit reached",
+    "publishNow": "➕ Publish Now",
+    "publishFirst": "➕ Publish First Reel",
+    "videoPublished": "✅ Video published successfully!",
+    "refreshData": "🔄 Refresh Data",
+    "recentVideos": "Recent Videos",
+    "uploadTitlePlaceholder": "Video title...",
+    "uploadUrlPlaceholder": "https://youtube.com/watch?v=... or direct link",
+    "uploadDescPlaceholder": "Describe the content...",
+    "uploadTagsLabel": "Tags (comma separated)",
+    "uploadTagsPlaceholder": "AI, Tech, Tutorial, Trading...",
+    "reset": "🗑️ Reset",
+    "videoManagerTitle": "Video Manager",
+    "videosPublished": "{{count}} videos published",
+    "noVideosYet": "No videos yet",
+    "view": "▶ View",
+    "confirmDelete": "Sure?",
+    "yes": "Yes",
+    "no": "No",
+    "deleteVideo": "🗑️ Delete",
+    "canPostMore": "You can publish {{count}} more reels today.",
+    "limitReachedMsg": "Daily limit reached ({{max}}). Come back tomorrow!",
+    "publishNewReel": "Publish a New Reel",
+    "dataLoadError": "Could not load data. Check your connection.",
+    "deleteError": "Could not delete the video.",
+    "publishError": "Error publishing. Try again.",
+    "loading": "⏳ Loading..."
+  },
+  "writers": {
+    "title": "WRITERS HUB",
+    "close": "Close Writers Hub",
+    "workshop": "Workshop",
+    "library": "Library",
+    "drafts": "Drafts",
+    "reading": "Reading",
+    "titlePlaceholder": "Title",
+    "contentPlaceholder": "Start writing...",
+    "genre": "Genre",
+    "fiction": "Fiction",
+    "poetry": "Poetry",
+    "essay": "Essay",
+    "drama": "Drama",
+    "script": "Script",
+    "memoir": "Memoir",
+    "other": "Other",
+    "coverUrl": "Cover Image URL (optional)",
+    "publish": "📤 PUBLISH",
+    "publishLabel": "Publish",
+    "publishing": "Publishing...",
+    "saveDraft": "💾 Save Draft",
+    "inspireme": "✨ Inspire me",
+    "wordCount": "{{words}} words · {{chars}} characters",
+    "libraryTitle": "COMMUNITY LIBRARY",
+    "loadingLibrary": "Loading library...",
+    "emptyLibrary": "No published works yet. Be the first to share!",
+    "by": "by",
+    "readMore": "📖 Read more →",
+    "comments": "💬 Comments ({{count}})",
+    "writeComment": "Write a comment...",
+    "postComment": "Send",
+    "draftsTitle": "MY DRAFTS",
+    "noDrafts": "No saved drafts.",
+    "editDraft": "✏ Edit",
+    "deleteDraft": "🗑 Delete",
+    "readingTitle": "READING MODE",
+    "selectToRead": "Select a work from the library to read here.",
+    "closeReading": "Close Reading",
+    "sfFantasy": "SF & Fantasy",
+    "nonFiction": "Non-Fiction",
+    "anonymous": "Anonymous",
+    "likes": "likes",
+    "maraAssistant": "🧠 Mara AI Writing Assistant",
+    "maraPromptPlaceholder": "E.g.: Generate a dialogue between two characters...",
+    "insertInText": "📝 Insert into text",
+    "untitled": "Untitled",
+    "maraNoSuggestion": "Mara could not generate a suggestion.",
+    "maraError": "⚠️ Could not contact Mara AI."
+  },
+  "reels": {
+    "feed": "Feed",
+    "create": "Create",
+    "myReels": "My Reels",
+    "stats": "Stats",
+    "loadingFeed": "Loading feed...",
+    "noReels": "No reels found.",
+    "createReel": "Create Reel",
+    "reelTitle": "Title",
+    "reelUrl": "Video URL",
+    "reelDescription": "Description",
+    "reelTags": "Tags (comma separated)",
+    "publish": "📤 Publish",
+    "publishing": "Publishing...",
+    "publishError": "Error publishing",
+    "myReelsTitle": "MY REELS",
+    "noMyReels": "You haven't uploaded any reels yet.",
+    "trendingTags": "Trending Tags",
+    "statsTitle": "STATISTICS",
+    "comment": "Comment",
+    "addComment": "Write a comment...",
+    "postComment": "Post",
+    "share": "Share",
+    "report": "Report",
+    "delete": "Delete",
+    "loadMore": "🔄 Load more",
+    "titleLabel": "Title *",
+    "urlLabel": "URL Video * (YouTube, MP4)",
+    "descLabel": "Description",
+    "tagsLabel": "Tags (comma separated)",
+    "titleUrlRequired": "Title and URL are required.",
+    "feedLoadError": "Could not load the feed.",
+    "totalReels": "Total Reels",
+    "totalViews": "Total Views",
+    "totalLikes": "Total Likes",
+    "followersLabel": "Followers",
+    "engagementLabel": "Engagement",
+    "saved": "Saved",
+    "saveLabel": "Save",
+    "createFirst": "+ Create Reel"
+  },
+  "you": {
+    "profileTab": "📊 Profile",
+    "insightsTab": "🧠 Insights",
+    "vaultTab": "🔐 Vault",
+    "customizeTab": "✨ Customize",
+    "settingsTab": "⚙️ Settings",
+    "level": "Level",
+    "streak": "Streak",
+    "days": "days",
+    "posts": "Posts",
+    "followersLabel": "Followers",
+    "following": "Following",
+    "badges": "Badges",
+    "editProfile": "Edit Profile",
+    "insights": "🤖 Mara AI Insights",
+    "statsOverview": "Statistics",
+    "totalPosts": "Total Posts",
+    "totalLikes": "Total Likes",
+    "totalComments": "Comments",
+    "totalFollowers": "Followers",
+    "totalFollowing": "Following",
+    "memberSince": "Member Since",
+    "vaultTitle": "🔐 Personal Vault ({{count}})",
+    "vaultEmpty": "Your vault is empty. Add notes, screenshots or insights.",
+    "vaultAdd": "Add to Vault",
+    "vaultContent": "What's on your mind?",
+    "vaultMood": "Mood",
+    "settingsTitle": "⚙️ Account Settings",
+    "name": "Name",
+    "namePlaceholder": "Your name",
+    "emailLabel": "Email",
+    "bio": "Bio",
+    "bioPlaceholder": "Write something about yourself...",
+    "saveChanges": "💾 Save Changes",
+    "saved": "✅ Saved!",
+    "logout": "🚪 Logout",
+    "customize": "✨ Avatar Customization",
+    "theme": "Theme",
+    "accentColor": "Accent Color",
+    "language": "Language",
+    "statistics": "Statistics",
+    "xpProgress": "XP Progress — Level {{level}}",
+    "peakHours": "Peak hours: {{start}} - {{end}}",
+    "peakEngagement": "3.2x higher engagement during these times",
+    "topContent": "Top content: {{category}}",
+    "topEngagement": "4.2x average engagement on this topic",
+    "totalLikesInsight": "Total likes: {{count}}",
+    "activePostsInsight": "With {{count}} active posts on the platform",
+    "loading": "Loading...",
+    "note": "📝 Note",
+    "screenshot": "📸 Screenshot",
+    "insight": "💡 Insight",
+    "addToVault": "Save",
+    "glowColor": "Glow Color",
+    "glowIntensity": "Glow Intensity",
+    "effects": "Effects",
+    "neonGlow": "Neon Glow",
+    "particles": "Particles"
+  },
+  "userProfile": {
+    "close": "Close Profile",
+    "follow": "Follow",
+    "unfollow": "Unfollow",
+    "message": "Message",
+    "editProfileBtn": "Edit",
+    "bio": "Bio",
+    "website": "Website",
+    "joined": "Joined",
+    "posts": "Posts",
+    "followers": "Followers",
+    "following": "Following",
+    "likes": "Likes",
+    "noPosts": "No posts yet.",
+    "saveBio": "Save",
+    "bannerLabel": "Change Banner",
+    "color": "Color"
+  },
+  "chat": {
+    "title": "Ћаскање са Mara",
+    "placeholder": "Напишите поруку...",
+    "send": "Пошаљи",
+    "welcome": "👋 Здраво {{name}}! Ја сам Mara, ваш паметни асистент. Како могу да помогнем?",
+    "welcomeGuest": "👋 Здраво! Ја сам Mara. Како могу да помогнем?",
+    "quickModules": "What modules does the platform have?",
+    "quickRecommend": "Recommendation for me",
+    "quickHow": "How does it work?",
+    "errorMsg": "Извините, дошло је до грешке. Покушајте поново.",
+    "issueMsg": "I encountered an issue. Please try again.",
+    "thinking": "Thinking...",
+    "modules": "📚 Modules",
+    "recommendations": "🎯 Recommendations",
+    "help": "❓ Help",
+    "selectLanguage": "Select language",
+    "typing": "Mara пише...",
+    "chatError": "Грешка везе. Покушајте поново."
+  },
+  "languages": {
+    "en": "English",
+    "ro": "Română",
+    "es": "Español",
+    "fr": "Français",
+    "de": "Deutsch",
+    "it": "Italiano",
+    "pt": "Português",
+    "ru": "Русский",
+    "uk": "Українська",
+    "pl": "Polski",
+    "nl": "Nederlands",
+    "cs": "Čeština",
+    "hu": "Magyar",
+    "bg": "Български",
+    "hr": "Hrvatski",
+    "sr": "Srpski",
+    "tr": "Türkçe",
+    "ar": "العربية",
+    "hi": "हिन्दी",
+    "ja": "日本語",
+    "ko": "한국어",
+    "zh": "中文",
+    "th": "ไทย",
+    "vi": "Tiếng Việt",
+    "sv": "Svenska",
+    "da": "Dansk",
+    "el": "Ελληνικά"
+  },
+  "languageSelector": {
+    "label": "Језик",
+    "changeLanguage": "Промени језик"
+  }
+}
