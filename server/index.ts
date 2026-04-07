@@ -10,10 +10,24 @@ import { runBrainCycle, runInitialLearning } from './mara-brain/index.js';
 import { getMaraResponse, generateMarketingPost } from './ai.js';
 import { WebSocketServer } from 'ws';
 import url from 'url';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { storage } from './storage.js';
 import { firebaseAuthMiddleware } from './firebaseAuth.js'; // Pregătire pentru Firebase Auth
 import { z } from 'zod';
+import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
+import { db } from './db.js';
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+async function runMigrations() {
+  const migrationsFolder = path.resolve(__dirname, '..', 'migrations');
+  log(`Running database migrations from ${migrationsFolder}...`, 'db');
+  migrate(db, { migrationsFolder });
+  log('Database migrations completed successfully.', 'db');
+}
 
 const app = express();
 
@@ -156,6 +170,9 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Run Drizzle migrations before anything else so all tables exist.
+  await runMigrations();
+
   await registerRoutes(httpServer, app);
 
   // --- START P2P WEBSOCKET INTEGRATION ---
