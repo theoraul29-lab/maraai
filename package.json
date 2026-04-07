@@ -13,7 +13,8 @@
     "deploy": "firebase deploy --project maraai-488fb",
     "deploy:hosting": "firebase deploy --only hosting --project maraai-488fb",
     "deploy:functions": "firebase deploy --only functions --project maraai-488fb",
-    "logs": "firebase functions:log --follow --project maraai-488fb"
+    "logs": "firebase functions:log --follow --project maraai-488fb",
+    "smoke:runtime": "node scripts/smoke-runtime.mjs"
   },
   "dependencies": {
     "@genkit-ai/firebase": "^0.5.3",
