@@ -33,33 +33,30 @@ import {
   generateMarketingPost,
 } from './ai';
 import { getLibraryProgress, addAndReadCustomBook, getKnowledgeStats } from './mara-brain/index';
-import {
-  setupAuth,
-  registerAuthRoutes,
-} from './replit_integrations/auth/index';
-import { authStorage } from './replit_integrations/auth/storage';
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express,
 ): Promise<Server> {
-  await setupAuth(app);
-  registerAuthRoutes(app);
 
-  // Middleware: requires a logged-in user
+  // Middleware: requires a logged-in user (session user)
   const requireAuth = (req: any, res: any, next: any) => {
-    const userId = req.user?.claims?.sub || req.user?.uid;
+    const userId = req.user?.uid;
     if (!userId) return res.status(401).json({ message: 'Unauthorized — login required.' });
     return next();
   };
 
-  // Admin guard: ADMIN_EMAILS must be set and user email must be in the list (deny-by-default)
+  // Admin guard: match against ADMIN_USER_IDS (deny-by-default)
   const requireAdmin = (req: any, res: any, next: any) => {
-    const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map((e: string) => e.trim()).filter(Boolean);
-    const userEmail: string | undefined = req.user?.email || req.user?.claims?.email;
-    const userId: string | undefined = req.user?.claims?.sub || req.user?.uid;
+    const adminIds = (process.env.ADMIN_USER_IDS || '')
+      .split(',')
+      .map((e: string) => e.trim())
+      .filter(Boolean);
+
+    const userId: string | undefined = req.user?.uid;
     if (!userId) return res.status(401).json({ message: 'Unauthorized.' });
-    if (adminEmails.length === 0 || !userEmail || !adminEmails.includes(userEmail)) {
+
+    if (adminIds.length === 0 || !adminIds.includes(userId)) {
       return res.status(403).json({ message: 'Forbidden — admin access required.' });
     }
     return next();
@@ -80,14 +77,11 @@ export async function registerRoutes(
     serious: 'onyx',
     playful: 'shimmer',
     confident: 'alloy',
-    importAudioClient: () => import('./replit_integrations/audio/client'),
   });
-  sttModule.injectDeps({
-    importAudioClient: () => import('./replit_integrations/audio/client'),
-  });
+  sttModule.injectDeps({});
   userPrefsModule.injectDeps({ storage });
   adminModule.injectDeps({ storage });
-  profileModule.injectDeps({ storage, authStorage });
+  profileModule.injectDeps({ storage });
   ordersModule.injectDeps({ storage, z });
   adminOrdersModule.injectDeps({ storage });
   paymentsModule.injectDeps({

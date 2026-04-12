@@ -11,7 +11,7 @@ import { getMaraResponse, generateMarketingPost } from './ai.js';
 import { WebSocketServer } from 'ws';
 import url from 'url';
 import { storage } from './storage.js';
-import { authMiddleware } from './auth.js'; // JWT auth middleware
+import { setupSessionAuth } from './auth.js';
 import { z } from 'zod';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { db } from './db.js';
@@ -97,7 +97,7 @@ app.use(
   }),
 );
 
-app.use(authMiddleware); // JWT auth middleware
+setupSessionAuth(app);
 const httpServer = createServer(app);
 
 declare module 'http' {
@@ -119,6 +119,10 @@ app.use(express.urlencoded({ extended: false }));
 // Lightweight health probe for local/dev orchestration and uptime checks.
 app.get('/api/health', (_req, res) => {
   res.status(200).json({ status: 'ok' });
+});
+
+app.get('/api/auth/me', (req: any, res) => {
+  res.json({ uid: req.user?.uid ?? null });
 });
 
 app.get('/api/runtime', (_req, res) => {
