@@ -9,6 +9,17 @@ import { analyzePlatform, generateGrowthSuggestions, identifyWeakModules } from 
 import { getKnowledgeStats, storeKnowledge } from './knowledge-base.js';
 import { readNextLibraryBook, getLibraryProgress } from './library.js';
 
+/** Wrap a promise with a timeout (ms). Rejects with an error if it takes too long. */
+function withTimeout<T>(promise: Promise<T>, ms: number, label = 'operation'): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms / 1000}s`)), ms);
+    promise.then(
+      (v) => { clearTimeout(timer); resolve(v); },
+      (e) => { clearTimeout(timer); reject(e); },
+    );
+  });
+}
+
 export interface BrainCycleResult {
   research: string;
   productIdeas: string;
@@ -18,11 +29,19 @@ export interface BrainCycleResult {
   reflectionId: number | null;
 }
 
+const BRAIN_CYCLE_TIMEOUT = 10 * 60 * 1000; // 10 minutes
+const INITIAL_LEARNING_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const PHASE_TIMEOUT = 60 * 1000; // 1 minute per phase
+
 /**
  * Run the full autonomous brain cycle
  * This is called every 6 hours by the scheduler
  */
 export async function runBrainCycle(): Promise<BrainCycleResult> {
+  return withTimeout(_runBrainCycleInner(), BRAIN_CYCLE_TIMEOUT, 'Brain cycle');
+}
+
+async function _runBrainCycleInner(): Promise<BrainCycleResult> {
   console.log('[MaraBrain] 🧠 Autonomous brain cycle starting...');
 
   const startTime = Date.now();
@@ -36,14 +55,16 @@ export async function runBrainCycle(): Promise<BrainCycleResult> {
     // === PHASE 0: Library Reading ===
     console.log('[MaraBrain] Phase 0: Reading from library...');
     try {
-      const bookResult = await readNextLibraryBook();
-      if (bookResult) {
-        research.push(`📚 Read "${bookResult.title}": ${bookResult.totalIdeas} ideas extracted`);
-        knowledgeLearned += bookResult.savedKnowledgeIds.length;
-      } else {
-        const progress = await getLibraryProgress();
-        research.push(`📚 Library complete: ${progress.read}/${progress.total} books read`);
-      }
+      await withTimeout((async () => {
+        const bookResult = await readNextLibraryBook();
+        if (bookResult) {
+          research.push(`📚 Read "${bookResult.title}": ${bookResult.totalIdeas} ideas extracted`);
+          knowledgeLearned += bookResult.savedKnowledgeIds.length;
+        } else {
+          const progress = await getLibraryProgress();
+          research.push(`📚 Library complete: ${progress.read}/${progress.total} books read`);
+        }
+      })(), PHASE_TIMEOUT, 'Phase 0: Library');
     } catch (err) {
       console.error('[MaraBrain] Library reading failed:', err);
     }
@@ -170,6 +191,10 @@ export async function runBrainCycle(): Promise<BrainCycleResult> {
  * Called once when the server starts with no existing knowledge
  */
 export async function runInitialLearning(): Promise<void> {
+  return withTimeout(_runInitialLearningInner(), INITIAL_LEARNING_TIMEOUT, 'Initial learning');
+}
+
+async function _runInitialLearningInner(): Promise<void> {
   const stats = await getKnowledgeStats();
   if (stats.total > 0) {
     console.log(`[MaraBrain] Already have ${stats.total} knowledge entries. Skipping bootstrap.`);
@@ -194,7 +219,7 @@ export async function runInitialLearning(): Promise<void> {
   for (const topic of bootstrapTopics) {
     try {
       console.log(`[MaraBrain] 📚 Learning: ${topic.substring(0, 60)}...`);
-      await learnFromGemini(topic);
+      await withTimeout(learnFromGemini(topic), PHASE_TIMEOUT, `Learn: ${topic.substring(0, 40)}`);
       // Rate limit
       await new Promise((resolve) => setTimeout(resolve, 3000));
     } catch (err) {
@@ -205,28 +230,28 @@ export async function runInitialLearning(): Promise<void> {
   // Research competitors
   try {
     console.log('[MaraBrain] 🔍 Researching competitors...');
-    await researchCompetitors();
-  } catch {
-    console.error('[MaraBrain] Competitor research failed');
+    await withTimeout(researchCompetitors(), PHASE_TIMEOUT, 'Competitor research');
+  } catch (err) {
+    console.error('[MaraBrain] Competitor research failed:', err);
   }
 
   // Start reading the first library book
   try {
     console.log('[MaraBrain] 📚 Reading first library book...');
-    const bookResult = await readNextLibraryBook();
+    const bookResult = await withTimeout(readNextLibraryBook(), PHASE_TIMEOUT, 'Library read');
     if (bookResult) {
       console.log(`[MaraBrain] 📚 Finished "${bookResult.title}": ${bookResult.totalIdeas} ideas`);
     }
-  } catch {
-    console.error('[MaraBrain] Initial library reading failed');
+  } catch (err) {
+    console.error('[MaraBrain] Initial library reading failed:', err);
   }
 
   // Initial platform analysis
   try {
     console.log('[MaraBrain] 📊 Initial platform analysis...');
-    await analyzePlatform();
-  } catch {
-    console.error('[MaraBrain] Initial analysis failed');
+    await withTimeout(analyzePlatform(), PHASE_TIMEOUT, 'Platform analysis');
+  } catch (err) {
+    console.error('[MaraBrain] Initial analysis failed:', err);
   }
 
   // Write first reflection

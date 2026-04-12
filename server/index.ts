@@ -409,13 +409,12 @@ app.use((req, res, next) => {
       }
     }
 
-    // Run initial learning bootstrap (non-blocking)
-    runInitialLearning().catch((err) => {
-      log(`Initial learning failed: ${err}`, 'mara-brain');
-    });
-
-    // Rulează task-urile AI costisitoare doar dacă este activat explicit
+    // Run initial learning bootstrap only when explicitly enabled (non-blocking)
     if (process.env.PROCESS_AI_TASKS === 'true') {
+      runInitialLearning().catch((err) => {
+        log(`Initial learning failed: ${err}`, 'mara-brain');
+      });
+
       // Run first brain cycle after 30 seconds (let server fully start)
       setTimeout(runAutoBrainCycle, 30 * 1000);
       setInterval(runAutoBrainCycle, BRAIN_INTERVAL);
@@ -426,7 +425,7 @@ app.use((req, res, next) => {
       );
     } else {
       log(
-        'Mara auto-scheduler is disabled. Set PROCESS_AI_TASKS=true to enable.',
+        'Mara AI tasks disabled (initial learning + brain cycles). Set PROCESS_AI_TASKS=true to enable.',
         'mara-scheduler',
       );
     }
