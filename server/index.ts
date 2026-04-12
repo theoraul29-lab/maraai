@@ -11,7 +11,7 @@ import { getMaraResponse, generateMarketingPost } from './ai.js';
 import { WebSocketServer } from 'ws';
 import url from 'url';
 import { storage } from './storage.js';
-import { authMiddleware } from './auth.js'; // JWT auth middleware
+import { setupSessionAuth } from './auth.js';
 import { z } from 'zod';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { db } from './db.js';
@@ -97,7 +97,7 @@ app.use(
   }),
 );
 
-app.use(authMiddleware); // JWT auth middleware
+setupSessionAuth(app); // Session-based auth
 const httpServer = createServer(app);
 
 declare module 'http' {

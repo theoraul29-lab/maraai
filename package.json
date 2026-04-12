@@ -12,7 +12,6 @@
     "smoke:runtime": "node scripts/smoke-runtime.mjs"
   },
   "dependencies": {
-    "@genkit-ai/googleai": "^1.28.0",
     "@google/generative-ai": "^0.21.0",
     "bcryptjs": "^2.4.3",
     "better-sqlite3": "^12.8.0",
@@ -23,10 +22,7 @@
     "drizzle-zod": "^0.5.1",
     "express": "^4.19.2",
     "express-session": "^1.18.0",
-    "genkit": "^1.31.0",
     "memoizee": "^0.4.15",
-    "openid-client": "^5.6.5",
-    "passport": "^0.7.0",
     "ws": "^8.17.0",
     "zod": "^3.23.8"
   },
@@ -39,7 +35,6 @@
     "@types/express-session": "^1.18.0",
     "@types/memoizee": "^0.4.11",
     "@types/node": "^20.14.0",
-    "@types/passport": "^1.0.16",
     "@types/ws": "^8.5.10",
     "@vitejs/plugin-react": "^6.0.1",
     "tsx": "^4.15.0",
