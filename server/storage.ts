@@ -88,6 +88,7 @@ export interface IStorage {
   ): Promise<void>;
 
   getAllUsers(): Promise<User[]>;
+  getUser(id: string): Promise<User | undefined>;
   getTotalMessageCount(): Promise<number>;
   getTotalLikeCount(): Promise<number>;
   clearOldMessages(hoursOld: number): Promise<void>;
@@ -368,6 +369,11 @@ export class DatabaseStorage implements IStorage {
 
   async getAllUsers(): Promise<User[]> {
     return await db.select().from(users).orderBy(desc(users.createdAt));
+  }
+
+  async getUser(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
 
   async getTotalMessageCount(): Promise<number> {

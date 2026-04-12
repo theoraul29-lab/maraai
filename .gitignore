@@ -18,9 +18,11 @@ client/dist/
 
 # Database files — contain production data
 *.sqlite
-*.sqlite3*.sqlite-shm
+*.sqlite3
+*.sqlite-shm
 *.sqlite-wal
-*.sqlite-journalinstance/
+*.sqlite-journal
+instance/
 
 # Sensitive Kubernetes backup files containing credentials
 backup_k8s_*.yaml
