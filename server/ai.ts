@@ -1,7 +1,5 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { buildUserContext, buildSystemInstruction, recordLearningFromChat } from './mara-brain/index.js';
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+import { isOpenRouterConfigured, chatCompletion, generate } from './openrouter.js';
 
 // Legacy system instructions kept as fallback when brain module is unavailable
 const SYSTEM_INSTRUCTION_FALLBACK =
@@ -47,9 +45,9 @@ export async function getMaraResponse(
 	module?: string,
 	userId?: string,
 ): Promise<{ response: string; detectedMood: string }> {
-	if (!process.env.GEMINI_API_KEY) {
+	if (!isOpenRouterConfigured()) {
 		return {
-			response: 'Mara AI is not configured. Please set GEMINI_API_KEY.',
+			response: 'Mara AI is not configured. Please set OPENROUTER_API_KEY.',
 			detectedMood: 'neutral',
 		};
 	}
@@ -77,22 +75,18 @@ export async function getMaraResponse(
 		systemInstruction = getFallbackInstruction(prefs?.language);
 	}
 
-	const model = genAI.getGenerativeModel({
-		model: 'gemini-1.5-flash',
-		systemInstruction,
-		generationConfig: { temperature: 0.95 },
-	});
+	const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
+		{ role: 'system', content: systemInstruction },
+		...history
+			.filter((h) => h.role === 'user' || h.role === 'model' || h.role === 'assistant')
+			.map((h) => ({
+				role: (h.role === 'model' ? 'assistant' : h.role) as 'user' | 'assistant',
+				content: h.content,
+			})),
+		{ role: 'user', content: message },
+	];
 
-	const chatHistory = history
-		.filter((h) => h.role === 'user' || h.role === 'model' || h.role === 'assistant')
-		.map((h) => ({
-			role: h.role === 'user' ? ('user' as const) : ('model' as const),
-			parts: [{ text: h.content }],
-		}));
-
-	const chat = model.startChat({ history: chatHistory });
-	const result = await chat.sendMessage(message);
-	const responseText = result.response.text();
+	const responseText = await chatCompletion(messages, { temperature: 0.95 });
 	const detectedMood = detectMood(responseText);
 
 	return { response: responseText, detectedMood };
@@ -109,16 +103,14 @@ export async function analyzeFeedbackPatterns(
 }
 
 export async function generateImprovementIdeas(context: string): Promise<string[]> {
-	if (!process.env.GEMINI_API_KEY) {
+	if (!isOpenRouterConfigured()) {
 		return ['Improve response time', 'Add more personalization', 'Enhance context understanding'];
 	}
 	try {
-		const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-		const result = await model.generateContent(
+		const text = await generate(
 			`Give 3 concise improvement ideas for this AI system context: ${context}. Return a JSON array of strings.`,
 		);
-		const text = result.response.text().trim();
-		const json = text.match(/\[.*\]/s)?.[0];
+		const json = text.trim().match(/\[.*\]/s)?.[0];
 		return json
 			? JSON.parse(json)
 			: ['Improve response accuracy', 'Add context awareness', 'Enhance personalization'];
@@ -129,15 +121,14 @@ export async function generateImprovementIdeas(context: string): Promise<string[
 
 export async function generateMarketingPost(topic?: string): Promise<string> {
 	const postTopic = topic || 'MaraAI platform features';
-	if (!process.env.GEMINI_API_KEY) {
+	if (!isOpenRouterConfigured()) {
 		return `Check out the latest from MaraAI on ${postTopic}! #MaraAI #AI`;
 	}
 	try {
-		const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-		const result = await model.generateContent(
+		const text = await generate(
 			`Write a short, engaging social media post about: ${postTopic}. Under 280 characters.`,
 		);
-		return result.response.text().trim();
+		return text.trim();
 	} catch {
 		return `Exciting news about ${postTopic} from MaraAI! Stay tuned. #MaraAI`;
 	}
