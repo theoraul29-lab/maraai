@@ -1,21 +1,21 @@
 // Mara Knowledge Base — Long-term memory & knowledge retrieval
-// Stores everything Mara learns: from Gemini, web, users, self-reflection
+// Stores everything Mara learns: from LLM, web, users, self-reflection
 
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { llmGenerate, isLLMConfigured } from '../llm.js';
 import { storage } from '../storage.js';
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export type KnowledgeCategory =
   | 'user_pattern'
   | 'platform_insight'
   | 'business_insight'
-  | 'gemini_learning'
+  | 'llm_learning'
+  | 'gemini_learning'  // kept for backward compatibility with existing data
   | 'web_research'
   | 'book_knowledge';
 
 export type KnowledgeSource =
-  | 'gemini'
+  | 'llm'
+  | 'gemini'           // kept for backward compatibility with existing data
   | 'web'
   | 'user_interaction'
   | 'self_reflection'
@@ -146,11 +146,9 @@ export async function learnFromText(
   source: KnowledgeSource = 'document',
   sourceLabel?: string,
 ): Promise<{ ideas: ExtractedIdea[]; savedIds: number[] }> {
-  if (!process.env.GEMINI_API_KEY) {
+  if (!isLLMConfigured()) {
     return { ideas: [], savedIds: [] };
   }
-
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
   const prompt = `Analizează acest text și extrage idei utile. Pentru fiecare idee, returnează JSON structurat.
 
@@ -161,15 +159,14 @@ ${text.substring(0, 4000)}
 
 Returnează un JSON array cu maxim 5 idei, fiecare cu aceste câmpuri:
 - "idea": ideea principală (1-2 propoziții)
-- "category": una din: business_insight, platform_insight, user_pattern, gemini_learning, web_research, book_knowledge
+- "category": una din: business_insight, platform_insight, user_pattern, llm_learning, web_research, book_knowledge
 - "how_to_apply": cum se poate aplica concret pe platforma MaraAI (1-2 propoziții)
 
 Răspunde DOAR cu JSON array-ul, fără alt text. Exemplu:
 [{"idea":"...", "category":"business_insight", "how_to_apply":"..."}]`;
 
   try {
-    const result = await model.generateContent(prompt);
-    const raw = result.response.text().trim();
+    const raw = (await llmGenerate(prompt)).trim();
     const jsonMatch = raw.match(/\[[\s\S]*\]/);
     if (!jsonMatch) return { ideas: [], savedIds: [] };
 
@@ -180,7 +177,7 @@ Răspunde DOAR cu JSON array-ul, fără alt text. Exemplu:
     for (const item of parsed) {
       if (!item.idea || !item.category || !item.howToApply) continue;
 
-      const validCategory = (['business_insight', 'platform_insight', 'user_pattern', 'gemini_learning', 'web_research', 'book_knowledge'] as KnowledgeCategory[]).includes(item.category as KnowledgeCategory)
+      const validCategory = (['business_insight', 'platform_insight', 'user_pattern', 'llm_learning', 'web_research', 'book_knowledge'] as KnowledgeCategory[]).includes(item.category as KnowledgeCategory)
         ? (item.category as KnowledgeCategory)
         : 'book_knowledge';
 

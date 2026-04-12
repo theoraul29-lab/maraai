@@ -38,9 +38,9 @@ async function runChecks(): Promise<void> {
   // 1. Environment Variables
   console.log('📋 Checking Environment Variables...');
   check(
-    'GEMINI_API_KEY',
-    !!process.env.GEMINI_API_KEY,
-    'Missing GEMINI_API_KEY - AI responses will fail',
+    'OPENROUTER_API_KEY or OLLAMA_BASE_URL',
+    !!(process.env.OPENROUTER_API_KEY || process.env.OLLAMA_BASE_URL),
+    'Missing OPENROUTER_API_KEY (and no OLLAMA_BASE_URL) - AI responses will fail',
   );
   check(
     'DATABASE_URL',
@@ -82,7 +82,6 @@ async function runChecks(): Promise<void> {
 
   const requiredDeps = [
     'express',
-    '@google/generative-ai',
     'ws',
     'zod',
   ];
@@ -110,9 +109,9 @@ async function runChecks(): Promise<void> {
   // 8. API Endpoints
   console.log('\n🔌 Checking Critical Endpoints...');
   check(
-    'Gemini Integration',
-    fs.readFileSync('server/ai.ts', 'utf-8').includes('GoogleGenerativeAI'),
-    'Gemini API not configured in ai.ts',
+    'LLM Integration',
+    fs.readFileSync('server/llm.ts', 'utf-8').includes('openrouterChat'),
+    'OpenRouter provider not configured in llm.ts',
   );
   check(
     'Chat Endpoint',

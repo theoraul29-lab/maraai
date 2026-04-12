@@ -1,27 +1,30 @@
 /**
  * LLM Abstraction Layer
  *
- * Selects between Ollama (self-hosted) and Gemini based on env vars:
+ * Selects between Ollama (self-hosted) and OpenRouter based on env vars:
  *
- *   AI_PROVIDER=ollama|gemini   (default: "ollama" when OLLAMA_BASE_URL is set, else "gemini")
- *   OLLAMA_BASE_URL             (e.g. http://ollama:11434)
- *   OLLAMA_MODEL                (default: llama3.2:1b)
- *   GEMINI_API_KEY              (required when provider is gemini)
+ *   AI_PROVIDER=ollama|openrouter   (default: "ollama" when OLLAMA_BASE_URL is set, else "openrouter")
+ *   OLLAMA_BASE_URL                 (e.g. http://ollama:11434)
+ *   OLLAMA_MODEL                    (default: llama3.2:1b)
+ *   OPENROUTER_API_KEY              (required when provider is openrouter)
+ *   OPENROUTER_MODEL                (default: openai/gpt-4o-mini)
+ *   OPENROUTER_BASE_URL             (default: https://openrouter.ai/api/v1)
+ *   OPENROUTER_HTTP_REFERER         (optional — sent as HTTP-Referer header)
+ *   OPENROUTER_X_TITLE              (optional — sent as X-Title header)
  */
-
-import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // ─── Provider selection ───────────────────────────────────────────────────────
 
-export type LLMProvider = 'ollama' | 'gemini';
+export type LLMProvider = 'ollama' | 'openrouter';
 
 export function getActiveProvider(): LLMProvider {
   const explicit = process.env.AI_PROVIDER?.toLowerCase();
   if (explicit === 'ollama') return 'ollama';
-  if (explicit === 'gemini') return 'gemini';
+  // Accept 'openrouter' and legacy 'gemini' value for backward compatibility
+  if (explicit === 'openrouter' || explicit === 'gemini') return 'openrouter';
   // Auto-detect: prefer Ollama when OLLAMA_BASE_URL is configured
   if (process.env.OLLAMA_BASE_URL) return 'ollama';
-  return 'gemini';
+  return 'openrouter';
 }
 
 // ─── Shared message type ──────────────────────────────────────────────────────
@@ -108,43 +111,61 @@ export async function checkOllamaHealth(): Promise<{
   }
 }
 
-// ─── Gemini provider ──────────────────────────────────────────────────────────
+// ─── OpenRouter provider ──────────────────────────────────────────────────────
 
-function getGenAI(): GoogleGenerativeAI {
-  return new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+const OPENROUTER_DEFAULT_MODEL = 'openai/gpt-4o-mini';
+const OPENROUTER_DEFAULT_BASE_URL = 'https://openrouter.ai/api/v1';
+
+function getOpenRouterConfig(): {
+  apiKey: string;
+  model: string;
+  baseUrl: string;
+  httpReferer?: string;
+  xTitle?: string;
+} {
+  return {
+    apiKey: process.env.OPENROUTER_API_KEY || '',
+    model: process.env.OPENROUTER_MODEL || OPENROUTER_DEFAULT_MODEL,
+    baseUrl: (process.env.OPENROUTER_BASE_URL || OPENROUTER_DEFAULT_BASE_URL).replace(/\/$/, ''),
+    httpReferer: process.env.OPENROUTER_HTTP_REFERER,
+    xTitle: process.env.OPENROUTER_X_TITLE,
+  };
 }
 
-async function geminiChat(messages: LLMMessage[], temperature = 0.95): Promise<string> {
-  const genAI = getGenAI();
-  const systemMessages = messages.filter((m) => m.role === 'system');
-  const conversationMessages = messages.filter((m) => m.role !== 'system');
+async function openrouterChat(messages: LLMMessage[], temperature = 0.95): Promise<string> {
+  const { apiKey, model, baseUrl, httpReferer, xTitle } = getOpenRouterConfig();
 
-  const systemInstruction = systemMessages.map((m) => m.content).join('\n');
-  const model = genAI.getGenerativeModel({
-    model: 'gemini-1.5-flash',
-    ...(systemInstruction ? { systemInstruction } : {}),
-    generationConfig: { temperature },
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${apiKey}`,
+  };
+  if (httpReferer) headers['HTTP-Referer'] = httpReferer;
+  if (xTitle) headers['X-Title'] = xTitle;
+
+  const body = JSON.stringify({
+    model,
+    messages: messages.map((m) => ({ role: m.role, content: m.content })),
+    temperature,
   });
 
-  const history = conversationMessages.slice(0, -1).map((m) => ({
-    role: m.role === 'user' ? ('user' as const) : ('model' as const),
-    parts: [{ text: m.content }],
-  }));
+  const res = await fetch(`${baseUrl}/chat/completions`, {
+    method: 'POST',
+    headers,
+    body,
+    signal: AbortSignal.timeout(120_000), // 2-minute timeout
+  });
 
-  const last = conversationMessages[conversationMessages.length - 1];
-  const chat = model.startChat({ history });
-  const result = await chat.sendMessage(last?.content ?? '');
-  return result.response.text();
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '');
+    throw new Error(`OpenRouter request failed (${res.status}): ${errText}`);
+  }
+
+  const data = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+  return data.choices?.[0]?.message?.content ?? '';
 }
 
-async function geminiGenerate(prompt: string, temperature = 0.7): Promise<string> {
-  const genAI = getGenAI();
-  const model = genAI.getGenerativeModel({
-    model: 'gemini-1.5-flash',
-    generationConfig: { temperature },
-  });
-  const result = await model.generateContent(prompt);
-  return result.response.text();
+async function openrouterGenerate(prompt: string, temperature = 0.7): Promise<string> {
+  return openrouterChat([{ role: 'user', content: prompt }], temperature);
 }
 
 // ─── Unified public API ───────────────────────────────────────────────────────
@@ -163,10 +184,10 @@ export async function llmChat(messages: LLMMessage[], temperature = 0.95): Promi
     return ollamaChat(messages, temperature);
   }
 
-  if (!process.env.GEMINI_API_KEY) {
-    throw new Error('GEMINI_API_KEY is not set. Cannot use Gemini provider.');
+  if (!process.env.OPENROUTER_API_KEY) {
+    throw new Error('OPENROUTER_API_KEY is not set. Cannot use OpenRouter provider.');
   }
-  return geminiChat(messages, temperature);
+  return openrouterChat(messages, temperature);
 }
 
 /**
@@ -182,15 +203,15 @@ export async function llmGenerate(prompt: string, temperature = 0.7): Promise<st
     return ollamaGenerate(prompt, temperature);
   }
 
-  if (!process.env.GEMINI_API_KEY) {
-    throw new Error('GEMINI_API_KEY is not set. Cannot use Gemini provider.');
+  if (!process.env.OPENROUTER_API_KEY) {
+    throw new Error('OPENROUTER_API_KEY is not set. Cannot use OpenRouter provider.');
   }
-  return geminiGenerate(prompt, temperature);
+  return openrouterGenerate(prompt, temperature);
 }
 
 /** True when the active provider has its required config present. */
 export function isLLMConfigured(): boolean {
   const provider = getActiveProvider();
   if (provider === 'ollama') return !!process.env.OLLAMA_BASE_URL;
-  return !!process.env.GEMINI_API_KEY;
+  return !!process.env.OPENROUTER_API_KEY;
 }

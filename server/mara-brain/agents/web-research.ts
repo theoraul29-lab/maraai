@@ -1,6 +1,6 @@
 // Mara Web Research Agent
 // Searches the internet for information, trends, and knowledge
-// Uses the configured LLM provider (Ollama or Gemini) for web-grounded queries
+// Uses the configured LLM provider for web-grounded queries
 
 import { llmGenerate, isLLMConfigured } from '../../llm.js';
 import { storeKnowledge } from '../knowledge-base.js';
@@ -14,8 +14,7 @@ interface WebResearchResult {
 }
 
 /**
- * Research a topic using Gemini's knowledge (grounded in web data)
- * Gemini 1.5 has up-to-date training data and can be used as a research proxy
+ * Research a topic using the configured LLM's knowledge (grounded in training data)
  */
 export async function researchTopic(query: string, context?: string): Promise<WebResearchResult> {
   if (!isLLMConfigured()) {

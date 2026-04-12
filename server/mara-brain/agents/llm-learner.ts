@@ -1,5 +1,5 @@
 // Mara LLM Learner Agent
-// Learns from LLM (Ollama or Gemini): asks questions, deepens concepts, validates ideas, self-improves
+// Learns from the configured LLM via OpenRouter: asks questions, deepens concepts, validates ideas, self-improves
 
 import { llmGenerate, isLLMConfigured } from '../../llm.js';
 import { storeKnowledge } from '../knowledge-base.js';
@@ -12,9 +12,9 @@ interface LearningResult {
 }
 
 /**
- * Ask Gemini to teach Mara about a specific topic
+ * Ask the LLM to teach Mara about a specific topic
  */
-export async function learnFromGemini(topic: string, context?: string): Promise<LearningResult> {
+export async function learnFromLLM(topic: string, context?: string): Promise<LearningResult> {
   if (!isLLMConfigured()) {
     return { topic, learned: 'LLM provider not configured', savedKnowledgeIds: [] };
   }
@@ -43,10 +43,10 @@ Fii concis dar informativ. Răspunde în limba română.`;
 
     // Store main knowledge
     const mainId = await storeKnowledge(
-      'gemini_learning',
+      'llm_learning',
       topic,
       text,
-      'gemini',
+      'llm',
       80,
       { learnedAt: new Date().toISOString(), type: 'full_lesson' },
     );
@@ -56,10 +56,10 @@ Fii concis dar informativ. Răspunde în limba română.`;
     const concepts = extractConcepts(text);
     for (const concept of concepts) {
       const id = await storeKnowledge(
-        'gemini_learning',
+        'llm_learning',
         `${topic} — ${concept.title}`,
         concept.content,
-        'gemini',
+        'llm',
         75,
         { parentTopic: topic, type: 'concept' },
       );
@@ -69,7 +69,7 @@ Fii concis dar informativ. Răspunde în limba română.`;
     // Log the search/learning activity
     await storage.createSearchHistory({
       query: topic,
-      source: 'gemini',
+      source: 'llm',
       resultSummary: text.substring(0, 500),
       knowledgeExtracted: JSON.stringify(savedIds),
       triggeredBy: 'brain_cycle',
@@ -77,13 +77,16 @@ Fii concis dar informativ. Răspunde în limba română.`;
 
     return { topic, learned: text, savedKnowledgeIds: savedIds };
   } catch (error) {
-    console.error(`[GeminiLearner] Failed to learn about "${topic}":`, error);
+    console.error(`[LLMLearner] Failed to learn about "${topic}":`, error);
     return { topic, learned: `Error learning about ${topic}`, savedKnowledgeIds: [] };
   }
 }
 
+/** @deprecated Use learnFromLLM instead */
+export const learnFromGemini = learnFromLLM;
+
 /**
- * Ask Gemini to analyze user patterns and give recommendations
+ * Ask the LLM to analyze user patterns and give recommendations
  */
 export async function analyzeUserPatterns(patterns: string): Promise<string> {
   if (!isLLMConfigured()) return 'LLM provider not configured';
@@ -163,10 +166,10 @@ Dă-mi 3-5 sugestii concrete de îmbunătățire a răspunsurilor mele. Focus pe
 }
 
 /**
- * Ask Gemini about business strategies for the platform
+ * Ask LLM about business strategies for the platform
  */
 export async function learnBusinessStrategy(platformContext: string): Promise<LearningResult> {
-  return learnFromGemini(
+  return learnFromLLM(
     'Business strategy & growth pentru platformă socială cu AI, trading crypto, creator studio, și writers hub',
     platformContext,
   );
@@ -176,13 +179,13 @@ export async function learnBusinessStrategy(platformContext: string): Promise<Le
  * Explore a topic Mara encountered but doesn't know well
  */
 export async function deepenConcept(concept: string, currentKnowledge: string): Promise<LearningResult> {
-  return learnFromGemini(
+  return learnFromLLM(
     concept,
     `Ce știu deja: ${currentKnowledge}\n\nVreau să aprofundez acest subiect.`,
   );
 }
 
-// Helper: extract key concepts from a Gemini response
+// Helper: extract key concepts from an LLM response
 function extractConcepts(text: string): { title: string; content: string }[] {
   const concepts: { title: string; content: string }[] = [];
   const lines = text.split('\n');

@@ -15,7 +15,7 @@ export {
   type EmotionalProfile,
   type PersonalityConfig,
 } from './personality.js';
-export { learnFromGemini, deepenConcept, validateIdeas, selfImproveQuery } from './agents/gemini-learner.js';
+export { learnFromLLM, learnFromGemini, deepenConcept, validateIdeas, selfImproveQuery } from './agents/llm-learner.js';
 export { researchTopic, researchModuleTrends, researchGap, generateResearchAgenda } from './agents/web-research.js';
 export { analyzePlatform, collectPlatformMetrics, generateGrowthSuggestions, identifyWeakModules } from './agents/platform-analyzer.js';
 export { processDocument, processDocumentBatch, type DocumentReadResult } from './agents/document-reader.js';
