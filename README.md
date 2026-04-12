@@ -25,7 +25,7 @@ npm run dev
 - **Backend** → http://localhost:5000 (or next available port)
 - **Health check** → http://localhost:5000/api/health
 
-> **No API key required for basic use.** AI features (chat, marketing posts) will return graceful error messages if `AI_INTEGRATIONS_OPENAI_API_KEY` is not set.
+> **No API key required for basic use.** AI features (chat, marketing posts) will return graceful error messages if `GEMINI_API_KEY` is not set.
 
 ## Environment Variables
 
@@ -37,9 +37,10 @@ Copy `.env.example` to `.env` and set the following:
 | `NODE_ENV` | No | `development` or `production` |
 | `SESSION_SECRET` | Production only | Random secret for sessions (auto-generated in dev) |
 | `DATABASE_URL` | No | SQLite path (default: `./maraai.sqlite`) |
-| `AUTH_MODE` | No | Set to `local` to bypass OAuth (dev-friendly default) |
-| `AI_INTEGRATIONS_OPENAI_API_KEY` | No | OpenAI API key for AI features |
-| `AI_INTEGRATIONS_OPENAI_BASE_URL` | No | Custom OpenAI base URL (optional) |
+| `AUTH_MODE` | No | Always `local` — simple session-based auth |
+| `CORS_ORIGINS` | Production only | Comma-separated allowed origins |
+| `GEMINI_API_KEY` | No | Google Gemini API key for AI features |
+| `PROCESS_AI_TASKS` | No | `true` to enable periodic brain/marketing cycles |
 
 ## Configuration Map
 
@@ -52,7 +53,7 @@ Canonical app configuration (used by root `npm` scripts):
 - Tailwind/PostCSS: `tailwind.config.js`, `postcss.config.cjs`
 - Linting: `eslint.config.js`
 - Database migrations: `drizzle.config.ts`
-- Deployment: `render.yaml`
+- Deployment: `railway.json`, `nixpacks.toml`
 
 Notes:
 
@@ -94,8 +95,8 @@ npm start       # starts the backend serving the built frontend
 	- `PORT=5000` (Railway also injects `PORT`; keeping this explicit is fine)
 	- `AUTH_MODE=local`
 	- `SESSION_SECRET=<long-random-secret>`
-	- `DATABASE_URL=sqlite:///data/maraai.sqlite`
-	- `AI_INTEGRATIONS_OPENAI_API_KEY=<optional>`
+	- `DATABASE_URL=sqlite:////data/maraai.sqlite`
+	- `GEMINI_API_KEY=<optional>`
 6. Deploy and open your Railway service URL.
 
 Quick verify after deploy:
