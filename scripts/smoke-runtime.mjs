@@ -8,16 +8,19 @@ const BASE = process.env.MARAAI_BASE_URL || 'http://localhost:3001';
 const endpoints = [
   { path: '/api/health', expect: 200 },
   { path: '/api/runtime', expect: 200 },
+  // AI provider health — always returns JSON; 503 means "not configured" (expected in CI)
+  { path: '/api/ai/health', expect: [200, 503] },
 ];
 
 let failures = 0;
 
 for (const { path, expect } of endpoints) {
   const url = `${BASE}${path}`;
+  const acceptedStatuses = Array.isArray(expect) ? expect : [expect];
   try {
     const res = await fetch(url);
-    if (res.status !== expect) {
-      console.error(`FAIL  ${url} — expected ${expect}, got ${res.status}`);
+    if (!acceptedStatuses.includes(res.status)) {
+      console.error(`FAIL  ${url} — expected ${acceptedStatuses.join('|')}, got ${res.status}`);
       failures++;
     } else {
       const body = await res.text();

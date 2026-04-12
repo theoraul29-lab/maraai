@@ -1,12 +1,10 @@
 // Mara Web Research Agent
 // Searches the internet for information, trends, and knowledge
-// Uses Google Custom Search API or falls back to Gemini web-grounded queries
+// Uses the configured LLM provider (Ollama or Gemini) for web-grounded queries
 
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { llmGenerate, isLLMConfigured } from '../../llm.js';
 import { storeKnowledge } from '../knowledge-base.js';
 import { storage } from '../../storage.js';
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 interface WebResearchResult {
   query: string;
@@ -20,11 +18,9 @@ interface WebResearchResult {
  * Gemini 1.5 has up-to-date training data and can be used as a research proxy
  */
 export async function researchTopic(query: string, context?: string): Promise<WebResearchResult> {
-  if (!process.env.GEMINI_API_KEY) {
-    return { query, findings: 'API key not configured', knowledgeIds: [], source: 'none' };
+  if (!isLLMConfigured()) {
+    return { query, findings: 'LLM provider not configured', knowledgeIds: [], source: 'none' };
   }
-
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
   const prompt = `Ești un agent de research al platformei MaraAI. Caută și raportează cele mai recente informații despre:
 
@@ -47,8 +43,7 @@ Format:
 Răspunde în română.`;
 
   try {
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
+    const text = await llmGenerate(prompt);
 
     const knowledgeIds: number[] = [];
 
@@ -59,20 +54,20 @@ Răspunde în română.`;
       text,
       'web',
       65,
-      { researchedAt: new Date().toISOString(), method: 'gemini_grounded' },
+      { researchedAt: new Date().toISOString(), method: 'llm_grounded' },
     );
     knowledgeIds.push(id);
 
     // Log search
     await storage.createSearchHistory({
       query,
-      source: 'gemini',
+      source: 'llm',
       resultSummary: text.substring(0, 500),
       knowledgeExtracted: JSON.stringify(knowledgeIds),
       triggeredBy: 'brain_cycle',
     });
 
-    return { query, findings: text, knowledgeIds, source: 'gemini_grounded' };
+    return { query, findings: text, knowledgeIds, source: 'llm_grounded' };
   } catch (error) {
     console.error(`[WebResearch] Failed to research "${query}":`, error);
     return { query, findings: 'Research failed', knowledgeIds: [], source: 'error' };
@@ -149,9 +144,7 @@ export async function batchResearch(topics: string[]): Promise<WebResearchResult
  * Generate research topics based on what Mara doesn't know yet
  */
 export async function generateResearchAgenda(): Promise<string[]> {
-  if (!process.env.GEMINI_API_KEY) return [];
-
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  if (!isLLMConfigured()) return [];
 
   // Get what Mara already knows
   const existingKnowledge = await storage.getAllKnowledge(50);
@@ -167,8 +160,7 @@ Focus pe: tendințe actuale, business strategy, user experience, monetizare, teh
 Returnează doar un JSON array de strings: ["topic1", "topic2", ...]`;
 
   try {
-    const result = await model.generateContent(prompt);
-    const text = result.response.text().trim();
+    const text = (await llmGenerate(prompt)).trim();
     const jsonMatch = text.match(/\[[\s\S]*\]/);
     return jsonMatch ? JSON.parse(jsonMatch[0]) : [];
   } catch {
