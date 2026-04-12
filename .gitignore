@@ -2,6 +2,11 @@
 .env
 .env.*
 !.env.example
+.env.local
+
+# Sensitive key files
+*.secret.json
+firebase-key.json
 
 # Dependencies
 node_modules/

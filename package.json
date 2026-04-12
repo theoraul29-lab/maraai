@@ -10,10 +10,10 @@
     "build:functions": "cd functions && npm install && npm run build",
     "start": "tsx server/index.ts",
     "start:backend": "tsx server/index.ts",
-    "deploy": "firebase deploy --project maraai-488fb",
-    "deploy:hosting": "firebase deploy --only hosting --project maraai-488fb",
-    "deploy:functions": "firebase deploy --only functions --project maraai-488fb",
-    "logs": "firebase functions:log --follow --project maraai-488fb",
+    "deploy": "firebase deploy --project ${FIREBASE_PROJECT_ID:-maraai-488fb}",
+    "deploy:hosting": "firebase deploy --only hosting --project ${FIREBASE_PROJECT_ID:-maraai-488fb}",
+    "deploy:functions": "firebase deploy --only functions --project ${FIREBASE_PROJECT_ID:-maraai-488fb}",
+    "logs": "firebase functions:log --follow --project ${FIREBASE_PROJECT_ID:-maraai-488fb}",
     "smoke:runtime": "node scripts/smoke-runtime.mjs"
   },
   "dependencies": {
@@ -55,6 +55,6 @@
     "vite": "^8.0.5"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": "20.x"
   }
 }
