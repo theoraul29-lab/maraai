@@ -76,21 +76,35 @@ const checkRateLimit = (
 // --- END RATE LIMITER LOGIC ---
 
 // --- CORS configuration ---
-const allowedOrigins = process.env.CORS_ORIGINS
-  ? process.env.CORS_ORIGINS.split(',')
+// In production, set CORS_ORIGINS to a comma-separated list of allowed origins.
+// Example: CORS_ORIGINS=https://maraai-production.up.railway.app,https://yourdomain.com
+// If CORS_ORIGINS is not set in production, all cross-origin requests will be rejected (secure default).
+// In development, all origins are allowed when CORS_ORIGINS is not set.
+const allowedOrigins: string[] = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
   : [];
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (server-to-server, curl, etc.)
+      // Allow requests with no origin (server-to-server, curl, Postman, etc.)
       if (!origin) return callback(null, true);
+
+      // Development with no origins configured: allow everything
       if (allowedOrigins.length === 0 && process.env.NODE_ENV !== 'production') {
-        return callback(null, true); // Allow all in dev if no origins configured
+        return callback(null, true);
       }
+
+      // Production with no CORS_ORIGINS set: reject all cross-origin requests
+      if (allowedOrigins.length === 0 && process.env.NODE_ENV === 'production') {
+        return callback(new Error('CORS not allowed: no CORS_ORIGINS configured in production'), false);
+      }
+
+      // Check against the explicit allow-list
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
+
       return callback(new Error('CORS not allowed'), false);
     },
     credentials: true,
