@@ -36,8 +36,8 @@ import { getLibraryProgress, addAndReadCustomBook, getKnowledgeStats } from './m
 import {
   setupAuth,
   registerAuthRoutes,
-} from './replit_integrations/auth/index';
-import { authStorage } from './replit_integrations/auth/storage';
+} from './auth.js';
+import { authStorage } from './replit_integrations/auth/storage.js';
 
 export async function registerRoutes(
   httpServer: Server,
