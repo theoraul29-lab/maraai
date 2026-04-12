@@ -43,10 +43,10 @@ Fii concis dar informativ. Răspunde în limba română.`;
 
     // Store main knowledge
     const mainId = await storeKnowledge(
-      'gemini_learning',
+      'llm_learning',
       topic,
       text,
-      'gemini',
+      'llm',
       80,
       { learnedAt: new Date().toISOString(), type: 'full_lesson' },
     );
@@ -56,10 +56,10 @@ Fii concis dar informativ. Răspunde în limba română.`;
     const concepts = extractConcepts(text);
     for (const concept of concepts) {
       const id = await storeKnowledge(
-        'gemini_learning',
+        'llm_learning',
         `${topic} — ${concept.title}`,
         concept.content,
-        'gemini',
+        'llm',
         75,
         { parentTopic: topic, type: 'concept' },
       );
@@ -69,7 +69,7 @@ Fii concis dar informativ. Răspunde în limba română.`;
     // Log the search/learning activity
     await storage.createSearchHistory({
       query: topic,
-      source: 'gemini',
+      source: 'llm',
       resultSummary: text.substring(0, 500),
       knowledgeExtracted: JSON.stringify(savedIds),
       triggeredBy: 'brain_cycle',
@@ -86,7 +86,7 @@ Fii concis dar informativ. Răspunde în limba română.`;
 export const learnFromGemini = learnFromLLM;
 
 /**
- * Ask Gemini to analyze user patterns and give recommendations
+ * Ask the LLM to analyze user patterns and give recommendations
  */
 export async function analyzeUserPatterns(patterns: string): Promise<string> {
   if (!isLLMConfigured()) return 'LLM provider not configured';

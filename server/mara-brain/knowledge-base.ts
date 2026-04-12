@@ -8,12 +8,14 @@ export type KnowledgeCategory =
   | 'user_pattern'
   | 'platform_insight'
   | 'business_insight'
-  | 'gemini_learning'
+  | 'llm_learning'
+  | 'gemini_learning'  // kept for backward compatibility with existing data
   | 'web_research'
   | 'book_knowledge';
 
 export type KnowledgeSource =
-  | 'gemini'
+  | 'llm'
+  | 'gemini'           // kept for backward compatibility with existing data
   | 'web'
   | 'user_interaction'
   | 'self_reflection'
@@ -157,7 +159,7 @@ ${text.substring(0, 4000)}
 
 Returnează un JSON array cu maxim 5 idei, fiecare cu aceste câmpuri:
 - "idea": ideea principală (1-2 propoziții)
-- "category": una din: business_insight, platform_insight, user_pattern, gemini_learning, web_research, book_knowledge
+- "category": una din: business_insight, platform_insight, user_pattern, llm_learning, web_research, book_knowledge
 - "how_to_apply": cum se poate aplica concret pe platforma MaraAI (1-2 propoziții)
 
 Răspunde DOAR cu JSON array-ul, fără alt text. Exemplu:
@@ -175,7 +177,7 @@ Răspunde DOAR cu JSON array-ul, fără alt text. Exemplu:
     for (const item of parsed) {
       if (!item.idea || !item.category || !item.howToApply) continue;
 
-      const validCategory = (['business_insight', 'platform_insight', 'user_pattern', 'gemini_learning', 'web_research', 'book_knowledge'] as KnowledgeCategory[]).includes(item.category as KnowledgeCategory)
+      const validCategory = (['business_insight', 'platform_insight', 'user_pattern', 'llm_learning', 'web_research', 'book_knowledge'] as KnowledgeCategory[]).includes(item.category as KnowledgeCategory)
         ? (item.category as KnowledgeCategory)
         : 'book_knowledge';
 
