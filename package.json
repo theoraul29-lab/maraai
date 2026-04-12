@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server/index.ts",
-    "build": "npm run build:frontend",
+    "build": "npm run build:frontend && npm run build:functions",
     "build:frontend": "cd frontend && npm install && npm run build",
+    "build:functions": "test -d functions && (cd functions && npm ci && npm run build) || echo \"No functions/ directory; skipping\"",
     "start": "tsx server/index.ts",
     "start:backend": "tsx server/index.ts",
     "smoke:runtime": "node scripts/smoke-runtime.mjs"
