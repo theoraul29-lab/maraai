@@ -191,6 +191,20 @@ app.use((req, res, next) => {
 (async () => {
   runMigrations();
 
+  // --- API Key Validation ---
+  // Warn early if GOOGLE_GENAI_API_KEY is absent so failures are caught at
+  // startup rather than silently inside AI call-paths at runtime.
+  if (!process.env.GOOGLE_GENAI_API_KEY && !process.env.GEMINI_API_KEY) {
+    log(
+      'WARNING: Neither GOOGLE_GENAI_API_KEY nor GEMINI_API_KEY is set. ' +
+        'AI features will be unavailable. Disabling PROCESS_AI_TASKS.',
+      'startup',
+    );
+    process.env.PROCESS_AI_TASKS = 'false';
+  } else {
+    log('AI API key detected. AI features are available.', 'startup');
+  }
+
   await registerRoutes(httpServer, app);
 
   // --- START P2P WEBSOCKET INTEGRATION ---
@@ -419,10 +433,19 @@ app.use((req, res, next) => {
       }
     }
 
-    // Run initial learning bootstrap (non-blocking)
-    runInitialLearning().catch((err) => {
-      log(`Initial learning failed: ${err}`, 'mara-brain');
-    });
+    // Run initial learning bootstrap only when AI tasks are explicitly enabled.
+    // Skipped by default to avoid blocking the health check on startup.
+    // Trigger manually via POST /api/admin/run-initial-learning or set PROCESS_AI_TASKS=true.
+    if (process.env.PROCESS_AI_TASKS === 'true') {
+      runInitialLearning().catch((err) => {
+        log(`Initial learning failed: ${err}`, 'mara-brain');
+      });
+    } else {
+      log(
+        'Initial learning bootstrap skipped. Set PROCESS_AI_TASKS=true to enable on startup.',
+        'mara-brain',
+      );
+    }
 
     // Rulează task-urile AI costisitoare doar dacă este activat explicit
     if (process.env.PROCESS_AI_TASKS === 'true') {

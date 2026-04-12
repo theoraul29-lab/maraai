@@ -18,7 +18,9 @@ async function getAdminAuth(): Promise<any> {
 		_auth = admin.auth();
 	} catch (err) {
 		console.warn(
-			'[firebaseAuth] Firebase Admin SDK unavailable. Continuing without Firebase auth.',
+			'[firebaseAuth] Firebase Admin SDK unavailable — token verification is disabled. ' +
+				'Set FIREBASE_PROJECT_ID (or GOOGLE_CLOUD_PROJECT) and ensure firebase-admin is installed ' +
+				'to enable authenticated routes. Continuing in unauthenticated mode.',
 			err instanceof Error ? err.message : err,
 		);
 	}

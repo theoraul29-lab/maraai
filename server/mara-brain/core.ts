@@ -18,12 +18,35 @@ export interface BrainCycleResult {
   reflectionId: number | null;
 }
 
+const BRAIN_CYCLE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+const INITIAL_LEARNING_TIMEOUT_MS = 2 * 60 * 1000; // 2 minutes
+
 /**
  * Run the full autonomous brain cycle
- * This is called every 6 hours by the scheduler
+ * This is called every 6 hours by the scheduler.
+ * Wrapped in a 5-minute timeout so a hung AI call can never block the process.
  */
 export async function runBrainCycle(): Promise<BrainCycleResult> {
   console.log('[MaraBrain] 🧠 Autonomous brain cycle starting...');
+
+  const timeoutPromise = new Promise<BrainCycleResult>((resolve) => {
+    setTimeout(() => {
+      console.warn('[MaraBrain] ⏱️ Brain cycle exceeded 5-minute timeout — returning partial results.');
+      resolve({
+        research: 'Brain cycle timed out after 5 minutes.',
+        productIdeas: '',
+        devTasks: '',
+        growthIdeas: '',
+        knowledgeLearned: 0,
+        reflectionId: null,
+      });
+    }, BRAIN_CYCLE_TIMEOUT_MS);
+  });
+
+  return Promise.race([_runBrainCycleInternal(), timeoutPromise]);
+}
+
+async function _runBrainCycleInternal(): Promise<BrainCycleResult> {
 
   const startTime = Date.now();
   const research: string[] = [];
@@ -91,9 +114,13 @@ export async function runBrainCycle(): Promise<BrainCycleResult> {
 
     // === PHASE 4: Platform Analysis ===
     console.log('[MaraBrain] Phase 4: Platform analysis...');
-    const analysis = await analyzePlatform();
-    productIdeas.push(...(analysis.proposals?.map((p) => `[${p.priority}] ${p.title}: ${p.description}`) || []));
-    research.push(...(analysis.insights || []));
+    try {
+      const analysis = await analyzePlatform();
+      productIdeas.push(...(analysis.proposals?.map((p) => `[${p.priority}] ${p.title}: ${p.description}`) || []));
+      research.push(...(analysis.insights || []));
+    } catch (err) {
+      console.error('[MaraBrain] Phase 4 (platform analysis) failed — skipping:', err);
+    }
 
     // === PHASE 5: Identify Weak Points ===
     console.log('[MaraBrain] Phase 5: Identifying weak modules...');
@@ -166,10 +193,22 @@ export async function runBrainCycle(): Promise<BrainCycleResult> {
 }
 
 /**
- * Run initial learning — bootstraps Mara's knowledge on first startup
- * Called once when the server starts with no existing knowledge
+ * Run initial learning — bootstraps Mara's knowledge on first startup.
+ * Called once when the server starts with no existing knowledge.
+ * Wrapped in a 2-minute timeout so it never blocks server startup.
  */
 export async function runInitialLearning(): Promise<void> {
+  const timeoutPromise = new Promise<void>((resolve) => {
+    setTimeout(() => {
+      console.warn('[MaraBrain] ⏱️ Initial learning exceeded 2-minute timeout — aborting bootstrap gracefully.');
+      resolve();
+    }, INITIAL_LEARNING_TIMEOUT_MS);
+  });
+
+  return Promise.race([_runInitialLearningInternal(), timeoutPromise]);
+}
+
+async function _runInitialLearningInternal(): Promise<void> {
   const stats = await getKnowledgeStats();
   if (stats.total > 0) {
     console.log(`[MaraBrain] Already have ${stats.total} knowledge entries. Skipping bootstrap.`);
