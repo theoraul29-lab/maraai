@@ -84,7 +84,6 @@ async function runChecks(): Promise<void> {
     'express',
     '@google/generative-ai',
     'ws',
-    'firebase-admin',
     'zod',
   ];
 

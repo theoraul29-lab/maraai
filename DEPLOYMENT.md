@@ -69,10 +69,10 @@ npm install
 cat > .env << EOF
 GEMINI_API_KEY=your_gemini_key_here
 DATABASE_URL=sqlite:///./mara_system.db
+JWT_SECRET=your_random_jwt_secret
 NODE_ENV=development
 PORT=5000
 HOST=localhost
-Firebase_Config=your_firebase_config
 EOF
 ```
 
@@ -204,46 +204,50 @@ npm run verify:deploy
 
 ## 🌐 DEPLOYMENT PLATFORMS
 
-### **Option 1: Local / Replit**
+### **Option 1: Local Development**
 ```bash
 npm run start:backend
 # Platform runs on http://localhost:5000
 ```
 
-### **Option 2: Google Cloud Run**
+### **Option 2: Railway.app (Recommended)**
+```bash
+# 1. Push code to GitHub
+git add .
+git commit -m "Production ready"
+git push origin main
+
+# 2. Go to https://railway.app
+#    - New Project → Deploy from GitHub repo
+#    - Railway auto-detects Dockerfile.nodejs via railway.json
+
+# 3. Set environment variables in Railway dashboard:
+#    - GEMINI_API_KEY=your_key
+#    - JWT_SECRET=your_random_secret
+#    - DATABASE_URL=sqlite:///./maraai.sqlite
+#    - NODE_ENV=production
+#    - CORS_ORIGINS=https://maraai.net
+
+# 4. Add a volume (optional, for persistent SQLite):
+#    Mount path: /app/data
+#    Then set DATABASE_URL=sqlite:///data/maraai.sqlite
+
+# 5. Custom domain:
+#    Settings → Domains → Add custom domain → maraai.net
+#    Update DNS: CNAME → <your-railway-url>
+```
+
+### **Option 3: Docker (any host)**
 ```bash
 # Build Docker image
-docker build -t maraai:latest .
+docker build -t maraai:latest -f Dockerfile.nodejs .
 
-# Push to Google Container Registry
-docker tag maraai gcr.io/YOUR_PROJECT/maraai
-docker push gcr.io/YOUR_PROJECT/maraai
-
-# Deploy to Cloud Run
-gcloud run deploy maraai \
-  --image gcr.io/YOUR_PROJECT/maraai \
-  --platform managed \
-  --region us-central1 \
-  --allow-unauthenticated \
-  --set-env-vars GEMINI_API_KEY=your_key,DATABASE_URL=your_db_url
-```
-
-### **Option 3: Google App Engine**
-```bash
-# Ensure app.yaml exists
-gcloud app deploy --no-promote
-
-# Check status
-gcloud app browse
-```
-
-### **Option 4: Railway.app**
-```bash
-# Railway reads from Dockerfile + environment variables
-# Ensure .env or Railway dashboard has:
-# - GEMINI_API_KEY
-# - DATABASE_URL
-# - NODE_ENV=production
+# Run
+docker run -p 5000:5000 \
+  -e GEMINI_API_KEY=your_key \
+  -e JWT_SECRET=your_secret \
+  -e NODE_ENV=production \
+  maraai:latest
 ```
 
 ---
@@ -255,7 +259,8 @@ gcloud app browse
 NODE_ENV=production
 PORT=5000
 GEMINI_API_KEY=your_production_key
-DATABASE_URL=postgresql://user:pass@host:5432/maraai_prod
+JWT_SECRET=your_strong_random_secret
+DATABASE_URL=sqlite:///./maraai.sqlite
 CORS_ORIGINS=https://maraai.net,https://www.maraai.net
 LOG_LEVEL=info
 MARA_BRAIN_AUTOSAVE_INTERVAL=30000

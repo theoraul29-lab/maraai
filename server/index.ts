@@ -11,7 +11,7 @@ import { getMaraResponse, generateMarketingPost } from './ai.js';
 import { WebSocketServer } from 'ws';
 import url from 'url';
 import { storage } from './storage.js';
-import { firebaseAuthMiddleware } from './firebaseAuth.js'; // Pregătire pentru Firebase Auth
+import { authMiddleware } from './auth.js'; // JWT auth middleware
 import { z } from 'zod';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { db } from './db.js';
@@ -97,7 +97,7 @@ app.use(
   }),
 );
 
-app.use(firebaseAuthMiddleware); // Înlocuim Replit Auth cu noul middleware
+app.use(authMiddleware); // JWT auth middleware
 const httpServer = createServer(app);
 
 declare module 'http' {
@@ -198,9 +198,9 @@ app.use((req, res, next) => {
 
   wss.on('connection', (ws: any, req: any) => {
     const userId = url.parse(req.url || '', true).query.userId as string;
-    // ID-ul utilizatorului va veni de la Firebase Auth
-    const firebaseUserId = req.user?.uid;
-    const finalUserId = userId || firebaseUserId;
+    // ID-ul utilizatorului va veni de la JWT Auth
+    const authUserId = req.user?.uid;
+    const finalUserId = userId || authUserId;
     if (finalUserId) {
       log(`P2P user connected: ${userId}`, 'p2p-ws');
       userConnections.set(finalUserId, ws);

@@ -2,11 +2,11 @@
 
 ## System Overview
 
-MaraAI is a modern AI platform with 6 specialized modules deployed on Firebase Hosting with Cloud Functions backend.
+MaraAI is a modern AI platform with 6 specialized modules deployed on Railway with a Node.js backend.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                     maraai.net (Firebase Hosting)               │
+│                     maraai.net (Railway)                        │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                   │
 │  ┌──────────────────────────────────────────────────────────┐   │
@@ -52,7 +52,7 @@ MaraAI is a modern AI platform with 6 specialized modules deployed on Firebase H
 └─────────────────────────────────────────────────────────────────┘
         ↓              ↓              ↓              ↓
 ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
-│  Gemini API  │ │  Firestore   │ │   Storage    │ │  Firebase    │
+│  Gemini API  │ │   SQLite     │ │   Local      │ │    JWT       │
 │  (AI/Chat)   │ │ (Database)   │ │  (Files)     │ │   Auth       │
 └──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘
         ↓
@@ -103,28 +103,13 @@ MaraAI/
 │   ├── package.json                  # npm Dependencies
 │   └── vite.config.js                # Build Configuration
 │
-├── functions/                         # Firebase Cloud Functions
-│   ├── src/
-│   │   └── index.ts                  # Express API Handler
-│   │       ├── Chat Endpoints
-│   │       ├── Module Endpoints
-│   │       ├── User Management
-│   │       └── Admin Routes
-│   ├── package.json                  # Functions Dependencies
-│   ├── tsconfig.json                 # TypeScript Config
-│   └── dist/                         # [AUTO] Compiled Code
-│
-├── server/                           # Node.js Express (Alternative)
+├── server/                           # Node.js Express Backend
 │   ├── index.ts                      # Main Server
 │   ├── routes.ts                     # Route Registration
 │   ├── ai.ts                         # Gemini API Client
+│   ├── auth.ts                       # JWT Authentication
 │   ├── mara-brain.ts                 # Memory + Learning System
-│   ├── firebase.ts                   # Firebase Config
 │   ├── storage.ts                    # Persistence Layer
-│   ├── middleware/
-│   │   ├── auth.ts                   # Authentication
-│   │   ├── rate-limit.ts             # Rate Limiting
-│   │   └── error-handler.ts          # Error Handling
 │   └── modules/                      # Business Logic
 │       ├── chat.ts
 │       ├── trading.ts
@@ -133,30 +118,15 @@ MaraAI/
 │       ├── writers.ts
 │       └── payments.ts
 │
-├── dataconnect/                      # Google Data Connect (Optional)
-│   └── schema.fwice
-│
-├── k8s/                              # Kubernetes Deployment (Optional)
-│   ├── deployment.yaml
-│   ├── service.yaml
-│   └── ingress.yaml
-│
-├── FIREBASE_DEPLOY.md                # Comprehensive Deploy Guide
-├── QUICK_DEPLOY.md                   # 5-10 Min Quick Start
-├── DEPLOYMENT_CHECKLIST.md          # Verification Checklist
-├── DEPLOYMENT_READY.md              # Setup Overview
-├── firebase.json                     # Firebase Configuration
-├── .firebaserc                       # Firebase Project Config
+├── DEPLOYMENT.md                     # Deploy Guide (Railway)
 ├── .env.example                      # Environment Template
-├── deploy-firebase.ps1               # Windows Deploy Script
-├── deploy-firebase.sh                # Linux/Mac Deploy Script
 │
 └── [Other Config Files]
     ├── package.json                  # Root Dependencies
     ├── tsconfig.json                 # TypeScript Config
     ├── vite.config.js                # Vite Config
     ├── railway.json                  # Railway Config
-    ├── docker                        # Container
+    ├── Dockerfile.nodejs             # Container
     └── requirements.txt              # Python Dependencies
 ```
 
@@ -240,14 +210,10 @@ GET /api/writers/{id}/comments    // Get comments
 
 ### **Authentication Layers**
 
-1. **Firebase Auth**
-   - Email/password login
-   - Google OAuth
-   - Phone authentication
-
-2. **Middleware Authentication**
-   - JWT token validation
-   - User context injection
+1. **JWT Auth**
+   - Email/password login with bcrypt
+   - JWT token generation & validation (HMAC-SHA256)
+   - User context injection via middleware
    - Session management
 
 3. **Admin Authorization**
@@ -264,14 +230,13 @@ GET /api/writers/{id}/comments    // Get comments
    - SQL injection prevention (Drizzle ORM)
 
 2. **Database Security**
-   - Firestore rules (users read/write own data only)
-   - Storage rules (only owners can upload)
-   - Encryption at rest
+   - SQLite with Drizzle ORM parameterized queries
+   - Row-level authorization in route handlers
    - Encryption in transit (HTTPS/TLS)
 
 3. **Environment Security**
    - API keys in .env (not in repo)
-   - Secrets managed by Firebase
+   - Secrets managed via Railway environment variables
    - No hardcoded credentials
    - Audit trails for admin actions
 
@@ -279,7 +244,7 @@ GET /api/writers/{id}/comments    // Get comments
 
 ## 🗄️ Database Schema
 
-### **Firestore Collections**
+### **SQLite Tables**
 
 ```
 users/
@@ -416,59 +381,26 @@ GET /api/health
 
 ## 🚀 Deployment Architecture
 
-### **Firebase Components**
+### **Railway Deployment**
 
 ```
-Firebase Project (maraai-488fb)
-├── Hosting
-│   ├── Public: frontend/dist/
-│   ├── Rewrites: /api/** → Cloud Functions
-│   ├── Cache Rules: Static assets cached forever
+Railway Project (maraai)
+├── Service: Node.js Express + Vite static
+│   ├── Build: Dockerfile.nodejs (multi-stage)
+│   ├── Port: Injected via $PORT
+│   ├── Health: /api/health
 │   └── Custom Domain: maraai.net
 │
-├── Cloud Functions
-│   ├── Region: europe-west1
-│   ├── Runtime: Node.js 22
-│   ├── Memory: 1GB per instance
-│   └── Timeout: 60 seconds
+├── Database: SQLite (volume-mounted)
+│   ├── Location: /data/maraai.sqlite
+│   └── Persistence: Railway volume
 │
-├── Firestore
-│   ├── Location: europe-west1
-│   ├── Collections: users, chats, posts, videos
-│   ├── Indexes: Auto-created on first query
-│   └── Backup: Daily automatic backup
+├── Auth: JWT (HMAC-SHA256)
+│   ├── Token expiry: 24h
+│   └── Secret: JWT_SECRET env var
 │
-├── Storage
-│   ├── Buckets: User uploads, media cache
-│   ├── Rules: Users upload to /uploads/{userId}/*
-│   └── CDN: Global distribution
-│
-└── Authentication
-    ├── Methods: Email/password, Google, Phone
-    ├── Session Management: Long-lived tokens
-    └── MFA: Optional for premium users
-```
-
-### **Alternative Deployment Options**
-
-```
-Option 1: Cloud Run (Currently Used)
-├── Container: Dockerized Express app
-├── Region: europe-west1
-├── Scaling: Auto-scale 0-100 instances
-└── Cost: Per request
-
-Option 2: App Engine Flexible
-├── Runtime: Node.js
-├── Health Checks: Auto-restart on failure
-├── Scaling: Min/max instances
-└── Cost: Per instance-hour
-
-Option 3: Kubernetes (GKE)
-├── Orchestration: Managed Kubernetes
-├── Replicas: Auto-scale based on traffic
-├── Rolling Updates: Zero-downtime deploys
-└── Cost: Per node/hour
+└── AI: Gemini API
+    └── Key: GEMINI_API_KEY env var
 ```
 
 ---
@@ -483,9 +415,6 @@ cd frontend && npm run dev
 
 # Start backend server
 npm run dev
-
-# Start Firebase emulator
-firebase emulators:start
 ```
 
 ### **Testing**
@@ -493,12 +422,6 @@ firebase emulators:start
 ```bash
 # Unit tests
 npm test
-
-# Integration tests
-npm run test:integration
-
-# E2E tests
-npm run test:e2e
 ```
 
 ### **Build & Deploy**
@@ -506,13 +429,9 @@ npm run test:e2e
 ```bash
 # Build for production
 npm run build:frontend
-cd functions && npm run build
 
-# Deploy to Firebase
-firebase deploy
-
-# Deploy to specific region
-firebase deploy --project maraai-488fb
+# Deploy to Railway (via GitHub push)
+git push origin main
 ```
 
 ---
@@ -539,23 +458,21 @@ firebase deploy --project maraai-488fb
 - Concurrent Users: 1,000+
 - Requests/Second: 100+
 - Database Queries/Second: 500+
-- Bandwidth: Unlimited (Firebase CDN)
+- Bandwidth: Railway CDN
 
 ---
 
 ## 📈 Monitoring & Analytics
 
-### **Firebase Console Metrics**
+### **Railway Dashboard Metrics**
 
-- Hosting traffic and errors
-- Function execution time and memory
-- Database read/write operations
-- Storage bandwidth and requests
-- Authentication conversion rates
+- Service traffic and errors
+- CPU and memory usage
+- Response times
 
 ### **Error Tracking**
 
-- Cloud Functions logs
+- Server logs (Railway dashboard)
 - Browser console errors
 - API error rates
 - Database transaction failures
@@ -582,18 +499,16 @@ firebase deploy --project maraai-488fb
 
 ### **Compliance Certifications**
 
-- SOC 2 Type II (via Google Cloud)
-- ISO 27001 (Google Cloud Security)
+- SOC 2 (via Railway infrastructure)
 - GDPR compliant
-- HIPAA eligible (not enabled)
 
 ---
 
 ## ✨ Next Steps
 
-1. **Deploy:** Follow [QUICK_DEPLOY.md](QUICK_DEPLOY.md)
+1. **Deploy:** Push to GitHub → Railway auto-deploys
 2. **Test:** Verify homepage and chat endpoints
-3. **Monitor:** Watch Firebase Console for logs
+3. **Monitor:** Watch Railway dashboard for logs
 4. **Optimize:** Fine-tune performance as needed
 5. **Scale:** Add more modules or features
 
