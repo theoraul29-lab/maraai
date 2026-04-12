@@ -1,10 +1,8 @@
 // Mara Knowledge Base — Long-term memory & knowledge retrieval
-// Stores everything Mara learns: from Gemini, web, users, self-reflection
+// Stores everything Mara learns: from the LLM, web, users, self-reflection
 
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { isOpenRouterConfigured, generate } from '../openrouter.js';
 import { storage } from '../storage.js';
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export type KnowledgeCategory =
   | 'user_pattern'
@@ -146,11 +144,9 @@ export async function learnFromText(
   source: KnowledgeSource = 'document',
   sourceLabel?: string,
 ): Promise<{ ideas: ExtractedIdea[]; savedIds: number[] }> {
-  if (!process.env.GEMINI_API_KEY) {
+  if (!isOpenRouterConfigured()) {
     return { ideas: [], savedIds: [] };
   }
-
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
   const prompt = `Analizează acest text și extrage idei utile. Pentru fiecare idee, returnează JSON structurat.
 
@@ -168,8 +164,7 @@ Răspunde DOAR cu JSON array-ul, fără alt text. Exemplu:
 [{"idea":"...", "category":"business_insight", "how_to_apply":"..."}]`;
 
   try {
-    const result = await model.generateContent(prompt);
-    const raw = result.response.text().trim();
+    const raw = (await generate(prompt)).trim();
     const jsonMatch = raw.match(/\[[\s\S]*\]/);
     if (!jsonMatch) return { ideas: [], savedIds: [] };
 

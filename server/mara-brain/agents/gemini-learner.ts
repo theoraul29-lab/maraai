@@ -1,11 +1,9 @@
-// Mara Gemini Learner Agent
-// Learns from Gemini API: asks questions, deepens concepts, validates ideas, self-improves
+// Mara LLM Learner Agent
+// Learns from the configured LLM (OpenRouter): asks questions, deepens concepts, validates ideas, self-improves
 
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { isOpenRouterConfigured, generate } from '../../openrouter.js';
 import { storeKnowledge } from '../knowledge-base.js';
 import { storage } from '../../storage.js';
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 interface LearningResult {
   topic: string;
@@ -17,11 +15,9 @@ interface LearningResult {
  * Ask Gemini to teach Mara about a specific topic
  */
 export async function learnFromGemini(topic: string, context?: string): Promise<LearningResult> {
-  if (!process.env.GEMINI_API_KEY) {
-    return { topic, learned: 'Gemini API key not configured', savedKnowledgeIds: [] };
+  if (!isOpenRouterConfigured()) {
+    return { topic, learned: 'LLM API key not configured', savedKnowledgeIds: [] };
   }
-
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
   const prompt = `Tu ești un profesor expert. Eu sunt Mara, un AI care învață continuu pentru a îmbunătăți platforma MaraAI.
 
@@ -40,8 +36,7 @@ Răspunde structurat:
 Fii concis dar informativ. Răspunde în limba română.`;
 
   try {
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
+    const text = await generate(prompt);
 
     // Parse and store knowledge
     const savedIds: number[] = [];
@@ -91,9 +86,8 @@ Fii concis dar informativ. Răspunde în limba română.`;
  * Ask Gemini to analyze user patterns and give recommendations
  */
 export async function analyzeUserPatterns(patterns: string): Promise<string> {
-  if (!process.env.GEMINI_API_KEY) return 'Gemini API key not configured';
+  if (!isOpenRouterConfigured()) return 'LLM API key not configured';
 
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
   const prompt = `Analizează aceste pattern-uri de utilizare ale platformei MaraAI și dă recomandări concrete de îmbunătățire:
 
 ${patterns}
@@ -106,8 +100,7 @@ Răspunde cu:
 Fii concis și practic.`;
 
   try {
-    const result = await model.generateContent(prompt);
-    return result.response.text();
+    return await generate(prompt);
   } catch (error) {
     console.error('[GeminiLearner] Failed to analyze patterns:', error);
     return 'Analysis failed';
@@ -118,9 +111,8 @@ Fii concis și practic.`;
  * Ask Gemini to validate and refine Mara's own improvement ideas
  */
 export async function validateIdeas(ideas: string[]): Promise<{ original: string; validation: string; score: number }[]> {
-  if (!process.env.GEMINI_API_KEY || ideas.length === 0) return [];
+  if (!isOpenRouterConfigured() || ideas.length === 0) return [];
 
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
   const prompt = `Evaluează aceste idei de îmbunătățire pentru platforma MaraAI și dă un scor 1-10 fiecăreia:
 
 ${ideas.map((idea, i) => `${i + 1}. ${idea}`).join('\n')}
@@ -131,8 +123,7 @@ Răspunde în JSON format:
 Fii sincer — dacă o idee e slabă, spune de ce.`;
 
   try {
-    const result = await model.generateContent(prompt);
-    const text = result.response.text().trim();
+    const text = await generate(prompt);
     const jsonMatch = text.match(/\[[\s\S]*\]/);
     if (!jsonMatch) return ideas.map((idea) => ({ original: idea, validation: 'Could not parse', score: 5 }));
 
@@ -152,9 +143,8 @@ Fii sincer — dacă o idee e slabă, spune de ce.`;
  * Ask Gemini how to improve Mara's own responses
  */
 export async function selfImproveQuery(recentConversations: string): Promise<string> {
-  if (!process.env.GEMINI_API_KEY) return 'API key not configured';
+  if (!isOpenRouterConfigured()) return 'API key not configured';
 
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
   const prompt = `Eu sunt Mara, un AI conversațional. Analizează aceste conversații recente și spune-mi cum pot răspunde mai bine:
 
 ${recentConversations}
@@ -166,8 +156,7 @@ Dă-mi 3-5 sugestii concrete de îmbunătățire a răspunsurilor mele. Focus pe
 - Personalizare`;
 
   try {
-    const result = await model.generateContent(prompt);
-    return result.response.text();
+    return await generate(prompt);
   } catch {
     return 'Self-improvement query failed';
   }
