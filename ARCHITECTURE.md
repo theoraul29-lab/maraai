@@ -399,8 +399,8 @@ Railway Project (maraai)
 │   ├── Token expiry: 24h
 │   └── Secret: JWT_SECRET env var
 │
-└── AI: Gemini API
-    └── Key: GEMINI_API_KEY env var
+└── AI: OpenRouter / Ollama
+    └── Key: OPENROUTER_API_KEY or OLLAMA_BASE_URL env var
 ```
 
 ---

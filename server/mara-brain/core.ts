@@ -3,7 +3,7 @@
 // Coordinates all agents: learning, research, analysis, self-reflection
 
 import { storage } from '../storage.js';
-import { learnFromGemini, learnBusinessStrategy, validateIdeas, selfImproveQuery } from './agents/gemini-learner.js';
+import { learnFromGemini, learnBusinessStrategy, validateIdeas, selfImproveQuery } from './agents/llm-learner.js';
 import { researchModuleTrends, researchCompetitors, generateResearchAgenda, batchResearch } from './agents/web-research.js';
 import { analyzePlatform, generateGrowthSuggestions, identifyWeakModules } from './agents/platform-analyzer.js';
 import { getKnowledgeStats, storeKnowledge } from './knowledge-base.js';
@@ -107,7 +107,7 @@ export async function runBrainCycle(): Promise<BrainCycleResult> {
     const growth = await generateGrowthSuggestions();
     growthIdeas.push(...growth);
 
-    // === PHASE 7: Validate Ideas with Gemini ===
+    // === PHASE 7: Validate Ideas with LLM ===
     console.log('[MaraBrain] Phase 7: Validating ideas...');
     if (productIdeas.length > 0) {
       const validated = await validateIdeas(productIdeas.slice(0, 5));

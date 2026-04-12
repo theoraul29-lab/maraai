@@ -25,7 +25,7 @@ npm run dev
 - **Backend** → http://localhost:5000 (or next available port)
 - **Health check** → http://localhost:5000/api/health
 
-> **No external API key required.** When `OLLAMA_BASE_URL` is set, MaraAI uses the self-hosted Ollama service for all AI features. Set `GEMINI_API_KEY` instead if you prefer Google Gemini.
+> **No external API key required.** When `OLLAMA_BASE_URL` is set, MaraAI uses the self-hosted Ollama service for all AI features. Set `OPENROUTER_API_KEY` instead if you prefer [OpenRouter](https://openrouter.ai).
 
 ## Environment Variables
 
@@ -38,10 +38,11 @@ Copy `.env.example` to `.env` and set the following:
 | `SESSION_SECRET` | Production only | Random secret for sessions (auto-generated in dev) |
 | `DATABASE_URL` | No | SQLite path (default: `./maraai.sqlite`) |
 | `AUTH_MODE` | No | Set to `local` to bypass OAuth (dev-friendly default) |
-| `AI_PROVIDER` | No | `ollama` (default when `OLLAMA_BASE_URL` is set) or `gemini` |
+| `AI_PROVIDER` | No | `ollama` (default when `OLLAMA_BASE_URL` is set) or `openrouter` |
 | `OLLAMA_BASE_URL` | No | URL of Ollama service (e.g. `http://localhost:11434` or Railway internal URL) |
 | `OLLAMA_MODEL` | No | Ollama model name (default: `llama3.2:1b`) |
-| `GEMINI_API_KEY` | No | Google Gemini API key (required when `AI_PROVIDER=gemini`) |
+| `OPENROUTER_API_KEY` | No | OpenRouter API key (required when `AI_PROVIDER=openrouter`) |
+| `OPENROUTER_MODEL` | No | Model to use via OpenRouter (default: `openai/gpt-4o-mini`) |
 | `PROCESS_AI_TASKS` | No | Set to `true` to enable autonomous Mara brain cycle |
 
 ## Configuration Map
@@ -103,7 +104,7 @@ MaraAI can run completely **without external AI API keys** by self-hosting [Olla
 | `AUTH_MODE` | `local` | |
 | `SESSION_SECRET` | *(random secret)* | Use Railway's "Generate" button |
 | `DATABASE_URL` | `sqlite:///data/maraai.sqlite` | Requires the Volume above |
-| `AI_PROVIDER` | `ollama` | Use `gemini` if you prefer Gemini |
+| `AI_PROVIDER` | `ollama` | Use `openrouter` if you prefer OpenRouter |
 | `OLLAMA_BASE_URL` | `http://ollama:11434` | Railway internal hostname of service 2 |
 | `OLLAMA_MODEL` | `llama3.2:1b` | Or `phi3:mini` for slightly larger model |
 | `PROCESS_AI_TASKS` | `false` | Set `true` to enable autonomous brain cycle |
@@ -136,13 +137,14 @@ curl https://<your-railway-domain>/api/ai/health
 # Expected (when Ollama is running): {"provider":"ollama","configured":true,"ok":true,...}
 ```
 
-### Using Gemini instead of Ollama
+### Using OpenRouter instead of Ollama
 
-If you prefer to use Google Gemini instead of self-hosting Ollama:
+If you prefer to use [OpenRouter](https://openrouter.ai) instead of self-hosting Ollama:
 
-1. Set `AI_PROVIDER=gemini` (or simply leave `OLLAMA_BASE_URL` unset).
-2. Set `GEMINI_API_KEY=<your-key>`.
-3. You do **not** need Service 2 (Ollama).
+1. Set `AI_PROVIDER=openrouter` (or simply leave `OLLAMA_BASE_URL` unset).
+2. Set `OPENROUTER_API_KEY=<your-key>`.
+3. Optionally set `OPENROUTER_MODEL` (default: `openai/gpt-4o-mini`).
+4. You do **not** need Service 2 (Ollama).
 
 ## Smoke Tests
 

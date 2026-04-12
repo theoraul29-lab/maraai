@@ -55,7 +55,7 @@
 ```bash
 Node.js 20+
 npm / yarn
-GEMINI_API_KEY (from Google AI Studio)
+OPENROUTER_API_KEY (from https://openrouter.ai) or OLLAMA_BASE_URL
 ```
 
 ### **1. Setup**
@@ -67,7 +67,7 @@ npm install
 
 # Set environment variables (create .env file)
 cat > .env << EOF
-GEMINI_API_KEY=your_gemini_key_here
+OPENROUTER_API_KEY=your_openrouter_key_here
 DATABASE_URL=sqlite:///./mara_system.db
 JWT_SECRET=your_random_jwt_secret
 NODE_ENV=development
@@ -111,7 +111,7 @@ User Message → server/index.ts (WebSocket)
 checkRateLimit() → getUserPreferences()
     ↓
 getMaraResponse() from server/ai.ts
-    ├── GoogleGenerativeAI (Gemini API)
+    ├── OpenRouter / Ollama LLM call
     ├── detectMood() - analyze response
     ├── buildContextPrompt() - from mara-brain.ts
     └── Return { response, detectedMood }
@@ -191,7 +191,7 @@ npm run verify:deploy
 ```
 
 ### **Manual Checklist**
-- [ ] GEMINI_API_KEY is valid (test: `curl https://generativelanguage.googleapis.com/v1beta/models`)
+- [ ] OPENROUTER_API_KEY is valid (or OLLAMA_BASE_URL is configured)
 - [ ] Database connection works (check `mara_system.db` or cloud DB)
 - [ ] Frontend builds: `npm run build`
 - [ ] No console errors in DevTools
@@ -222,7 +222,7 @@ git push origin main
 #    - Railway auto-detects Dockerfile.nodejs via railway.json
 
 # 3. Set environment variables in Railway dashboard:
-#    - GEMINI_API_KEY=your_key
+#    - OPENROUTER_API_KEY=your_key
 #    - JWT_SECRET=your_random_secret
 #    - DATABASE_URL=sqlite:///./maraai.sqlite
 #    - NODE_ENV=production
@@ -244,7 +244,7 @@ docker build -t maraai:latest -f Dockerfile.nodejs .
 
 # Run
 docker run -p 5000:5000 \
-  -e GEMINI_API_KEY=your_key \
+  -e OPENROUTER_API_KEY=your_key \
   -e JWT_SECRET=your_secret \
   -e NODE_ENV=production \
   maraai:latest
@@ -258,7 +258,8 @@ docker run -p 5000:5000 \
 ```bash
 NODE_ENV=production
 PORT=5000
-GEMINI_API_KEY=your_production_key
+OPENROUTER_API_KEY=your_production_key
+OPENROUTER_MODEL=openai/gpt-4o-mini
 JWT_SECRET=your_strong_random_secret
 DATABASE_URL=sqlite:///./maraai.sqlite
 CORS_ORIGINS=https://maraai.net,https://www.maraai.net
@@ -280,9 +281,9 @@ npm run start
 
 ## 🔍 TROUBLESHOOTING
 
-### **Issue: "GEMINI_API_KEY is required"**
-- Solution: Add `GEMINI_API_KEY` to `.env` file
-- Get key: https://ai.google.dev
+### **Issue: "OPENROUTER_API_KEY is not set"**
+- Solution: Add `OPENROUTER_API_KEY` to `.env` file
+- Get key: https://openrouter.ai/keys
 
 ### **Issue: "Cannot find module 'storage'"**
 - Solution: Ensure `server/storage.ts` exists with correct exports
@@ -292,7 +293,7 @@ npm run start
 - Try: Hard refresh (Ctrl+Shift+R)
 
 ### **Issue: Mara not responding**
-- Check: Is GEMINI_API_KEY valid?
+- Check: Is OPENROUTER_API_KEY valid? (or OLLAMA_BASE_URL configured?)
 - Check: Does WebSocket connect? (DevTools → Network → WS)
 - Check: Any rate limiting? (10 messages/min limit in server/index.ts)
 

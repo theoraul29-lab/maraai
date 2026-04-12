@@ -50,7 +50,7 @@ export async function getMaraResponse(
 		const hint =
 			provider === 'ollama'
 				? 'Please set OLLAMA_BASE_URL to enable Ollama.'
-				: 'Please set GEMINI_API_KEY to enable Gemini.';
+				: 'Please set OPENROUTER_API_KEY to enable OpenRouter.';
 		return {
 			response: `Mara AI is not configured. ${hint}`,
 			detectedMood: 'neutral',
