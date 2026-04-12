@@ -16,11 +16,19 @@ class BetterSqliteStore extends session.Store {
 
   constructor() {
     super();
+    // Accept sqlite:////abs/path (4 slashes = absolute) or
+    //         sqlite:///./rel/path (3 slashes + dot = relative)
+    //         or plain file path
     const rawUrl = process.env.DATABASE_URL || '';
-    // Accept sqlite:///path or sqlite://path or plain path
-    const dbPath =
-      rawUrl.replace(/^sqlite:\/\/\//, '/').replace(/^sqlite:\/\//, '') ||
-      path.resolve(process.cwd(), 'maraai.sqlite');
+    let dbPath: string;
+    if (rawUrl.startsWith('sqlite:///')) {
+      // Strip the sqlite:// scheme prefix, leaving the path as-is
+      dbPath = rawUrl.slice('sqlite://'.length);
+    } else if (rawUrl) {
+      dbPath = rawUrl;
+    } else {
+      dbPath = path.resolve(process.cwd(), 'maraai.sqlite');
+    }
 
     this.db = new Database(dbPath);
     this.db.exec(`
@@ -103,6 +111,45 @@ declare module 'express-session' {
 }
 
 // ---------------------------------------------------------------------------
+// Simple in-memory rate limiter for auth endpoints
+// ---------------------------------------------------------------------------
+
+const AUTH_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const AUTH_RATE_LIMIT_MAX = 10; // max attempts per window per IP
+const authAttempts = new Map<string, number[]>();
+
+function checkAuthRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const attempts = (authAttempts.get(ip) || []).filter(
+    (ts) => now - ts < AUTH_RATE_LIMIT_WINDOW_MS,
+  );
+  if (attempts.length >= AUTH_RATE_LIMIT_MAX) return false;
+  attempts.push(now);
+  authAttempts.set(ip, attempts);
+  return true;
+}
+
+// ---------------------------------------------------------------------------
+// CSRF: require JSON Content-Type for state-changing auth requests
+// ---------------------------------------------------------------------------
+
+/**
+ * Middleware that rejects state-changing requests whose Content-Type is not
+ * `application/json`. This is a lightweight CSRF guard for API endpoints: a
+ * cross-origin HTML form cannot set Content-Type to application/json, so
+ * classic CSRF attacks are blocked. The sameSite=lax cookie and CORS origin
+ * list provide additional layers of protection.
+ */
+const requireJsonContentType: RequestHandler = (req, res, next) => {
+  const ct = req.headers['content-type'] || '';
+  if (!ct.includes('application/json')) {
+    res.status(415).json({ message: 'Content-Type must be application/json' });
+    return;
+  }
+  next();
+};
+
+// ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
 
@@ -178,8 +225,13 @@ export async function setupAuth(app: Express) {
     res.json({ mode: 'local' });
   });
 
-  // 4. Registration
-  app.post('/api/auth/register', async (req: any, res: any) => {
+  // 4. Registration (rate-limited + CSRF-safe)
+  app.post('/api/auth/register', requireJsonContentType, async (req: any, res: any) => {
+    const clientIp = req.ip || 'unknown';
+    if (!checkAuthRateLimit(clientIp)) {
+      return res.status(429).json({ message: 'Too many attempts. Please try again later.' });
+    }
+
     const parsed = localAuthPayloadSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ message: parsed.error.errors[0].message });
@@ -207,8 +259,13 @@ export async function setupAuth(app: Express) {
     }
   });
 
-  // 5. Login
-  app.post('/api/auth/login', async (req: any, res: any) => {
+  // 5. Login (rate-limited + CSRF-safe)
+  app.post('/api/auth/login', requireJsonContentType, async (req: any, res: any) => {
+    const clientIp = req.ip || 'unknown';
+    if (!checkAuthRateLimit(clientIp)) {
+      return res.status(429).json({ message: 'Too many attempts. Please try again later.' });
+    }
+
     const parsed = localAuthPayloadSchema
       .omit({ firstName: true, lastName: true })
       .safeParse(req.body);
@@ -294,3 +351,4 @@ export function registerAuthRoutes(app: Express) {
     }
   });
 }
+

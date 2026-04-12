@@ -214,7 +214,7 @@ app.use((req, res, next) => {
     const sessionUserId = req.user?.claims?.sub || req.user?.uid;
     const finalUserId = userId || sessionUserId;
     if (finalUserId) {
-      log(`P2P user connected: ${userId}`, 'p2p-ws');
+      log(`P2P user connected: ${finalUserId}`, 'p2p-ws');
       userConnections.set(finalUserId, ws);
       ws.userId = finalUserId;
     } else {
