@@ -1,11 +1,9 @@
 // Mara Platform Analyzer Agent
 // Analyzes the platform's health, generates insights, and proposes improvements
 
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { llmGenerate, isLLMConfigured } from '../../llm.js';
 import { storeKnowledge, getKnowledgeStats } from '../knowledge-base.js';
 import { storage } from '../../storage.js';
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 interface PlatformHealth {
   totalUsers: number;
@@ -65,11 +63,9 @@ export async function analyzePlatform(): Promise<{
   const metrics = await collectPlatformMetrics();
   const knowledgeStats = await getKnowledgeStats();
 
-  if (!process.env.GEMINI_API_KEY) {
-    return { insights: ['Gemini API key not configured'], proposals: [] };
+  if (!isLLMConfigured()) {
+    return { insights: ['LLM provider not configured'], proposals: [] };
   }
-
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
   const prompt = `Ești Mara, AI-ul platformei MaraAI. Analizează aceste metrici și generează insights + propuneri de îmbunătățire:
 
@@ -107,8 +103,7 @@ Returnează JSON:
 Generează MINIM 3 insights și 3 propuneri concrete. Fii specific și acționabil.`;
 
   try {
-    const result = await model.generateContent(prompt);
-    const text = result.response.text().trim();
+    const text = (await llmGenerate(prompt)).trim();
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) return { insights: ['Could not parse analysis'], proposals: [] };
 
@@ -150,10 +145,9 @@ Generează MINIM 3 insights și 3 propuneri concrete. Fii specific și acționab
  * Generate growth suggestions based on current state
  */
 export async function generateGrowthSuggestions(): Promise<string[]> {
-  if (!process.env.GEMINI_API_KEY) return [];
+  if (!isLLMConfigured()) return [];
 
   const metrics = await collectPlatformMetrics();
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
   const prompt = `Platformă MaraAI:
 - ${metrics.totalUsers} useri, ${metrics.totalMessages} mesaje, ${metrics.totalVideos} videouri, ${metrics.totalWriterPages} pagini
@@ -162,8 +156,7 @@ export async function generateGrowthSuggestions(): Promise<string[]> {
 Generează 5 sugestii concrete de growth. Răspunde ca JSON array: ["sugestie1", ...]`;
 
   try {
-    const result = await model.generateContent(prompt);
-    const text = result.response.text().trim();
+    const text = (await llmGenerate(prompt)).trim();
     const jsonMatch = text.match(/\[[\s\S]*\]/);
     return jsonMatch ? JSON.parse(jsonMatch[0]) : [];
   } catch {

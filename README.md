@@ -25,7 +25,7 @@ npm run dev
 - **Backend** → http://localhost:5000 (or next available port)
 - **Health check** → http://localhost:5000/api/health
 
-> **No API key required for basic use.** AI features (chat, marketing posts) will return graceful error messages if `AI_INTEGRATIONS_OPENAI_API_KEY` is not set.
+> **No external API key required.** When `OLLAMA_BASE_URL` is set, MaraAI uses the self-hosted Ollama service for all AI features. Set `GEMINI_API_KEY` instead if you prefer Google Gemini.
 
 ## Environment Variables
 
@@ -38,8 +38,11 @@ Copy `.env.example` to `.env` and set the following:
 | `SESSION_SECRET` | Production only | Random secret for sessions (auto-generated in dev) |
 | `DATABASE_URL` | No | SQLite path (default: `./maraai.sqlite`) |
 | `AUTH_MODE` | No | Set to `local` to bypass OAuth (dev-friendly default) |
-| `AI_INTEGRATIONS_OPENAI_API_KEY` | No | OpenAI API key for AI features |
-| `AI_INTEGRATIONS_OPENAI_BASE_URL` | No | Custom OpenAI base URL (optional) |
+| `AI_PROVIDER` | No | `ollama` (default when `OLLAMA_BASE_URL` is set) or `gemini` |
+| `OLLAMA_BASE_URL` | No | URL of Ollama service (e.g. `http://localhost:11434` or Railway internal URL) |
+| `OLLAMA_MODEL` | No | Ollama model name (default: `llama3.2:1b`) |
+| `GEMINI_API_KEY` | No | Google Gemini API key (required when `AI_PROVIDER=gemini`) |
+| `PROCESS_AI_TASKS` | No | Set to `true` to enable autonomous Mara brain cycle |
 
 ## Configuration Map
 
@@ -81,34 +84,65 @@ npm start       # starts the backend serving the built frontend
 
 ## Deploy to Railway
 
-1. Push this repo to GitHub.
-2. In Railway, create a new project and choose **Deploy from GitHub repo**.
-3. Railway will detect [railway.json](railway.json) and use:
-	- Build command: `npm ci && npm run build`
-	- Start command: `npm start`
-	- Health check: `/api/health`
-	Runtime is pinned via `nixpacks.toml` to Node 20.
-4. Add a **Volume** in Railway and mount it to `/data`.
-5. Set environment variables in Railway:
-	- `NODE_ENV=production`
-	- `PORT=5000` (Railway also injects `PORT`; keeping this explicit is fine)
-	- `AUTH_MODE=local`
-	- `SESSION_SECRET=<long-random-secret>`
-	- `DATABASE_URL=sqlite:///data/maraai.sqlite`
-	- `AI_INTEGRATIONS_OPENAI_API_KEY=<optional>`
-6. Deploy and open your Railway service URL.
+MaraAI can run completely **without external AI API keys** by self-hosting [Ollama](https://ollama.ai) as a second Railway service.
 
-Quick verify after deploy:
+### Quick setup — two services on Railway
+
+#### Service 1: MaraAI (Node/React)
+
+1. Push this repo to GitHub.
+2. In Railway, create a new project → **Deploy from GitHub repo**.
+3. Railway will detect [railway.json](railway.json) and use `Dockerfile.nodejs`.
+4. Add a **Volume** and mount it to `/data`.
+5. Set environment variables:
+
+| Variable | Value | Notes |
+|---|---|---|
+| `NODE_ENV` | `production` | |
+| `PORT` | `5000` | Railway also injects `PORT` automatically |
+| `AUTH_MODE` | `local` | |
+| `SESSION_SECRET` | *(random secret)* | Use Railway's "Generate" button |
+| `DATABASE_URL` | `sqlite:///data/maraai.sqlite` | Requires the Volume above |
+| `AI_PROVIDER` | `ollama` | Use `gemini` if you prefer Gemini |
+| `OLLAMA_BASE_URL` | `http://ollama:11434` | Railway internal hostname of service 2 |
+| `OLLAMA_MODEL` | `llama3.2:1b` | Or `phi3:mini` for slightly larger model |
+| `PROCESS_AI_TASKS` | `false` | Set `true` to enable autonomous brain cycle |
+
+#### Service 2: Ollama (self-hosted LLM)
+
+1. In the **same Railway project**, add a new service → **Deploy from GitHub repo** (same repo).
+2. Set the **Dockerfile path** to `Dockerfile.ollama`.
+3. Set environment variables:
+
+| Variable | Value | Notes |
+|---|---|---|
+| `OLLAMA_MODEL` | `llama3.2:1b` | Model to pull on startup |
+| `OLLAMA_PULL_ON_START` | `true` | Set `false` to skip pull (faster restarts if model is cached) |
+| `OLLAMA_HOST` | `0.0.0.0` | Already set in Dockerfile; keep it |
+
+> **Optional Volume for Ollama:** Add a Volume mounted to `/root/.ollama` so models are cached and don't need re-downloading on each deploy.
+
+4. Note the **internal hostname** Railway gives this service (usually `ollama`). Use it in `OLLAMA_BASE_URL` of Service 1 as `http://ollama:11434`.
+
+#### Verify after deploy
 
 ```bash
+# MaraAI health
 curl https://<your-railway-domain>/api/health
+# Expected: {"status":"ok"}
+
+# AI provider health (Ollama connectivity + model check)
+curl https://<your-railway-domain>/api/ai/health
+# Expected (when Ollama is running): {"provider":"ollama","configured":true,"ok":true,...}
 ```
 
-Expected response:
+### Using Gemini instead of Ollama
 
-```json
-{"status":"ok"}
-```
+If you prefer to use Google Gemini instead of self-hosting Ollama:
+
+1. Set `AI_PROVIDER=gemini` (or simply leave `OLLAMA_BASE_URL` unset).
+2. Set `GEMINI_API_KEY=<your-key>`.
+3. You do **not** need Service 2 (Ollama).
 
 ## Smoke Tests
 
