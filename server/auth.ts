@@ -17,8 +17,12 @@ export function setupSessionAuth(app: Express): void {
 	}
 
 	const sessionSecret = process.env.SESSION_SECRET || randomBytes(32).toString('hex');
-	if (!process.env.SESSION_SECRET && isProduction) {
-		throw new Error('SESSION_SECRET must be set in production');
+	if (!process.env.SESSION_SECRET) {
+		if (isProduction) {
+			throw new Error('SESSION_SECRET must be set in production');
+		} else {
+			console.warn('[auth] SESSION_SECRET not set — sessions will be invalidated on every restart. Set SESSION_SECRET for stable dev sessions.');
+		}
 	}
 
 	const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 7 days in ms
@@ -62,8 +66,4 @@ export function setupSessionAuth(app: Express): void {
 	app.get('/api/auth/mode', (_req, res) => {
 		res.json({ mode: 'session' });
 	});
-}
-
-export function getUserId(req: Request & { user?: any }): string | undefined {
-	return req.user?.uid || req.session?.uid;
 }
