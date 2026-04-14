@@ -33,7 +33,7 @@
     "firebase-admin": "^10.3.0",
     "genkit": "^1.31.0",
     "memoizee": "^0.4.15",
-    "openid-client": "^5.6.5",
+    "openid-client": "^6.8.2",
     "passport": "^0.7.0",
     "ws": "^8.17.0",
     "zod": "^3.23.8"

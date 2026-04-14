@@ -135,8 +135,8 @@ export async function registerRoutes(
   app.delete('/api/creator/videos/:id', requireAuth, videoModule.deleteCreatorVideo);
 
   // Chat endpoints (require auth)
-  app.get(api.chat.list.path, requireAuth, chatModule.getChatHistory);
-  app.post(api.chat.send.path, requireAuth, chatModule.sendChatMessage);
+  app.get(api.chat.list.path, chatModule.getChatHistory);
+  app.post(api.chat.send.path, chatModule.sendChatMessage);
 
   // TTS/STT endpoints
   app.post('/api/mara-speak', ttsModule.maraSpeak);
