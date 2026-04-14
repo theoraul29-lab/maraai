@@ -26,26 +26,11 @@ jobs:
           node-version: 20
           cache: npm
 
-      - name: Debug workspace
-        run: ls -la
-
       - name: Install dependencies
         run: npm ci
 
       - name: Build
         run: npm run build
-
-      # Example: Only run if functions folder exists
-      - name: Functions folder check and debug
-        run: |
-          if [ -d "functions" ]; then
-            echo "functions folder exists"
-            ls -la functions
-            # Uncomment and add your commands here if needed, e.g.:
-            # cd functions && npm ci
-          else
-            echo "functions folder missing, skipping functions step"
-          fi
 
       - name: Start backend and run smoke tests
         shell: bash
@@ -123,4 +108,3 @@ jobs:
           if [ -f backend.pid ]; then
             kill $(cat backend.pid) || true
           fi
-          rm -f backend.pid
