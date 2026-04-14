@@ -35,6 +35,14 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Build functions (dacă există folderul)
+        run: |
+          if [ -d "functions" ]; then
+            npm run build:functions
+          else
+            echo "functions folder missing, skipping build:functions"
+          fi
+
       # Example: Only run if functions folder exists
       - name: Functions folder check and debug
         run: |
