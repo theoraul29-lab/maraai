@@ -7,9 +7,13 @@
     "dev": "tsx server/index.ts",
     "build": "npm run build:frontend && npm run build:functions",
     "build:frontend": "cd frontend && npm install && npm run build",
-    "build:functions": "test -d functions && (cd functions && npm ci && npm run build) || echo \"No functions/ directory; skipping\"",
+    "build:functions": "cd functions && npm install && npm run build",
     "start": "tsx server/index.ts",
     "start:backend": "tsx server/index.ts",
+    "deploy": "firebase deploy --project maraai-488fb",
+    "deploy:hosting": "firebase deploy --only hosting --project maraai-488fb",
+    "deploy:functions": "firebase deploy --only functions --project maraai-488fb",
+    "logs": "firebase functions:log --follow --project maraai-488fb",
     "smoke:runtime": "node scripts/smoke-runtime.mjs"
   },
   "dependencies": {
@@ -29,7 +33,6 @@
     "memoizee": "^0.4.15",
     "openid-client": "^6.8.2",
     "passport": "^0.7.0",
-    "tsx": "^4.15.0",
     "ws": "^8.17.0",
     "zod": "^3.23.8"
   },
@@ -45,6 +48,7 @@
     "@types/passport": "^1.0.16",
     "@types/ws": "^8.5.10",
     "@vitejs/plugin-react": "^6.0.1",
+    "tsx": "^4.15.0",
     "typescript": "~5.5.0",
     "vite": "^8.0.5"
   },
