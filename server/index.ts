@@ -228,14 +228,26 @@ app.use((req, res, next) => {
   const videoSeeders = new Map<number, Set<string>>();
   const peerSeeds = new Map<string, Set<number>>();
 
+  // Per-connection cap on how many videos a single peer can claim to be
+  // seeding. Without this a malicious client can flood `p2p-have-video`
+  // with unique IDs and grow the maps without bound until the server OOMs.
+  const MAX_SEEDS_PER_USER = Number.parseInt(
+    process.env.P2P_MAX_SEEDS_PER_USER ?? '',
+    10,
+  ) || 500;
+
   const addSeed = (userId: string, videoId: number) => {
+    let owned = peerSeeds.get(userId);
+    if (owned && owned.size >= MAX_SEEDS_PER_USER && !owned.has(videoId)) {
+      // Silently reject — client can drop something before adding more.
+      return;
+    }
     let seeders = videoSeeders.get(videoId);
     if (!seeders) {
       seeders = new Set<string>();
       videoSeeders.set(videoId, seeders);
     }
     seeders.add(userId);
-    let owned = peerSeeds.get(userId);
     if (!owned) {
       owned = new Set<number>();
       peerSeeds.set(userId, owned);
