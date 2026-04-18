@@ -22,6 +22,11 @@ import { z } from 'zod';
 
 const BCRYPT_ROUNDS = 10;
 
+// Pre-computed bcrypt hash (of a random throwaway string) used only to
+// equalise response timing in `login()` when the email does not exist, so
+// attackers can't enumerate registered emails via timing side-channels.
+const DUMMY_BCRYPT_HASH = '$2a$10$zvolThg7zhnrni8khQnWXOaqChfBo1KU6L3uBzYFN0kr4VkDrbmJ.';
+
 const emailSchema = z.string().trim().email().max(320);
 const passwordSchema = z.string().min(8).max(200);
 const nameSchema = z.string().trim().min(1).max(120);
@@ -87,8 +92,25 @@ async function findCredentialsByEmail(email: string) {
   return rows[0] ?? null;
 }
 
-function setSessionUser(req: Request, userId: string) {
-  req.session.userId = userId;
+/**
+ * Regenerate the session ID and attach the authenticated user id.
+ *
+ * Regenerating the id on login/signup prevents session fixation: the
+ * anonymous session id the browser was using (assigned by
+ * `setupSessionAuth`) is thrown away, and the authenticated state is
+ * bound to a fresh, unpredictable id.
+ */
+function setSessionUser(req: Request, userId: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    req.session.regenerate((err) => {
+      if (err) return reject(err);
+      req.session.userId = userId;
+      req.session.save((saveErr) => {
+        if (saveErr) return reject(saveErr);
+        resolve();
+      });
+    });
+  });
 }
 
 function flashBadRequest(res: Response, message: string) {
@@ -164,7 +186,12 @@ export async function signup(req: Request, res: Response) {
     return res.status(500).json({ message: 'Failed to create account. Please try again.' });
   }
 
-  setSessionUser(req, user.id);
+  try {
+    await setSessionUser(req, user.id);
+  } catch (err) {
+    console.error('[auth] session.regenerate failed after signup:', err);
+    return res.status(500).json({ message: 'Failed to create session. Please try again.' });
+  }
   return res.status(201).json(toPayload(user));
 }
 
@@ -179,7 +206,10 @@ export async function login(req: Request, res: Response) {
 
   const creds = await findCredentialsByEmail(email);
   if (!creds) {
-    // Uniform error message so we don't leak which emails exist.
+    // Uniform error message AND matching latency: run a dummy bcrypt.compare
+    // so the "user not found" path takes the same ~100ms as a real compare.
+    // Without this, an attacker could enumerate valid emails via timing.
+    await bcrypt.compare(password, DUMMY_BCRYPT_HASH).catch(() => false);
     return res.status(401).json({ message: 'Invalid email or password.' });
   }
 
@@ -197,7 +227,12 @@ export async function login(req: Request, res: Response) {
     return res.status(500).json({ message: 'User record missing.' });
   }
 
-  setSessionUser(req, user[0].id);
+  try {
+    await setSessionUser(req, user[0].id);
+  } catch (err) {
+    console.error('[auth] session.regenerate failed after login:', err);
+    return res.status(500).json({ message: 'Failed to create session. Please try again.' });
+  }
   return res.status(200).json(toPayload(user[0]));
 }
 
