@@ -323,6 +323,64 @@ export interface IStorage {
       likes: number;
     }>
   >;
+
+  // --- Unified feed (PR I) -------------------------------------------------
+  /**
+   * Public cross-module feed. Merges approved reels and *published* writer
+   * pages into a single stream. Only `public` writer pages are included —
+   * vip/paid pages are gated by purchase/plan and belong behind the read
+   * endpoint, not a discovery feed.
+   *
+   * Ordering is "most recent first" by publication time. Callers can pass
+   * `kinds` to restrict to a subset.
+   */
+  getUnifiedFeed(opts: {
+    limit: number;
+    offset: number;
+    kinds?: Array<'reel' | 'writer_page'>;
+  }): Promise<
+    Array<{
+      kind: 'reel' | 'writer_page';
+      id: number;
+      userId: string;
+      title: string;
+      excerpt: string | null;
+      thumbnailUrl: string | null;
+      slug: string | null;
+      visibility: 'public' | 'vip' | 'paid';
+      views: number;
+      likes: number;
+      createdAt: Date;
+    }>
+  >;
+
+  /**
+   * Feed restricted to content authored by users the caller follows. Returns
+   * the same shape as `getUnifiedFeed`. Returns an empty array when the user
+   * follows nobody — the feed is opt-in, not a fallback to the global feed.
+   */
+  getFollowingFeed(
+    userId: string,
+    opts: {
+      limit: number;
+      offset: number;
+      kinds?: Array<'reel' | 'writer_page'>;
+    },
+  ): Promise<
+    Array<{
+      kind: 'reel' | 'writer_page';
+      id: number;
+      userId: string;
+      title: string;
+      excerpt: string | null;
+      thumbnailUrl: string | null;
+      slug: string | null;
+      visibility: 'public' | 'vip' | 'paid';
+      views: number;
+      likes: number;
+      createdAt: Date;
+    }>
+  >;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1427,6 +1485,278 @@ export class DatabaseStorage implements IStorage {
         createdAt: r.createdAt,
         views: r.views ?? 0,
         likes: r.likes ?? 0,
+      });
+    }
+
+    combined.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return combined.slice(offset, offset + limit);
+  }
+
+  // --- Unified feed (PR I) -------------------------------------------------
+
+  async getUnifiedFeed(opts: {
+    limit: number;
+    offset: number;
+    kinds?: Array<'reel' | 'writer_page'>;
+  }): Promise<
+    Array<{
+      kind: 'reel' | 'writer_page';
+      id: number;
+      userId: string;
+      title: string;
+      excerpt: string | null;
+      thumbnailUrl: string | null;
+      slug: string | null;
+      visibility: 'public' | 'vip' | 'paid';
+      views: number;
+      likes: number;
+      createdAt: Date;
+    }>
+  > {
+    const limit = Math.min(Math.max(opts.limit, 1), 100);
+    const offset = Math.max(opts.offset, 0);
+    const kinds = opts.kinds && opts.kinds.length > 0
+      ? new Set(opts.kinds)
+      : new Set<'reel' | 'writer_page'>(['reel', 'writer_page']);
+
+    // Over-fetch per source so the in-memory merge still has enough items
+    // after the offset cut. 2*limit + offset is a safe upper bound for the
+    // two-way merge.
+    const fetchSize = limit * 2 + offset;
+
+    const pageRows = kinds.has('writer_page')
+      ? await db
+          .select({
+            id: writerPages.id,
+            userId: writerPages.userId,
+            title: writerPages.title,
+            excerpt: writerPages.excerpt,
+            thumbnailUrl: writerPages.coverImage,
+            slug: writerPages.slug,
+            visibility: writerPages.visibility,
+            views: writerPages.views,
+            likes: writerPages.likes,
+            publishedAt: writerPages.publishedAt,
+            fallbackCreatedAt: writerPages.createdAt,
+          })
+          .from(writerPages)
+          .where(
+            and(
+              eq(writerPages.published, 1),
+              eq(writerPages.visibility, 'public'),
+            ),
+          )
+          .orderBy(desc(writerPages.publishedAt))
+          .limit(fetchSize)
+      : [];
+
+    const reelRows = kinds.has('reel')
+      ? await db
+          .select({
+            id: videos.id,
+            creatorId: videos.creatorId,
+            title: videos.title,
+            description: videos.description,
+            thumbnailUrl: videos.thumbnailUrl,
+            views: videos.views,
+            likes: videos.likes,
+            moderationStatus: videos.moderationStatus,
+            createdAt: videos.createdAt,
+          })
+          .from(videos)
+          .where(eq(videos.moderationStatus, 'approved'))
+          .orderBy(desc(videos.createdAt))
+          .limit(fetchSize)
+      : [];
+
+    const combined: Array<{
+      kind: 'reel' | 'writer_page';
+      id: number;
+      userId: string;
+      title: string;
+      excerpt: string | null;
+      thumbnailUrl: string | null;
+      slug: string | null;
+      visibility: 'public' | 'vip' | 'paid';
+      views: number;
+      likes: number;
+      createdAt: Date;
+    }> = [];
+
+    for (const p of pageRows) {
+      const when = p.publishedAt ?? p.fallbackCreatedAt;
+      if (!when) continue;
+      combined.push({
+        kind: 'writer_page',
+        id: p.id,
+        userId: p.userId,
+        title: p.title,
+        excerpt: p.excerpt ?? null,
+        thumbnailUrl: p.thumbnailUrl ?? null,
+        slug: p.slug ?? null,
+        visibility: (p.visibility as 'public' | 'vip' | 'paid') ?? 'public',
+        views: p.views ?? 0,
+        likes: p.likes ?? 0,
+        createdAt: when,
+      });
+    }
+    for (const r of reelRows) {
+      // Legacy/seed videos without a creatorId cannot be attributed to a
+      // user on the feed — skip them rather than surface orphan rows.
+      if (!r.creatorId) continue;
+      combined.push({
+        kind: 'reel',
+        id: r.id,
+        userId: r.creatorId,
+        title: r.title,
+        excerpt: r.description ?? null,
+        thumbnailUrl: r.thumbnailUrl ?? null,
+        slug: null,
+        visibility: 'public',
+        views: r.views ?? 0,
+        likes: r.likes ?? 0,
+        createdAt: r.createdAt,
+      });
+    }
+
+    combined.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return combined.slice(offset, offset + limit);
+  }
+
+  async getFollowingFeed(
+    userId: string,
+    opts: {
+      limit: number;
+      offset: number;
+      kinds?: Array<'reel' | 'writer_page'>;
+    },
+  ): Promise<
+    Array<{
+      kind: 'reel' | 'writer_page';
+      id: number;
+      userId: string;
+      title: string;
+      excerpt: string | null;
+      thumbnailUrl: string | null;
+      slug: string | null;
+      visibility: 'public' | 'vip' | 'paid';
+      views: number;
+      likes: number;
+      createdAt: Date;
+    }>
+  > {
+    const limit = Math.min(Math.max(opts.limit, 1), 100);
+    const offset = Math.max(opts.offset, 0);
+    const kinds = opts.kinds && opts.kinds.length > 0
+      ? new Set(opts.kinds)
+      : new Set<'reel' | 'writer_page'>(['reel', 'writer_page']);
+
+    const following = await db
+      .select({ followingId: followers.followingId })
+      .from(followers)
+      .where(eq(followers.followerId, userId));
+    const followIds = following.map((row) => row.followingId);
+    // No follows -> empty stream. Callers can fall back to /api/feed if
+    // they want global discovery.
+    if (followIds.length === 0) return [];
+
+    const fetchSize = limit * 2 + offset;
+
+    const pageRows = kinds.has('writer_page')
+      ? await db
+          .select({
+            id: writerPages.id,
+            userId: writerPages.userId,
+            title: writerPages.title,
+            excerpt: writerPages.excerpt,
+            thumbnailUrl: writerPages.coverImage,
+            slug: writerPages.slug,
+            visibility: writerPages.visibility,
+            views: writerPages.views,
+            likes: writerPages.likes,
+            publishedAt: writerPages.publishedAt,
+            fallbackCreatedAt: writerPages.createdAt,
+          })
+          .from(writerPages)
+          .where(
+            and(
+              eq(writerPages.published, 1),
+              eq(writerPages.visibility, 'public'),
+              inArray(writerPages.userId, followIds),
+            ),
+          )
+          .orderBy(desc(writerPages.publishedAt))
+          .limit(fetchSize)
+      : [];
+
+    const reelRows = kinds.has('reel')
+      ? await db
+          .select({
+            id: videos.id,
+            creatorId: videos.creatorId,
+            title: videos.title,
+            description: videos.description,
+            thumbnailUrl: videos.thumbnailUrl,
+            views: videos.views,
+            likes: videos.likes,
+            createdAt: videos.createdAt,
+          })
+          .from(videos)
+          .where(
+            and(
+              eq(videos.moderationStatus, 'approved'),
+              inArray(videos.creatorId, followIds),
+            ),
+          )
+          .orderBy(desc(videos.createdAt))
+          .limit(fetchSize)
+      : [];
+
+    const combined: Array<{
+      kind: 'reel' | 'writer_page';
+      id: number;
+      userId: string;
+      title: string;
+      excerpt: string | null;
+      thumbnailUrl: string | null;
+      slug: string | null;
+      visibility: 'public' | 'vip' | 'paid';
+      views: number;
+      likes: number;
+      createdAt: Date;
+    }> = [];
+
+    for (const p of pageRows) {
+      const when = p.publishedAt ?? p.fallbackCreatedAt;
+      if (!when) continue;
+      combined.push({
+        kind: 'writer_page',
+        id: p.id,
+        userId: p.userId,
+        title: p.title,
+        excerpt: p.excerpt ?? null,
+        thumbnailUrl: p.thumbnailUrl ?? null,
+        slug: p.slug ?? null,
+        visibility: (p.visibility as 'public' | 'vip' | 'paid') ?? 'public',
+        views: p.views ?? 0,
+        likes: p.likes ?? 0,
+        createdAt: when,
+      });
+    }
+    for (const r of reelRows) {
+      if (!r.creatorId) continue;
+      combined.push({
+        kind: 'reel',
+        id: r.id,
+        userId: r.creatorId,
+        title: r.title,
+        excerpt: r.description ?? null,
+        thumbnailUrl: r.thumbnailUrl ?? null,
+        slug: null,
+        visibility: 'public',
+        views: r.views ?? 0,
+        likes: r.likes ?? 0,
+        createdAt: r.createdAt,
       });
     }
 

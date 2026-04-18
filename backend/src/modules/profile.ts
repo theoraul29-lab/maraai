@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import type { IStorage } from '../../../server/storage';
+import { platformBus } from '../../../server/events';
 
 let deps: { storage: IStorage };
 
@@ -112,6 +113,18 @@ export async function followUser(req: Request, res: Response) {
       return;
     }
     const result = await deps.storage.followUser(followerId, followingId);
+    // `followUser` is a toggle: emit the right event based on the returned
+    // state so subscribers can distinguish new follows from unfollows.
+    try {
+      const key = result.following ? 'user.followed' : 'user.unfollowed';
+      platformBus.emit(key, {
+        followerId,
+        followingId,
+        at: new Date(),
+      });
+    } catch (busErr) {
+      console.error('[profile] failed to emit follow event:', busErr);
+    }
     res.json(result);
   } catch (error) {
     console.error('[profile] followUser failed:', error);
