@@ -15,6 +15,13 @@
       "when": 1776512500000,
       "tag": "0001_users_auth_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1776520100000,
+      "tag": "0002_billing",
+      "breakpoints": true
     }
   ]
 }

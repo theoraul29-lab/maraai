@@ -11,6 +11,7 @@ import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
 export * from './models/auth.ts';
+export * from './models/billing.ts';
 export * from './models/chat.ts';
 
 // === VIDEOS ===

@@ -14,6 +14,8 @@ import { storage } from './storage.js';
 import { setupSessionAuth } from './auth.js';
 import { checkRateLimit } from './rate-limit.js';
 import * as authApi from './modules/auth-api.js';
+import { registerBillingApi } from './billing/api.js';
+import { seedPlans } from './billing/seed.js';
 import { z } from 'zod';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { db } from './db.js';
@@ -105,6 +107,10 @@ app.post('/api/auth/logout', authApi.logout);
 app.get('/api/auth/me', authApi.me);
 app.post('/api/auth/oauth/:provider', authApi.oauth);
 
+// Subscription / billing endpoints. Public plan catalogue + authed
+// `/me`, `/subscribe` (503 until PAYMENTS_ENABLED + provider keys), `/cancel`.
+registerBillingApi(app);
+
 app.get('/api/runtime', (_req, res) => {
   const displayHost =
     runtimeState.host === '0.0.0.0' ? 'localhost' : runtimeState.host;
@@ -160,6 +166,17 @@ app.use((req, res, next) => {
 
 (async () => {
   runMigrations();
+
+  // Upsert the canonical plan catalogue (Free / Pro / VIP / Creator ×
+  // monthly+yearly) so `GET /api/billing/plans` always has fresh rows and
+  // operators can tweak pricing without writing a new migration.
+  try {
+    await seedPlans();
+    console.log('[billing] plans seeded');
+  } catch (err) {
+    console.error('[billing] seed failed:', err);
+    throw err;
+  }
 
   await registerRoutes(httpServer, app);
 
