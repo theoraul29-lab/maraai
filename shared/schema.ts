@@ -497,3 +497,67 @@ export type SelfReflection = typeof maraSelfReflection.$inferSelect;
 export type InsertSelfReflection = z.infer<typeof insertSelfReflectionSchema>;
 export type PlatformInsight = typeof maraPlatformInsights.$inferSelect;
 export type InsertPlatformInsight = z.infer<typeof insertPlatformInsightSchema>;
+
+// === TRADING ACADEMY (PR F) ===
+// Modules group lessons (e.g. "Fundamentals", "Technical Analysis"). Access
+// is gated by a billing FeatureKey stored as text here (not a FK) so the
+// plans catalogue remains the single source of truth for entitlements and
+// we don't have to coordinate migration order against billing seeds.
+export const tradingModules = pgTable('trading_modules', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  slug: text('slug').notNull(),
+  level: integer('level').notNull(),
+  title: text('title').notNull(),
+  description: text('description').default('').notNull(),
+  orderIdx: integer('order_idx').default(0).notNull(),
+  requiredFeature: text('required_feature').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .default(sql`(CURRENT_TIMESTAMP)`)
+    .notNull(),
+});
+
+export const tradingLessons = pgTable('trading_lessons', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  moduleId: integer('module_id').notNull(),
+  slug: text('slug').notNull(),
+  title: text('title').notNull(),
+  content: text('content').default('').notNull(),
+  videoUrl: text('video_url'),
+  durationSeconds: integer('duration_seconds').default(0).notNull(),
+  orderIdx: integer('order_idx').default(0).notNull(),
+  // Optional quiz as a JSON string. Shape:
+  //   { questions: [{ id, prompt, choices:[..], answer: <idx> }] }
+  // Null means the lesson has no quiz and is completed on explicit
+  // /complete without scoring.
+  quizJson: text('quiz_json'),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .default(sql`(CURRENT_TIMESTAMP)`)
+    .notNull(),
+});
+
+export const tradingLessonProgress = pgTable('trading_lesson_progress', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: text('user_id').notNull(),
+  lessonId: integer('lesson_id').notNull(),
+  quizScore: integer('quiz_score'),
+  completedAt: integer('completed_at', { mode: 'timestamp' })
+    .default(sql`(CURRENT_TIMESTAMP)`)
+    .notNull(),
+});
+
+export const tradingCertificates = pgTable('trading_certificates', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: text('user_id').notNull(),
+  moduleId: integer('module_id').notNull(),
+  avgScore: integer('avg_score').default(0).notNull(),
+  issuedAt: integer('issued_at', { mode: 'timestamp' })
+    .default(sql`(CURRENT_TIMESTAMP)`)
+    .notNull(),
+});
+
+export type TradingModule = typeof tradingModules.$inferSelect;
+export type InsertTradingModule = typeof tradingModules.$inferInsert;
+export type TradingLesson = typeof tradingLessons.$inferSelect;
+export type InsertTradingLesson = typeof tradingLessons.$inferInsert;
+export type TradingLessonProgress = typeof tradingLessonProgress.$inferSelect;
+export type TradingCertificate = typeof tradingCertificates.$inferSelect;
