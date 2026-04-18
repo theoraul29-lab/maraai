@@ -11,12 +11,12 @@ interface ChatBoxProps {
   setLang: (lang: Language) => void;
 }
 
-export const ChatBox: React.FC<ChatBoxProps> = ({ lang, setLang }) => {
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [prompt, setPrompt] = useState<string>('');
   const [response, setResponse] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [history, setHistory] = useState<{ role: string; parts: { text: string }[] }[]>([]);
+  const [visible, setVisible] = useState(true);
 
   const translations = {
     RO: { langTitle: "LIMBA", placeholder: "Scrie un mesaj...", system: "MARA" },
@@ -49,17 +49,28 @@ export const ChatBox: React.FC<ChatBoxProps> = ({ lang, setLang }) => {
 
   const t = translations[lang];
 
+  if (!visible) {
+    return (
+      <div style={{ position: 'fixed', bottom: 30, right: 30, zIndex: 200 }}>
+        <button onClick={() => setVisible(true)} style={{ background: '#00ff7f', color: '#111', border: 'none', borderRadius: 20, padding: '10px 20px', fontWeight: 700, cursor: 'pointer' }}>Deschide Chat</button>
+      </div>
+    );
+  }
   return (
     <div className="ui-fixed-bottom">
       <style>{`
-        .ui-fixed-bottom { position: absolute; bottom: 30px; right: 30px; width: 280px; z-index: 200; }
+        .ui-fixed-bottom { position: fixed; bottom: 30px; right: 30px; width: 280px; z-index: 200; }
         .lang-selector-btn { float: right; font-size: 0.7rem; font-weight: 900; color: #00ff7f; cursor: pointer; background: rgba(0,0,0,0.8); border: 1px solid rgba(0,255,127,0.3); padding: 6px 15px; border-radius: 20px; margin-bottom: 10px; backdrop-filter: blur(10px); transition: 0.3s; }
         .lang-dropdown { position: absolute; bottom: 50px; right: 0; background: rgba(10, 10, 10, 0.98); border: 1px solid #333; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 8px; width: 120px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 300; }
         .lang-option { font-size: 0.65rem; color: white; cursor: pointer; opacity: 0.6; padding: 4px; transition: 0.2s; }
         .lang-option:hover, .lang-option.active { opacity: 1; color: #00ff7f; }
+        .chat-box, .chat-box * { user-select: text; }
         .chat-box { clear: both; background: rgba(0,0,0,0.95); border: 1px solid; border-radius: 20px; padding: 15px; animation: glowPulse 4s infinite ease-in-out; }
+        .close-btn { position: absolute; top: 10px; right: 10px; background: none; border: none; color: #00ff7f; font-size: 1.2rem; cursor: pointer; z-index: 400; }
       `}</style>
-      
+
+      <button className="close-btn" onClick={() => setVisible(false)} title="Închide chat">×</button>
+
       <div className="lang-selector-btn" onClick={() => setShowLangMenu(!showLangMenu)}>
         {t.langTitle} {showLangMenu ? '▲' : '▼'}
       </div>
