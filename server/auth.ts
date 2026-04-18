@@ -21,20 +21,30 @@ function makeId() {
 }
 
 export function setupSessionAuth(app: Express) {
+  const isProduction = process.env.NODE_ENV === 'production';
+
   // Railway terminates TLS at the edge (proxy). Needed for secure cookies.
-  if (process.env.NODE_ENV === 'production') {
+  if (isProduction) {
     app.set('trust proxy', 1);
   }
 
+  const configuredSecret = process.env.SESSION_SECRET;
+  if (isProduction && !configuredSecret) {
+    throw new Error(
+      'SESSION_SECRET is required in production. Set a long random string in the environment.',
+    );
+  }
+  const sessionSecret = configuredSecret || 'dev-secret-not-for-production';
+
   app.use(
     session({
-      secret: process.env.SESSION_SECRET || 'dev-secret',
+      secret: sessionSecret,
       resave: false,
       saveUninitialized: false,
       cookie: {
         httpOnly: true,
         sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
+        secure: isProduction,
         maxAge: 7 * 24 * 60 * 60 * 1000,
       },
     }),
