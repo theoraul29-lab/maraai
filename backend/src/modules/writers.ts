@@ -209,9 +209,15 @@ export async function getArticle(req: Request, res: Response) {
 
     const access = await resolveReadAccess(userId, page);
     if (!access.allowed) {
+      // Drafts must be indistinguishable from missing rows — returning any
+      // metadata (title, excerpt, cover) would let an unauthenticated user
+      // enumerate ids and scrape unpublished content.
+      if (access.reason === 'draft') {
+        return res.status(404).json({ error: 'Article not found' });
+      }
       // Paywalled / VIP-only: reply with enough metadata for the client to
       // render the paywall (title, excerpt, price, reason) but never the body.
-      return res.status(access.reason === 'draft' ? 404 : 403).json({
+      return res.status(403).json({
         error: 'Access denied',
         reason: access.reason,
         article: {
@@ -353,7 +359,10 @@ export async function updateArticle(req: Request, res: Response) {
       patch.visibility = vis;
     }
     if (typeof body.priceCents === 'number' && Number.isFinite(body.priceCents)) {
-      patch.priceCents = Math.min(Math.max(body.priceCents, 0), 100_00);
+      // Same floor as publish: 0.50 EUR minimum, 100 EUR cap. Preventing 0
+      // here is critical — a 0-cent paid article would paywall the content
+      // while letting anyone "purchase" it for free and unlock full access.
+      patch.priceCents = Math.min(Math.max(body.priceCents, 50), 100_00);
     }
     if (typeof body.published === 'boolean') {
       patch.published = body.published;
@@ -511,23 +520,45 @@ export async function purchaseArticle(req: Request, res: Response) {
     const already = await deps.storage.hasPurchasedWriterPage(userId, id);
     if (already) return res.status(200).json({ purchased: true, alreadyOwned: true });
 
-    // Payments are feature-flagged off until the provider keys are wired
-    // in Railway. When flipped on the request body should carry a
-    // provider-specific token (`stripeSessionId` / `paypalOrderId`) that
-    // we forward to the real charge path. For now: 501 + clear reason.
+    // Purchase recording is gated behind TWO separate flags to avoid any
+    // possibility of a user unlocking paid content without a real charge:
+    //
+    //   - PAYMENTS_ENABLED=true       → user has configured Stripe/PayPal
+    //     keys and a real webhook. In this case /purchase is a no-op here;
+    //     the purchase row is written by the provider webhook handler
+    //     (shipping in the Stripe/PayPal PR) *after* the charge clears.
+    //     We return 501 from this endpoint to make it very obvious the
+    //     charge path has not run yet.
+    //
+    //   - PAYMENTS_TEST_MODE=true     → explicit CI / local-dev override.
+    //     When this is set, the endpoint will directly record a purchase
+    //     row with the 70/30 split so we can smoke-test the paywall flow
+    //     without a real provider. NEVER set this in production.
+    //
+    // If neither flag is set, 501 as before.
     const enabled = (process.env.PAYMENTS_ENABLED || '').toLowerCase() === 'true';
-    if (!enabled) {
+    const testMode = (process.env.PAYMENTS_TEST_MODE || '').toLowerCase() === 'true';
+
+    if (!enabled && !testMode) {
       return res.status(501).json({
         error: 'Payments not enabled yet',
         hint: 'Set PAYMENTS_ENABLED=true and configure Stripe/PayPal keys.',
       });
     }
 
-    // When enabled, the actual charge happens through the billing provider
-    // (Stripe Checkout Session or PayPal order capture). Because the real
-    // provider integration lives in a separate PR, we trust a server-side
-    // environment flag for the stub path and record the purchase with the
-    // 70/30 split so reporting works from day one.
+    if (enabled && !testMode) {
+      // Real payments live — the purchase row is written by the provider
+      // webhook, NOT by this endpoint. Returning 501 here prevents the
+      // "set the flag and unlock every paid article" foot-gun.
+      return res.status(501).json({
+        error: 'Direct purchase recording disabled under PAYMENTS_ENABLED',
+        hint: 'Complete checkout via Stripe/PayPal — the purchase row is written by the webhook after the charge clears.',
+      });
+    }
+
+    // PAYMENTS_TEST_MODE=true path: record directly with the 70/30 split.
+    // This is the only path in PR E that writes a purchase row and is
+    // explicitly documented as dev/CI-only.
     const amountCents = page.priceCents ?? 0;
     const authorShare = Math.floor(amountCents * CREATOR_REVENUE_SHARE);
     const platformShare = amountCents - authorShare;
@@ -543,7 +574,7 @@ export async function purchaseArticle(req: Request, res: Response) {
       platformShareCents: platformShare,
     });
 
-    res.status(201).json({ purchased: true, purchase });
+    res.status(201).json({ purchased: true, purchase, testMode: true });
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'failed to purchase';
     res.status(500).json({ error: 'Failed to purchase', detail: msg });
