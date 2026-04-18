@@ -9,6 +9,7 @@ import {
 } from '../shared/schema';
 import { db } from './db';
 import { eq } from 'drizzle-orm';
+import { csrfProtection } from './auth';
 import * as videoModule from '../backend/src/modules/video.js';
 import * as chatModule from '../backend/src/modules/chat.js';
 import * as ttsModule from '../backend/src/modules/tts.js';
@@ -46,6 +47,11 @@ export async function registerRoutes(
     if (!userId) return res.status(401).json({ message: 'Unauthorized — login required.' });
     return next();
   };
+
+  // Apply CSRF protection to all state-changing routes.
+  // Note: setupSessionAuth() is called in server/index.ts before registerRoutes(),
+  // so req.session is populated by the time this middleware runs.
+  app.use(csrfProtection);
 
   // Admin guard: match against ADMIN_USER_IDS (deny-by-default)
   const requireAdmin = (req: any, res: any, next: any) => {
@@ -135,8 +141,8 @@ export async function registerRoutes(
   app.delete('/api/creator/videos/:id', requireAuth, videoModule.deleteCreatorVideo);
 
   // Chat endpoints (require auth)
-  app.get(api.chat.list.path, chatModule.getChatHistory);
-  app.post(api.chat.send.path, chatModule.sendChatMessage);
+  app.get(api.chat.list.path, requireAuth, chatModule.getChatHistory);
+  app.post(api.chat.send.path, requireAuth, chatModule.sendChatMessage);
 
   // TTS/STT endpoints
   app.post('/api/mara-speak', ttsModule.maraSpeak);

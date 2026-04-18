@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import type { IStorage } from '../../../server/storage';
+import { insertVideoSchema } from '../../../shared/schema';
 import { eq, sql } from 'drizzle-orm';
 
 let deps: {
@@ -28,17 +29,30 @@ export async function listVideos(req: Request, res: Response) {
 export async function maraFeed(_req: Request, res: Response) {
   try {
     const videos = await deps.storage.getVideos();
-    // Return shuffled feed
-    const shuffled = videos.sort(() => Math.random() - 0.5);
-    res.json(shuffled.slice(0, 50));
+    // Fisher-Yates shuffle for a uniform random permutation
+    for (let i = videos.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [videos[i], videos[j]] = [videos[j], videos[i]];
+    }
+    res.json(videos.slice(0, 50));
   } catch (error) {
     res.status(500).json({ message: 'Failed to load feed' });
   }
 }
 
+// Validate body, strip server-controlled fields (creatorId is set from auth, not from client)
+const videoBodySchema = insertVideoSchema.omit({ creatorId: true });
+
 export async function createVideo(req: Request, res: Response) {
+  const parsed = videoBodySchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ message: parsed.error.issues[0]?.message || 'Invalid input' });
+  }
   try {
-    const video = await deps.storage.createVideo(req.body);
+    const video = await deps.storage.createVideo({
+      ...parsed.data,
+      creatorId: (req.user as any)?.uid ?? null,
+    });
     res.status(201).json(video);
   } catch (error) {
     res.status(400).json({ message: 'Failed to create video' });
@@ -47,7 +61,7 @@ export async function createVideo(req: Request, res: Response) {
 
 export async function likeVideo(req: Request, res: Response) {
   try {
-    const userId = req.user?.claims?.sub || (req.user as any)?.uid;
+    const userId = (req.user as any)?.uid;
     const videoId = parseInt(req.params.id, 10);
     if (isNaN(videoId)) return res.status(400).json({ message: 'Invalid video ID' });
     const result = await deps.storage.likeVideo(userId, videoId);
@@ -70,7 +84,7 @@ export async function viewVideo(req: Request, res: Response) {
 
 export async function saveVideo(req: Request, res: Response) {
   try {
-    const userId = req.user?.claims?.sub || (req.user as any)?.uid;
+    const userId = (req.user as any)?.uid;
     const videoId = parseInt(req.params.id, 10);
     if (isNaN(videoId)) return res.status(400).json({ message: 'Invalid video ID' });
     const result = await deps.storage.saveVideo(userId, videoId, req.body.note);
@@ -82,7 +96,7 @@ export async function saveVideo(req: Request, res: Response) {
 
 export async function unsaveVideo(req: Request, res: Response) {
   try {
-    const userId = req.user?.claims?.sub || (req.user as any)?.uid;
+    const userId = (req.user as any)?.uid;
     const videoId = parseInt(req.params.id, 10);
     if (isNaN(videoId)) return res.status(400).json({ message: 'Invalid video ID' });
     const result = await deps.storage.unsaveVideo(userId, videoId);
@@ -94,7 +108,7 @@ export async function unsaveVideo(req: Request, res: Response) {
 
 export async function getSavedVideos(req: Request, res: Response) {
   try {
-    const userId = req.user?.claims?.sub || (req.user as any)?.uid;
+    const userId = (req.user as any)?.uid;
     const saved = await deps.storage.getSavedVideos(userId);
     res.json(saved);
   } catch (error) {
@@ -104,7 +118,7 @@ export async function getSavedVideos(req: Request, res: Response) {
 
 export async function creatorPostStatus(req: Request, res: Response) {
   try {
-    const userId = req.user?.claims?.sub || (req.user as any)?.uid;
+    const userId = (req.user as any)?.uid;
     const status = await deps.storage.canUserPost(userId);
     res.json(status);
   } catch (error) {
@@ -114,7 +128,7 @@ export async function creatorPostStatus(req: Request, res: Response) {
 
 export async function creatorMyVideos(req: Request, res: Response) {
   try {
-    const userId = req.user?.claims?.sub || (req.user as any)?.uid;
+    const userId = (req.user as any)?.uid;
     const videos = await deps.storage.getCreatorVideos(userId);
     res.json(videos);
   } catch (error) {
@@ -124,7 +138,7 @@ export async function creatorMyVideos(req: Request, res: Response) {
 
 export async function creatorPostReel(req: Request, res: Response) {
   try {
-    const userId = req.user?.claims?.sub || (req.user as any)?.uid;
+    const userId = (req.user as any)?.uid;
     const canPost = await deps.storage.canUserPost(userId);
     if (!canPost.canPost) {
       return res.status(403).json({
@@ -150,7 +164,7 @@ export async function creatorPostReel(req: Request, res: Response) {
 
 export async function creatorAnalytics(req: Request, res: Response) {
   try {
-    const userId = req.user?.claims?.sub || (req.user as any)?.uid;
+    const userId = (req.user as any)?.uid;
     const videos = await deps.storage.getCreatorVideos(userId);
     const totalViews = videos.reduce((sum, v) => sum + (v.views || 0), 0);
     const totalLikes = videos.reduce((sum, v) => sum + (v.likes || 0), 0);
@@ -170,7 +184,7 @@ export async function creatorAnalytics(req: Request, res: Response) {
 
 export async function deleteCreatorVideo(req: Request, res: Response) {
   try {
-    const userId = req.user?.claims?.sub || (req.user as any)?.uid;
+    const userId = (req.user as any)?.uid;
     const videoId = parseInt(req.params.id, 10);
     if (isNaN(videoId)) return res.status(400).json({ message: 'Invalid video ID' });
     const deleted = await deps.storage.deleteCreatorVideo(videoId, userId);

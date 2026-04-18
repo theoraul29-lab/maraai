@@ -9,7 +9,7 @@ export function injectDeps(d: typeof deps) {
 
 export async function getUserLanguage(req: Request, res: Response) {
   try {
-    const userId = req.user?.claims?.sub || (req.user as any)?.uid;
+    const userId = (req.user as any)?.uid;
     const prefs = await deps.storage.getUserPreferences(userId);
     res.json({ language: prefs?.language || 'en' });
   } catch (error) {
@@ -19,7 +19,7 @@ export async function getUserLanguage(req: Request, res: Response) {
 
 export async function setUserLanguage(req: Request, res: Response) {
   try {
-    const userId = req.user?.claims?.sub || (req.user as any)?.uid;
+    const userId = (req.user as any)?.uid;
     const { language } = req.body;
     if (!language || typeof language !== 'string') {
       return res.status(400).json({ message: 'Language code is required' });
