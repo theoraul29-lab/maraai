@@ -757,11 +757,12 @@ export class DatabaseStorage implements IStorage {
       .from(writerPages)
       .where(ownershipCond);
     if (!existing) return false;
-    await db.delete(writerPages).where(eq(writerPages.id, id));
-    // Cascade: comments + purchases are orphan-safe but we clean them anyway
-    // so an article can be fully removed on GDPR request.
+    // Cascade: delete children first so a partial failure (DB error between
+    // statements) doesn't strand orphan purchase rows (which carry userId —
+    // PII) after the parent page is already gone. Order matters for GDPR.
     await db.delete(writerComments).where(eq(writerComments.pageId, id));
     await db.delete(writerPurchases).where(eq(writerPurchases.pageId, id));
+    await db.delete(writerPages).where(eq(writerPages.id, id));
     return true;
   }
 

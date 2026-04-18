@@ -534,7 +534,13 @@ export async function purchaseArticle(req: Request, res: Response) {
     if (!Number.isFinite(id)) return res.status(400).json({ error: 'Invalid article id' });
 
     const page = await deps.storage.getWriterPageById(id);
-    if (!page) return res.status(404).json({ error: 'Article not found' });
+    // Drafts must be indistinguishable from missing rows here too — otherwise
+    // an attacker could call /purchase on guessed ids and use the response
+    // (400 "not paywalled" vs 404) to learn which drafts exist and even
+    // leak their tier / price metadata once published-but-drafted.
+    if (!page || !page.published) {
+      return res.status(404).json({ error: 'Article not found' });
+    }
     if (page.visibility !== 'paid') {
       return res.status(400).json({ error: 'Article is not paywalled' });
     }
