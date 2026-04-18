@@ -246,7 +246,11 @@ export interface IStorage {
   ): Promise<{ videos: Video[]; users: User[]; pages: any[] }>;
   updateUserProfile(
     userId: string,
-    data: { displayName?: string; bio?: string },
+    data: {
+      displayName?: string;
+      bio?: string;
+      profileImageUrl?: string | null;
+    },
   ): Promise<User | null>;
 
   // === Trading Academy (PR F) ===
@@ -271,6 +275,47 @@ export interface IStorage {
     moduleId: number,
   ): Promise<TradingCertificate | null>;
   listUserCertificates(userId: string): Promise<TradingCertificate[]>;
+
+  // --- Profile / You (PR H) ------------------------------------------------
+  getUserById(userId: string): Promise<User | null>;
+  listFollowers(
+    userId: string,
+    opts?: { limit?: number; offset?: number },
+  ): Promise<
+    Array<{
+      id: string;
+      displayName: string | null;
+      firstName: string | null;
+      profileImageUrl: string | null;
+      followedAt: Date | null;
+    }>
+  >;
+  listFollowing(
+    userId: string,
+    opts?: { limit?: number; offset?: number },
+  ): Promise<
+    Array<{
+      id: string;
+      displayName: string | null;
+      firstName: string | null;
+      profileImageUrl: string | null;
+      followedAt: Date | null;
+    }>
+  >;
+  getProfileActivity(
+    userId: string,
+    opts?: { limit?: number; offset?: number },
+  ): Promise<
+    Array<{
+      kind: 'writer_page' | 'reel';
+      id: number;
+      title: string;
+      thumbnailUrl: string | null;
+      createdAt: Date;
+      views: number;
+      likes: number;
+    }>
+  >;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1226,7 +1271,11 @@ export class DatabaseStorage implements IStorage {
 
   async updateUserProfile(
     userId: string,
-    data: { displayName?: string; bio?: string },
+    data: {
+      displayName?: string;
+      bio?: string;
+      profileImageUrl?: string | null;
+    },
   ): Promise<User | null> {
     const [updated] = await db
       .update(users)
@@ -1234,6 +1283,138 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, userId))
       .returning();
     return updated || null;
+  }
+
+  // --- Profile / You (PR H) ------------------------------------------------
+
+  async getUserById(userId: string): Promise<User | null> {
+    const [row] = await db.select().from(users).where(eq(users.id, userId));
+    return row ?? null;
+  }
+
+  async listFollowers(
+    userId: string,
+    opts?: { limit?: number; offset?: number },
+  ) {
+    const limit = Math.min(Math.max(opts?.limit ?? 50, 1), 200);
+    const offset = Math.max(opts?.offset ?? 0, 0);
+    return await db
+      .select({
+        id: users.id,
+        displayName: users.displayName,
+        firstName: users.firstName,
+        profileImageUrl: users.profileImageUrl,
+        followedAt: followers.createdAt,
+      })
+      .from(followers)
+      .innerJoin(users, eq(users.id, followers.followerId))
+      .where(eq(followers.followingId, userId))
+      .orderBy(desc(followers.createdAt))
+      .limit(limit)
+      .offset(offset);
+  }
+
+  async listFollowing(
+    userId: string,
+    opts?: { limit?: number; offset?: number },
+  ) {
+    const limit = Math.min(Math.max(opts?.limit ?? 50, 1), 200);
+    const offset = Math.max(opts?.offset ?? 0, 0);
+    return await db
+      .select({
+        id: users.id,
+        displayName: users.displayName,
+        firstName: users.firstName,
+        profileImageUrl: users.profileImageUrl,
+        followedAt: followers.createdAt,
+      })
+      .from(followers)
+      .innerJoin(users, eq(users.id, followers.followingId))
+      .where(eq(followers.followerId, userId))
+      .orderBy(desc(followers.createdAt))
+      .limit(limit)
+      .offset(offset);
+  }
+
+  async getProfileActivity(
+    userId: string,
+    opts?: { limit?: number; offset?: number },
+  ) {
+    const limit = Math.min(Math.max(opts?.limit ?? 20, 1), 100);
+    const offset = Math.max(opts?.offset ?? 0, 0);
+
+    // Fetch a window of recent items from each source and merge in memory.
+    // Pull 2*limit per source so we still have enough after the offset cut.
+    const fetchSize = limit * 2 + offset;
+
+    const pageRows = await db
+      .select({
+        id: writerPages.id,
+        title: writerPages.title,
+        thumbnailUrl: writerPages.coverImage,
+        createdAt: writerPages.publishedAt,
+        fallbackCreatedAt: writerPages.createdAt,
+        views: writerPages.views,
+        likes: writerPages.likes,
+      })
+      .from(writerPages)
+      .where(
+        and(eq(writerPages.userId, userId), eq(writerPages.published, 1)),
+      )
+      .orderBy(desc(writerPages.publishedAt))
+      .limit(fetchSize);
+
+    const reelRows = await db
+      .select({
+        id: videos.id,
+        title: videos.title,
+        thumbnailUrl: videos.thumbnailUrl,
+        createdAt: videos.createdAt,
+        views: videos.views,
+        likes: videos.likes,
+      })
+      .from(videos)
+      .where(eq(videos.creatorId, userId))
+      .orderBy(desc(videos.createdAt))
+      .limit(fetchSize);
+
+    const combined: Array<{
+      kind: 'writer_page' | 'reel';
+      id: number;
+      title: string;
+      thumbnailUrl: string | null;
+      createdAt: Date;
+      views: number;
+      likes: number;
+    }> = [];
+
+    for (const p of pageRows) {
+      const when = p.createdAt ?? p.fallbackCreatedAt;
+      if (!when) continue;
+      combined.push({
+        kind: 'writer_page',
+        id: p.id,
+        title: p.title,
+        thumbnailUrl: p.thumbnailUrl ?? null,
+        createdAt: when,
+        views: p.views ?? 0,
+        likes: p.likes ?? 0,
+      });
+    }
+    for (const r of reelRows) {
+      combined.push({
+        kind: 'reel',
+        id: r.id,
+        title: r.title,
+        thumbnailUrl: r.thumbnailUrl ?? null,
+        createdAt: r.createdAt,
+        views: r.views ?? 0,
+        likes: r.likes ?? 0,
+      });
+    }
+
+    combined.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return combined.slice(offset, offset + limit);
   }
 
   // === MARA KNOWLEDGE BASE ===

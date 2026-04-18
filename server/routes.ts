@@ -111,9 +111,17 @@ export async function registerRoutes(
   app.get('/api/trading/access', requireAuth, ordersModule.getTradingAccess);
   app.post('/api/premium/order', requireAuth, ordersModule.createPremiumOrder);
 
-  // Profile endpoints
+  // Profile endpoints (PR H)
+  // Order matters: `/me` must be registered before `/:id` so Express matches
+  // it literally instead of treating "me" as a user id.
+  app.get('/api/profile/me', requireAuth, profileModule.getMe);
+  app.patch('/api/profile/me', requireAuth, profileModule.updateMe);
   app.get('/api/profile/:id', profileModule.getProfile);
   app.get('/api/profile/:id/videos', profileModule.getProfileVideos);
+  app.get('/api/profile/:id/followers', profileModule.listFollowers);
+  app.get('/api/profile/:id/following', profileModule.listFollowing);
+  app.get('/api/profile/:id/activity', profileModule.getActivity);
+  app.get('/api/profile/:id/badges', profileModule.getBadges);
   app.post('/api/profile/:id/follow', requireAuth, profileModule.followUser);
 
   // Admin endpoints (require admin)
