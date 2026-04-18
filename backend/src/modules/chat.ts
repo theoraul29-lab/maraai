@@ -1,10 +1,11 @@
 import type { Request, Response } from 'express';
 import { storage } from '../../../server/storage';
 import { getMaraResponse } from '../../../server/ai';
+import { checkRateLimit } from '../../../server/rateLimit';
 
 export async function getChatHistory(req: Request, res: Response) {
   try {
-    const userId = req.user?.claims?.sub || (req.user as any)?.uid;
+    const userId = (req.user as any)?.uid;
     const messages = await storage.getChatMessages(userId);
     res.json(messages);
   } catch (error) {
@@ -14,11 +15,19 @@ export async function getChatHistory(req: Request, res: Response) {
 
 export async function sendChatMessage(req: Request, res: Response) {
   try {
-    const userId = req.user?.claims?.sub || (req.user as any)?.uid;
+    const userId = (req.user as any)?.uid;
     const { message, module, language } = req.body;
 
     if (!message || typeof message !== 'string') {
       return res.status(400).json({ message: 'Message is required' });
+    }
+
+    const rateLimitCheck = checkRateLimit(userId);
+    if (!rateLimitCheck.allowed) {
+      return res.status(429).json({
+        message: 'Too many messages. Please try again in a moment.',
+        retryAfterMs: rateLimitCheck.retryAfterMs,
+      });
     }
 
     // Save user message

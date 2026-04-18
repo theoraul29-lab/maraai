@@ -21,6 +21,13 @@ function makeId() {
 }
 
 export function setupSessionAuth(app: Express) {
+  if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
+    throw new Error(
+      'SESSION_SECRET environment variable is required in production. ' +
+        'Set a long random string (e.g. openssl rand -hex 32).',
+    );
+  }
+
   // Railway terminates TLS at the edge (proxy). Needed for secure cookies.
   if (process.env.NODE_ENV === 'production') {
     app.set('trust proxy', 1);
