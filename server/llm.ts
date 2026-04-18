@@ -66,20 +66,33 @@ function getOllamaNumPredict(): number {
   return Number.isFinite(n) && n > 0 ? n : OLLAMA_DEFAULT_NUM_PREDICT;
 }
 
-async function ollamaChat(messages: LLMMessage[], temperature = 0.95): Promise<string> {
+/**
+ * Low-level Ollama chat call.
+ *
+ * `numPredict` is optional: the shared brain-agent generate path
+ * (`ollamaGenerate` → `llmGenerate`) deliberately omits it so long
+ * structured / JSON responses are never silently truncated. The chat
+ * path (`llmChat`) passes `getOllamaNumPredict()` (default 220) so
+ * small local models stay snappy and don't ramble.
+ */
+async function ollamaChat(
+  messages: LLMMessage[],
+  temperature = 0.95,
+  numPredict?: number,
+): Promise<string> {
   const base = getOllamaBase();
   const model = getOllamaModel();
+
+  const options: Record<string, unknown> = { temperature };
+  if (typeof numPredict === 'number' && numPredict > 0) {
+    options.num_predict = numPredict;
+  }
 
   const body = JSON.stringify({
     model,
     messages: messages.map((m) => ({ role: m.role, content: m.content })),
     stream: false,
-    options: {
-      temperature,
-      // Hard cap on reply length. Small local models (1B on CPU) produce better
-      // answers when they don't ramble past the first good paragraph.
-      num_predict: getOllamaNumPredict(),
-    },
+    options,
   });
 
   const res = await fetch(`${base}/api/chat`, {
@@ -99,6 +112,7 @@ async function ollamaChat(messages: LLMMessage[], temperature = 0.95): Promise<s
 }
 
 async function ollamaGenerate(prompt: string, temperature = 0.7): Promise<string> {
+  // No num_predict: brain agents expect full-length structured / JSON output.
   return ollamaChat([{ role: 'user', content: prompt }], temperature);
 }
 
@@ -217,7 +231,8 @@ export async function llmChat(messages: LLMMessage[], temperature = 0.95): Promi
       throw new Error('OLLAMA_BASE_URL is not set. Cannot use Ollama provider.');
     }
     try {
-      return await ollamaChat(messages, temperature);
+      // Apply num_predict only on the user-facing chat path.
+      return await ollamaChat(messages, temperature, getOllamaNumPredict());
     } catch (err) {
       if (autoFallbackEnabled() && process.env.OPENROUTER_API_KEY) {
         console.warn('[llm] Ollama failed, falling back to OpenRouter:', String(err));
