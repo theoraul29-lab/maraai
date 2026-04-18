@@ -148,17 +148,23 @@ export function requireFeature(key: FeatureKey) {
     res: Response,
     next: NextFunction,
   ): Promise<void> {
-    const userId = (req.session as { userId?: string } | undefined)?.userId ?? null;
-    const allowed = await hasFeature(userId, key);
-    if (!allowed) {
-      res.status(403).json({
-        error: 'feature_not_available',
-        feature: key,
-        message:
-          'This feature requires an upgraded plan. Visit /billing to upgrade.',
-      });
-      return;
+    try {
+      const userId = (req.session as { userId?: string } | undefined)?.userId ?? null;
+      const allowed = await hasFeature(userId, key);
+      if (!allowed) {
+        res.status(403).json({
+          error: 'feature_not_available',
+          feature: key,
+          message:
+            'This feature requires an upgraded plan. Visit /billing to upgrade.',
+        });
+        return;
+      }
+      next();
+    } catch (err) {
+      // Forward to Express's error handler instead of leaving the request
+      // hanging on an unhandled rejection (Node 20 would crash the process).
+      next(err);
     }
-    next();
   };
 }
