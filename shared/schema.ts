@@ -24,6 +24,26 @@ export const videos = pgTable('videos', {
   creatorId: text('creator_id'),
   likes: integer('likes').default(0).notNull(),
   views: integer('views').default(0).notNull(),
+  shares: integer('shares').default(0).notNull(),
+  // Set when the video was uploaded through /api/videos/upload and the bytes
+  // live on a Railway volume (or local disk in dev). Null for legacy / external
+  // (YouTube, Vimeo, seeded sample) videos.
+  fileKey: text('file_key'),
+  mimeType: text('mime_type'),
+  durationSec: integer('duration_sec'),
+  thumbnailUrl: text('thumbnail_url'),
+  moderationStatus: text('moderation_status').default('approved').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
+// === VIDEO COMMENTS ===
+export const videoComments = pgTable('video_comments', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  videoId: integer('video_id').notNull(),
+  userId: text('user_id').notNull(),
+  content: text('content').notNull(),
   createdAt: integer('created_at', { mode: 'timestamp' })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
@@ -294,6 +314,11 @@ export const insertVideoSchema = createInsertSchema(videos).omit({
   createdAt: true,
   likes: true,
   views: true,
+  shares: true,
+});
+export const insertVideoCommentSchema = createInsertSchema(videoComments).omit({
+  id: true,
+  createdAt: true,
 });
 export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({
   id: true,
@@ -388,6 +413,8 @@ export const creatorPostRequestSchema = z.object({
 // === TYPES ===
 export type Video = typeof videos.$inferSelect;
 export type InsertVideo = z.infer<typeof insertVideoSchema>;
+export type VideoComment = typeof videoComments.$inferSelect;
+export type InsertVideoComment = z.infer<typeof insertVideoCommentSchema>;
 export type ChatMessage = typeof chatMessages.$inferSelect;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 export type Like = typeof likes.$inferSelect;

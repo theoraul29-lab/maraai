@@ -1,6 +1,7 @@
 import { db } from "./db";
 import {
   videos,
+  videoComments,
   chatMessages,
   likes,
   followers,
@@ -24,6 +25,8 @@ import {
   users,
   type Video,
   type InsertVideo,
+  type VideoComment,
+  type InsertVideoComment,
   type ChatMessage,
   type InsertChatMessage,
   type PremiumOrder,
@@ -66,7 +69,27 @@ export interface IStorage {
     videoId: number,
   ): Promise<{ liked: boolean; likes: number }>;
   viewVideo(videoId: number): Promise<{ views: number }>;
+  shareVideo(videoId: number): Promise<{ shares: number }>;
   deleteVideo(videoId: number): Promise<void>;
+  getVideoById(videoId: number): Promise<Video | null>;
+  getReelsFeed(options?: {
+    limit?: number;
+    offset?: number;
+  }): Promise<Video[]>;
+
+  createVideoComment(
+    comment: InsertVideoComment,
+  ): Promise<VideoComment>;
+  listVideoComments(
+    videoId: number,
+    limit?: number,
+  ): Promise<VideoComment[]>;
+  deleteVideoComment(
+    commentId: number,
+    userId: string,
+    isAdmin: boolean,
+  ): Promise<boolean>;
+  countVideoComments(videoId: number): Promise<number>;
 
   getChatMessages(userId?: string): Promise<ChatMessage[]>;
   createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
@@ -1114,6 +1137,101 @@ export class DatabaseStorage implements IStorage {
       .where(eq(maraPlatformInsights.id, id))
       .returning();
     return updated || null;
+  }
+
+  // --- Reels (PR D) ------------------------------------------------------
+
+  async getVideoById(videoId: number): Promise<Video | null> {
+    const [row] = await db.select().from(videos).where(eq(videos.id, videoId));
+    return row ?? null;
+  }
+
+  async shareVideo(videoId: number): Promise<{ shares: number }> {
+    await db
+      .update(videos)
+      .set({ shares: sql`${videos.shares} + 1` })
+      .where(eq(videos.id, videoId));
+    const [row] = await db
+      .select({ shares: videos.shares })
+      .from(videos)
+      .where(eq(videos.id, videoId));
+    return { shares: row?.shares ?? 0 };
+  }
+
+  async getReelsFeed(options?: {
+    limit?: number;
+    offset?: number;
+  }): Promise<Video[]> {
+    const limit = Math.min(Math.max(options?.limit ?? 20, 1), 100);
+    const offset = Math.max(options?.offset ?? 0, 0);
+    // Engagement score: likes*3 + views + shares*5 - hours_since_creation*0.1
+    // so newer videos get a small boost and very old videos decay. We only
+    // include approved videos — pending/rejected never hit the feed.
+    //
+    // `videos.created_at` in SQLite is defaulted via `CURRENT_TIMESTAMP`,
+    // which produces an ISO-8601 text string (not a unix epoch integer).
+    // We coerce it through `strftime('%s', …)` so the subtraction is in
+    // seconds. `COALESCE` + fallback to `strftime('%s','now')` keeps rows
+    // with a NULL `createdAt` from torpedoing the sort.
+    return await db
+      .select()
+      .from(videos)
+      .where(eq(videos.moderationStatus, 'approved'))
+      .orderBy(
+        desc(
+          sql`(${videos.likes} * 3 + ${videos.views} + ${videos.shares} * 5) - ((CAST(strftime('%s','now') AS INTEGER) - CAST(COALESCE(strftime('%s', ${videos.createdAt}), strftime('%s','now')) AS INTEGER)) / 3600.0) * 0.1`,
+        ),
+        desc(videos.createdAt),
+      )
+      .limit(limit)
+      .offset(offset);
+  }
+
+  async createVideoComment(
+    comment: InsertVideoComment,
+  ): Promise<VideoComment> {
+    const [created] = await db
+      .insert(videoComments)
+      .values(comment)
+      .returning();
+    return created;
+  }
+
+  async listVideoComments(
+    videoId: number,
+    limit = 100,
+  ): Promise<VideoComment[]> {
+    return await db
+      .select()
+      .from(videoComments)
+      .where(eq(videoComments.videoId, videoId))
+      .orderBy(desc(videoComments.createdAt))
+      .limit(Math.min(Math.max(limit, 1), 500));
+  }
+
+  async deleteVideoComment(
+    commentId: number,
+    userId: string,
+    isAdmin: boolean,
+  ): Promise<boolean> {
+    const [row] = await db
+      .select()
+      .from(videoComments)
+      .where(eq(videoComments.id, commentId));
+    if (!row) return false;
+    if (!isAdmin && row.userId !== userId) return false;
+    await db
+      .delete(videoComments)
+      .where(eq(videoComments.id, commentId));
+    return true;
+  }
+
+  async countVideoComments(videoId: number): Promise<number> {
+    const [row] = await db
+      .select({ n: count() })
+      .from(videoComments)
+      .where(eq(videoComments.videoId, videoId));
+    return Number(row?.n ?? 0);
   }
 }
 

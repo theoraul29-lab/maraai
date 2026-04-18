@@ -22,6 +22,13 @@
       "when": 1776520100000,
       "tag": "0002_billing",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1776537300000,
+      "tag": "0003_reels",
+      "breakpoints": true
     }
   ]
 }
