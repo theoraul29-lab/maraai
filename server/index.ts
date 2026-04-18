@@ -21,6 +21,7 @@ import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { db } from './db.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { UPLOADS_DIR } from '../backend/src/modules/reels.js';
 dotenv.config();
 
 const __migrationFilename = fileURLToPath(import.meta.url);
@@ -178,6 +179,19 @@ app.use((req, res, next) => {
     throw err;
   }
 
+  // Serve uploaded reel files from the configured volume. Mounted BEFORE
+  // registerRoutes so it wins over any `/videos` proxy or catch-all later.
+  // `maxAge` allows aggressive browser caching — the filename is content-
+  // hashed so invalidation is not a concern.
+  app.use(
+    '/videos/files',
+    express.static(UPLOADS_DIR, {
+      maxAge: '7d',
+      immutable: true,
+      fallthrough: false,
+    }),
+  );
+
   await registerRoutes(httpServer, app);
 
   // --- START P2P WEBSOCKET INTEGRATION ---
@@ -196,6 +210,53 @@ app.use((req, res, next) => {
     },
   });
   const userConnections = new Map<string, any>();
+  // In-memory index of which connected peers are currently caching which
+  // video IDs (Reels P2P distribution). This lives only in process memory —
+  // on restart peers re-announce via `p2p-have-video`.
+  //
+  // videoSeeders: videoId -> Set<userId>
+  // peerSeeds:    userId  -> Set<videoId>  (so we can clean up on disconnect)
+  const videoSeeders = new Map<number, Set<string>>();
+  const peerSeeds = new Map<string, Set<number>>();
+
+  const addSeed = (userId: string, videoId: number) => {
+    let seeders = videoSeeders.get(videoId);
+    if (!seeders) {
+      seeders = new Set<string>();
+      videoSeeders.set(videoId, seeders);
+    }
+    seeders.add(userId);
+    let owned = peerSeeds.get(userId);
+    if (!owned) {
+      owned = new Set<number>();
+      peerSeeds.set(userId, owned);
+    }
+    owned.add(videoId);
+  };
+  const removeSeed = (userId: string, videoId: number) => {
+    const seeders = videoSeeders.get(videoId);
+    if (seeders) {
+      seeders.delete(userId);
+      if (seeders.size === 0) videoSeeders.delete(videoId);
+    }
+    const owned = peerSeeds.get(userId);
+    if (owned) {
+      owned.delete(videoId);
+      if (owned.size === 0) peerSeeds.delete(userId);
+    }
+  };
+  const clearSeedsForUser = (userId: string) => {
+    const owned = peerSeeds.get(userId);
+    if (!owned) return;
+    for (const videoId of owned) {
+      const seeders = videoSeeders.get(videoId);
+      if (seeders) {
+        seeders.delete(userId);
+        if (seeders.size === 0) videoSeeders.delete(videoId);
+      }
+    }
+    peerSeeds.delete(userId);
+  };
 
   wss.on('connection', (ws: any, req: any) => {
     const userId = url.parse(req.url || '', true).query.userId as string;
@@ -241,6 +302,43 @@ app.use((req, res, next) => {
             );
           }
           break;
+
+        // --- Reel P2P seed advertising (PR D) ---
+        //
+        // Peers announce which video IDs they currently have cached
+        // locally so that other peers can fetch bytes P2P via WebRTC
+        // instead of hammering the origin / CDN. The server keeps the
+        // index in-memory only; peers re-advertise on reconnect.
+        case 'p2p-have-video': {
+          if (!ws.userId) break;
+          const vid = Number((data as any).videoId);
+          if (!Number.isFinite(vid)) break;
+          addSeed(ws.userId, vid);
+          break;
+        }
+        case 'p2p-drop-video': {
+          if (!ws.userId) break;
+          const vid = Number((data as any).videoId);
+          if (!Number.isFinite(vid)) break;
+          removeSeed(ws.userId, vid);
+          break;
+        }
+        case 'p2p-want-video': {
+          const vid = Number((data as any).videoId);
+          if (!Number.isFinite(vid)) break;
+          const seeders = videoSeeders.get(vid);
+          const peers = seeders
+            ? Array.from(seeders).filter((uid) => uid !== ws.userId).slice(0, 8)
+            : [];
+          ws.send(
+            JSON.stringify({
+              type: 'p2p-peer-list',
+              videoId: vid,
+              peers,
+            }),
+          );
+          break;
+        }
 
         // --- AI Chat Handler ---
         case 'chat':
@@ -313,6 +411,7 @@ app.use((req, res, next) => {
       if (ws.userId) {
         log(`P2P user disconnected: ${ws.userId}`, 'p2p-ws');
         userConnections.delete(ws.userId);
+        clearSeedsForUser(ws.userId);
       } else {
         log('Anonymous P2P user disconnected.', 'p2p-ws');
       }

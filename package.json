@@ -19,6 +19,7 @@
   "dependencies": {
     "@genkit-ai/googleai": "^1.28.0",
     "@openrouter/sdk": "^0.12.3",
+    "@types/multer": "^2.1.0",
     "axios": "^1.15.0",
     "bcryptjs": "^2.4.3",
     "better-sqlite3": "^12.8.0",
@@ -31,6 +32,7 @@
     "express-session": "^1.18.0",
     "genkit": "^1.16.1",
     "memoizee": "^0.4.15",
+    "multer": "^2.1.1",
     "openid-client": "^6.8.2",
     "passport": "^0.7.0",
     "stripe": "^17.7.0",

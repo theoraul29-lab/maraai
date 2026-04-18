@@ -10,6 +10,7 @@ import {
 import { db } from './db';
 import { eq } from 'drizzle-orm';
 import * as videoModule from '../backend/src/modules/video.js';
+import * as reelsModule from '../backend/src/modules/reels.js';
 import * as chatModule from '../backend/src/modules/chat.js';
 import * as ttsModule from '../backend/src/modules/tts.js';
 import * as sttModule from '../backend/src/modules/stt.js';
@@ -66,6 +67,7 @@ export async function registerRoutes(
 
   // Inject dependencies into modules
   videoModule.injectDeps({ storage, db, api, z, creatorPostRequestSchema, likesTable });
+  reelsModule.injectDeps({ storage });
   ttsModule.injectDeps({
     classic: 'nova',
     friendly: 'shimmer',
@@ -127,6 +129,28 @@ export async function registerRoutes(
   app.post('/api/videos/:id/save', requireAuth, videoModule.saveVideo);
   app.delete('/api/videos/:id/save', requireAuth, videoModule.unsaveVideo);
   app.get('/api/videos/saved', requireAuth, videoModule.getSavedVideos);
+
+  // --- Reels pipeline (PR D) -------------------------------------------------
+  app.get('/api/reels/feed', reelsModule.getReelsFeed);
+  app.post(
+    '/api/reels/upload',
+    requireAuth,
+    (req: any, res: any, next: any) => {
+      reelsModule.uploadMiddleware(req, res, (err: unknown) => {
+        if (err) {
+          const msg = err instanceof Error ? err.message : 'upload error';
+          const status = msg.includes('File too large') ? 413 : 400;
+          return res.status(status).json({ error: msg });
+        }
+        return next();
+      });
+    },
+    reelsModule.uploadReel,
+  );
+  app.post('/api/videos/:id/share', requireAuth, reelsModule.shareReel);
+  app.get('/api/videos/:id/comments', reelsModule.listComments);
+  app.post('/api/videos/:id/comments', requireAuth, reelsModule.createComment);
+  app.delete('/api/videos/comments/:commentId', requireAuth, reelsModule.deleteComment);
 
   // Creator endpoints (require auth)
   app.get('/api/creator/post-status', requireAuth, videoModule.creatorPostStatus);
