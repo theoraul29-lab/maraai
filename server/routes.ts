@@ -33,7 +33,7 @@ import {
   generateMarketingPost,
 } from './ai';
 import { getActiveProvider, checkOllamaHealth, isLLMConfigured } from './llm';
-import { getLibraryProgress, addAndReadCustomBook, getKnowledgeStats } from './mara-brain/index';
+import { getLibraryProgress, addAndReadCustomBook, getKnowledgeStats, brainManager } from './mara-brain/index';
 import { chatRateLimit } from './rate-limit.js';
 
 export async function registerRoutes(
@@ -194,6 +194,70 @@ export async function registerRoutes(
       res.json(stats);
     } catch (error) {
       res.status(500).json({ error: 'Failed to get knowledge stats' });
+    }
+  });
+
+  // === Mara Brain status/logs/trigger (admin only) ===
+  app.get('/api/admin/brain/status', requireAdmin, (_req: any, res: any) => {
+    try {
+      res.json(brainManager.status());
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to get brain status' });
+    }
+  });
+
+  app.get('/api/admin/brain/logs', requireAdmin, async (req: any, res: any) => {
+    try {
+      const rawLimit = Number.parseInt(String(req.query.limit ?? '20'), 10);
+      const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(rawLimit, 1), 200) : 20;
+      const logs = await storage.getBrainLogs(limit);
+      // BrainLog fields are plain newline-delimited strings. Expose both the
+      // raw string and a best-effort array split so the UI can render either.
+      const toLines = (val: unknown): string[] => {
+        if (typeof val !== 'string') return [];
+        return val.split('\n').map((s) => s.trim()).filter(Boolean);
+      };
+      const decoded = logs.map((l) => ({
+        id: l.id,
+        createdAt: l.createdAt,
+        research: l.research,
+        productIdeas: l.productIdeas,
+        devTasks: l.devTasks,
+        growthIdeas: l.growthIdeas,
+        researchItems: toLines(l.research),
+        productIdeasItems: toLines(l.productIdeas),
+        devTasksItems: toLines(l.devTasks),
+        growthIdeasItems: toLines(l.growthIdeas),
+      }));
+      res.json({ logs: decoded });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to get brain logs' });
+    }
+  });
+
+  app.post('/api/admin/brain/trigger', requireAdmin, async (_req: any, res: any) => {
+    try {
+      const result = await brainManager.triggerManual();
+      if (result.ok) {
+        return res.status(202).json({ ok: true, message: 'Brain cycle started in background.' });
+      }
+      if (result.reason === 'disabled') {
+        return res.status(503).json({ ok: false, code: 'brain_disabled', message: 'Brain scheduler is disabled.' });
+      }
+      if (result.reason === 'running') {
+        return res.status(409).json({ ok: false, code: 'brain_running', message: 'A brain cycle is already running.' });
+      }
+      if (result.reason === 'cooldown') {
+        return res.status(429).json({
+          ok: false,
+          code: 'cooldown',
+          message: 'Manual trigger cooldown active.',
+          retryAfterMs: result.retryAfterMs,
+        });
+      }
+      return res.status(500).json({ ok: false, message: 'Unknown trigger failure.' });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to trigger brain cycle' });
     }
   });
 
