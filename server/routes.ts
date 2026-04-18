@@ -213,11 +213,13 @@ export async function registerRoutes(
       });
     }
 
-    // Gemini: just report configuration status
+    // OpenRouter / other: configuration status plus the active model id so
+    // the admin UI can display what will actually answer the next request.
     return res.status(configured ? 200 : 503).json({
       provider,
       configured,
       ok: configured,
+      model: process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini',
     });
   });
 
