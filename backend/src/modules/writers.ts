@@ -368,6 +368,18 @@ export async function updateArticle(req: Request, res: Response) {
       patch.published = body.published;
     }
 
+    // Cross-field check: whenever the article ends up as `paid` after this
+    // PATCH, it must have a valid price. Otherwise an author could create a
+    // public article (priceCents=null), then PATCH only { visibility: 'paid' }
+    // and turn it into a 0-cent paywall — purchaseArticle falls back to 0
+    // and anyone unlocks full access for free.
+    const effectiveVisibility = (patch.visibility ?? existing.visibility) as string;
+    const effectivePrice =
+      (patch.priceCents as number | undefined) ?? (existing.priceCents ?? null);
+    if (effectiveVisibility === 'paid' && (!effectivePrice || effectivePrice < 50)) {
+      return res.status(400).json({ error: 'priceCents must be >= 50 for paid articles' });
+    }
+
     const updated = await deps.storage.updateWriterPage(
       id,
       userId,
