@@ -106,7 +106,7 @@ MaraAI can run completely **without external AI API keys** by self-hosting [Olla
 | `PORT` | `5000` | Railway also injects `PORT` automatically |
 | `AUTH_MODE` | `local` | |
 | `SESSION_SECRET` | *(random secret)* | Use Railway's "Generate" button |
-| `DATABASE_URL` | `sqlite:///data/maraai.sqlite` | Requires the Volume above |
+| `DATABASE_URL` | `sqlite:////data/maraai.sqlite` | Requires the Volume above. Note: **four** slashes encode an absolute path (`/data/...`); three slashes would be interpreted as relative to `CWD` (`/app/data/...`) and would not persist across redeploys. |
 | `AI_PROVIDER` | `ollama` | Use `openrouter` if you prefer OpenRouter |
 | `OLLAMA_BASE_URL` | `http://ollama:11434` | Railway internal hostname of service 2 |
 | `OLLAMA_MODEL` | `llama3.2:1b` | Or `phi3:mini` for slightly larger model |
