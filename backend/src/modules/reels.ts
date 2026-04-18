@@ -53,17 +53,23 @@ try {
 const MAX_UPLOAD_BYTES =
   Number.parseInt(process.env.VIDEO_UPLOAD_MAX_BYTES ?? '', 10) || 100 * 1024 * 1024; // 100 MB default
 
-const ALLOWED_MIME_TYPES = new Set([
-  'video/mp4',
-  'video/webm',
-  'video/quicktime',
-  'video/x-matroska',
-]);
+// MIME -> extension whitelist. We derive the on-disk extension from the
+// server-validated MIME type, NOT from the user-supplied originalname,
+// because express.static serves files based on extension. Trusting the
+// client's filename here would let an attacker upload `evil.html` with a
+// spoofed `Content-Type: video/mp4` and achieve stored XSS.
+const MIME_TO_EXT: Record<string, string> = {
+  'video/mp4': '.mp4',
+  'video/webm': '.webm',
+  'video/quicktime': '.mov',
+  'video/x-matroska': '.mkv',
+};
+const ALLOWED_MIME_TYPES = new Set(Object.keys(MIME_TO_EXT));
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
   filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase().replace(/[^a-z0-9.]/g, '') || '.bin';
+    const ext = MIME_TO_EXT[file.mimetype] ?? '.bin';
     const name = `${Date.now()}-${randomBytes(8).toString('hex')}${ext}`;
     cb(null, name);
   },
@@ -113,8 +119,13 @@ export async function uploadReel(req: Request, res: Response) {
 
     res.status(201).json({ video: created });
   } catch (err) {
+    // Best-effort cleanup of the file multer already wrote to disk so a
+    // flaky DB doesn't slowly fill the Railway volume with orphaned bytes.
+    const file = (req as any).file as Express.Multer.File | undefined;
+    if (file?.path) {
+      fs.unlink(file.path, () => { /* ignore cleanup errors */ });
+    }
     const msg = err instanceof Error ? err.message : 'upload failed';
-    // multer surfaces limit errors as LIMIT_FILE_SIZE etc — surface as 413/400.
     if (msg.includes('File too large')) {
       res.status(413).json({ error: 'File too large' });
       return;

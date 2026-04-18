@@ -183,8 +183,17 @@ app.use((req, res, next) => {
   // registerRoutes so it wins over any `/videos` proxy or catch-all later.
   // `maxAge` allows aggressive browser caching — the filename is content-
   // hashed so invalidation is not a concern.
+  //
+  // Defense-in-depth: set `X-Content-Type-Options: nosniff` so a browser
+  // never second-guesses the Content-Type. Extensions are already derived
+  // from the server-validated MIME whitelist (see backend/src/modules/reels.ts),
+  // but we treat the static tree as untrusted user content anyway.
   app.use(
     '/videos/files',
+    (_req, res, next) => {
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      next();
+    },
     express.static(UPLOADS_DIR, {
       maxAge: '7d',
       immutable: true,
