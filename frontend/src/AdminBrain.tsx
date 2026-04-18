@@ -22,10 +22,14 @@ type BrainStatus = {
 type BrainLog = {
   id: number;
   createdAt: string | number | null;
-  research: unknown;
-  productIdeas: unknown;
-  devTasks: unknown;
-  growthIdeas: unknown;
+  research: string;
+  productIdeas: string;
+  devTasks: string;
+  growthIdeas: string;
+  researchItems?: string[];
+  productIdeasItems?: string[];
+  devTasksItems?: string[];
+  growthIdeasItems?: string[];
 };
 
 function formatDate(iso: string | number | null): string {
@@ -42,11 +46,10 @@ function formatDuration(ms: number | null): string {
   return `${(ms / 60_000).toFixed(1)} min`;
 }
 
-function renderListOrText(val: unknown): string {
-  if (val === null || val === undefined) return '—';
-  if (Array.isArray(val)) return val.length ? val.join('\n• ') : '—';
-  if (typeof val === 'string') return val || '—';
-  try { return JSON.stringify(val, null, 2); } catch { return String(val); }
+function renderSection(raw: string | undefined, items: string[] | undefined): string {
+  if (items && items.length) return items.map((s) => `• ${s}`).join('\n');
+  if (typeof raw === 'string' && raw.length) return raw;
+  return '—';
 }
 
 export default function AdminBrain() {
@@ -182,25 +185,25 @@ export default function AdminBrain() {
             <details>
               <summary>Research</summary>
               <pre style={{ whiteSpace: 'pre-wrap', background: '#f7f7f7', padding: 8 }}>
-                {renderListOrText(log.research)}
+                {renderSection(log.research, log.researchItems)}
               </pre>
             </details>
             <details>
               <summary>Product ideas</summary>
               <pre style={{ whiteSpace: 'pre-wrap', background: '#f7f7f7', padding: 8 }}>
-                {renderListOrText(log.productIdeas)}
+                {renderSection(log.productIdeas, log.productIdeasItems)}
               </pre>
             </details>
             <details>
               <summary>Dev tasks</summary>
               <pre style={{ whiteSpace: 'pre-wrap', background: '#f7f7f7', padding: 8 }}>
-                {renderListOrText(log.devTasks)}
+                {renderSection(log.devTasks, log.devTasksItems)}
               </pre>
             </details>
             <details>
               <summary>Growth ideas</summary>
               <pre style={{ whiteSpace: 'pre-wrap', background: '#f7f7f7', padding: 8 }}>
-                {renderListOrText(log.growthIdeas)}
+                {renderSection(log.growthIdeas, log.growthIdeasItems)}
               </pre>
             </details>
           </div>

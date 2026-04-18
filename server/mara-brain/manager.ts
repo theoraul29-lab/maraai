@@ -201,11 +201,13 @@ class BrainManagerImpl {
     try {
       logger('Auto brain cycle starting...', 'mara-brain');
       const result = await runBrainCycle();
+      // BrainCycleResult fields are already strings (each agent joins with '\n').
+      // Keep historic on-disk format: store raw strings, not JSON-encoded strings.
       await storage.createBrainLog({
-        research: JSON.stringify(result.research ?? []),
-        productIdeas: JSON.stringify(result.productIdeas ?? []),
-        devTasks: JSON.stringify(result.devTasks ?? []),
-        growthIdeas: JSON.stringify(result.growthIdeas ?? []),
+        research: result.research ?? '',
+        productIdeas: result.productIdeas ?? '',
+        devTasks: result.devTasks ?? '',
+        growthIdeas: result.growthIdeas ?? '',
       });
       this._lastKnowledgeLearned = result.knowledgeLearned ?? 0;
       logger(

@@ -211,17 +211,23 @@ export async function registerRoutes(
       const rawLimit = Number.parseInt(String(req.query.limit ?? '20'), 10);
       const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(rawLimit, 1), 200) : 20;
       const logs = await storage.getBrainLogs(limit);
-      const parse = (val: unknown): unknown => {
-        if (typeof val !== 'string') return val;
-        try { return JSON.parse(val); } catch { return val; }
+      // BrainLog fields are plain newline-delimited strings. Expose both the
+      // raw string and a best-effort array split so the UI can render either.
+      const toLines = (val: unknown): string[] => {
+        if (typeof val !== 'string') return [];
+        return val.split('\n').map((s) => s.trim()).filter(Boolean);
       };
       const decoded = logs.map((l) => ({
         id: l.id,
         createdAt: l.createdAt,
-        research: parse(l.research),
-        productIdeas: parse(l.productIdeas),
-        devTasks: parse(l.devTasks),
-        growthIdeas: parse(l.growthIdeas),
+        research: l.research,
+        productIdeas: l.productIdeas,
+        devTasks: l.devTasks,
+        growthIdeas: l.growthIdeas,
+        researchItems: toLines(l.research),
+        productIdeasItems: toLines(l.productIdeas),
+        devTasksItems: toLines(l.devTasks),
+        growthIdeasItems: toLines(l.growthIdeas),
       }));
       res.json({ logs: decoded });
     } catch (error) {
