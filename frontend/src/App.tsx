@@ -16,6 +16,7 @@ import You from './you';
 import ResetPassword from './ResetPassword';
 import ResetPasswordConfirmation from './ResetPasswordConfirmation';
 import HomePage from './HomePage';
+import AdminBrain from './AdminBrain';
 
 function App() {
   const navigate = useNavigate();
@@ -36,6 +37,7 @@ function App() {
           <Route path="/writers-hub" element={<WritersHub onClose={() => navigate('/')} />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/reset-password/confirmation" element={<ResetPasswordConfirmation />} />
+          <Route path="/admin/brain" element={<AdminBrain />} />
         </Routes>
         {/* Mara Chat Widget - appears on all pages */}
         <MaraChatWidget />

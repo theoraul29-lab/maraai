@@ -6,8 +6,8 @@ import type { Request, Response, NextFunction } from 'express';
 import { registerRoutes } from './routes.js';
 import { serveStatic } from './static.js';
 import { createServer } from 'http';
-import { runBrainCycle, runInitialLearning } from './mara-brain/index.js';
-import { getMaraResponse, generateMarketingPost } from './ai.js';
+import { brainManager } from './mara-brain/index.js';
+import { getMaraResponse } from './ai.js';
 import { WebSocketServer } from 'ws';
 import url from 'url';
 import { storage } from './storage.js';
@@ -367,65 +367,10 @@ app.use((req, res, next) => {
       'runtime',
     );
 
-    const BRAIN_INTERVAL = 6 * 60 * 60 * 1000;
-    const SELF_POST_INTERVAL = 4 * 60 * 60 * 1000;
-
-    async function runAutoBrainCycle() {
-      try {
-        log('Auto brain cycle starting...', 'mara-brain');
-        const result = await runBrainCycle();
-        await storage.createBrainLog({
-          research: result.research,
-          productIdeas: result.productIdeas,
-          devTasks: result.devTasks,
-          growthIdeas: result.growthIdeas,
-        });
-        log(`Auto brain cycle completed. Learned ${result.knowledgeLearned} new pieces of knowledge.`, 'mara-brain');
-      } catch (err) {
-        log(`Auto brain cycle failed: ${err}`, 'mara-brain');
-      }
-    }
-
-    async function runAutoSelfPost() {
-      try {
-        log('Auto self-marketing post starting...', 'mara-marketing');
-        const postContent = await generateMarketingPost();
-        await storage.createVideo({
-          url: '#',
-          type: 'creator',
-          title: 'Mara AI Insight',
-          description: postContent,
-          creatorId: 'mara-ai',
-        });
-        log(
-          `Auto self-marketing post published`,
-          'mara-marketing',
-        );
-      } catch (err) {
-        log(`Auto self-marketing post failed: ${err}`, 'mara-marketing');
-      }
-    }
-
-    // Run initial learning bootstrap only when explicitly enabled (non-blocking)
-    if (process.env.PROCESS_AI_TASKS === 'true') {
-      runInitialLearning().catch((err) => {
-        log(`Initial learning failed: ${err}`, 'mara-brain');
-      });
-
-      // Run first brain cycle after 30 seconds (let server fully start)
-      setTimeout(runAutoBrainCycle, 30 * 1000);
-      setInterval(runAutoBrainCycle, BRAIN_INTERVAL);
-      setInterval(runAutoSelfPost, SELF_POST_INTERVAL);
-      log(
-        'Mara auto-scheduler started: brain cycle every 6h, self-post every 4h',
-        'mara-scheduler',
-      );
-    } else {
-      log(
-        'Mara AI tasks disabled (initial learning + brain cycles). Set PROCESS_AI_TASKS=true to enable.',
-        'mara-scheduler',
-      );
-    }
+    // Mara Brain scheduler — enabled by default (PR C). To kill:
+    //   BRAIN_ENABLED=false or PROCESS_AI_TASKS=false.
+    // See server/mara-brain/manager.ts for full lifecycle + status.
+    brainManager.start(log);
   }
 
   // Logica simplificată pentru pornirea serverului, ideală pentru Cloud Run

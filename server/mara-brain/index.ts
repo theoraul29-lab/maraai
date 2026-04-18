@@ -20,3 +20,4 @@ export { researchTopic, researchModuleTrends, researchGap, generateResearchAgend
 export { analyzePlatform, collectPlatformMetrics, generateGrowthSuggestions, identifyWeakModules } from './agents/platform-analyzer.js';
 export { processDocument, processDocumentBatch, type DocumentReadResult } from './agents/document-reader.js';
 export { readNextLibraryBook, getNextUnreadBook, getLibraryProgress, addAndReadCustomBook, getBuiltInLibrary, type LibraryBook } from './library.js';
+export { brainManager, type BrainStatus } from './manager.js';
