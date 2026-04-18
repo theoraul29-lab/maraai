@@ -187,6 +187,32 @@ export const writerPurchases = pgTable('writer_purchases', {
     .notNull(),
 });
 
+// === CREATOR PAYOUTS (PR G) ===
+// Creators request payouts of their accumulated earnings (from writer paid
+// article purchases + future tips/reel payouts). Admin reviews and updates
+// status. The payable balance is computed on-demand (no ledger table needed
+// for now): sum(authorShareCents from writerPurchases joined on pages.userId)
+// minus sum(amountCents from payouts with status in {approved, paid}).
+export const creatorPayouts = pgTable('creator_payouts', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: text('user_id').notNull(),
+  amountCents: integer('amount_cents').notNull(),
+  currency: text('currency').default('EUR').notNull(),
+  // 'bank' | 'paypal' | 'stripe' | 'crypto'
+  method: text('method').notNull(),
+  // Free-form JSON string with provider-specific details (IBAN, PayPal email,
+  // stripe account id, wallet address, etc.). Never returned from list
+  // endpoints — only to the owning creator or admins.
+  methodDetails: text('method_details').default('{}').notNull(),
+  // 'requested' -> 'approved' | 'rejected' -> 'paid'
+  status: text('status').default('requested').notNull(),
+  notes: text('notes'),
+  requestedAt: integer('requested_at', { mode: 'timestamp' })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+  processedAt: integer('processed_at', { mode: 'timestamp' }),
+});
+
 // === USER FEEDBACK ===
 export const userFeedback = pgTable('user_feedback', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -387,6 +413,12 @@ export const insertWriterPurchaseSchema = createInsertSchema(writerPurchases).om
   id: true,
   createdAt: true,
 });
+export const insertCreatorPayoutSchema = createInsertSchema(creatorPayouts).omit({
+  id: true,
+  requestedAt: true,
+  processedAt: true,
+  status: true,
+});
 export const insertFeedbackSchema = createInsertSchema(userFeedback).omit({
   id: true,
   createdAt: true,
@@ -473,6 +505,8 @@ export type WriterComment = typeof writerComments.$inferSelect;
 export type InsertWriterComment = z.infer<typeof insertWriterCommentSchema>;
 export type WriterPurchase = typeof writerPurchases.$inferSelect;
 export type InsertWriterPurchase = z.infer<typeof insertWriterPurchaseSchema>;
+export type CreatorPayout = typeof creatorPayouts.$inferSelect;
+export type InsertCreatorPayout = z.infer<typeof insertCreatorPayoutSchema>;
 export type SavedVideo = typeof savedVideos.$inferSelect;
 export type Feedback = typeof userFeedback.$inferSelect;
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;

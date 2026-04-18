@@ -11,6 +11,7 @@ import {
   writerPages,
   writerComments,
   writerPurchases,
+  creatorPayouts,
   savedVideos,
   userFeedback,
   aiImprovements,
@@ -39,6 +40,8 @@ import {
   type InsertWriterComment,
   type WriterPurchase,
   type InsertWriterPurchase,
+  type CreatorPayout,
+  type InsertCreatorPayout,
   type SavedVideo,
   type Feedback,
   type InsertFeedback,
@@ -193,6 +196,53 @@ export interface IStorage {
   hasPurchasedWriterPage(userId: string, pageId: number): Promise<boolean>;
   getWriterPurchasesByUser(userId: string): Promise<WriterPurchase[]>;
   getWriterPurchasesForPage(pageId: number): Promise<WriterPurchase[]>;
+
+  // Creator Tools (PR G)
+  /**
+   * Aggregated earnings for `userId`: sum of authorShareCents from
+   * writer_purchases joined on writer_pages.user_id. Breakdown by source
+   * lets the dashboard show "writers: 45€, reels: 0€" etc. Returns cents.
+   */
+  getCreatorEarnings(userId: string): Promise<{
+    totalCents: number;
+    paidOutCents: number;
+    pendingPayoutCents: number;
+    availableCents: number;
+    byPage: Array<{ pageId: number; title: string; earnedCents: number; salesCount: number }>;
+  }>;
+  /** Raw per-sale history (joined with page title/slug). */
+  listCreatorEarningsHistory(
+    userId: string,
+    opts?: { limit?: number; offset?: number },
+  ): Promise<Array<{
+    purchaseId: number;
+    pageId: number;
+    pageTitle: string;
+    amountCents: number;
+    authorShareCents: number;
+    currency: string;
+    createdAt: Date;
+  }>>;
+  /** Simple counters for the dashboard. */
+  getCreatorAnalytics(userId: string): Promise<{
+    writerPagesPublished: number;
+    writerPageViews: number;
+    writerPageLikes: number;
+    reelsPublished: number;
+    reelViews: number;
+    reelLikes: number;
+    followers: number;
+  }>;
+  // Payout requests
+  createCreatorPayout(input: InsertCreatorPayout): Promise<CreatorPayout>;
+  listCreatorPayoutsByUser(userId: string): Promise<CreatorPayout[]>;
+  getCreatorPayoutById(id: number): Promise<CreatorPayout | null>;
+  listAllCreatorPayouts(opts?: { status?: string }): Promise<CreatorPayout[]>;
+  updateCreatorPayoutStatus(
+    id: number,
+    status: 'approved' | 'rejected' | 'paid',
+    notes?: string,
+  ): Promise<CreatorPayout | null>;
 
   saveVideo(
     userId: string,
@@ -908,6 +958,208 @@ export class DatabaseStorage implements IStorage {
       .from(writerPurchases)
       .where(eq(writerPurchases.pageId, pageId))
       .orderBy(desc(writerPurchases.createdAt));
+  }
+
+  // --- Creator Tools (PR G) -----------------------------------------------
+
+  async getCreatorEarnings(userId: string) {
+    // All sales where the page author is this user.
+    const rows = await db
+      .select({
+        purchaseId: writerPurchases.id,
+        pageId: writerPurchases.pageId,
+        title: writerPages.title,
+        authorShare: writerPurchases.authorShareCents,
+      })
+      .from(writerPurchases)
+      .innerJoin(writerPages, eq(writerPages.id, writerPurchases.pageId))
+      .where(eq(writerPages.userId, userId));
+
+    const totalCents = rows.reduce((sum, r) => sum + (r.authorShare ?? 0), 0);
+
+    // Aggregate by page for the dashboard breakdown.
+    const byPageMap = new Map<number, { pageId: number; title: string; earnedCents: number; salesCount: number }>();
+    for (const r of rows) {
+      const prev = byPageMap.get(r.pageId);
+      if (prev) {
+        prev.earnedCents += r.authorShare ?? 0;
+        prev.salesCount += 1;
+      } else {
+        byPageMap.set(r.pageId, {
+          pageId: r.pageId,
+          title: r.title ?? `#${r.pageId}`,
+          earnedCents: r.authorShare ?? 0,
+          salesCount: 1,
+        });
+      }
+    }
+    const byPage = Array.from(byPageMap.values()).sort(
+      (a, b) => b.earnedCents - a.earnedCents,
+    );
+
+    // Amount already disbursed or committed. A 'rejected' payout does not
+    // count against the available balance; 'requested' is still pending and
+    // DOES lock the amount (so users can't double-request).
+    const payoutRows = await db
+      .select({
+        status: creatorPayouts.status,
+        amount: creatorPayouts.amountCents,
+      })
+      .from(creatorPayouts)
+      .where(eq(creatorPayouts.userId, userId));
+
+    let paidOutCents = 0;
+    let pendingPayoutCents = 0;
+    for (const p of payoutRows) {
+      if (p.status === 'paid') paidOutCents += p.amount;
+      else if (p.status === 'requested' || p.status === 'approved') {
+        pendingPayoutCents += p.amount;
+      }
+    }
+
+    const availableCents = Math.max(
+      0,
+      totalCents - paidOutCents - pendingPayoutCents,
+    );
+
+    return {
+      totalCents,
+      paidOutCents,
+      pendingPayoutCents,
+      availableCents,
+      byPage,
+    };
+  }
+
+  async listCreatorEarningsHistory(
+    userId: string,
+    opts?: { limit?: number; offset?: number },
+  ) {
+    const limit = Math.min(Math.max(opts?.limit ?? 50, 1), 200);
+    const offset = Math.max(opts?.offset ?? 0, 0);
+
+    const rows = await db
+      .select({
+        purchaseId: writerPurchases.id,
+        pageId: writerPurchases.pageId,
+        pageTitle: writerPages.title,
+        amountCents: writerPurchases.amountCents,
+        authorShareCents: writerPurchases.authorShareCents,
+        currency: writerPurchases.currency,
+        createdAt: writerPurchases.createdAt,
+      })
+      .from(writerPurchases)
+      .innerJoin(writerPages, eq(writerPages.id, writerPurchases.pageId))
+      .where(eq(writerPages.userId, userId))
+      .orderBy(desc(writerPurchases.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    return rows.map((r) => ({
+      purchaseId: r.purchaseId,
+      pageId: r.pageId,
+      pageTitle: r.pageTitle ?? `#${r.pageId}`,
+      amountCents: r.amountCents,
+      authorShareCents: r.authorShareCents,
+      currency: r.currency,
+      createdAt: r.createdAt,
+    }));
+  }
+
+  async getCreatorAnalytics(userId: string) {
+    const [pagesAgg] = await db
+      .select({
+        published: count(writerPages.id),
+        views: sql<number>`COALESCE(SUM(${writerPages.views}), 0)`,
+        likes: sql<number>`COALESCE(SUM(${writerPages.likes}), 0)`,
+      })
+      .from(writerPages)
+      .where(and(eq(writerPages.userId, userId), eq(writerPages.published, 1)));
+
+    const [reelsAgg] = await db
+      .select({
+        published: count(videos.id),
+        views: sql<number>`COALESCE(SUM(${videos.views}), 0)`,
+        likes: sql<number>`COALESCE(SUM(${videos.likes}), 0)`,
+      })
+      .from(videos)
+      .where(eq(videos.creatorId, userId));
+
+    const [followerAgg] = await db
+      .select({ n: count(followers.id) })
+      .from(followers)
+      .where(eq(followers.followingId, userId));
+
+    return {
+      writerPagesPublished: Number(pagesAgg?.published ?? 0),
+      writerPageViews: Number(pagesAgg?.views ?? 0),
+      writerPageLikes: Number(pagesAgg?.likes ?? 0),
+      reelsPublished: Number(reelsAgg?.published ?? 0),
+      reelViews: Number(reelsAgg?.views ?? 0),
+      reelLikes: Number(reelsAgg?.likes ?? 0),
+      followers: Number(followerAgg?.n ?? 0),
+    };
+  }
+
+  async createCreatorPayout(input: InsertCreatorPayout): Promise<CreatorPayout> {
+    // Drizzle's timestamp-int mode round-trips Date<->unix-seconds, but the
+    // SQL default `CURRENT_TIMESTAMP` stores an ISO string that reads back as
+    // NULL. Set it explicitly so the returned row always has a real date.
+    const [created] = await db
+      .insert(creatorPayouts)
+      .values({ ...input, requestedAt: new Date() })
+      .returning();
+    return created;
+  }
+
+  async listCreatorPayoutsByUser(userId: string): Promise<CreatorPayout[]> {
+    return await db
+      .select()
+      .from(creatorPayouts)
+      .where(eq(creatorPayouts.userId, userId))
+      .orderBy(desc(creatorPayouts.requestedAt));
+  }
+
+  async getCreatorPayoutById(id: number): Promise<CreatorPayout | null> {
+    const [row] = await db
+      .select()
+      .from(creatorPayouts)
+      .where(eq(creatorPayouts.id, id))
+      .limit(1);
+    return row ?? null;
+  }
+
+  async listAllCreatorPayouts(opts?: { status?: string }): Promise<CreatorPayout[]> {
+    if (opts?.status) {
+      return await db
+        .select()
+        .from(creatorPayouts)
+        .where(eq(creatorPayouts.status, opts.status))
+        .orderBy(desc(creatorPayouts.requestedAt));
+    }
+    return await db
+      .select()
+      .from(creatorPayouts)
+      .orderBy(desc(creatorPayouts.requestedAt));
+  }
+
+  async updateCreatorPayoutStatus(
+    id: number,
+    status: 'approved' | 'rejected' | 'paid',
+    notes?: string,
+  ): Promise<CreatorPayout | null> {
+    const values: Record<string, unknown> = {
+      status,
+      processedAt: new Date(),
+    };
+    if (typeof notes === 'string') values.notes = notes;
+
+    const [updated] = await db
+      .update(creatorPayouts)
+      .set(values)
+      .where(eq(creatorPayouts.id, id))
+      .returning();
+    return updated ?? null;
   }
 
   async saveVideo(
