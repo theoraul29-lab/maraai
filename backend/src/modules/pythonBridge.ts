@@ -97,15 +97,16 @@ function isInternalHost(hostname: string): boolean {
     if (second >= 16 && second <= 31) return true;
   }
 
-  // IPv6 private ranges (fc00::/7 covers fc00:: and fd00::)
-  // Must start with "fc00:", "fc:", "fd00:", "fd:" etc. — require a colon to
-  // avoid matching legitimate hostnames like "fcdomain.com".
-  if (/^f[cd][0-9a-f]*:/i.test(h)) {
+  // IPv6 unique-local (fc00::/7 covers fc00:: and fd00::).
+  // Require at least two hex digits after fc/fd to avoid matching hostnames
+  // that merely start with those letters (e.g. "fcdomain.com").
+  if (/^f[cd][0-9a-f]{2,}:/i.test(h)) {
     return true;
   }
 
-  // Link-local IPv6 (fe80::/10) — require colon to avoid matching "fe80xyz.com"
-  if (/^fe80:/i.test(h)) {
+  // Link-local IPv6 (fe80::/10).
+  // Require a colon + at least one hex digit to avoid matching "fe80xyz.com".
+  if (/^fe80:[0-9a-f]/i.test(h)) {
     return true;
   }
 

@@ -48,7 +48,9 @@ export async function registerRoutes(
     return next();
   };
 
-  // Apply CSRF protection to all state-changing routes
+  // Apply CSRF protection to all state-changing routes.
+  // Note: setupSessionAuth() is called in server/index.ts before registerRoutes(),
+  // so req.session is populated by the time this middleware runs.
   app.use(csrfProtection);
 
   // Admin guard: match against ADMIN_USER_IDS (deny-by-default)
