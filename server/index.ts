@@ -13,6 +13,7 @@ import url from 'url';
 import { storage } from './storage.js';
 import { setupSessionAuth } from './auth.js';
 import { checkRateLimit } from './rate-limit.js';
+import * as authApi from './modules/auth-api.js';
 import { z } from 'zod';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { db } from './db.js';
@@ -97,9 +98,12 @@ app.get('/api/health', (_req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
-app.get('/api/auth/me', (req: any, res) => {
-  res.json({ uid: req.user?.uid ?? null });
-});
+// Real auth endpoints (email + password). Backs the frontend AuthContext.
+app.post('/api/auth/signup', authApi.signup);
+app.post('/api/auth/login', authApi.login);
+app.post('/api/auth/logout', authApi.logout);
+app.get('/api/auth/me', authApi.me);
+app.post('/api/auth/oauth/:provider', authApi.oauth);
 
 app.get('/api/runtime', (_req, res) => {
   const displayHost =
