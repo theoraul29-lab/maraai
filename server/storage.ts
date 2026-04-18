@@ -1168,16 +1168,18 @@ export class DatabaseStorage implements IStorage {
     // so newer videos get a small boost and very old videos decay. We only
     // include approved videos — pending/rejected never hit the feed.
     //
-    // `videos.created_at` is stored as a unix-epoch-second integer (Drizzle's
-    // `integer({ mode: 'timestamp' })`), so `strftime('%s', createdAt)` would
-    // fail in SQLite — we use the raw column value directly instead.
+    // `videos.created_at` in SQLite is defaulted via `CURRENT_TIMESTAMP`,
+    // which produces an ISO-8601 text string (not a unix epoch integer).
+    // We coerce it through `strftime('%s', …)` so the subtraction is in
+    // seconds. `COALESCE` + fallback to `strftime('%s','now')` keeps rows
+    // with a NULL `createdAt` from torpedoing the sort.
     return await db
       .select()
       .from(videos)
       .where(eq(videos.moderationStatus, 'approved'))
       .orderBy(
         desc(
-          sql`(${videos.likes} * 3 + ${videos.views} + ${videos.shares} * 5) - ((CAST(strftime('%s','now') AS INTEGER) - ${videos.createdAt}) / 3600.0) * 0.1`,
+          sql`(${videos.likes} * 3 + ${videos.views} + ${videos.shares} * 5) - ((CAST(strftime('%s','now') AS INTEGER) - CAST(COALESCE(strftime('%s', ${videos.createdAt}), strftime('%s','now')) AS INTEGER)) / 3600.0) * 0.1`,
         ),
         desc(videos.createdAt),
       )
