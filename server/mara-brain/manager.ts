@@ -49,6 +49,7 @@ class BrainManagerImpl {
   private _lastManualTriggerAt: number | null = null;
   private _cycleTimer: NodeJS.Timeout | null = null;
   private _selfPostTimer: NodeJS.Timeout | null = null;
+  private _initialTimeout: NodeJS.Timeout | null = null;
   private _started = false;
 
   get cycleIntervalMs(): number {
@@ -95,7 +96,10 @@ class BrainManagerImpl {
     const firstCycleDelay = 30 * 1000;
     this._nextRunAt = Date.now() + firstCycleDelay;
 
-    setTimeout(() => void this._scheduledCycle(logger), firstCycleDelay);
+    this._initialTimeout = setTimeout(() => {
+      this._initialTimeout = null;
+      void this._scheduledCycle(logger);
+    }, firstCycleDelay);
     this._cycleTimer = setInterval(
       () => void this._scheduledCycle(logger),
       this.cycleIntervalMs,
@@ -113,6 +117,10 @@ class BrainManagerImpl {
 
   /** Stop the scheduler. Used for tests and graceful shutdown. */
   stop(): void {
+    if (this._initialTimeout) {
+      clearTimeout(this._initialTimeout);
+      this._initialTimeout = null;
+    }
     if (this._cycleTimer) {
       clearInterval(this._cycleTimer);
       this._cycleTimer = null;
@@ -173,6 +181,7 @@ class BrainManagerImpl {
   }
 
   private async _scheduledCycle(logger: (msg: string, tag?: string) => void): Promise<void> {
+    if (!this._started) return; // stop() called before this tick fired
     if (!this.isEnabled) return;
     if (this._running) {
       logger('Skipping scheduled cycle — previous cycle still running', 'mara-brain');
@@ -218,6 +227,7 @@ class BrainManagerImpl {
   private async _scheduledSelfPost(
     logger: (msg: string, tag?: string) => void,
   ): Promise<void> {
+    if (!this._started) return;
     if (!this.isEnabled) return;
     try {
       logger('Auto self-marketing post starting...', 'mara-marketing');
