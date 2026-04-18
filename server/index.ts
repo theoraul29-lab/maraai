@@ -12,6 +12,7 @@ import { WebSocketServer } from 'ws';
 import url from 'url';
 import { storage } from './storage.js';
 import { setupSessionAuth } from './auth.js';
+import { checkRateLimit } from './rate-limit.js';
 import { z } from 'zod';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { db } from './db.js';
@@ -49,31 +50,6 @@ const runtimeState: RuntimeState = {
   host: process.env.HOST || '0.0.0.0',
   startedAt: null,
 };
-
-// --- START RATE LIMITER LOGIC (moved from routes.ts) ---
-const RATE_LIMIT_WINDOW_MS = 60 * 1000;
-const RATE_LIMIT_MAX_MESSAGES = 10;
-const userMessageTimestamps = new Map<string, number[]>();
-
-const checkRateLimit = (
-  userId: string,
-): { allowed: boolean; retryAfterMs?: number } => {
-  const now = Date.now();
-  let timestamps = userMessageTimestamps.get(userId) || [];
-
-  timestamps = timestamps.filter((ts) => now - ts < RATE_LIMIT_WINDOW_MS);
-
-  if (timestamps.length >= RATE_LIMIT_MAX_MESSAGES) {
-    const oldestTimestamp = Math.min(...timestamps);
-    const retryAfterMs = RATE_LIMIT_WINDOW_MS - (now - oldestTimestamp);
-    return { allowed: false, retryAfterMs };
-  }
-
-  timestamps.push(now);
-  userMessageTimestamps.set(userId, timestamps);
-  return { allowed: true };
-};
-// --- END RATE LIMITER LOGIC ---
 
 // --- CORS configuration ---
 const allowedOrigins = process.env.CORS_ORIGINS

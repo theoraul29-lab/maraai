@@ -230,7 +230,7 @@ git push origin main
 
 # 4. Add a volume (optional, for persistent SQLite):
 #    Mount path: /app/data
-#    Then set DATABASE_URL=sqlite:///data/maraai.sqlite
+#    Then set DATABASE_URL=sqlite:////data/maraai.sqlite (four slashes = absolute path /data/...)
 
 # 5. Custom domain:
 #    Settings → Domains → Add custom domain → maraai.net

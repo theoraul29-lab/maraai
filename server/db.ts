@@ -8,8 +8,33 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const dbPath =
-  process.env.DATABASE_PATH || path.resolve(__dirname, '..', 'maraai.sqlite');
+// Resolve the SQLite file path from either DATABASE_URL (preferred, matches
+// .env.example and SQLAlchemy convention) or DATABASE_PATH (legacy).
+// SQLAlchemy-style URLs:
+//   sqlite:///relative/path.db    (3 slashes → relative to cwd)
+//   sqlite:////absolute/path.db   (4 slashes → absolute)
+function resolveDbPath(): string {
+  const url = process.env.DATABASE_URL;
+  if (url) {
+    if (url.startsWith('sqlite:////')) {
+      return url.slice('sqlite:///'.length); // keeps leading '/' → absolute
+    }
+    if (url.startsWith('sqlite:///')) {
+      return url.slice('sqlite:///'.length); // strips leading '/' → relative
+    }
+    if (url.startsWith('sqlite://')) {
+      return url.slice('sqlite://'.length);
+    }
+    if (url.startsWith('file:')) {
+      return url.replace(/^file:(?:\/\/)?/, '');
+    }
+    // Treat any other DATABASE_URL as a literal path (best-effort).
+    return url;
+  }
+  return process.env.DATABASE_PATH || path.resolve(__dirname, '..', 'maraai.sqlite');
+}
+
+const dbPath = resolveDbPath();
 
 const sqlite = new Database(dbPath);
 sqlite.pragma('journal_mode = WAL');

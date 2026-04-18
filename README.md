@@ -49,20 +49,23 @@ Copy `.env.example` to `.env` and set the following:
 
 Canonical app configuration (used by root `npm` scripts):
 
-- Runtime/env: `server/index.ts` (loads `.env` via `dotenv`)
-- Scripts/dependencies: `package.json`
-- Frontend bundler: `vite.config.ts`
-- TypeScript: `tsconfig.json`
-- Tailwind/PostCSS: `tailwind.config.js`, `postcss.config.cjs`
-- Linting: `eslint.config.js`
-- Database migrations: `drizzle.config.ts`
-- Deployment: `render.yaml`
+- Scripts/dependencies: `package.json` (root)
+- Runtime/env entry point: `server/index.ts` (loads `.env` via `dotenv`)
+- Drizzle ORM schema: `shared/schema.ts`; migrations: `migrations/`
+- Root Vite config: `vite.config.js` (currently only used by the root `dev` flow)
+- Frontend bundler (React app): `frontend/vite.config.ts`
+- Frontend TypeScript: `frontend/tsconfig.json`, `frontend/tsconfig.app.json`, `frontend/tsconfig.node.json`
+- Frontend Tailwind/PostCSS: `frontend/tailwind.config.js`, `frontend/postcss.config.cjs`
+- Frontend linting: `frontend/eslint.config.js` (plus `.eslintrc.js` / `.prettierrc.js` / `.stylelintrc.js` at root for editor integration)
+- Container builds: `Dockerfile.nodejs` (app), `Dockerfile.ollama` (self-hosted LLM)
+- Railway deployment: `railway.json`
 
 Notes:
 
-- Root `npm run dev` / `npm run build` uses the root config files above.
+- Root `npm run dev` / `npm run start` runs `tsx server/index.ts`.
+- Root `npm run build` runs `npm run build:frontend`, which installs and builds `frontend/` via its own Vite config.
 - `backend/src/modules/*` is imported by the root server (`server/routes.ts`) and is part of the active runtime.
-- `frontend/package.json` and `backend/package.json` define standalone subproject workflows; they are not used by root npm scripts.
+- `frontend/package.json` defines a standalone subproject workflow for the React app.
 
 ## Build for Production
 
@@ -103,7 +106,7 @@ MaraAI can run completely **without external AI API keys** by self-hosting [Olla
 | `PORT` | `5000` | Railway also injects `PORT` automatically |
 | `AUTH_MODE` | `local` | |
 | `SESSION_SECRET` | *(random secret)* | Use Railway's "Generate" button |
-| `DATABASE_URL` | `sqlite:///data/maraai.sqlite` | Requires the Volume above |
+| `DATABASE_URL` | `sqlite:////data/maraai.sqlite` | Requires the Volume above. Note: **four** slashes encode an absolute path (`/data/...`); three slashes would be interpreted as relative to `CWD` (`/app/data/...`) and would not persist across redeploys. |
 | `AI_PROVIDER` | `ollama` | Use `openrouter` if you prefer OpenRouter |
 | `OLLAMA_BASE_URL` | `http://ollama:11434` | Railway internal hostname of service 2 |
 | `OLLAMA_MODEL` | `llama3.2:1b` | Or `phi3:mini` for slightly larger model |

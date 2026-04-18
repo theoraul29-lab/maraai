@@ -34,6 +34,7 @@ import {
 } from './ai';
 import { getActiveProvider, checkOllamaHealth, isLLMConfigured } from './llm';
 import { getLibraryProgress, addAndReadCustomBook, getKnowledgeStats } from './mara-brain/index';
+import { chatRateLimit } from './rate-limit.js';
 
 export async function registerRoutes(
   httpServer: Server,
@@ -134,9 +135,9 @@ export async function registerRoutes(
   app.get('/api/creator/analytics', requireAuth, videoModule.creatorAnalytics);
   app.delete('/api/creator/videos/:id', requireAuth, videoModule.deleteCreatorVideo);
 
-  // Chat endpoints (require auth)
-  app.get(api.chat.list.path, chatModule.getChatHistory);
-  app.post(api.chat.send.path, chatModule.sendChatMessage);
+  // Chat endpoints (require auth; chat send is rate-limited to match WebSocket)
+  app.get(api.chat.list.path, requireAuth, chatModule.getChatHistory);
+  app.post(api.chat.send.path, requireAuth, chatRateLimit, chatModule.sendChatMessage);
 
   // TTS/STT endpoints
   app.post('/api/mara-speak', ttsModule.maraSpeak);
