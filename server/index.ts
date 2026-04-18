@@ -11,7 +11,7 @@ import { getMaraResponse, generateMarketingPost } from './ai.js';
 import { WebSocketServer } from 'ws';
 import url from 'url';
 import { storage } from './storage.js';
-import { setupSessionAuth } from './auth.js';
+import { setupSessionAuth, csrfProtection } from './auth.js';
 import { checkRateLimit } from './rateLimit.js';
 import { z } from 'zod';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
@@ -102,7 +102,7 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.get('/api/auth/me', (req: any, res) => {
-  res.json({ uid: req.user?.uid ?? null });
+  res.json({ uid: req.user?.uid ?? null, csrfToken: req.session?.csrfToken ?? null });
 });
 
 app.get('/api/runtime', (_req, res) => {

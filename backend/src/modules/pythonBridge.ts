@@ -59,56 +59,62 @@ export async function fetchWithPython(req: Request, res: Response) {
  * higher-security deployments, resolve the hostname to an IP before checking.
  */
 function isInternalHost(hostname: string): boolean {
+  // Strip IPv6 brackets if present (e.g. "[::1]" → "::1")
+  const h = hostname.startsWith('[') && hostname.endsWith(']')
+    ? hostname.slice(1, -1)
+    : hostname;
+
   // IPv4 loopback and unspecified
-  if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0') {
+  if (h === 'localhost' || h === '127.0.0.1' || h === '0.0.0.0') {
     return true;
   }
 
   // IPv6 loopback and unspecified
-  if (hostname === '::1' || hostname === '::' || hostname === '[::1]' || hostname === '[::]') {
+  if (h === '::1' || h === '::') {
     return true;
   }
 
-  // IPv4-mapped IPv6 addresses (e.g. ::ffff:127.0.0.1)
-  if (hostname.startsWith('::ffff:')) {
-    const ipv4Part = hostname.slice(7);
+  // IPv4-mapped IPv6 (e.g. ::ffff:127.0.0.1)
+  if (h.startsWith('::ffff:')) {
+    const ipv4Part = h.slice(7);
     return isInternalHost(ipv4Part);
   }
 
   // IPv4 private ranges
   if (
-    hostname.startsWith('10.') ||
-    hostname.startsWith('192.168.') ||
-    hostname === '169.254.169.254' || // AWS metadata endpoint
-    hostname.startsWith('169.254.')   // Link-local range
+    h.startsWith('10.') ||
+    h.startsWith('192.168.') ||
+    h === '169.254.169.254' || // AWS/GCP metadata endpoint
+    h.startsWith('169.254.')   // Link-local range
   ) {
     return true;
   }
 
   // RFC1918 172.16.0.0/12 — 172.16.x.x through 172.31.x.x
-  const match172 = hostname.match(/^172\.(\d{1,3})\./);
+  const match172 = h.match(/^172\.(\d{1,3})\./);
   if (match172) {
     const second = parseInt(match172[1], 10);
     if (second >= 16 && second <= 31) return true;
   }
 
   // IPv6 private ranges (fc00::/7 covers fc00:: and fd00::)
-  if (hostname.startsWith('fc') || hostname.startsWith('fd') ||
-      hostname.startsWith('[fc') || hostname.startsWith('[fd')) {
+  // Must start with "fc00:", "fc:", "fd00:", "fd:" etc. — require a colon to
+  // avoid matching legitimate hostnames like "fcdomain.com".
+  if (/^f[cd][0-9a-f]*:/i.test(h)) {
     return true;
   }
 
-  // Link-local IPv6
-  if (hostname.startsWith('fe80') || hostname.startsWith('[fe80')) {
+  // Link-local IPv6 (fe80::/10) — require colon to avoid matching "fe80xyz.com"
+  if (/^fe80:/i.test(h)) {
     return true;
   }
 
-  // Cloud metadata endpoints
+  // Cloud metadata endpoints (exact TLD match for .internal and .local)
   if (
-    hostname === 'metadata.google.internal' ||
-    hostname === 'metadata.goog' ||
-    hostname.endsWith('.internal') ||
-    hostname.endsWith('.local')
+    h === 'metadata.google.internal' ||
+    h === 'metadata.goog' ||
+    h === 'metadata.internal' ||
+    /\.(internal|local)$/i.test(h)
   ) {
     return true;
   }
