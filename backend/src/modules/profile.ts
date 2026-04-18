@@ -185,11 +185,18 @@ export async function updateMe(req: Request, res: Response) {
         res.status(400).json({ error: 'invalid_display_name', code: 'invalid_display_name' });
         return;
       }
-      if (typeof v !== 'string' || v.length < 1 || v.length > 60) {
+      if (typeof v !== 'string') {
         res.status(400).json({ error: 'invalid_display_name', code: 'invalid_display_name' });
         return;
       }
-      patch.displayName = v.trim();
+      // Trim first so a whitespace-only name (e.g. "   ") is rejected
+      // rather than silently collapsing to the empty string at persistence.
+      const trimmed = v.trim();
+      if (trimmed.length < 1 || trimmed.length > 60) {
+        res.status(400).json({ error: 'invalid_display_name', code: 'invalid_display_name' });
+        return;
+      }
+      patch.displayName = trimmed;
     }
 
     if ('bio' in body) {
@@ -284,12 +291,14 @@ export async function getBadges(req: Request, res: Response) {
       return;
     }
 
-    const [videos, followerCount, activity] = await Promise.all([
+    // Use a dedicated page count instead of filtering `getProfileActivity`:
+    // the activity feed interleaves reels and pages, so a low `limit` can
+    // drop all pages from the window and under-report `first_page`.
+    const [videos, followerCount, pageCount] = await Promise.all([
       deps.storage.getCreatorVideos(profileId),
       deps.storage.getFollowerCount(profileId),
-      deps.storage.getProfileActivity(profileId, { limit: 1 }),
+      deps.storage.getPublishedPageCount(profileId),
     ]);
-    const pageCount = activity.filter((a) => a.kind === 'writer_page').length;
 
     const badges: Array<{ code: string; earnedAt: Date | null }> = [];
     if (videos.length >= 1) {

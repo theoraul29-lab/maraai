@@ -278,6 +278,13 @@ export interface IStorage {
 
   // --- Profile / You (PR H) ------------------------------------------------
   getUserById(userId: string): Promise<User | null>;
+  /**
+   * Count of published writer pages authored by this user. Used by the
+   * badges endpoint — a dedicated count avoids mis-reads from the merged
+   * activity feed (which interleaves reels and pages and can drop all pages
+   * below a low `limit`).
+   */
+  getPublishedPageCount(userId: string): Promise<number>;
   listFollowers(
     userId: string,
     opts?: { limit?: number; offset?: number },
@@ -1290,6 +1297,16 @@ export class DatabaseStorage implements IStorage {
   async getUserById(userId: string): Promise<User | null> {
     const [row] = await db.select().from(users).where(eq(users.id, userId));
     return row ?? null;
+  }
+
+  async getPublishedPageCount(userId: string): Promise<number> {
+    const [row] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(writerPages)
+      .where(
+        and(eq(writerPages.userId, userId), eq(writerPages.published, 1)),
+      );
+    return Number(row?.count ?? 0);
   }
 
   async listFollowers(
