@@ -48,14 +48,14 @@ export async function setupVite(server: Server, app: Express) {
 
   app.use(vite.middlewares);
 
-  // Correct Express catch-all route
-  app.use("/{*path}", async (req, res, next) => {
+  // Correct Express catch-all route (Express 4 compatible wildcard)
+  app.use("*", async (req, res, next) => {
     const url = req.originalUrl;
     try {
       const clientTemplate = path.resolve(
         __dirname,
         "..",
-        "client",
+        "frontend",
         "index.html",
       );
       // always reload the index.html file from disk in case it changes
