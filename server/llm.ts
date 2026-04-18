@@ -6,7 +6,11 @@
  *   AI_PROVIDER=ollama|openrouter   (default: "ollama" when OLLAMA_BASE_URL is set, else "openrouter")
  *   OLLAMA_BASE_URL                 (e.g. http://ollama:11434)
  *   OLLAMA_MODEL                    (default: llama3.2:1b)
- *   OPENROUTER_API_KEY              (required when provider is openrouter)
+ *   OLLAMA_TIMEOUT_MS               (default: 60000 — fail fast for chat UX)
+ *   OLLAMA_NUM_PREDICT              (default: 220 — cap output tokens for snappier answers)
+ *   LLM_AUTO_FALLBACK               ("true" — when Ollama fails and OPENROUTER_API_KEY is present,
+ *                                    retry once on OpenRouter. Default on.)
+ *   OPENROUTER_API_KEY              (required when provider is openrouter OR for Ollama fallback)
  *   OPENROUTER_MODEL                (default: openai/gpt-4o-mini)
  *   OPENROUTER_BASE_URL             (default: https://openrouter.ai/api/v1)
  *   OPENROUTER_HTTP_REFERER         (optional — sent as HTTP-Referer header)
@@ -37,6 +41,8 @@ export interface LLMMessage {
 // ─── Ollama provider ──────────────────────────────────────────────────────────
 
 const OLLAMA_DEFAULT_MODEL = 'llama3.2:1b';
+const OLLAMA_DEFAULT_TIMEOUT_MS = 60_000;
+const OLLAMA_DEFAULT_NUM_PREDICT = 220;
 
 function getOllamaBase(): string {
   return (process.env.OLLAMA_BASE_URL || 'http://localhost:11434').replace(/\/$/, '');
@@ -46,22 +52,54 @@ function getOllamaModel(): string {
   return process.env.OLLAMA_MODEL || OLLAMA_DEFAULT_MODEL;
 }
 
-async function ollamaChat(messages: LLMMessage[], temperature = 0.95): Promise<string> {
+function getOllamaTimeoutMs(): number {
+  const raw = process.env.OLLAMA_TIMEOUT_MS;
+  if (!raw) return OLLAMA_DEFAULT_TIMEOUT_MS;
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? n : OLLAMA_DEFAULT_TIMEOUT_MS;
+}
+
+function getOllamaNumPredict(): number {
+  const raw = process.env.OLLAMA_NUM_PREDICT;
+  if (!raw) return OLLAMA_DEFAULT_NUM_PREDICT;
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? n : OLLAMA_DEFAULT_NUM_PREDICT;
+}
+
+/**
+ * Low-level Ollama chat call.
+ *
+ * `numPredict` is optional: the shared brain-agent generate path
+ * (`ollamaGenerate` → `llmGenerate`) deliberately omits it so long
+ * structured / JSON responses are never silently truncated. The chat
+ * path (`llmChat`) passes `getOllamaNumPredict()` (default 220) so
+ * small local models stay snappy and don't ramble.
+ */
+async function ollamaChat(
+  messages: LLMMessage[],
+  temperature = 0.95,
+  numPredict?: number,
+): Promise<string> {
   const base = getOllamaBase();
   const model = getOllamaModel();
+
+  const options: Record<string, unknown> = { temperature };
+  if (typeof numPredict === 'number' && numPredict > 0) {
+    options.num_predict = numPredict;
+  }
 
   const body = JSON.stringify({
     model,
     messages: messages.map((m) => ({ role: m.role, content: m.content })),
     stream: false,
-    options: { temperature },
+    options,
   });
 
   const res = await fetch(`${base}/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body,
-    signal: AbortSignal.timeout(120_000), // 2-minute timeout
+    signal: AbortSignal.timeout(getOllamaTimeoutMs()),
   });
 
   if (!res.ok) {
@@ -74,6 +112,7 @@ async function ollamaChat(messages: LLMMessage[], temperature = 0.95): Promise<s
 }
 
 async function ollamaGenerate(prompt: string, temperature = 0.7): Promise<string> {
+  // No num_predict: brain agents expect full-length structured / JSON output.
   return ollamaChat([{ role: 'user', content: prompt }], temperature);
 }
 
@@ -170,9 +209,19 @@ async function openrouterGenerate(prompt: string, temperature = 0.7): Promise<st
 
 // ─── Unified public API ───────────────────────────────────────────────────────
 
+function autoFallbackEnabled(): boolean {
+  const raw = (process.env.LLM_AUTO_FALLBACK || 'true').toLowerCase();
+  return raw === 'true' || raw === '1' || raw === 'yes';
+}
+
 /**
  * Send a chat-style request to the configured LLM.
  * Accepts an array of messages (system/user/assistant).
+ *
+ * When the primary provider is Ollama and the request fails (network, timeout,
+ * model not pulled, etc.) but `OPENROUTER_API_KEY` is set and auto-fallback is
+ * enabled, retry once on OpenRouter. This keeps the user-facing chat alive
+ * even when the self-hosted model is down.
  */
 export async function llmChat(messages: LLMMessage[], temperature = 0.95): Promise<string> {
   const provider = getActiveProvider();
@@ -181,7 +230,16 @@ export async function llmChat(messages: LLMMessage[], temperature = 0.95): Promi
     if (!process.env.OLLAMA_BASE_URL) {
       throw new Error('OLLAMA_BASE_URL is not set. Cannot use Ollama provider.');
     }
-    return ollamaChat(messages, temperature);
+    try {
+      // Apply num_predict only on the user-facing chat path.
+      return await ollamaChat(messages, temperature, getOllamaNumPredict());
+    } catch (err) {
+      if (autoFallbackEnabled() && process.env.OPENROUTER_API_KEY) {
+        console.warn('[llm] Ollama failed, falling back to OpenRouter:', String(err));
+        return openrouterChat(messages, temperature);
+      }
+      throw err;
+    }
   }
 
   if (!process.env.OPENROUTER_API_KEY) {
@@ -192,6 +250,7 @@ export async function llmChat(messages: LLMMessage[], temperature = 0.95): Promi
 
 /**
  * Send a simple generate request (single prompt → text response).
+ * Applies the same Ollama → OpenRouter auto-fallback as `llmChat`.
  */
 export async function llmGenerate(prompt: string, temperature = 0.7): Promise<string> {
   const provider = getActiveProvider();
@@ -200,7 +259,15 @@ export async function llmGenerate(prompt: string, temperature = 0.7): Promise<st
     if (!process.env.OLLAMA_BASE_URL) {
       throw new Error('OLLAMA_BASE_URL is not set. Cannot use Ollama provider.');
     }
-    return ollamaGenerate(prompt, temperature);
+    try {
+      return await ollamaGenerate(prompt, temperature);
+    } catch (err) {
+      if (autoFallbackEnabled() && process.env.OPENROUTER_API_KEY) {
+        console.warn('[llm] Ollama failed, falling back to OpenRouter:', String(err));
+        return openrouterGenerate(prompt, temperature);
+      }
+      throw err;
+    }
   }
 
   if (!process.env.OPENROUTER_API_KEY) {

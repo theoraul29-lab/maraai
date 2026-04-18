@@ -1,5 +1,6 @@
 import { buildUserContext, buildSystemInstruction, recordLearningFromChat } from './mara-brain/index.js';
 import { llmChat, llmGenerate, isLLMConfigured, getActiveProvider } from './llm.js';
+import { logError } from './logger.js';
 
 // Legacy system instructions kept as fallback when brain module is unavailable
 const SYSTEM_INSTRUCTION_FALLBACK =
@@ -37,6 +38,29 @@ function detectMood(text: string): string {
 }
 
 const MAX_MESSAGE_LENGTH = 2000;
+
+// Localized friendly fallback when the LLM provider fails (timeout, 500, model
+// not loaded, etc.). Keep each message under ~120 chars so it fits on one line
+// in the chat bubble on mobile.
+const DEGRADE_MESSAGES: Record<string, string> = {
+	en: "I'm catching my breath — please try again in a moment. ✨",
+	ro: 'Mara are un moment dificil. Mai încearcă în câteva secunde. ✨',
+	es: 'Un momento, intenta de nuevo en unos segundos. ✨',
+	fr: 'Petite pause technique, réessaie dans quelques secondes. ✨',
+	de: 'Kleine Pause, bitte gleich noch einmal versuchen. ✨',
+	it: 'Un attimo, riprova tra qualche secondo. ✨',
+	pt: 'Um instante, tenta novamente em alguns segundos. ✨',
+	ru: 'Минутку, пожалуйста, попробуй ещё раз. ✨',
+	uk: 'Хвилинку, спробуй ще раз. ✨',
+	ar: 'لحظة من فضلك، حاول مرة أخرى. ✨',
+	hi: 'एक पल, कृपया फिर से प्रयास करें। ✨',
+	ja: 'ちょっと待って、もう一度試してね。 ✨',
+};
+
+function degradeMessage(language?: string): string {
+	const key = (language || 'en').toLowerCase();
+	return DEGRADE_MESSAGES[key] || DEGRADE_MESSAGES.en;
+}
 
 export async function getMaraResponse(
 	message: string,
@@ -91,9 +115,28 @@ export async function getMaraResponse(
 		{ role: 'user', content: message },
 	];
 
-	const responseText = await llmChat(conversationMessages, 0.95);
-	const detectedMood = detectMood(responseText);
+	// Graceful degrade: a local Ollama on CPU can time out, and the user
+	// shouldn't see a 500. We return a friendly localized message; the client
+	// already treats it as a normal message bubble.
+	let responseText: string;
+	try {
+		responseText = await llmChat(conversationMessages, 0.95);
+	} catch (err) {
+		logError(err, { scope: 'getMaraResponse' });
+		return {
+			response: degradeMessage(prefs?.language),
+			detectedMood: 'calm',
+		};
+	}
 
+	if (!responseText.trim()) {
+		return {
+			response: degradeMessage(prefs?.language),
+			detectedMood: 'calm',
+		};
+	}
+
+	const detectedMood = detectMood(responseText);
 	return { response: responseText, detectedMood };
 }
 
