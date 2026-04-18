@@ -11,6 +11,7 @@ interface ChatBoxProps {
   setLang: (lang: Language) => void;
 }
 
+const ChatBox: React.FC<ChatBoxProps> = ({ lang, setLang }) => {
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [prompt, setPrompt] = useState<string>('');
   const [response, setResponse] = useState<string>('');
@@ -103,3 +104,5 @@ interface ChatBoxProps {
     </div>
   );
 };
+
+export default ChatBox;
