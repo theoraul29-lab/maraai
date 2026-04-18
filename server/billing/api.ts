@@ -237,6 +237,9 @@ export function registerBillingApi(app: Express): void {
             eq(subscriptions.status, 'active'),
           ),
         )
+        // Match the tie-break used by getActivePlanId so cancel always
+        // targets the same row that is currently granting access.
+        .orderBy(desc(subscriptions.createdAt))
         .limit(1);
       const sub = rows[0];
       if (!sub) {
