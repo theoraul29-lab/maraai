@@ -13,7 +13,7 @@
  */
 
 import type { Request, Response, NextFunction } from 'express';
-import { eq, and, or, gt } from 'drizzle-orm';
+import { eq, and, or, gt, desc } from 'drizzle-orm';
 import { db } from '../db.js';
 import { plans, subscriptions } from '../../shared/models/billing.js';
 import { PLAN_CATALOGUE } from './plans.js';
@@ -104,6 +104,11 @@ export async function getActivePlanId(userId: string | null): Promise<string> {
         ),
       ),
     )
+    // Deterministic tie-break: if a user somehow has more than one
+    // qualifying row (e.g. an active sub plus an older cancelled one with
+    // a future periodEnd), pick the most recently created. Without this
+    // SQLite returns an arbitrary row which could flip between requests.
+    .orderBy(desc(subscriptions.createdAt))
     .limit(1);
 
   return rows[0]?.planId ?? 'free';
