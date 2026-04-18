@@ -237,7 +237,16 @@ export async function updateMe(req: Request, res: Response) {
       res.status(404).json({ error: 'not_found', code: 'not_found' });
       return;
     }
-    res.json({ user: toPublicProfile(updated) });
+    // Mirror the shape of GET /profile/me so clients can replace cached
+    // user state with the PATCH response without silently losing
+    // `email` / `lastName`.
+    res.json({
+      user: {
+        ...toPublicProfile(updated),
+        email: updated.email,
+        lastName: updated.lastName,
+      },
+    });
   } catch (error) {
     console.error('[profile] updateMe failed:', error);
     res.status(500).json({ error: 'update_failed', code: 'update_failed' });
