@@ -415,9 +415,26 @@ export async function likeArticle(req: Request, res: Response) {
 
 export async function listComments(req: Request, res: Response) {
   try {
+    const userId = getUserId(req);
     const id = Number.parseInt(req.params.id, 10);
     if (!Number.isFinite(id)) return res.status(400).json({ error: 'Invalid article id' });
     const limit = clampInt(req.query.limit, 1, 500, 100);
+
+    // Comment threads must follow the same read-access rules as the article
+    // body. Otherwise an anon user could scrape comments on paywalled / VIP
+    // articles (potentially leaking excerpts quoted back in comments) or
+    // enumerate drafts via their comment lists.
+    const page = await deps.storage.getWriterPageById(id);
+    if (!page) return res.status(404).json({ error: 'Article not found' });
+
+    const access = await resolveReadAccess(userId, page);
+    if (!access.allowed) {
+      if (access.reason === 'draft') {
+        return res.status(404).json({ error: 'Article not found' });
+      }
+      return res.status(403).json({ error: 'Access denied', reason: access.reason });
+    }
+
     const comments = await deps.storage.listWriterComments(id, limit);
     res.json({ comments });
   } catch (err) {
@@ -485,6 +502,13 @@ export async function getAccess(req: Request, res: Response) {
     const page = await deps.storage.getWriterPageById(id);
     if (!page) return res.status(404).json({ error: 'Article not found' });
     const access = await resolveReadAccess(userId, page);
+    // Drafts must be indistinguishable from missing rows — same treatment as
+    // getArticle. Otherwise an attacker could iterate numeric ids against
+    // /access to enumerate unpublished drafts and read their visibility tier
+    // / price tag before they go live.
+    if (!access.allowed && access.reason === 'draft') {
+      return res.status(404).json({ error: 'Article not found' });
+    }
     res.json({
       hasAccess: access.allowed,
       reason: access.allowed ? null : access.reason,
