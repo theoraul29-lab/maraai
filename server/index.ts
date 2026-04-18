@@ -98,6 +98,24 @@ app.get('/api/health', (_req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
+// LLM provider health (used by admin UI and /admin/brain dashboard later).
+// Returns the active provider, whether it's configured, and — for Ollama —
+// whether the configured model is actually pulled.
+app.get('/api/ai/health', async (_req, res) => {
+  const { getActiveProvider, isLLMConfigured, checkOllamaHealth } = await import('./llm.js');
+  const provider = getActiveProvider();
+  const configured = isLLMConfigured();
+  if (provider === 'ollama') {
+    const health = await checkOllamaHealth();
+    return res.json({ provider, configured, ...health });
+  }
+  return res.json({
+    provider,
+    configured,
+    model: process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini',
+  });
+});
+
 // Real auth endpoints (email + password). Backs the frontend AuthContext.
 app.post('/api/auth/signup', authApi.signup);
 app.post('/api/auth/login', authApi.login);

@@ -41,9 +41,32 @@ Copy `.env.example` to `.env` and set the following:
 | `AI_PROVIDER` | No | `ollama` (default when `OLLAMA_BASE_URL` is set) or `openrouter` |
 | `OLLAMA_BASE_URL` | No | URL of Ollama service (e.g. `http://localhost:11434` or Railway internal URL) |
 | `OLLAMA_MODEL` | No | Ollama model name (default: `llama3.2:1b`) |
-| `OPENROUTER_API_KEY` | No | OpenRouter API key (required when `AI_PROVIDER=openrouter`) |
+| `OLLAMA_TIMEOUT_MS` | No | Max wait per Ollama request in ms (default: `60000`) |
+| `OLLAMA_NUM_PREDICT` | No | Max output tokens from Ollama (default: `220`) |
+| `LLM_AUTO_FALLBACK` | No | When Ollama fails and `OPENROUTER_API_KEY` is set, retry on OpenRouter (default: `true`) |
+| `OPENROUTER_API_KEY` | No | OpenRouter API key (required when `AI_PROVIDER=openrouter` or for Ollama fallback) |
 | `OPENROUTER_MODEL` | No | Model to use via OpenRouter (default: `openai/gpt-4o-mini`) |
 | `PROCESS_AI_TASKS` | No | Set to `true` to enable autonomous Mara brain cycle |
+
+## AI Provider & Performance
+
+MaraAI uses Ollama by default (self-hosted) and falls back to OpenRouter on failure.
+
+**Expected Ollama latency (single chat reply, `llama3.2:1b`):**
+
+| Hardware | Typical latency |
+|---|---|
+| Modern GPU (RTX 3060+ / Apple M-series) | 1–3 s |
+| CPU-only, 4 vCPU (Railway Pro, laptop) | 30–90 s |
+| CPU-only, 1–2 vCPU (Railway Hobby) | often > 60 s, will time out |
+
+**Recommendations:**
+- For production chat UX, deploy Ollama to a **GPU-backed Railway plan** (or any GPU host) or use **OpenRouter pay-per-token**.
+- Keep `LLM_AUTO_FALLBACK=true` with a valid `OPENROUTER_API_KEY` — if Ollama stalls, users automatically get an OpenRouter reply instead of a friendly "please retry" message.
+- If you want faster, shorter answers, lower `OLLAMA_NUM_PREDICT` (e.g. `120`). For more elaborate replies, raise it to `400–600`.
+- Probe current provider health at any time: `GET /api/ai/health` returns `{ provider, configured, model, ok, error? }`.
+
+**Graceful degrade:** when both Ollama and the fallback path fail, `/api/chat` returns a localized "I'm catching my breath" message as a normal chat bubble (not an HTTP 500), so the UI never shows a red error.
 
 ## Configuration Map
 
