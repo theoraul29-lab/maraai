@@ -91,10 +91,19 @@ class PlatformBus {
     return () => this.inner.off(key, wrapped);
   }
 
-  onAny(handler: (e: { key: PlatformEventKey; payload: unknown }) => void): () => void {
+  onAny(
+    handler: (e: { key: PlatformEventKey; payload: unknown }) => void | Promise<void>,
+  ): () => void {
     const wrapped = (e: { key: PlatformEventKey; payload: unknown }) => {
       try {
-        handler(e);
+        const out = handler(e);
+        // Mirror `on` so async wildcard handlers don't escape as unhandled
+        // rejections (which can crash the process on recent Node versions).
+        if (out && typeof (out as Promise<void>).catch === 'function') {
+          (out as Promise<void>).catch((err) => {
+            console.error('[events] wildcard handler rejected:', err);
+          });
+        }
       } catch (err) {
         console.error('[events] wildcard handler threw:', err);
       }
