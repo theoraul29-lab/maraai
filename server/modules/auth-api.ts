@@ -113,14 +113,36 @@ function setSessionUser(req: Request, userId: string): Promise<void> {
   });
 }
 
-function flashBadRequest(res: Response, message: string) {
-  return res.status(400).json({ message });
+/**
+ * Stable machine-readable error codes returned alongside human-readable
+ * English fallback messages. Frontend maps `code` to i18n keys (see
+ * `frontend/src/i18n/locales/*.json -> auth.errors.<code>`), so adding a
+ * new code here requires adding a matching translation entry.
+ */
+export type AuthErrorCode =
+  | 'signup_body_invalid'
+  | 'login_body_invalid'
+  | 'email_exists'
+  | 'invalid_credentials'
+  | 'account_create_failed'
+  | 'session_create_failed'
+  | 'user_missing'
+  | 'logout_failed'
+  | 'oauth_unsupported'
+  | 'oauth_not_enabled';
+
+function authError(res: Response, status: number, code: AuthErrorCode, message: string, extra?: Record<string, unknown>) {
+  return res.status(status).json({ code, message, ...extra });
+}
+
+function flashBadRequest(res: Response, code: AuthErrorCode, message: string) {
+  return authError(res, 400, code, message);
 }
 
 export async function signup(req: Request, res: Response) {
   const parsed = signupBodySchema.safeParse(req.body);
   if (!parsed.success) {
-    return flashBadRequest(res, 'Email, password (min 8 chars) and name are required.');
+    return flashBadRequest(res, 'signup_body_invalid', 'Email, password (min 8 chars) and name are required.');
   }
 
   const email = parsed.data.email.toLowerCase();
@@ -134,7 +156,7 @@ export async function signup(req: Request, res: Response) {
     findUserByEmail(email),
   ]);
   if (existingCreds || existingUser) {
-    return res.status(409).json({ message: 'An account with this email already exists.' });
+    return authError(res, 409, 'email_exists', 'An account with this email already exists.');
   }
 
   let passwordHash: string;
@@ -143,7 +165,7 @@ export async function signup(req: Request, res: Response) {
   } catch (err) {
     // bcrypt rarely fails, but we mustn't leak the error and hang the request.
     console.error('[auth] bcrypt.hash failed:', err);
-    return res.status(500).json({ message: 'Failed to create account. Please try again.' });
+    return authError(res, 500, 'account_create_failed', 'Failed to create account. Please try again.');
   }
 
   // Wrap both inserts in a single transaction so we never end up with an
@@ -181,16 +203,16 @@ export async function signup(req: Request, res: Response) {
     console.error('[auth] signup transaction failed:', err);
     const msg = String((err as Error)?.message || '');
     if (msg.includes('UNIQUE') || msg.includes('unique')) {
-      return res.status(409).json({ message: 'An account with this email already exists.' });
+      return authError(res, 409, 'email_exists', 'An account with this email already exists.');
     }
-    return res.status(500).json({ message: 'Failed to create account. Please try again.' });
+    return authError(res, 500, 'account_create_failed', 'Failed to create account. Please try again.');
   }
 
   try {
     await setSessionUser(req, user.id);
   } catch (err) {
     console.error('[auth] session.regenerate failed after signup:', err);
-    return res.status(500).json({ message: 'Failed to create session. Please try again.' });
+    return authError(res, 500, 'session_create_failed', 'Failed to create session. Please try again.');
   }
   return res.status(201).json(toPayload(user));
 }
@@ -198,7 +220,7 @@ export async function signup(req: Request, res: Response) {
 export async function login(req: Request, res: Response) {
   const parsed = loginBodySchema.safeParse(req.body);
   if (!parsed.success) {
-    return flashBadRequest(res, 'Email and password are required.');
+    return flashBadRequest(res, 'login_body_invalid', 'Email and password are required.');
   }
 
   const email = parsed.data.email.toLowerCase();
@@ -210,12 +232,12 @@ export async function login(req: Request, res: Response) {
     // so the "user not found" path takes the same ~100ms as a real compare.
     // Without this, an attacker could enumerate valid emails via timing.
     await bcrypt.compare(password, DUMMY_BCRYPT_HASH).catch(() => false);
-    return res.status(401).json({ message: 'Invalid email or password.' });
+    return authError(res, 401, 'invalid_credentials', 'Invalid email or password.');
   }
 
   const ok = await bcrypt.compare(password, creds.passwordHash);
   if (!ok) {
-    return res.status(401).json({ message: 'Invalid email or password.' });
+    return authError(res, 401, 'invalid_credentials', 'Invalid email or password.');
   }
 
   const user = await db
@@ -224,14 +246,14 @@ export async function login(req: Request, res: Response) {
     .where(eq(users.id, creds.userId))
     .limit(1);
   if (!user[0]) {
-    return res.status(500).json({ message: 'User record missing.' });
+    return authError(res, 500, 'user_missing', 'User record missing.');
   }
 
   try {
     await setSessionUser(req, user[0].id);
   } catch (err) {
     console.error('[auth] session.regenerate failed after login:', err);
-    return res.status(500).json({ message: 'Failed to create session. Please try again.' });
+    return authError(res, 500, 'session_create_failed', 'Failed to create session. Please try again.');
   }
   return res.status(200).json(toPayload(user[0]));
 }
@@ -241,7 +263,7 @@ export async function logout(req: Request, res: Response) {
     if (err) {
       // Session destroy failure shouldn't block the client — just warn.
       // The client clears local state anyway.
-      return res.status(500).json({ message: 'Logout failed.' });
+      return authError(res, 500, 'logout_failed', 'Logout failed.');
     }
     res.clearCookie('connect.sid');
     return res.status(200).json({ ok: true });
@@ -271,12 +293,10 @@ export async function me(req: Request, res: Response) {
 export async function oauth(req: Request, res: Response) {
   const provider = String(req.params.provider || '').toLowerCase();
   if (!['google', 'facebook'].includes(provider)) {
-    return res.status(400).json({ message: 'Unsupported OAuth provider.' });
+    return authError(res, 400, 'oauth_unsupported', 'Unsupported OAuth provider.');
   }
   // Real OAuth wiring (Google/Facebook app + callback) tracked separately.
-  return res.status(501).json({
-    message: `OAuth (${provider}) not yet enabled. Use email + password for now.`,
-  });
+  return authError(res, 501, 'oauth_not_enabled', `OAuth (${provider}) not yet enabled. Use email + password for now.`, { provider });
 }
 
 // Touch sql to avoid unused-import tree-shake complaint on strict tsc configs.

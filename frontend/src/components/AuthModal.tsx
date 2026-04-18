@@ -129,7 +129,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         context: mode === 'login' ? 'login' : 'signup',
         email,
       });
-      setError(errorResult.message);
+      const code = (err as { code?: string })?.code;
+      setError(code ? t(`auth.errors.${code}`, errorResult.message) : errorResult.message);
     } finally {
       setLoading(false);
     }
@@ -150,7 +151,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         context: 'oauth',
         provider,
       });
-      setError(errorResult.message);
+      const code = (err as { code?: string })?.code;
+      setError(code ? t(`auth.errors.${code}`, errorResult.message) : errorResult.message);
     } finally {
       setLoading(false);
     }

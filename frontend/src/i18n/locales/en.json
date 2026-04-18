@@ -77,7 +77,21 @@
     "signInWith": "Sign in with {{provider}}",
     "switchToSignup": "Switch to sign up",
     "switchToLogin": "Switch to login",
-    "or": "OR"
+    "or": "OR",
+    "errors": {
+      "signup_body_invalid": "Email, password (min 8 chars) and name are required.",
+      "login_body_invalid": "Email and password are required.",
+      "email_exists": "An account with this email already exists.",
+      "invalid_credentials": "Invalid email or password.",
+      "account_create_failed": "Failed to create account. Please try again.",
+      "session_create_failed": "Failed to create session. Please try again.",
+      "user_missing": "User record missing.",
+      "logout_failed": "Logout failed.",
+      "oauth_unsupported": "Unsupported OAuth provider.",
+      "oauth_not_enabled": "OAuth sign-in is not yet enabled. Use email and password for now.",
+      "network_error": "Network error. Please try again.",
+      "unknown": "Something went wrong. Please try again."
+    }
   },
   "trading": {
     "title": "TRADING STRATEGY ACADEMY",

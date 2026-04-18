@@ -64,7 +64,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         body: JSON.stringify({ email, password }),
       });
 
-      if (!response.ok) throw new Error('Login failed');
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        const err = new Error(payload?.message || 'Login failed') as Error & { code?: string; statusCode?: number };
+        err.code = payload?.code || 'unknown';
+        err.statusCode = response.status;
+        throw err;
+      }
 
       const userData = await response.json();
       const newUser: User = {
@@ -91,7 +97,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         body: JSON.stringify({ email, password, name }),
       });
 
-      if (!response.ok) throw new Error('Signup failed');
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        const err = new Error(payload?.message || 'Signup failed') as Error & { code?: string; statusCode?: number };
+        err.code = payload?.code || 'unknown';
+        err.statusCode = response.status;
+        throw err;
+      }
 
       const userData = await response.json();
       const newUser: User = {
@@ -117,7 +129,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         headers: { 'Content-Type': 'application/json' },
       });
 
-      if (!response.ok) throw new Error(`OAuth login failed for ${provider}`);
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        const err = new Error(payload?.message || `OAuth login failed for ${provider}`) as Error & { code?: string; statusCode?: number };
+        err.code = payload?.code || 'unknown';
+        err.statusCode = response.status;
+        throw err;
+      }
 
       const userData = await response.json();
       const newUser: User = {
