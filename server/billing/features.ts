@@ -13,7 +13,7 @@
  */
 
 import type { Request, Response, NextFunction } from 'express';
-import { eq, and, or, isNull, gt } from 'drizzle-orm';
+import { eq, and, or, gt } from 'drizzle-orm';
 import { db } from '../db.js';
 import { plans, subscriptions } from '../../shared/models/billing.js';
 import { PLAN_CATALOGUE } from './plans.js';
@@ -78,10 +78,12 @@ export function validatePlanCatalogue(): void {
 
 /**
  * Derive the active plan id for a user. Anonymous users (null userId) and
- * users without an active subscription get `free`. A subscription is
- * considered active if status is 'active' OR 'cancelled' with periodEnd in
- * the future (cancelled users keep access until the period they paid for
- * expires).
+ * users without an active subscription get `free`. A subscription grants
+ * access while its status is `active`, OR while it is `cancelled` with a
+ * concrete `periodEnd` still in the future — so a user who cancels mid-cycle
+ * keeps paid features until the period they already paid for expires. A
+ * cancelled subscription with no `periodEnd` grants no access (defence in
+ * depth against rows where the provider never reported a period end).
  */
 export async function getActivePlanId(userId: string | null): Promise<string> {
   if (!userId) return 'free';
@@ -97,10 +99,7 @@ export async function getActivePlanId(userId: string | null): Promise<string> {
           eq(subscriptions.status, 'active'),
           and(
             eq(subscriptions.status, 'cancelled'),
-            or(
-              isNull(subscriptions.periodEnd),
-              gt(subscriptions.periodEnd, now),
-            ),
+            gt(subscriptions.periodEnd, now),
           ),
         ),
       ),

@@ -151,62 +151,67 @@ export function registerBillingApi(app: Express): void {
   // the UI so we can build against it.
   // -------------------------------------------------------------------------
   app.post('/api/billing/subscribe', async (req: Request, res: Response) => {
-    const userId = await getAuthenticatedUserId(req);
-    if (!userId) {
-      return res.status(401).json({ error: 'not_authenticated' });
-    }
+    try {
+      const userId = await getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: 'not_authenticated' });
+      }
 
-    const parsed = subscribeBodySchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res
-        .status(400)
-        .json({ error: 'invalid_body', details: parsed.error.flatten() });
-    }
-    const { planId, provider } = parsed.data;
+      const parsed = subscribeBodySchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res
+          .status(400)
+          .json({ error: 'invalid_body', details: parsed.error.flatten() });
+      }
+      const { planId, provider } = parsed.data;
 
-    const plan = PLAN_CATALOGUE.find((p) => p.id === planId);
-    if (!plan) {
-      return res.status(404).json({ error: 'unknown_plan', planId });
-    }
+      const plan = PLAN_CATALOGUE.find((p) => p.id === planId);
+      if (!plan) {
+        return res.status(404).json({ error: 'unknown_plan', planId });
+      }
 
-    if (plan.tier === 'free') {
-      return res
-        .status(400)
-        .json({ error: 'free_plan_not_subscribable', planId });
-    }
+      if (plan.tier === 'free') {
+        return res
+          .status(400)
+          .json({ error: 'free_plan_not_subscribable', planId });
+      }
 
-    if (!paymentsEnabled()) {
-      return res.status(503).json({
-        error: 'payments_disabled',
+      if (!paymentsEnabled()) {
+        return res.status(503).json({
+          error: 'payments_disabled',
+          message:
+            'Payments are not yet enabled on this deployment. Contact the operator to set PAYMENTS_ENABLED=true and configure Stripe / PayPal keys.',
+        });
+      }
+
+      if (provider === 'stripe' && !stripeConfigured()) {
+        return res.status(503).json({
+          error: 'stripe_not_configured',
+          message: 'Set STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET to enable Stripe.',
+        });
+      }
+      if (provider === 'paypal' && !paypalConfigured()) {
+        return res.status(503).json({
+          error: 'paypal_not_configured',
+          message: 'Set PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET to enable PayPal.',
+        });
+      }
+
+      // Real Checkout session creation will be wired here in a follow-up
+      // once operator keys are in place. We intentionally *do not* create a
+      // DB row yet — it's the webhook's job to persist the subscription
+      // once the provider confirms payment.
+      return res.status(501).json({
+        error: 'checkout_not_implemented',
         message:
-          'Payments are not yet enabled on this deployment. Contact the operator to set PAYMENTS_ENABLED=true and configure Stripe / PayPal keys.',
+          'Provider checkout wiring ships in a follow-up PR; this endpoint currently only validates configuration.',
+        planId,
+        provider,
       });
+    } catch (err) {
+      console.error('[billing] POST /subscribe failed:', err);
+      return res.status(500).json({ error: 'internal_error' });
     }
-
-    if (provider === 'stripe' && !stripeConfigured()) {
-      return res.status(503).json({
-        error: 'stripe_not_configured',
-        message: 'Set STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET to enable Stripe.',
-      });
-    }
-    if (provider === 'paypal' && !paypalConfigured()) {
-      return res.status(503).json({
-        error: 'paypal_not_configured',
-        message: 'Set PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET to enable PayPal.',
-      });
-    }
-
-    // Real Checkout session creation will be wired here in a follow-up
-    // once operator keys are in place. We intentionally *do not* create a
-    // DB row yet — it's the webhook's job to persist the subscription
-    // once the provider confirms payment.
-    return res.status(501).json({
-      error: 'checkout_not_implemented',
-      message:
-        'Provider checkout wiring ships in a follow-up PR; this endpoint currently only validates configuration.',
-      planId,
-      provider,
-    });
   });
 
   // -------------------------------------------------------------------------
@@ -217,36 +222,53 @@ export function registerBillingApi(app: Express): void {
   // the provider when payments are enabled — scaffolded in follow-up.
   // -------------------------------------------------------------------------
   app.post('/api/billing/cancel', async (req: Request, res: Response) => {
-    const userId = await getAuthenticatedUserId(req);
-    if (!userId) {
-      return res.status(401).json({ error: 'not_authenticated' });
-    }
+    try {
+      const userId = await getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: 'not_authenticated' });
+      }
 
-    const rows = await db
-      .select()
-      .from(subscriptions)
-      .where(
-        and(
-          eq(subscriptions.userId, userId),
-          eq(subscriptions.status, 'active'),
-        ),
-      )
-      .limit(1);
-    const sub = rows[0];
-    if (!sub) {
-      return res.status(404).json({ error: 'no_active_subscription' });
-    }
+      const rows = await db
+        .select()
+        .from(subscriptions)
+        .where(
+          and(
+            eq(subscriptions.userId, userId),
+            eq(subscriptions.status, 'active'),
+          ),
+        )
+        .limit(1);
+      const sub = rows[0];
+      if (!sub) {
+        return res.status(404).json({ error: 'no_active_subscription' });
+      }
 
-    await db
-      .update(subscriptions)
-      .set({
+      // If the subscription has no known paid-period end, set it to now so
+      // access is revoked immediately instead of being granted indefinitely
+      // (defence against cancelled rows that predate the webhook flow).
+      const now = new Date();
+      const preservedPeriodEnd = sub.periodEnd ?? now;
+
+      await db
+        .update(subscriptions)
+        .set({
+          status: 'cancelled',
+          cancelledAt: now,
+          periodEnd: preservedPeriodEnd,
+          updatedAt: now,
+        })
+        .where(eq(subscriptions.id, sub.id));
+
+      return res.json({
+        ok: true,
+        subscriptionId: sub.id,
         status: 'cancelled',
-        cancelledAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .where(eq(subscriptions.id, sub.id));
-
-    res.json({ ok: true, subscriptionId: sub.id, status: 'cancelled' });
+        periodEnd: preservedPeriodEnd,
+      });
+    } catch (err) {
+      console.error('[billing] POST /cancel failed:', err);
+      return res.status(500).json({ error: 'internal_error' });
+    }
   });
 
   // -------------------------------------------------------------------------
