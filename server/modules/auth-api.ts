@@ -104,30 +104,65 @@ export async function signup(req: Request, res: Response) {
   const email = parsed.data.email.toLowerCase();
   const { password, name } = parsed.data;
 
-  const existing = await findCredentialsByEmail(email);
-  if (existing) {
+  // Defence in depth: check both the users table and the credentials table.
+  // A match in either means this email is unusable for a new signup (possibly
+  // from a prior partial insert or a future OAuth-only user record).
+  const [existingCreds, existingUser] = await Promise.all([
+    findCredentialsByEmail(email),
+    findUserByEmail(email),
+  ]);
+  if (existingCreds || existingUser) {
     return res.status(409).json({ message: 'An account with this email already exists.' });
   }
 
-  const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+  let passwordHash: string;
+  try {
+    passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+  } catch (err) {
+    // bcrypt rarely fails, but we mustn't leak the error and hang the request.
+    console.error('[auth] bcrypt.hash failed:', err);
+    return res.status(500).json({ message: 'Failed to create account. Please try again.' });
+  }
 
-  // Insert user + credentials in sequence (SQLite: no transactional helper here;
-  // acceptable because unique-email constraint means re-tries are safe).
-  const inserted = await db
-    .insert(users)
-    .values({
-      email,
-      firstName: name,
-      displayName: name,
-    })
-    .returning();
-  const user = inserted[0];
-
-  await db.insert(localAuthCredentials).values({
-    userId: user.id,
-    email,
-    passwordHash,
-  });
+  // Wrap both inserts in a single transaction so we never end up with an
+  // orphaned `users` row if the `local_auth_credentials` insert fails. Drizzle
+  // on better-sqlite3 exposes a synchronous transaction helper that rolls back
+  // on any thrown error inside the callback.
+  let user: typeof users.$inferSelect;
+  try {
+    user = db.transaction((tx) => {
+      const inserted = tx
+        .insert(users)
+        .values({
+          email,
+          firstName: name,
+          displayName: name,
+        })
+        .returning()
+        .all();
+      const row = inserted[0];
+      if (!row) {
+        throw new Error('users.insert returned no row');
+      }
+      tx.insert(localAuthCredentials)
+        .values({
+          userId: row.id,
+          email,
+          passwordHash,
+        })
+        .run();
+      return row;
+    });
+  } catch (err) {
+    // UNIQUE constraint race (another signup completed between our check and
+    // this insert) or any other DB failure — do not leak error details.
+    console.error('[auth] signup transaction failed:', err);
+    const msg = String((err as Error)?.message || '');
+    if (msg.includes('UNIQUE') || msg.includes('unique')) {
+      return res.status(409).json({ message: 'An account with this email already exists.' });
+    }
+    return res.status(500).json({ message: 'Failed to create account. Please try again.' });
+  }
 
   setSessionUser(req, user.id);
   return res.status(201).json(toPayload(user));
