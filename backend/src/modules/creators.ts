@@ -194,19 +194,11 @@ export const createPayout = gate('creator.payouts', async (req, res, userId) => 
     }
   }
 
-  // Enforce balance check server-side — never trust the client.
-  const earnings = await deps.storage.getCreatorEarnings(userId);
-  if (amount > earnings.availableCents) {
-    res.status(400).json({
-      error: 'insufficient_balance',
-      code: 'insufficient_balance',
-      availableCents: earnings.availableCents,
-      requestedCents: amount,
-    });
-    return;
-  }
-
-  const created = await deps.storage.createCreatorPayout({
+  // Atomic check + insert. Two concurrent requests from the same user cannot
+  // both pass the balance check because the transaction serialises them at
+  // SQLite's write-lock level — the second one re-reads the committed state
+  // and observes the first payout as `pending`.
+  const result = deps.storage.createCreatorPayoutAtomic({
     userId,
     amountCents: amount,
     currency: typeof currency === 'string' && currency.length === 3 ? currency : 'EUR',
@@ -215,7 +207,17 @@ export const createPayout = gate('creator.payouts', async (req, res, userId) => 
     notes: null,
   });
 
-  res.status(201).json(created);
+  if (!result.ok) {
+    res.status(400).json({
+      error: result.code,
+      code: result.code,
+      availableCents: result.availableCents,
+      requestedCents: result.requestedCents,
+    });
+    return;
+  }
+
+  res.status(201).json(result.payout);
 });
 
 // --- Admin -------------------------------------------------------------------

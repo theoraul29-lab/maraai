@@ -204,8 +204,11 @@ export async function registerRoutes(
   // Aggregated earnings (requires creator.revenue_share feature).
   app.get('/api/creator/earnings', creatorsModule.getEarnings);
   app.get('/api/creator/earnings/history', creatorsModule.getEarningsHistory);
-  // Posts / followers / engagement counters (requires creator.analytics).
-  app.get('/api/creator/analytics', creatorsModule.getAnalytics);
+  // Writer-side analytics (pages/views/likes/followers). A distinct path from
+  // the existing reels-focused `/api/creator/analytics` (videoModule) which
+  // returns a different shape already consumed by the frontend; merging the
+  // two is deferred to the dashboard wiring PR.
+  app.get('/api/creator/dashboard-analytics', creatorsModule.getAnalytics);
   // Payout requests (list is open to any signed-in user so creators can see
   // their own past requests even if their active plan has lapsed; POST
   // requires the creator.payouts feature).

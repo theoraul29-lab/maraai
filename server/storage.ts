@@ -235,6 +235,22 @@ export interface IStorage {
   }>;
   // Payout requests
   createCreatorPayout(input: InsertCreatorPayout): Promise<CreatorPayout>;
+  /**
+   * Atomic balance-check + insert. Prevents TOCTOU double-spending when two
+   * concurrent requests arrive from the same user. Returns `{ ok: false }`
+   * with a balance snapshot when the creator does not have enough available
+   * funds; otherwise returns the inserted row.
+   */
+  createCreatorPayoutAtomic(
+    input: InsertCreatorPayout,
+  ):
+    | { ok: true; payout: CreatorPayout }
+    | {
+        ok: false;
+        code: 'insufficient_balance';
+        availableCents: number;
+        requestedCents: number;
+      };
   listCreatorPayoutsByUser(userId: string): Promise<CreatorPayout[]>;
   getCreatorPayoutById(id: number): Promise<CreatorPayout | null>;
   listAllCreatorPayouts(opts?: { status?: string }): Promise<CreatorPayout[]>;
@@ -1101,10 +1117,89 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
+  /**
+   * Atomically verifies the creator has enough available balance and inserts
+   * the payout row. Runs inside a single better-sqlite3 write transaction so
+   * two concurrent requests from the same user can't both pass the balance
+   * check — the second one re-reads the committed state and observes the
+   * first payout as pending.
+   *
+   * Returns an object with `ok: true` plus the created row, or `ok: false`
+   * with the current balance snapshot so the caller can return a 400 with a
+   * machine-readable `insufficient_balance` code.
+   */
+  createCreatorPayoutAtomic(
+    input: InsertCreatorPayout,
+  ):
+    | { ok: true; payout: CreatorPayout }
+    | {
+        ok: false;
+        code: 'insufficient_balance';
+        availableCents: number;
+        requestedCents: number;
+      } {
+    return db.transaction((tx): ReturnType<IStorage['createCreatorPayoutAtomic']> => {
+      // Compute current author-share total for this creator.
+      const earnedRows = tx
+        .select({ authorShare: writerPurchases.authorShareCents })
+        .from(writerPurchases)
+        .innerJoin(writerPages, eq(writerPages.id, writerPurchases.pageId))
+        .where(eq(writerPages.userId, input.userId))
+        .all();
+      const totalCents = earnedRows.reduce(
+        (sum, r) => sum + (r.authorShare ?? 0),
+        0,
+      );
+
+      // Sum existing payouts — 'requested' / 'approved' lock the balance,
+      // 'paid' reduces it permanently, 'rejected' releases it.
+      const payoutRows = tx
+        .select({
+          status: creatorPayouts.status,
+          amount: creatorPayouts.amountCents,
+        })
+        .from(creatorPayouts)
+        .where(eq(creatorPayouts.userId, input.userId))
+        .all();
+
+      let paidOutCents = 0;
+      let pendingPayoutCents = 0;
+      for (const p of payoutRows) {
+        if (p.status === 'paid') paidOutCents += p.amount;
+        else if (p.status === 'requested' || p.status === 'approved') {
+          pendingPayoutCents += p.amount;
+        }
+      }
+      const availableCents = Math.max(
+        0,
+        totalCents - paidOutCents - pendingPayoutCents,
+      );
+
+      if (input.amountCents > availableCents) {
+        return {
+          ok: false,
+          code: 'insufficient_balance',
+          availableCents,
+          requestedCents: input.amountCents,
+        };
+      }
+
+      // Drizzle's timestamp-int mode round-trips Date<->unix-seconds, but the
+      // SQL default `CURRENT_TIMESTAMP` stores an ISO string that reads back
+      // as NULL. Set it explicitly so the returned row always has a real date.
+      const inserted = tx
+        .insert(creatorPayouts)
+        .values({ ...input, requestedAt: new Date() })
+        .returning()
+        .all();
+      return { ok: true, payout: inserted[0] };
+    });
+  }
+
   async createCreatorPayout(input: InsertCreatorPayout): Promise<CreatorPayout> {
-    // Drizzle's timestamp-int mode round-trips Date<->unix-seconds, but the
-    // SQL default `CURRENT_TIMESTAMP` stores an ISO string that reads back as
-    // NULL. Set it explicitly so the returned row always has a real date.
+    // Backwards-compatible wrapper (no balance check). Kept for callers that
+    // have already validated balance out-of-band; new code should prefer
+    // createCreatorPayoutAtomic.
     const [created] = await db
       .insert(creatorPayouts)
       .values({ ...input, requestedAt: new Date() })
