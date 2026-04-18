@@ -1,7 +1,7 @@
 -- Users (registered accounts). Migration 0000 never emitted this table, so we
 -- create it here guarded by IF NOT EXISTS (safe on existing dev DBs too).
 CREATE TABLE IF NOT EXISTS `users` (
-	`id` text PRIMARY KEY NOT NULL,
+	`id` text PRIMARY KEY NOT NULL DEFAULT (lower(hex(randomblob(16)))),
 	`email` text,
 	`first_name` text,
 	`last_name` text,
