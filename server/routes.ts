@@ -11,6 +11,7 @@ import { db } from './db';
 import { eq } from 'drizzle-orm';
 import * as videoModule from '../backend/src/modules/video.js';
 import * as reelsModule from '../backend/src/modules/reels.js';
+import * as writersModule from '../backend/src/modules/writers.js';
 import * as chatModule from '../backend/src/modules/chat.js';
 import * as ttsModule from '../backend/src/modules/tts.js';
 import * as sttModule from '../backend/src/modules/stt.js';
@@ -68,6 +69,7 @@ export async function registerRoutes(
   // Inject dependencies into modules
   videoModule.injectDeps({ storage, db, api, z, creatorPostRequestSchema, likesTable });
   reelsModule.injectDeps({ storage });
+  writersModule.injectDeps({ storage });
   ttsModule.injectDeps({
     classic: 'nova',
     friendly: 'shimmer',
@@ -151,6 +153,31 @@ export async function registerRoutes(
   app.get('/api/videos/:id/comments', reelsModule.listComments);
   app.post('/api/videos/:id/comments', requireAuth, reelsModule.createComment);
   app.delete('/api/videos/comments/:commentId', requireAuth, reelsModule.deleteComment);
+
+  // --- Writers Hub (PR E) ----------------------------------------------------
+  //
+  // Legacy routes preserved for the frontend currently in production
+  // (`/api/writers/library`, `/api/writers/publish`, `/api/writers/:id/like`,
+  // `/api/writers/:id/comment`). New endpoints use the modern REST shape
+  // (`GET /api/writers`, `GET /api/writers/:idOrSlug`, etc.). Both resolve
+  // to the same handlers so the frontend can migrate incrementally.
+  app.get('/api/writers', writersModule.listLibrary);
+  app.get('/api/writers/library', writersModule.listLibrary);
+  app.get('/api/writers/mine', requireAuth, writersModule.listMyPages);
+  app.get('/api/writers/purchases', requireAuth, writersModule.listMyPurchases);
+  app.post('/api/writers', requireAuth, writersModule.publishArticle);
+  app.post('/api/writers/publish', requireAuth, writersModule.publishArticle);
+  app.get('/api/writers/:idOrSlug', writersModule.getArticle);
+  app.patch('/api/writers/:id', requireAuth, writersModule.updateArticle);
+  app.delete('/api/writers/:id', requireAuth, writersModule.deleteArticle);
+  app.post('/api/writers/:id/like', writersModule.likeArticle);
+  app.get('/api/writers/:id/comments', writersModule.listComments);
+  app.post('/api/writers/:id/comments', requireAuth, writersModule.createComment);
+  // legacy singular alias used by WritersHub.tsx
+  app.post('/api/writers/:id/comment', requireAuth, writersModule.createComment);
+  app.delete('/api/writers/comments/:commentId', requireAuth, writersModule.deleteComment);
+  app.get('/api/writers/:id/access', writersModule.getAccess);
+  app.post('/api/writers/:id/purchase', requireAuth, writersModule.purchaseArticle);
 
   // Creator endpoints (require auth)
   app.get('/api/creator/post-status', requireAuth, videoModule.creatorPostStatus);

@@ -9,6 +9,8 @@ import {
   premiumOrders,
   creatorPosts,
   writerPages,
+  writerComments,
+  writerPurchases,
   savedVideos,
   userFeedback,
   aiImprovements,
@@ -33,6 +35,10 @@ import {
   type InsertPremiumOrder,
   type WriterPage,
   type InsertWriterPage,
+  type WriterComment,
+  type InsertWriterComment,
+  type WriterPurchase,
+  type InsertWriterPurchase,
   type SavedVideo,
   type Feedback,
   type InsertFeedback,
@@ -139,15 +145,44 @@ export interface IStorage {
   createWriterPage(page: InsertWriterPage): Promise<WriterPage>;
   getWriterPages(userId?: string): Promise<WriterPage[]>;
   getPublishedWriterPages(): Promise<WriterPage[]>;
+  getWriterLibrary(options?: {
+    limit?: number;
+    offset?: number;
+    visibility?: 'public' | 'vip' | 'paid' | 'all';
+    category?: string;
+    authorId?: string;
+    search?: string;
+  }): Promise<WriterPage[]>;
   getWriterPageById(id: number): Promise<WriterPage | null>;
+  getWriterPageBySlug(slug: string): Promise<WriterPage | null>;
   updateWriterPage(
     id: number,
     userId: string,
     data: Partial<InsertWriterPage & { published: boolean }>,
+    options?: { isAdmin?: boolean },
   ): Promise<WriterPage | null>;
-  deleteWriterPage(id: number, userId: string): Promise<boolean>;
+  deleteWriterPage(
+    id: number,
+    userId: string,
+    options?: { isAdmin?: boolean },
+  ): Promise<boolean>;
   likeWriterPage(pageId: number): Promise<{ likes: number }>;
   viewWriterPage(pageId: number): Promise<{ views: number }>;
+
+  // Writer comments (PR E)
+  createWriterComment(comment: InsertWriterComment): Promise<WriterComment>;
+  listWriterComments(pageId: number, limit?: number): Promise<WriterComment[]>;
+  deleteWriterComment(
+    commentId: number,
+    userId: string,
+    isAdmin: boolean,
+  ): Promise<boolean>;
+
+  // Writer paid-article purchases (PR E)
+  createWriterPurchase(purchase: InsertWriterPurchase): Promise<WriterPurchase>;
+  hasPurchasedWriterPage(userId: string, pageId: number): Promise<boolean>;
+  getWriterPurchasesByUser(userId: string): Promise<WriterPurchase[]>;
+  getWriterPurchasesForPage(pageId: number): Promise<WriterPurchase[]>;
 
   saveVideo(
     userId: string,
@@ -620,15 +655,73 @@ export class DatabaseStorage implements IStorage {
     return page || null;
   }
 
+  async getWriterLibrary(options?: {
+    limit?: number;
+    offset?: number;
+    visibility?: 'public' | 'vip' | 'paid' | 'all';
+    category?: string;
+    authorId?: string;
+    search?: string;
+  }): Promise<WriterPage[]> {
+    const limit = Math.min(Math.max(options?.limit ?? 20, 1), 100);
+    const offset = Math.max(options?.offset ?? 0, 0);
+
+    // Library lists ONLY published articles. Drafts never appear here; the
+    // author-facing "my pages" path uses `getWriterPages(userId)` instead.
+    const conds = [eq(writerPages.published, 1)];
+
+    if (options?.visibility && options.visibility !== 'all') {
+      conds.push(eq(writerPages.visibility, options.visibility));
+    }
+    if (options?.category) {
+      conds.push(eq(writerPages.category, options.category));
+    }
+    if (options?.authorId) {
+      conds.push(eq(writerPages.userId, options.authorId));
+    }
+    if (options?.search) {
+      const needle = `%${options.search.trim().toLowerCase()}%`;
+      conds.push(
+        or(
+          like(sql`lower(${writerPages.title})`, needle),
+          like(sql`lower(${writerPages.penName})`, needle),
+          like(sql`lower(${writerPages.excerpt})`, needle),
+        )!,
+      );
+    }
+
+    return await db
+      .select()
+      .from(writerPages)
+      .where(and(...conds))
+      .orderBy(desc(writerPages.publishedAt), desc(writerPages.createdAt))
+      .limit(limit)
+      .offset(offset);
+  }
+
+  async getWriterPageBySlug(slug: string): Promise<WriterPage | null> {
+    const [page] = await db
+      .select()
+      .from(writerPages)
+      .where(eq(writerPages.slug, slug));
+    return page || null;
+  }
+
   async updateWriterPage(
     id: number,
     userId: string,
     data: Partial<InsertWriterPage & { published: boolean }>,
+    options?: { isAdmin?: boolean },
   ): Promise<WriterPage | null> {
+    // Authors can only touch their own pages. Admins (resolved upstream by
+    // the route handler against `ADMIN_USER_IDS`) can patch anything.
+    const ownershipCond = options?.isAdmin
+      ? eq(writerPages.id, id)
+      : and(eq(writerPages.id, id), eq(writerPages.userId, userId));
     const [existing] = await db
       .select()
       .from(writerPages)
-      .where(and(eq(writerPages.id, id), eq(writerPages.userId, userId)));
+      .where(ownershipCond);
     if (!existing) return null;
     const updateData: Record<string, unknown> = {
       ...data,
@@ -637,6 +730,10 @@ export class DatabaseStorage implements IStorage {
 
     if (typeof data.published === "boolean") {
       updateData.published = data.published ? 1 : 0;
+      // Stamp `publishedAt` exactly once, on the transition to published.
+      if (data.published && !existing.publishedAt) {
+        updateData.publishedAt = new Date();
+      }
     }
 
     const [updated] = await db
@@ -647,12 +744,24 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-  async deleteWriterPage(id: number, userId: string): Promise<boolean> {
+  async deleteWriterPage(
+    id: number,
+    userId: string,
+    options?: { isAdmin?: boolean },
+  ): Promise<boolean> {
+    const ownershipCond = options?.isAdmin
+      ? eq(writerPages.id, id)
+      : and(eq(writerPages.id, id), eq(writerPages.userId, userId));
     const [existing] = await db
       .select()
       .from(writerPages)
-      .where(and(eq(writerPages.id, id), eq(writerPages.userId, userId)));
+      .where(ownershipCond);
     if (!existing) return false;
+    // Cascade: delete children first so a partial failure (DB error between
+    // statements) doesn't strand orphan purchase rows (which carry userId —
+    // PII) after the parent page is already gone. Order matters for GDPR.
+    await db.delete(writerComments).where(eq(writerComments.pageId, id));
+    await db.delete(writerPurchases).where(eq(writerPurchases.pageId, id));
     await db.delete(writerPages).where(eq(writerPages.id, id));
     return true;
   }
@@ -679,6 +788,93 @@ export class DatabaseStorage implements IStorage {
       .from(writerPages)
       .where(eq(writerPages.id, pageId));
     return { views: page?.views ?? 0 };
+  }
+
+  // --- Writer comments (PR E) -----------------------------------------------
+
+  async createWriterComment(
+    comment: InsertWriterComment,
+  ): Promise<WriterComment> {
+    const [created] = await db
+      .insert(writerComments)
+      .values(comment)
+      .returning();
+    return created;
+  }
+
+  async listWriterComments(
+    pageId: number,
+    limit = 100,
+  ): Promise<WriterComment[]> {
+    const capped = Math.min(Math.max(limit, 1), 500);
+    return await db
+      .select()
+      .from(writerComments)
+      .where(eq(writerComments.pageId, pageId))
+      .orderBy(desc(writerComments.createdAt))
+      .limit(capped);
+  }
+
+  async deleteWriterComment(
+    commentId: number,
+    userId: string,
+    isAdmin: boolean,
+  ): Promise<boolean> {
+    const [existing] = await db
+      .select()
+      .from(writerComments)
+      .where(eq(writerComments.id, commentId));
+    if (!existing) return false;
+    if (!isAdmin && existing.userId !== userId) return false;
+    await db.delete(writerComments).where(eq(writerComments.id, commentId));
+    return true;
+  }
+
+  // --- Writer purchases (PR E, 70/30 revenue share) -------------------------
+
+  async createWriterPurchase(
+    purchase: InsertWriterPurchase,
+  ): Promise<WriterPurchase> {
+    const [created] = await db
+      .insert(writerPurchases)
+      .values(purchase)
+      .returning();
+    return created;
+  }
+
+  async hasPurchasedWriterPage(
+    userId: string,
+    pageId: number,
+  ): Promise<boolean> {
+    const [row] = await db
+      .select({ id: writerPurchases.id })
+      .from(writerPurchases)
+      .where(
+        and(
+          eq(writerPurchases.userId, userId),
+          eq(writerPurchases.pageId, pageId),
+        ),
+      )
+      .limit(1);
+    return !!row;
+  }
+
+  async getWriterPurchasesByUser(userId: string): Promise<WriterPurchase[]> {
+    return await db
+      .select()
+      .from(writerPurchases)
+      .where(eq(writerPurchases.userId, userId))
+      .orderBy(desc(writerPurchases.createdAt));
+  }
+
+  async getWriterPurchasesForPage(
+    pageId: number,
+  ): Promise<WriterPurchase[]> {
+    return await db
+      .select()
+      .from(writerPurchases)
+      .where(eq(writerPurchases.pageId, pageId))
+      .orderBy(desc(writerPurchases.createdAt));
   }
 
   async saveVideo(

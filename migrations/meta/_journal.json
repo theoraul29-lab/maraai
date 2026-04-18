@@ -29,6 +29,13 @@
       "when": 1776537300000,
       "tag": "0003_reels",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1776540000000,
+      "tag": "0004_writers_hub",
+      "breakpoints": true
     }
   ]
 }

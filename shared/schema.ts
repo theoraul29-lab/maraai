@@ -143,10 +143,46 @@ export const writerPages = pgTable('writer_pages', {
   published: integer('published').default(0).notNull(),
   likes: integer('likes').default(0).notNull(),
   views: integer('views').default(0).notNull(),
+  // --- Writers Hub (PR E) additions ---
+  // visibility: 'public' (anyone) | 'vip' (subscribers with >= vip plan) | 'paid' (one-off unlock per user)
+  visibility: text('visibility').default('public').notNull(),
+  priceCents: integer('price_cents'),
+  currency: text('currency').default('EUR').notNull(),
+  excerpt: text('excerpt'),
+  slug: text('slug'),
+  readTimeMinutes: integer('read_time_minutes'),
+  publishedAt: integer('published_at', { mode: 'timestamp' }),
   createdAt: integer('created_at', { mode: 'timestamp' })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
+// === WRITER COMMENTS ===
+export const writerComments = pgTable('writer_comments', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  pageId: integer('page_id').notNull(),
+  userId: text('user_id').notNull(),
+  content: text('content').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
+// === WRITER PURCHASES (70/30 revenue share per paid article) ===
+export const writerPurchases = pgTable('writer_purchases', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  pageId: integer('page_id').notNull(),
+  userId: text('user_id').notNull(),
+  amountCents: integer('amount_cents').notNull(),
+  currency: text('currency').default('EUR').notNull(),
+  provider: text('provider').default('stub').notNull(),
+  providerRef: text('provider_ref'),
+  authorShareCents: integer('author_share_cents').notNull(),
+  platformShareCents: integer('platform_share_cents').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
 });
@@ -338,9 +374,18 @@ export const insertWriterPageSchema = createInsertSchema(writerPages).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+  publishedAt: true,
   likes: true,
   views: true,
   published: true,
+});
+export const insertWriterCommentSchema = createInsertSchema(writerComments).omit({
+  id: true,
+  createdAt: true,
+});
+export const insertWriterPurchaseSchema = createInsertSchema(writerPurchases).omit({
+  id: true,
+  createdAt: true,
 });
 export const insertFeedbackSchema = createInsertSchema(userFeedback).omit({
   id: true,
@@ -424,6 +469,10 @@ export type PremiumOrder = typeof premiumOrders.$inferSelect;
 export type InsertPremiumOrder = z.infer<typeof insertPremiumOrderSchema>;
 export type WriterPage = typeof writerPages.$inferSelect;
 export type InsertWriterPage = z.infer<typeof insertWriterPageSchema>;
+export type WriterComment = typeof writerComments.$inferSelect;
+export type InsertWriterComment = z.infer<typeof insertWriterCommentSchema>;
+export type WriterPurchase = typeof writerPurchases.$inferSelect;
+export type InsertWriterPurchase = z.infer<typeof insertWriterPurchaseSchema>;
 export type SavedVideo = typeof savedVideos.$inferSelect;
 export type Feedback = typeof userFeedback.$inferSelect;
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
