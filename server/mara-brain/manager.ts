@@ -183,12 +183,17 @@ class BrainManagerImpl {
   private async _scheduledCycle(logger: (msg: string, tag?: string) => void): Promise<void> {
     if (!this._started) return; // stop() called before this tick fired
     if (!this.isEnabled) return;
+    // Anchor the next-run display to the tick time (now), not to the cycle's
+    // completion time. setInterval fires at fixed cadence from start(), so the
+    // true next fire is approx. now + cycleIntervalMs regardless of how long
+    // this cycle takes to run.
+    const tickAt = Date.now();
+    this._nextRunAt = tickAt + this.cycleIntervalMs;
     if (this._running) {
       logger('Skipping scheduled cycle — previous cycle still running', 'mara-brain');
       return;
     }
     await this._runCycleInternal(logger);
-    this._nextRunAt = Date.now() + this.cycleIntervalMs;
   }
 
   private async _runCycleInternal(
