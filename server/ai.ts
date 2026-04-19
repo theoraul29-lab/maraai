@@ -1,5 +1,5 @@
 import { buildUserContext, buildSystemInstruction, recordLearningFromChat } from './mara-brain/index.js';
-import { llmChat, llmGenerate, isLLMConfigured, getActiveProvider } from './llm.js';
+import { llmChat, llmGenerate, isLLMConfigured } from './llm.js';
 import { logError } from './logger.js';
 
 // Localized Mara "Guided Muse" persona used when the brain module is
@@ -128,13 +128,9 @@ export async function getMaraResponse(
 	userId?: string,
 ): Promise<{ response: string; detectedMood: string }> {
 	if (!isLLMConfigured()) {
-		const provider = getActiveProvider();
-		const hint =
-			provider === 'ollama'
-				? 'Please set OLLAMA_BASE_URL to enable Ollama.'
-				: 'Please set OPENROUTER_API_KEY to enable OpenRouter.';
 		return {
-			response: `Mara AI is not configured. ${hint}`,
+			response:
+				'Mara AI is not configured. Please set ANTHROPIC_API_KEY to enable Anthropic Claude.',
 			detectedMood: 'neutral',
 		};
 	}

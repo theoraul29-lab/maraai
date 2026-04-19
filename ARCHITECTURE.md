@@ -52,7 +52,7 @@ MaraAI is a modern AI platform with 6 specialized modules deployed on Railway wi
 └─────────────────────────────────────────────────────────────────┘
         ↓              ↓              ↓              ↓
 ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
-│  Gemini API  │ │   SQLite     │ │   Local      │ │    JWT       │
+│ Anthropic API│ │   SQLite     │ │   Local      │ │    JWT       │
 │  (AI/Chat)   │ │ (Database)   │ │  (Files)     │ │   Auth       │
 └──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘
         ↓
@@ -106,7 +106,7 @@ MaraAI/
 ├── server/                           # Node.js Express Backend
 │   ├── index.ts                      # Main Server
 │   ├── routes.ts                     # Route Registration
-│   ├── ai.ts                         # Gemini API Client
+│   ├── ai.ts                         # Anthropic Claude API Client
 │   ├── auth.ts                       # JWT Authentication
 │   ├── mara-brain.ts                 # Memory + Learning System
 │   ├── storage.ts                    # Persistence Layer
@@ -155,7 +155,7 @@ Each module is a card that:
 
 Features:
 - WebSocket connection for instant messages
-- Gemini API for intelligent responses
+- Anthropic Claude API (claude-sonnet-4-20250514) for intelligent responses
 - Mood detection (happy, analytical, sarcastic, etc.)
 - Chat history persistence
 - Typing indicators
@@ -399,8 +399,8 @@ Railway Project (maraai)
 │   ├── Token expiry: 24h
 │   └── Secret: JWT_SECRET env var
 │
-└── AI: OpenRouter / Ollama
-    └── Key: OPENROUTER_API_KEY or OLLAMA_BASE_URL env var
+└── AI: Anthropic Claude
+    └── Key: ANTHROPIC_API_KEY env var
 ```
 
 ---

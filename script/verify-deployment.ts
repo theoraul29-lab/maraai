@@ -38,9 +38,9 @@ async function runChecks(): Promise<void> {
   // 1. Environment Variables
   console.log('📋 Checking Environment Variables...');
   check(
-    'OPENROUTER_API_KEY or OLLAMA_BASE_URL',
-    !!(process.env.OPENROUTER_API_KEY || process.env.OLLAMA_BASE_URL),
-    'Missing OPENROUTER_API_KEY (and no OLLAMA_BASE_URL) - AI responses will fail',
+    'ANTHROPIC_API_KEY',
+    !!process.env.ANTHROPIC_API_KEY,
+    'Missing ANTHROPIC_API_KEY - AI responses will fail',
   );
   check(
     'DATABASE_URL',
@@ -110,8 +110,8 @@ async function runChecks(): Promise<void> {
   console.log('\n🔌 Checking Critical Endpoints...');
   check(
     'LLM Integration',
-    fs.readFileSync('server/llm.ts', 'utf-8').includes('openrouterChat'),
-    'OpenRouter provider not configured in llm.ts',
+    fs.readFileSync('server/llm.ts', 'utf-8').includes('@anthropic-ai/sdk'),
+    'Anthropic SDK not wired up in llm.ts',
   );
   check(
     'Chat Endpoint',
