@@ -155,7 +155,7 @@ Each module is a card that:
 
 Features:
 - WebSocket connection for instant messages
-- Anthropic Claude API (claude-sonnet-4-20250514) for intelligent responses
+- Anthropic Claude API (claude-sonnet-4-6) for intelligent responses
 - Mood detection (happy, analytical, sarcastic, etc.)
 - Chat history persistence
 - Typing indicators
