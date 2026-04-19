@@ -8,6 +8,7 @@ import { useAccessible } from './hooks/useAccessible';
 import './OrbitalStyles.css';
 import ChatWidget from './components/ChatWidget';
 import { AuthButton } from './components/AuthButton';
+import { LanguageSelector } from './components/LanguageSelector';
 
 const moduleKeys = [
   { id: 'you', titleKey: 'home.you', to: '/you', icon: '👤', color: '#a855f7' },
@@ -416,8 +417,11 @@ function HomePage() {
           ))}
       </div>
 
-      {/* Auth Button - Top Left */}
-      <AuthButton />
+      {/* Auth + Language - Top Left */}
+      <div className="top-left-controls">
+        <AuthButton />
+        <LanguageSelector compact />
+      </div>
 
       {/* Chat Widget - Bottom Right */}
       <ChatWidget />

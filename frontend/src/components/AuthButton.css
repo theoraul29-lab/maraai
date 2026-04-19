@@ -1,3 +1,22 @@
+/* Wrapper that groups Auth + Language selector at top-left on HomePage */
+.top-left-controls {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* When inside the wrapper, AuthButton must NOT position itself — the wrapper does */
+.top-left-controls .auth-button-login,
+.top-left-controls .auth-button-profile {
+  position: static;
+  top: auto;
+  left: auto;
+}
+
 /* Auth Button Container */
 .auth-button-login {
   position: fixed;
