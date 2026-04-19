@@ -37,6 +37,7 @@ import {
   type FeatureKey,
 } from '../../../server/billing/features';
 import { CREATOR_REVENUE_SHARE } from '../../../server/billing/plans';
+import { platformBus } from '../../../server/events';
 
 let deps: {
   storage: IStorage;
@@ -310,6 +311,26 @@ export async function publishArticle(req: Request, res: Response) {
       slug,
       published: true,
     });
+
+    // Announce to the platform event bus so subscribers (unified feed cache,
+    // notifications, Mara Brain) can react. Best-effort: failure inside the
+    // bus never blocks the API response.
+    try {
+      const publishedAt =
+        (patched && (patched as { publishedAt?: Date | null }).publishedAt) ||
+        (created as { publishedAt?: Date | null }).publishedAt ||
+        new Date();
+      platformBus.emit('content.published', {
+        kind: 'writer_page',
+        id: created.id,
+        userId,
+        title: title.slice(0, 200),
+        visibility,
+        publishedAt,
+      });
+    } catch (busErr) {
+      console.error('[writers] failed to emit content.published:', busErr);
+    }
 
     res.status(201).json({ article: patched ?? created });
   } catch (err) {

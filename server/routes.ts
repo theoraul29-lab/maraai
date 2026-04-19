@@ -20,6 +20,8 @@ import * as userPrefsModule from '../backend/src/modules/userPrefs.js';
 import * as adminModule from '../backend/src/modules/admin.js';
 import * as feedbackModule from '../backend/src/modules/feedback.js';
 import * as profileModule from '../backend/src/modules/profile.js';
+import * as feedModule from '../backend/src/modules/feed.js';
+import { installDefaultSubscribers } from './events';
 import * as ordersModule from '../backend/src/modules/orders.js';
 import * as adminOrdersModule from '../backend/src/modules/adminOrders.js';
 import * as paymentsModule from '../backend/src/modules/payments.js';
@@ -90,6 +92,8 @@ export async function registerRoutes(
   userPrefsModule.injectDeps({ storage });
   adminModule.injectDeps({ storage });
   profileModule.injectDeps({ storage });
+  feedModule.injectDeps({ storage });
+  installDefaultSubscribers();
   ordersModule.injectDeps({ storage, z });
   adminOrdersModule.injectDeps({ storage });
   paymentsModule.injectDeps({
@@ -123,6 +127,13 @@ export async function registerRoutes(
   app.get('/api/profile/:id/activity', profileModule.getActivity);
   app.get('/api/profile/:id/badges', profileModule.getBadges);
   app.post('/api/profile/:id/follow', requireAuth, profileModule.followUser);
+
+  // --- Unified feed (PR I) -------------------------------------------------
+  // Order matters: `/feed/following` must be registered before any generic
+  // `/feed/:something` route (there are none today, but locking in the order
+  // avoids a future regression).
+  app.get('/api/feed/following', requireAuth, feedModule.getFollowingFeed);
+  app.get('/api/feed', feedModule.getUnifiedFeed);
 
   // Admin endpoints (require admin)
   app.get('/api/admin/stats', requireAdmin, adminModule.getStats);

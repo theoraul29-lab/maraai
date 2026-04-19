@@ -24,6 +24,7 @@ import { randomBytes } from 'crypto';
 import type { Request, Response } from 'express';
 import multer from 'multer';
 import type { IStorage } from '../../../server/storage';
+import { platformBus } from '../../../server/events';
 
 let deps: {
   storage: IStorage;
@@ -116,6 +117,21 @@ export async function uploadReel(req: Request, res: Response) {
       durationSec: null,
       moderationStatus: 'approved',
     } as any);
+
+    // Fan-out to the platform event bus. Reels always publish with
+    // `public` visibility for now (we do not have a VIP/paid reel tier).
+    try {
+      platformBus.emit('content.published', {
+        kind: 'reel',
+        id: created.id,
+        userId,
+        title: title.slice(0, 200),
+        visibility: 'public',
+        publishedAt: created.createdAt ?? new Date(),
+      });
+    } catch (busErr) {
+      console.error('[reels] failed to emit content.published:', busErr);
+    }
 
     res.status(201).json({ video: created });
   } catch (err) {
