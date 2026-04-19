@@ -21,3 +21,4 @@ export { analyzePlatform, collectPlatformMetrics, generateGrowthSuggestions, ide
 export { processDocument, processDocumentBatch, type DocumentReadResult } from './agents/document-reader.js';
 export { readNextLibraryBook, getNextUnreadBook, getLibraryProgress, addAndReadCustomBook, getBuiltInLibrary, type LibraryBook } from './library.js';
 export { brainManager, type BrainStatus } from './manager.js';
+export { getPlatformContext } from './platform-context.js';

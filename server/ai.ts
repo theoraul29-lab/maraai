@@ -1,4 +1,4 @@
-import { buildUserContext, buildSystemInstruction, recordLearningFromChat } from './mara-brain/index.js';
+import { buildUserContext, buildSystemInstruction, recordLearningFromChat, getPlatformContext } from './mara-brain/index.js';
 import { llmChat, llmGenerate, isLLMConfigured } from './llm.js';
 import { logError } from './logger.js';
 
@@ -66,12 +66,13 @@ Você não tolera desrespeito. Não recompensa comportamento tóxico. Não se to
 function getFallbackInstruction(language?: string): string {
   const code = (language || 'en').toLowerCase();
   const base = SYSTEM_INSTRUCTION_FALLBACKS[code] || SYSTEM_INSTRUCTION_FALLBACKS.en;
+  const platform = getPlatformContext(code);
   // For languages we don't have a native persona for, tell the model to reply
   // in the requested language while keeping the English persona as the base.
   if (!SYSTEM_INSTRUCTION_FALLBACKS[code] && code !== 'en') {
-    return `${base}\n\nIMPORTANT: Always respond in the language with code "${code}".`;
+    return `${base}\n\n${platform}\n\nIMPORTANT: Always respond in the language with code "${code}".`;
   }
-  return base;
+  return `${base}\n\n${platform}`;
 }
 
 export const MOOD_TO_THEME: Record<string, string> = {
