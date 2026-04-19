@@ -6,6 +6,7 @@ import { storage } from '../storage.js';
 import { learnFromGemini, learnBusinessStrategy, validateIdeas, selfImproveQuery } from './agents/llm-learner.js';
 import { researchModuleTrends, researchCompetitors, generateResearchAgenda, batchResearch } from './agents/web-research.js';
 import { analyzePlatform, generateGrowthSuggestions, identifyWeakModules } from './agents/platform-analyzer.js';
+import { runAllModuleAnalyzers } from './agents/module-analyzers.js';
 import { getKnowledgeStats, storeKnowledge } from './knowledge-base.js';
 import { readNextLibraryBook, getLibraryProgress } from './library.js';
 
@@ -115,6 +116,29 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
     const analysis = await analyzePlatform();
     productIdeas.push(...(analysis.proposals?.map((p) => `[${p.priority}] ${p.title}: ${p.description}`) || []));
     research.push(...(analysis.insights || []));
+
+    // === PHASE 4.5: Per-Module Growth Analysis ===
+    // Each of the 6 modules (You / Reels / Trading / Writers / Creators / VIP)
+    // gets its own analyzer that proposes concrete growth levers. Proposals land
+    // in `maraPlatformInsights` (status='proposed') for admin approval — no
+    // autonomous code changes. Gated by MARA_LEARNING_ENABLED so it can be
+    // turned off without disabling the rest of the brain cycle.
+    if (process.env.MARA_LEARNING_ENABLED !== 'false') {
+      console.log('[MaraBrain] Phase 4.5: Per-module growth analysis...');
+      try {
+        const moduleResults = await runAllModuleAnalyzers();
+        for (const r of moduleResults) {
+          if (r.skipped) {
+            research.push(`[${r.module}] module analysis skipped (${r.reason ?? 'unknown'})`);
+          } else {
+            research.push(`[${r.module}] ${r.proposalsCreated} proposals + ${r.insightsStored} insight`);
+            knowledgeLearned += r.insightsStored;
+          }
+        }
+      } catch (err) {
+        console.error('[MaraBrain] Module analyzers failed:', err);
+      }
+    }
 
     // === PHASE 5: Identify Weak Points ===
     console.log('[MaraBrain] Phase 5: Identifying weak modules...');
