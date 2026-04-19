@@ -33,9 +33,16 @@ COPY --from=builder /app/backend ./backend
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/migrations ./migrations
 
-# Security: don't run as root
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nodejs -u 1001
+# Security: don't run as root.
+# Give `nodejs` ownership of /app and create /data (default SQLite home when
+# no DATABASE_URL is set) so better-sqlite3 can open/create files. Without
+# this, boot crashes with SQLITE_CANTOPEN because /app is owned by root.
+# On Railway, attach a Volume at /data to make the SQLite file persist across
+# deploys; otherwise DB is ephemeral.
+RUN addgroup -g 1001 -S nodejs \
+    && adduser -S nodejs -u 1001 \
+    && mkdir -p /data \
+    && chown -R nodejs:nodejs /app /data
 USER nodejs
 
 # Health check (Railway injects PORT)
