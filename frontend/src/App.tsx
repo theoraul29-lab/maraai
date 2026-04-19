@@ -1,6 +1,7 @@
 // import React from 'react';
 import { Route, Routes, useNavigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import './App.css';
 
 // Importuri Componente corecte
@@ -24,25 +25,31 @@ function App() {
   const isHomePage = location.pathname === '/';
 
   return (
-    <AuthProvider>
-      <div className="App">
-        {!isHomePage && <Nav />}
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/trading-academy" element={<TradingAcademy onClose={() => navigate('/')} />} />
-          <Route path="/membership" element={<VIP onClose={() => navigate('/')} />} />
-          <Route path="/creator-panel" element={<Creators onClose={() => navigate('/')} />} />
-          <Route path="/you" element={<You />} />
-          <Route path="/reels" element={<Reels />} />
-          <Route path="/writers-hub" element={<WritersHub onClose={() => navigate('/')} />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/reset-password/confirmation" element={<ResetPasswordConfirmation />} />
-          <Route path="/admin/brain" element={<AdminBrain />} />
-        </Routes>
-        {/* Mara Chat Widget - appears on all pages */}
-        <MaraChatWidget />
-      </div>
-    </AuthProvider>
+    <ErrorBoundary level="page">
+      <AuthProvider>
+        <div className="App">
+          {!isHomePage && <Nav />}
+          <ErrorBoundary level="section">
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/trading-academy" element={<TradingAcademy onClose={() => navigate('/')} />} />
+              <Route path="/membership" element={<VIP onClose={() => navigate('/')} />} />
+              <Route path="/creator-panel" element={<Creators onClose={() => navigate('/')} />} />
+              <Route path="/you" element={<You />} />
+              <Route path="/reels" element={<Reels />} />
+              <Route path="/writers-hub" element={<WritersHub onClose={() => navigate('/')} />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/reset-password/confirmation" element={<ResetPasswordConfirmation />} />
+              <Route path="/admin/brain" element={<AdminBrain />} />
+            </Routes>
+          </ErrorBoundary>
+          {/* Mara Chat Widget - appears on all pages */}
+          <ErrorBoundary level="component">
+            <MaraChatWidget />
+          </ErrorBoundary>
+        </div>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 
