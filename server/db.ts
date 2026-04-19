@@ -3,6 +3,7 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import Database from 'better-sqlite3';
 import * as schema from '../shared/schema.js';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -31,7 +32,18 @@ function resolveDbPath(): string {
     // Treat any other DATABASE_URL as a literal path (best-effort).
     return url;
   }
-  return process.env.DATABASE_PATH || path.resolve(__dirname, '..', 'maraai.sqlite');
+  if (process.env.DATABASE_PATH) return process.env.DATABASE_PATH;
+  // Production default: /data (chown'd to `nodejs` in Dockerfile; attach a
+  // Railway Volume here for persistence across deploys). Falls back to the
+  // repo-local sqlite file when /data does not exist (dev / local scripts).
+  try {
+    if (fs.existsSync('/data') && fs.statSync('/data').isDirectory()) {
+      return '/data/maraai.sqlite';
+    }
+  } catch {
+    // fall through to local default
+  }
+  return path.resolve(__dirname, '..', 'maraai.sqlite');
 }
 
 const dbPath = resolveDbPath();
