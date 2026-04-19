@@ -15,7 +15,8 @@
 - ✅ **Interactive animations** - Hover effects, floating icons, smooth transitions
 
 ### **Backend AI Integration**
-- ✅ **Mara AI (Gemini-powered)** - `server/ai.ts` handles all AI responses
+- ✅ **Mara AI (Anthropic Claude)** - `server/ai.ts` handles all AI responses
+  - Model: `claude-sonnet-4-20250514`
   - Mood detection (happy, excited, sad, calm, curious, neutral)
   - Context awareness from chat history
   - Temperature 0.95 for creative responses
@@ -36,7 +37,7 @@
 ### **Code Cleanup**
 - ✅ **Removed Vertex AI imports** from main.py
 - ✅ **Removed dead Flask endpoints** (`/api/chat`, `/api/trading/signals`)
-- ✅ **Consolidated AI** - All AI requests now go through server/ai.ts (Gemini only)
+- ✅ **Consolidated AI** - All AI requests now go through server/ai.ts via the Anthropic SDK
 
 ### **API Endpoints (Active)**
 - ✅ `/api/chat` - WebSocket chat with Mara
@@ -55,7 +56,7 @@
 ```bash
 Node.js 20+
 npm / yarn
-OPENROUTER_API_KEY (from https://openrouter.ai) or OLLAMA_BASE_URL
+ANTHROPIC_API_KEY (from https://console.anthropic.com/settings/keys)
 ```
 
 ### **1. Setup**
@@ -67,12 +68,12 @@ npm install
 
 # Set environment variables (create .env file)
 cat > .env << EOF
-OPENROUTER_API_KEY=your_openrouter_key_here
-DATABASE_URL=sqlite:///./mara_system.db
-JWT_SECRET=your_random_jwt_secret
+ANTHROPIC_API_KEY=your_anthropic_key_here
+ANTHROPIC_MODEL=claude-sonnet-4-20250514
+DATABASE_URL=sqlite:///./maraai.sqlite
+SESSION_SECRET=your_random_session_secret
 NODE_ENV=development
 PORT=5000
-HOST=localhost
 EOF
 ```
 
@@ -111,7 +112,7 @@ User Message → server/index.ts (WebSocket)
 checkRateLimit() → getUserPreferences()
     ↓
 getMaraResponse() from server/ai.ts
-    ├── OpenRouter / Ollama LLM call
+    ├── Anthropic Claude API call (claude-sonnet-4-20250514)
     ├── detectMood() - analyze response
     ├── buildContextPrompt() - from mara-brain.ts
     └── Return { response, detectedMood }
@@ -191,7 +192,7 @@ npm run verify:deploy
 ```
 
 ### **Manual Checklist**
-- [ ] OPENROUTER_API_KEY is valid (or OLLAMA_BASE_URL is configured)
+- [ ] ANTHROPIC_API_KEY is valid
 - [ ] Database connection works (check `mara_system.db` or cloud DB)
 - [ ] Frontend builds: `npm run build`
 - [ ] No console errors in DevTools
@@ -222,11 +223,12 @@ git push origin main
 #    - Railway auto-detects Dockerfile.nodejs via railway.json
 
 # 3. Set environment variables in Railway dashboard:
-#    - OPENROUTER_API_KEY=your_key
-#    - JWT_SECRET=your_random_secret
-#    - DATABASE_URL=sqlite:///./maraai.sqlite
+#    - ANTHROPIC_API_KEY=your_key
+#    - ANTHROPIC_MODEL=claude-sonnet-4-20250514
+#    - SESSION_SECRET=your_random_secret
+#    - DATABASE_URL=sqlite:////data/maraai.sqlite
 #    - NODE_ENV=production
-#    - CORS_ORIGINS=https://maraai.net
+#    - CORS_ORIGINS=https://your-domain.app
 
 # 4. Add a volume (optional, for persistent SQLite):
 #    Mount path: /app/data
@@ -244,8 +246,9 @@ docker build -t maraai:latest -f Dockerfile.nodejs .
 
 # Run
 docker run -p 5000:5000 \
-  -e OPENROUTER_API_KEY=your_key \
-  -e JWT_SECRET=your_secret \
+  -e ANTHROPIC_API_KEY=your_key \
+  -e ANTHROPIC_MODEL=claude-sonnet-4-20250514 \
+  -e SESSION_SECRET=your_secret \
   -e NODE_ENV=production \
   maraai:latest
 ```
@@ -258,11 +261,11 @@ docker run -p 5000:5000 \
 ```bash
 NODE_ENV=production
 PORT=5000
-OPENROUTER_API_KEY=your_production_key
-OPENROUTER_MODEL=openai/gpt-4o-mini
-JWT_SECRET=your_strong_random_secret
-DATABASE_URL=sqlite:///./maraai.sqlite
-CORS_ORIGINS=https://maraai.net,https://www.maraai.net
+ANTHROPIC_API_KEY=your_production_key
+ANTHROPIC_MODEL=claude-sonnet-4-20250514
+SESSION_SECRET=your_strong_random_secret
+DATABASE_URL=sqlite:////data/maraai.sqlite
+CORS_ORIGINS=https://your-domain.app
 LOG_LEVEL=info
 MARA_BRAIN_AUTOSAVE_INTERVAL=30000
 ```
@@ -281,9 +284,9 @@ npm run start
 
 ## 🔍 TROUBLESHOOTING
 
-### **Issue: "OPENROUTER_API_KEY is not set"**
-- Solution: Add `OPENROUTER_API_KEY` to `.env` file
-- Get key: https://openrouter.ai/keys
+### **Issue: "ANTHROPIC_API_KEY is not set"**
+- Solution: Add `ANTHROPIC_API_KEY` to `.env` file
+- Get key: https://console.anthropic.com/settings/keys
 
 ### **Issue: "Cannot find module 'storage'"**
 - Solution: Ensure `server/storage.ts` exists with correct exports
@@ -293,7 +296,7 @@ npm run start
 - Try: Hard refresh (Ctrl+Shift+R)
 
 ### **Issue: Mara not responding**
-- Check: Is OPENROUTER_API_KEY valid? (or OLLAMA_BASE_URL configured?)
+- Check: Is ANTHROPIC_API_KEY valid?
 - Check: Does WebSocket connect? (DevTools → Network → WS)
 - Check: Any rate limiting? (10 messages/min limit in server/index.ts)
 

@@ -36,7 +36,7 @@ import {
   generateImprovementIdeas,
   generateMarketingPost,
 } from './ai';
-import { getActiveProvider, checkOllamaHealth, isLLMConfigured } from './llm';
+import { getActiveProvider, checkAnthropicHealth, isLLMConfigured } from './llm';
 import { getLibraryProgress, addAndReadCustomBook, getKnowledgeStats, brainManager } from './mara-brain/index';
 import { chatRateLimit } from './rate-limit.js';
 
@@ -365,23 +365,11 @@ export async function registerRoutes(
   app.get('/api/ai/health', async (_req: any, res: any) => {
     const provider = getActiveProvider();
     const configured = isLLMConfigured();
-
-    if (provider === 'ollama') {
-      const health = await checkOllamaHealth();
-      return res.status(health.ok ? 200 : 503).json({
-        provider,
-        configured,
-        ...health,
-      });
-    }
-
-    // OpenRouter / other: configuration status plus the active model id so
-    // the admin UI can display what will actually answer the next request.
-    return res.status(configured ? 200 : 503).json({
+    const health = await checkAnthropicHealth();
+    return res.status(health.ok ? 200 : 503).json({
       provider,
       configured,
-      ok: configured,
-      model: process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini',
+      ...health,
     });
   });
 

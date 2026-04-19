@@ -9,6 +9,5 @@
     "*test.py"
   ],
   "python.testing.pytestEnabled": false,
-  "python.testing.unittestEnabled": true,
-  "geminicodeassist.project": "maraai-488fb"
+  "python.testing.unittestEnabled": true
 }
