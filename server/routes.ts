@@ -13,6 +13,7 @@ import * as videoModule from '../backend/src/modules/video.js';
 import * as reelsModule from '../backend/src/modules/reels.js';
 import * as writersModule from '../backend/src/modules/writers.js';
 import * as tradingAcademyModule from '../backend/src/modules/trading-academy.js';
+import * as creatorsModule from '../backend/src/modules/creators.js';
 import * as chatModule from '../backend/src/modules/chat.js';
 import * as ttsModule from '../backend/src/modules/tts.js';
 import * as sttModule from '../backend/src/modules/stt.js';
@@ -72,6 +73,7 @@ export async function registerRoutes(
   reelsModule.injectDeps({ storage });
   writersModule.injectDeps({ storage });
   tradingAcademyModule.injectDeps({ storage });
+  creatorsModule.injectDeps({ storage });
   ttsModule.injectDeps({
     classic: 'nova',
     friendly: 'shimmer',
@@ -197,6 +199,24 @@ export async function registerRoutes(
   app.post('/api/trading/lessons/:id/quiz', requireAuth, tradingAcademyModule.submitQuiz);
   app.get('/api/trading/progress', requireAuth, tradingAcademyModule.getProgress);
   app.get('/api/trading/certificates', requireAuth, tradingAcademyModule.getCertificates);
+
+  // --- Creator Tools (PR G) -------------------------------------------------
+  // Aggregated earnings (requires creator.revenue_share feature).
+  app.get('/api/creator/earnings', creatorsModule.getEarnings);
+  app.get('/api/creator/earnings/history', creatorsModule.getEarningsHistory);
+  // Writer-side analytics (pages/views/likes/followers). A distinct path from
+  // the existing reels-focused `/api/creator/analytics` (videoModule) which
+  // returns a different shape already consumed by the frontend; merging the
+  // two is deferred to the dashboard wiring PR.
+  app.get('/api/creator/dashboard-analytics', creatorsModule.getAnalytics);
+  // Payout requests (list is open to any signed-in user so creators can see
+  // their own past requests even if their active plan has lapsed; POST
+  // requires the creator.payouts feature).
+  app.get('/api/creator/payouts', creatorsModule.listMyPayouts);
+  app.post('/api/creator/payouts', creatorsModule.createPayout);
+  // Admin endpoints.
+  app.get('/api/admin/creator/payouts', creatorsModule.adminListPayouts);
+  app.patch('/api/admin/creator/payouts/:id', creatorsModule.adminUpdatePayout);
 
   // Creator endpoints (require auth)
   app.get('/api/creator/post-status', requireAuth, videoModule.creatorPostStatus);

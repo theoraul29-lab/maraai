@@ -43,6 +43,13 @@
       "when": 1776543356000,
       "tag": "0005_trading_academy",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1776548500000,
+      "tag": "0006_creator_tools",
+      "breakpoints": true
     }
   ]
 }
