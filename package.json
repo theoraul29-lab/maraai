@@ -5,9 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server/index.ts",
-    "build": "npm run build:frontend && if [ -d functions ]; then npm run build:functions; else echo 'No functions folder'; fi",
+    "build": "npm run build:frontend",
     "build:frontend": "cd frontend && npm install && npm run build",
-    "build:functions": "if [ -d functions ]; then cd functions && npm install && npm run build; else echo 'No functions directory, skipping.'; fi",
     "start": "tsx server/index.ts",
     "start:backend": "tsx server/index.ts",
     "deploy": "firebase deploy --project maraai-488fb",
