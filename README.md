@@ -25,7 +25,7 @@ npm run dev
 - **Backend** → http://localhost:5000 (or next available port)
 - **Health check** → http://localhost:5000/api/health
 
-> **Required:** `ANTHROPIC_API_KEY` — MaraAI uses the [Anthropic Claude API](https://console.anthropic.com/settings/keys) (model `claude-sonnet-4-20250514`) for all AI features.
+> **Required:** `ANTHROPIC_API_KEY` — MaraAI uses the [Anthropic Claude API](https://console.anthropic.com/settings/keys) (model `claude-sonnet-4-6`) for all AI features.
 
 ## Environment Variables
 
@@ -39,14 +39,14 @@ Copy `.env.example` to `.env` and set the following:
 | `DATABASE_URL` | No | SQLite path (default: `./maraai.sqlite`) |
 | `AUTH_MODE` | No | Set to `local` to bypass OAuth (dev-friendly default) |
 | `ANTHROPIC_API_KEY` | **Yes** | Anthropic API key ([console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys)) |
-| `ANTHROPIC_MODEL` | No | Claude model (default: `claude-sonnet-4-20250514`) |
+| `ANTHROPIC_MODEL` | No | Claude model (default: `claude-sonnet-4-6`) |
 | `ANTHROPIC_MAX_TOKENS` | No | Max output tokens per reply (default: `1024`) |
 | `ANTHROPIC_TIMEOUT_MS` | No | Request timeout in ms (default: `120000`) |
 | `PROCESS_AI_TASKS` | No | Set to `true` to enable autonomous Mara brain cycle |
 
 ## AI Provider & Performance
 
-MaraAI uses the [Anthropic Claude API](https://www.anthropic.com/) — model `claude-sonnet-4-20250514` by default.
+MaraAI uses the [Anthropic Claude API](https://www.anthropic.com/) — model `claude-sonnet-4-6` by default.
 
 **Tips:**
 - Probe current provider health at any time: `GET /api/ai/health` returns `{ provider, configured, model, ok, error? }`.
@@ -112,7 +112,7 @@ npm start       # starts the backend serving the built frontend
 | `SESSION_SECRET` | *(random secret)* | Use Railway's "Generate" button |
 | `DATABASE_URL` | `sqlite:////data/maraai.sqlite` | Requires the Volume above. **Four** slashes encode an absolute path (`/data/...`); three slashes would be interpreted as relative to `CWD` and would not persist across redeploys. |
 | `ANTHROPIC_API_KEY` | *(your key)* | Get one from https://console.anthropic.com/settings/keys |
-| `ANTHROPIC_MODEL` | `claude-sonnet-4-20250514` | Optional — defaults to this model |
+| `ANTHROPIC_MODEL` | `claude-sonnet-4-6` | Optional — defaults to this model |
 | `PROCESS_AI_TASKS` | `false` | Set `true` to enable autonomous brain cycle |
 
 ### Verify after deploy
@@ -124,7 +124,7 @@ curl https://<your-railway-domain>/api/health
 
 # AI provider health (Anthropic key presence + model)
 curl https://<your-railway-domain>/api/ai/health
-# Expected: {"provider":"anthropic","configured":true,"ok":true,"model":"claude-sonnet-4-20250514"}
+# Expected: {"provider":"anthropic","configured":true,"ok":true,"model":"claude-sonnet-4-6"}
 ```
 
 ## Smoke Tests

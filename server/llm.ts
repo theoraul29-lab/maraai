@@ -3,7 +3,7 @@
  *
  * Single provider. Required env:
  *   ANTHROPIC_API_KEY           (required — get one from https://console.anthropic.com/settings/keys)
- *   ANTHROPIC_MODEL             (optional — default: claude-sonnet-4-20250514)
+ *   ANTHROPIC_MODEL             (optional — default: claude-sonnet-4-6)
  *   ANTHROPIC_MAX_TOKENS        (optional — default: 1024)
  *   ANTHROPIC_TIMEOUT_MS        (optional — default: 120000)
  */
@@ -13,7 +13,7 @@ import Anthropic from '@anthropic-ai/sdk';
 // Retained for API compatibility with callers that used to pass/read this.
 export type LLMProvider = 'anthropic';
 
-const DEFAULT_MODEL = 'claude-sonnet-4-20250514';
+const DEFAULT_MODEL = 'claude-sonnet-4-6';
 const DEFAULT_MAX_TOKENS = 1024;
 const DEFAULT_TIMEOUT_MS = 120_000;
 
@@ -65,24 +65,52 @@ function getClient(): Anthropic {
 
 /**
  * Anthropic expects `system` as a separate parameter and `messages` as only
- * user/assistant turns. Combine multiple system messages (rare) into one.
+ * user/assistant turns with strictly alternating roles (first must be `user`).
+ *
+ * Callers in this app often produce consecutive `user` turns because the
+ * incoming message is saved to chat history *before* history is read back,
+ * and then the current user message is appended again. We normalize here so
+ * the Anthropic API never 400s on "consecutive user messages":
+ *
+ *   - Multiple system messages are joined into one `system` string.
+ *   - Empty/whitespace-only turns are dropped.
+ *   - Consecutive turns with the same role are merged (content joined with
+ *     a blank line) so roles alternate.
+ *   - A leading `assistant` turn is dropped (Anthropic requires the first
+ *     turn to be `user`).
  */
 function splitSystemAndMessages(messages: LLMMessage[]): {
   system: string | undefined;
   turns: { role: 'user' | 'assistant'; content: string }[];
 } {
   const systemParts: string[] = [];
-  const turns: { role: 'user' | 'assistant'; content: string }[] = [];
+  const rawTurns: { role: 'user' | 'assistant'; content: string }[] = [];
   for (const m of messages) {
     if (m.role === 'system') {
-      systemParts.push(m.content);
-    } else {
-      turns.push({ role: m.role, content: m.content });
+      if (m.content && m.content.trim().length > 0) systemParts.push(m.content);
+    } else if (m.content && m.content.trim().length > 0) {
+      rawTurns.push({ role: m.role, content: m.content });
     }
   }
+
+  const merged: { role: 'user' | 'assistant'; content: string }[] = [];
+  for (const t of rawTurns) {
+    const last = merged[merged.length - 1];
+    if (last && last.role === t.role) {
+      last.content = `${last.content}\n\n${t.content}`;
+    } else {
+      merged.push({ ...t });
+    }
+  }
+
+  // Anthropic requires the first message to be `user`.
+  while (merged.length > 0 && merged[0].role !== 'user') {
+    merged.shift();
+  }
+
   return {
     system: systemParts.length > 0 ? systemParts.join('\n\n') : undefined,
-    turns,
+    turns: merged,
   };
 }
 

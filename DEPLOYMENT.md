@@ -16,7 +16,7 @@
 
 ### **Backend AI Integration**
 - ✅ **Mara AI (Anthropic Claude)** - `server/ai.ts` handles all AI responses
-  - Model: `claude-sonnet-4-20250514`
+  - Model: `claude-sonnet-4-6`
   - Mood detection (happy, excited, sad, calm, curious, neutral)
   - Context awareness from chat history
   - Temperature 0.95 for creative responses
@@ -69,7 +69,7 @@ npm install
 # Set environment variables (create .env file)
 cat > .env << EOF
 ANTHROPIC_API_KEY=your_anthropic_key_here
-ANTHROPIC_MODEL=claude-sonnet-4-20250514
+ANTHROPIC_MODEL=claude-sonnet-4-6
 DATABASE_URL=sqlite:///./maraai.sqlite
 SESSION_SECRET=your_random_session_secret
 NODE_ENV=development
@@ -112,7 +112,7 @@ User Message → server/index.ts (WebSocket)
 checkRateLimit() → getUserPreferences()
     ↓
 getMaraResponse() from server/ai.ts
-    ├── Anthropic Claude API call (claude-sonnet-4-20250514)
+    ├── Anthropic Claude API call (claude-sonnet-4-6)
     ├── detectMood() - analyze response
     ├── buildContextPrompt() - from mara-brain.ts
     └── Return { response, detectedMood }
@@ -224,7 +224,7 @@ git push origin main
 
 # 3. Set environment variables in Railway dashboard:
 #    - ANTHROPIC_API_KEY=your_key
-#    - ANTHROPIC_MODEL=claude-sonnet-4-20250514
+#    - ANTHROPIC_MODEL=claude-sonnet-4-6
 #    - SESSION_SECRET=your_random_secret
 #    - DATABASE_URL=sqlite:////data/maraai.sqlite
 #    - NODE_ENV=production
@@ -247,7 +247,7 @@ docker build -t maraai:latest -f Dockerfile.nodejs .
 # Run
 docker run -p 5000:5000 \
   -e ANTHROPIC_API_KEY=your_key \
-  -e ANTHROPIC_MODEL=claude-sonnet-4-20250514 \
+  -e ANTHROPIC_MODEL=claude-sonnet-4-6 \
   -e SESSION_SECRET=your_secret \
   -e NODE_ENV=production \
   maraai:latest
@@ -262,7 +262,7 @@ docker run -p 5000:5000 \
 NODE_ENV=production
 PORT=5000
 ANTHROPIC_API_KEY=your_production_key
-ANTHROPIC_MODEL=claude-sonnet-4-20250514
+ANTHROPIC_MODEL=claude-sonnet-4-6
 SESSION_SECRET=your_strong_random_secret
 DATABASE_URL=sqlite:////data/maraai.sqlite
 CORS_ORIGINS=https://your-domain.app
