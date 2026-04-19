@@ -72,7 +72,11 @@ app.use(
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
-      return callback(new Error('CORS not allowed'), false);
+      // Deny by omitting CORS headers, but never throw — a thrown error here
+      // becomes an uncaught middleware error and Express returns 500 for
+      // *every* request (including same-origin asset loads from index.html),
+      // which turns the app into a black page on any misconfigured origin.
+      return callback(null, false);
     },
     credentials: true,
   }),
