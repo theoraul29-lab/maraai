@@ -12,6 +12,7 @@ import { eq } from 'drizzle-orm';
 import * as videoModule from '../backend/src/modules/video.js';
 import * as reelsModule from '../backend/src/modules/reels.js';
 import * as writersModule from '../backend/src/modules/writers.js';
+import * as tradingAcademyModule from '../backend/src/modules/trading-academy.js';
 import * as chatModule from '../backend/src/modules/chat.js';
 import * as ttsModule from '../backend/src/modules/tts.js';
 import * as sttModule from '../backend/src/modules/stt.js';
@@ -70,6 +71,7 @@ export async function registerRoutes(
   videoModule.injectDeps({ storage, db, api, z, creatorPostRequestSchema, likesTable });
   reelsModule.injectDeps({ storage });
   writersModule.injectDeps({ storage });
+  tradingAcademyModule.injectDeps({ storage });
   ttsModule.injectDeps({
     classic: 'nova',
     friendly: 'shimmer',
@@ -178,6 +180,23 @@ export async function registerRoutes(
   app.delete('/api/writers/comments/:commentId', requireAuth, writersModule.deleteComment);
   app.get('/api/writers/:id/access', writersModule.getAccess);
   app.post('/api/writers/:id/purchase', requireAuth, writersModule.purchaseArticle);
+
+  // --- Trading Academy (PR F) -----------------------------------------------
+  //
+  // Feature gating is checked inside the handlers themselves rather than with
+  // `requireFeature` middleware because:
+  //   * `listModules` and `getModule` must respond 200 even for locked
+  //     modules (the frontend renders a paywalled preview)
+  //   * `getLesson` / `completeLesson` / `submitQuiz` need to know which
+  //     FeatureKey to enforce, and that key is read from the module row
+  //     (not fixed on the route).
+  app.get('/api/trading/modules', tradingAcademyModule.listModules);
+  app.get('/api/trading/modules/:slug', tradingAcademyModule.getModule);
+  app.get('/api/trading/lessons/:id', tradingAcademyModule.getLesson);
+  app.post('/api/trading/lessons/:id/complete', requireAuth, tradingAcademyModule.completeLesson);
+  app.post('/api/trading/lessons/:id/quiz', requireAuth, tradingAcademyModule.submitQuiz);
+  app.get('/api/trading/progress', requireAuth, tradingAcademyModule.getProgress);
+  app.get('/api/trading/certificates', requireAuth, tradingAcademyModule.getCertificates);
 
   // Creator endpoints (require auth)
   app.get('/api/creator/post-status', requireAuth, videoModule.creatorPostStatus);

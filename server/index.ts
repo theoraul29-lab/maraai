@@ -16,6 +16,7 @@ import { checkRateLimit } from './rate-limit.js';
 import * as authApi from './modules/auth-api.js';
 import { registerBillingApi } from './billing/api.js';
 import { seedPlans } from './billing/seed.js';
+import { seedTradingAcademy } from './trading/seed.js';
 import { z } from 'zod';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { db } from './db.js';
@@ -177,6 +178,17 @@ app.use((req, res, next) => {
   } catch (err) {
     console.error('[billing] seed failed:', err);
     throw err;
+  }
+
+  // Trading Academy catalogue (PR F). Additive — missing rows are
+  // inserted, existing rows are updated with the current content above.
+  try {
+    await seedTradingAcademy();
+    console.log('[trading] academy catalogue seeded');
+  } catch (err) {
+    // Do NOT throw: if the content seed fails, the API is still usable
+    // (just with an empty catalogue). We'd rather boot than crash-loop.
+    console.error('[trading] seed failed (continuing):', err);
   }
 
   // Serve uploaded reel files from the configured volume. Mounted BEFORE

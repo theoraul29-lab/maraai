@@ -63,6 +63,16 @@ import {
   type InsertSelfReflection,
   type PlatformInsight,
   type InsertPlatformInsight,
+  tradingModules,
+  tradingLessons,
+  tradingLessonProgress,
+  tradingCertificates,
+  type TradingModule,
+  type InsertTradingModule,
+  type TradingLesson,
+  type InsertTradingLesson,
+  type TradingLessonProgress,
+  type TradingCertificate,
 } from "../shared/schema";
 import { eq, desc, and, sql, lt, gte, like, or, count, inArray } from "drizzle-orm";
 import type { User } from "../shared/models/auth";
@@ -238,6 +248,29 @@ export interface IStorage {
     userId: string,
     data: { displayName?: string; bio?: string },
   ): Promise<User | null>;
+
+  // === Trading Academy (PR F) ===
+  listTradingModules(): Promise<TradingModule[]>;
+  getTradingModuleBySlug(slug: string): Promise<TradingModule | null>;
+  getTradingModuleById(id: number): Promise<TradingModule | null>;
+  listTradingLessonsByModule(moduleId: number): Promise<TradingLesson[]>;
+  getTradingLessonById(id: number): Promise<TradingLesson | null>;
+  upsertTradingModule(mod: InsertTradingModule): Promise<TradingModule>;
+  upsertTradingLesson(lesson: InsertTradingLesson): Promise<TradingLesson>;
+  recordLessonCompletion(
+    userId: string,
+    lessonId: number,
+    quizScore: number | null,
+  ): Promise<TradingLessonProgress>;
+  listUserLessonProgress(
+    userId: string,
+    lessonIds?: number[],
+  ): Promise<TradingLessonProgress[]>;
+  issueCertificateIfEligible(
+    userId: string,
+    moduleId: number,
+  ): Promise<TradingCertificate | null>;
+  listUserCertificates(userId: string): Promise<TradingCertificate[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1428,6 +1461,232 @@ export class DatabaseStorage implements IStorage {
       .from(videoComments)
       .where(eq(videoComments.videoId, videoId));
     return Number(row?.n ?? 0);
+  }
+
+  // ==========================================================
+  // Trading Academy (PR F)
+  // ==========================================================
+
+  async listTradingModules(): Promise<TradingModule[]> {
+    return await db
+      .select()
+      .from(tradingModules)
+      .orderBy(tradingModules.level, tradingModules.orderIdx);
+  }
+
+  async getTradingModuleBySlug(slug: string): Promise<TradingModule | null> {
+    const [row] = await db
+      .select()
+      .from(tradingModules)
+      .where(eq(tradingModules.slug, slug))
+      .limit(1);
+    return row ?? null;
+  }
+
+  async getTradingModuleById(id: number): Promise<TradingModule | null> {
+    const [row] = await db
+      .select()
+      .from(tradingModules)
+      .where(eq(tradingModules.id, id))
+      .limit(1);
+    return row ?? null;
+  }
+
+  async listTradingLessonsByModule(moduleId: number): Promise<TradingLesson[]> {
+    return await db
+      .select()
+      .from(tradingLessons)
+      .where(eq(tradingLessons.moduleId, moduleId))
+      .orderBy(tradingLessons.orderIdx);
+  }
+
+  async getTradingLessonById(id: number): Promise<TradingLesson | null> {
+    const [row] = await db
+      .select()
+      .from(tradingLessons)
+      .where(eq(tradingLessons.id, id))
+      .limit(1);
+    return row ?? null;
+  }
+
+  async upsertTradingModule(mod: InsertTradingModule): Promise<TradingModule> {
+    // Slug is the natural key. Content-only fields (title/description/etc.)
+    // get rewritten so seeding the catalogue a second time picks up edits
+    // without a new migration.
+    const existing = await this.getTradingModuleBySlug(mod.slug);
+    if (existing) {
+      await db
+        .update(tradingModules)
+        .set({
+          level: mod.level,
+          title: mod.title,
+          description: mod.description ?? '',
+          orderIdx: mod.orderIdx ?? 0,
+          requiredFeature: mod.requiredFeature,
+        })
+        .where(eq(tradingModules.id, existing.id));
+      const [row] = await db
+        .select()
+        .from(tradingModules)
+        .where(eq(tradingModules.id, existing.id));
+      return row;
+    }
+    const [inserted] = await db
+      .insert(tradingModules)
+      .values(mod)
+      .returning();
+    return inserted;
+  }
+
+  async upsertTradingLesson(lesson: InsertTradingLesson): Promise<TradingLesson> {
+    // Natural key is (moduleId, slug). Same motivation as upsertTradingModule.
+    const [existing] = await db
+      .select()
+      .from(tradingLessons)
+      .where(
+        and(
+          eq(tradingLessons.moduleId, lesson.moduleId),
+          eq(tradingLessons.slug, lesson.slug),
+        ),
+      )
+      .limit(1);
+    if (existing) {
+      await db
+        .update(tradingLessons)
+        .set({
+          title: lesson.title,
+          content: lesson.content ?? '',
+          videoUrl: lesson.videoUrl ?? null,
+          durationSeconds: lesson.durationSeconds ?? 0,
+          orderIdx: lesson.orderIdx ?? 0,
+          quizJson: lesson.quizJson ?? null,
+        })
+        .where(eq(tradingLessons.id, existing.id));
+      const [row] = await db
+        .select()
+        .from(tradingLessons)
+        .where(eq(tradingLessons.id, existing.id));
+      return row;
+    }
+    const [inserted] = await db
+      .insert(tradingLessons)
+      .values(lesson)
+      .returning();
+    return inserted;
+  }
+
+  async recordLessonCompletion(
+    userId: string,
+    lessonId: number,
+    quizScore: number | null,
+  ): Promise<TradingLessonProgress> {
+    // (user_id, lesson_id) is unique (enforced by migration index). On
+    // a repeat call we refresh `completed_at` and keep the best quiz
+    // score seen so far — users aren't penalised for re-taking a quiz.
+    const [existing] = await db
+      .select()
+      .from(tradingLessonProgress)
+      .where(
+        and(
+          eq(tradingLessonProgress.userId, userId),
+          eq(tradingLessonProgress.lessonId, lessonId),
+        ),
+      )
+      .limit(1);
+
+    if (existing) {
+      const newScore =
+        quizScore === null
+          ? existing.quizScore
+          : existing.quizScore === null
+            ? quizScore
+            : Math.max(existing.quizScore, quizScore);
+      await db
+        .update(tradingLessonProgress)
+        .set({ quizScore: newScore, completedAt: new Date() })
+        .where(eq(tradingLessonProgress.id, existing.id));
+      const [row] = await db
+        .select()
+        .from(tradingLessonProgress)
+        .where(eq(tradingLessonProgress.id, existing.id));
+      return row;
+    }
+
+    const [inserted] = await db
+      .insert(tradingLessonProgress)
+      .values({ userId, lessonId, quizScore })
+      .returning();
+    return inserted;
+  }
+
+  async listUserLessonProgress(
+    userId: string,
+    lessonIds?: number[],
+  ): Promise<TradingLessonProgress[]> {
+    if (lessonIds && lessonIds.length > 0) {
+      return await db
+        .select()
+        .from(tradingLessonProgress)
+        .where(
+          and(
+            eq(tradingLessonProgress.userId, userId),
+            inArray(tradingLessonProgress.lessonId, lessonIds),
+          ),
+        );
+    }
+    return await db
+      .select()
+      .from(tradingLessonProgress)
+      .where(eq(tradingLessonProgress.userId, userId));
+  }
+
+  async issueCertificateIfEligible(
+    userId: string,
+    moduleId: number,
+  ): Promise<TradingCertificate | null> {
+    // A certificate is issued once every lesson in the module is completed.
+    // The `avgScore` averages graded quizzes only (lessons without a quiz
+    // are ignored for scoring). If the user already has a certificate we
+    // return the existing row instead of inserting a duplicate.
+    const lessons = await this.listTradingLessonsByModule(moduleId);
+    if (lessons.length === 0) return null;
+
+    const lessonIds = lessons.map((l) => l.id);
+    const progress = await this.listUserLessonProgress(userId, lessonIds);
+    if (progress.length < lessons.length) return null;
+
+    const scored = progress
+      .map((p) => p.quizScore)
+      .filter((s): s is number => typeof s === 'number');
+    const avg = scored.length
+      ? Math.round(scored.reduce((a, b) => a + b, 0) / scored.length)
+      : 0;
+
+    const [existing] = await db
+      .select()
+      .from(tradingCertificates)
+      .where(
+        and(
+          eq(tradingCertificates.userId, userId),
+          eq(tradingCertificates.moduleId, moduleId),
+        ),
+      )
+      .limit(1);
+    if (existing) return existing;
+
+    const [inserted] = await db
+      .insert(tradingCertificates)
+      .values({ userId, moduleId, avgScore: avg })
+      .returning();
+    return inserted ?? null;
+  }
+
+  async listUserCertificates(userId: string): Promise<TradingCertificate[]> {
+    return await db
+      .select()
+      .from(tradingCertificates)
+      .where(eq(tradingCertificates.userId, userId))
+      .orderBy(desc(tradingCertificates.issuedAt));
   }
 }
 
