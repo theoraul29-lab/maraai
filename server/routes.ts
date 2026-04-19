@@ -38,6 +38,7 @@ import {
 } from './ai';
 import { getActiveProvider, checkAnthropicHealth, isLLMConfigured } from './llm';
 import { getLibraryProgress, addAndReadCustomBook, getKnowledgeStats, brainManager } from './mara-brain/index';
+import { learningRateLimiter } from './mara-brain/rate-limiter';
 import { chatRateLimit } from './rate-limit.js';
 
 export async function registerRoutes(
@@ -356,6 +357,108 @@ export async function registerRoutes(
       return res.status(500).json({ ok: false, message: 'Unknown trigger failure.' });
     } catch (error) {
       res.status(500).json({ error: 'Failed to trigger brain cycle' });
+    }
+  });
+
+  // === Mara Learning Engine (admin only) ===
+  // Per-module growth proposals + reading/learning queue. Proposals are
+  // generated autonomously by the brain cycle and require admin approval
+  // before they take effect on the platform.
+
+  app.get('/api/admin/learning/stats', requireAdmin, async (_req: any, res: any) => {
+    try {
+      const [insights, queue, knowledge] = await Promise.all([
+        storage.getPlatformInsights(),
+        storage.getPendingLearningTasks(100),
+        getKnowledgeStats(),
+      ]);
+      const byModule: Record<string, { proposed: number; approved: number; rejected: number; completed: number }> = {};
+      for (const i of insights) {
+        if (!byModule[i.module]) {
+          byModule[i.module] = { proposed: 0, approved: 0, rejected: 0, completed: 0 };
+        }
+        const bucket = byModule[i.module];
+        if (i.status === 'proposed') bucket.proposed += 1;
+        else if (i.status === 'approved' || i.status === 'in_progress') bucket.approved += 1;
+        else if (i.status === 'rejected') bucket.rejected += 1;
+        else if (i.status === 'completed') bucket.completed += 1;
+      }
+      res.json({
+        rateLimiter: learningRateLimiter.stats(),
+        byModule,
+        queuePending: queue.length,
+        knowledge,
+      });
+    } catch (error) {
+      console.error('[Learning] stats failed:', error);
+      res.status(500).json({ error: 'Failed to get learning stats' });
+    }
+  });
+
+  app.get('/api/admin/learning/insights', requireAdmin, async (req: any, res: any) => {
+    try {
+      const status = typeof req.query.status === 'string' ? req.query.status : undefined;
+      const module = typeof req.query.module === 'string' ? req.query.module : undefined;
+      const rawLimit = Number.parseInt(String(req.query.limit ?? '100'), 10);
+      const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(rawLimit, 1), 500) : 100;
+      let insights = await storage.getPlatformInsights(status);
+      if (module) insights = insights.filter((i) => i.module === module);
+      res.json({ insights: insights.slice(0, limit) });
+    } catch (error) {
+      console.error('[Learning] list insights failed:', error);
+      res.status(500).json({ error: 'Failed to list insights' });
+    }
+  });
+
+  app.post('/api/admin/learning/insights/:id/status', requireAdmin, async (req: any, res: any) => {
+    try {
+      const id = Number.parseInt(String(req.params.id), 10);
+      if (!Number.isFinite(id) || id <= 0) {
+        return res.status(400).json({ error: 'Invalid insight id' });
+      }
+      const allowed = ['proposed', 'approved', 'in_progress', 'completed', 'rejected'];
+      const status = typeof req.body?.status === 'string' ? req.body.status : '';
+      if (!allowed.includes(status)) {
+        return res.status(400).json({ error: `status must be one of: ${allowed.join(', ')}` });
+      }
+      const updated = await storage.updatePlatformInsightStatus(id, status);
+      if (!updated) return res.status(404).json({ error: 'Insight not found' });
+      res.json({ insight: updated });
+    } catch (error) {
+      console.error('[Learning] update insight status failed:', error);
+      res.status(500).json({ error: 'Failed to update insight status' });
+    }
+  });
+
+  app.get('/api/admin/learning/queue', requireAdmin, async (_req: any, res: any) => {
+    try {
+      const pending = await storage.getPendingLearningTasks(100);
+      res.json({ queue: pending });
+    } catch (error) {
+      console.error('[Learning] list queue failed:', error);
+      res.status(500).json({ error: 'Failed to list learning queue' });
+    }
+  });
+
+  app.post('/api/admin/learning/queue', requireAdmin, async (req: any, res: any) => {
+    try {
+      const topic = typeof req.body?.topic === 'string' ? req.body.topic.trim() : '';
+      const reason = typeof req.body?.reason === 'string' ? req.body.reason.trim() : '';
+      const rawPriority = typeof req.body?.priority === 'string' ? req.body.priority : 'medium';
+      const priority = ['low', 'medium', 'high', 'critical'].includes(rawPriority) ? rawPriority : 'medium';
+      if (!topic || topic.length < 2 || topic.length > 500) {
+        return res.status(400).json({ error: 'topic is required (2-500 chars)' });
+      }
+      const created = await storage.createLearningTask({
+        topic,
+        reason: reason || `Admin-added: ${topic}`,
+        priority,
+        source: 'admin',
+      });
+      res.json({ task: created });
+    } catch (error) {
+      console.error('[Learning] add to queue failed:', error);
+      res.status(500).json({ error: 'Failed to add to learning queue' });
     }
   });
 

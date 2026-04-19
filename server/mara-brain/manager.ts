@@ -27,7 +27,9 @@ export type BrainStatus = {
 };
 
 // Defaults — overridable via env. Keep conservative for Railway free/hobby CPU.
-const DEFAULT_CYCLE_INTERVAL_MS = 6 * 60 * 60 * 1000; // 6h
+// 2h interval — balances timely learning with Claude API cost (user pick).
+// Override via BRAIN_CYCLE_INTERVAL_MS env var.
+const DEFAULT_CYCLE_INTERVAL_MS = 2 * 60 * 60 * 1000; // 2h
 const DEFAULT_SELF_POST_INTERVAL_MS = 4 * 60 * 60 * 1000; // 4h
 const DEFAULT_MANUAL_COOLDOWN_MS = 5 * 60 * 1000; // 5min between manual triggers
 
