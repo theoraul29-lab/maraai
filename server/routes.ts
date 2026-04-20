@@ -21,6 +21,7 @@ import * as userPrefsModule from '../backend/src/modules/userPrefs.js';
 import * as adminModule from '../backend/src/modules/admin.js';
 import * as feedbackModule from '../backend/src/modules/feedback.js';
 import * as profileModule from '../backend/src/modules/profile.js';
+import * as notificationsModule from '../backend/src/modules/notifications.js';
 import * as ordersModule from '../backend/src/modules/orders.js';
 import * as adminOrdersModule from '../backend/src/modules/adminOrders.js';
 import * as paymentsModule from '../backend/src/modules/payments.js';
@@ -157,6 +158,12 @@ export async function registerRoutes(
 
   // Feedback/moderation endpoint (require auth)
   app.post('/api/moderate', requireAuth, feedbackModule.moderate);
+
+  // --- Notifications (Phase 2 P2.1) -----------------------------------------
+  app.get('/api/notifications', requireAuth, notificationsModule.listNotifications);
+  app.get('/api/notifications/unread-count', requireAuth, notificationsModule.unreadCount);
+  app.post('/api/notifications/:id/read', requireAuth, notificationsModule.markRead);
+  app.post('/api/notifications/read-all', requireAuth, notificationsModule.markAllRead);
 
   // Video and feed endpoints
   app.get(api.videos.list.path, videoModule.listVideos);

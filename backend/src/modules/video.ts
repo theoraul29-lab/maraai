@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import type { IStorage } from '../../../server/storage';
 import { eq, sql } from 'drizzle-orm';
+import { notifyReelLike } from '../../../server/notifications/producer.js';
 
 let deps: {
   storage: IStorage;
@@ -51,6 +52,20 @@ export async function likeVideo(req: Request, res: Response) {
     const videoId = parseInt(req.params.id, 10);
     if (isNaN(videoId)) return res.status(400).json({ message: 'Invalid video ID' });
     const result = await deps.storage.likeVideo(userId, videoId);
+    if (userId && result && (result as { liked?: boolean }).liked) {
+      try {
+        const video = await deps.storage.getVideoById(videoId);
+        if (video?.userId && video.userId !== userId) {
+          void notifyReelLike({
+            videoOwnerId: video.userId,
+            likerId: userId,
+            videoId,
+          });
+        }
+      } catch {
+        /* best-effort */
+      }
+    }
     res.json(result);
   } catch (error) {
     res.status(500).json({ message: 'Failed to like video' });
