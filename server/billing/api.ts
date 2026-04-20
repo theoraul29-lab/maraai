@@ -17,13 +17,20 @@ import { plans, subscriptions } from '../../shared/models/billing.js';
 import { users } from '../../shared/models/auth.js';
 import { PLAN_CATALOGUE } from './plans.js';
 import { getActivePlanId } from './features.js';
+import {
+  isStripeConfigured,
+  createCheckoutSession as createStripeCheckout,
+  verifyWebhookEvent as verifyStripeEvent,
+  handleStripeEvent,
+  cancelUserSubscriptionAtPeriodEnd as cancelStripeAtPeriodEnd,
+} from './stripe.js';
 
 function paymentsEnabled(): boolean {
   return process.env.PAYMENTS_ENABLED === 'true';
 }
 
 function stripeConfigured(): boolean {
-  return !!(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET);
+  return isStripeConfigured();
 }
 
 function paypalConfigured(): boolean {
@@ -197,14 +204,37 @@ export function registerBillingApi(app: Express): void {
         });
       }
 
-      // Real Checkout session creation will be wired here in a follow-up
-      // once operator keys are in place. We intentionally *do not* create a
-      // DB row yet — it's the webhook's job to persist the subscription
-      // once the provider confirms payment.
+      // Stripe Checkout — create a live Session and return its URL so the
+      // frontend can redirect. We intentionally DO NOT create a
+      // `subscriptions` row here; that happens in the webhook after payment
+      // is confirmed, which is the only trustworthy signal.
+      if (provider === 'stripe') {
+        try {
+          const user = await db
+            .select({ email: users.email })
+            .from(users)
+            .where(eq(users.id, userId))
+            .limit(1);
+          const { url, sessionId } = await createStripeCheckout({
+            userId,
+            userEmail: user[0]?.email ?? null,
+            plan,
+          });
+          return res.json({ url, sessionId, provider: 'stripe' });
+        } catch (err) {
+          console.error('[billing] stripe checkout failed:', err);
+          return res.status(502).json({
+            error: 'stripe_checkout_failed',
+            message: 'Could not create Stripe checkout session.',
+          });
+        }
+      }
+
+      // PayPal wiring ships in P2.0.2 — same shape (returns { url }) so the
+      // frontend just picks the provider and redirects.
       return res.status(501).json({
         error: 'checkout_not_implemented',
-        message:
-          'Provider checkout wiring ships in a follow-up PR; this endpoint currently only validates configuration.',
+        message: 'PayPal checkout not wired yet (Phase 2 P2.0.2).',
         planId,
         provider,
       });
@@ -252,6 +282,20 @@ export function registerBillingApi(app: Express): void {
       const now = new Date();
       const preservedPeriodEnd = sub.periodEnd ?? now;
 
+      // For live Stripe subscriptions, cancel at period end so the user
+      // keeps access until they've consumed what they paid for. The DB
+      // update will be reconciled by the webhook; we still write a local
+      // 'cancelled' marker now so /me reflects the intent immediately.
+      if (sub.provider === 'stripe' && sub.providerSubscriptionId) {
+        try {
+          await cancelStripeAtPeriodEnd(sub.providerSubscriptionId);
+        } catch (err) {
+          console.error('[billing] stripe cancel_at_period_end failed:', err);
+          // Intentionally continue: we still want to record the cancellation
+          // locally so the user isn't stuck if the provider call hiccups.
+        }
+      }
+
       await db
         .update(subscriptions)
         .set({
@@ -275,16 +319,45 @@ export function registerBillingApi(app: Express): void {
   });
 
   // -------------------------------------------------------------------------
-  // Stripe webhook stub.
-  // Signature verification + event handling is the next follow-up. We
-  // register the route now so the URL is stable and can be added to the
-  // Stripe dashboard before the implementation lands.
+  // POST /api/billing/stripe/webhook
+  // Live webhook handler. Verifies the Stripe signature against the raw
+  // request body (captured by the express.json `verify` hook in index.ts)
+  // and dispatches to idempotent upserts in `stripe.ts#handleStripeEvent`.
+  //
+  // We always 200 after a successful verify, even if the event is one we
+  // don't act on, so Stripe stops retrying. Unhandled events are no-ops.
   // -------------------------------------------------------------------------
-  app.post('/api/billing/stripe/webhook', (_req: Request, res: Response) => {
-    if (!paymentsEnabled() || !stripeConfigured()) {
+  app.post('/api/billing/stripe/webhook', async (req: Request, res: Response) => {
+    if (!stripeConfigured()) {
       return res.status(503).json({ error: 'stripe_not_configured' });
     }
-    return res.status(501).json({ error: 'webhook_not_implemented' });
+    const signature = req.headers['stripe-signature'];
+    if (typeof signature !== 'string' || !signature) {
+      return res.status(400).json({ error: 'missing_signature' });
+    }
+    const rawBody = req.rawBody;
+    if (!(rawBody instanceof Buffer)) {
+      // express.json captured rawBody as a Buffer in index.ts; if it's
+      // missing here something upstream is stripping it and signature
+      // verification cannot succeed.
+      console.error('[billing] stripe webhook missing rawBody');
+      return res.status(400).json({ error: 'missing_raw_body' });
+    }
+    let event;
+    try {
+      event = verifyStripeEvent(rawBody, signature);
+    } catch (err) {
+      console.error('[billing] stripe signature verify failed:', err);
+      return res.status(400).json({ error: 'invalid_signature' });
+    }
+    try {
+      await handleStripeEvent(event);
+    } catch (err) {
+      console.error('[billing] stripe event handler failed:', event.type, err);
+      // Return 500 so Stripe retries — our upserts are idempotent.
+      return res.status(500).json({ error: 'handler_failed' });
+    }
+    return res.json({ received: true });
   });
 
   app.post('/api/billing/paypal/webhook', (_req: Request, res: Response) => {
