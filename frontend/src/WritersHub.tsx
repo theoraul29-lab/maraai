@@ -91,10 +91,21 @@ const MAX_DRAFTS = 20;
 
 function htmlToPlainText(html: string): string {
   if (!html) return '';
-  // DOMPurify with ALLOWED_TAGS:[] flattens to text while keeping whitespace.
-  return DOMPurify.sanitize(html, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] })
-    .replace(/\s+/g, ' ')
-    .trim();
+  // DOMPurify strips tags, but the result is still HTML-entity-encoded
+  // (`&amp;` stays `&amp;`), which would poison excerpts and char counts.
+  // Round-trip through a detached DOM node so textContent gives us real
+  // plain text.
+  const stripped = DOMPurify.sanitize(html, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+  const el = document.createElement('div');
+  el.innerHTML = stripped;
+  return (el.textContent || '').replace(/\s+/g, ' ').trim();
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
 function buildExcerpt(html: string, max = 240): string {
@@ -372,8 +383,11 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
 
   const insertSuggestion = () => {
     if (!maraSuggestion) return;
-    // Append as a paragraph — keeps the rich HTML shape.
-    setContent((prev) => `${prev}<p>${DOMPurify.sanitize(maraSuggestion, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] })}</p>`);
+    // `maraSuggestion` is plain text from the chat API — HTML-escape it
+    // instead of running it through DOMPurify, which would parse tag-like
+    // tokens (`<section>`, `<script>`, ...) as real elements and strip them,
+    // silently losing content.
+    setContent((prev) => `${prev}<p>${escapeHtml(maraSuggestion)}</p>`);
     setMaraSuggestion('');
   };
 
