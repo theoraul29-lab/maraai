@@ -48,13 +48,19 @@ function toPublicProfile(
 function validateOptionalUrl(v: unknown, maxLen = 2048): { ok: true; value: string | null } | { ok: false } {
   if (v === null || v === '') return { ok: true, value: null };
   if (typeof v !== 'string' || v.length > maxLen) return { ok: false };
+  let normalized: string;
   try {
     const url = new URL(v);
     if (url.protocol !== 'https:' && url.protocol !== 'http:') return { ok: false };
+    // Use the parsed .href so that quotes / control chars are percent-encoded
+    // before the value is stored. This prevents things like
+    //   https://x.com/img"test.jpg
+    // from breaking the frontend's CSS `url("…")` construction.
+    normalized = url.href;
   } catch {
     return { ok: false };
   }
-  return { ok: true, value: v };
+  return { ok: true, value: normalized };
 }
 
 function parsePagination(
