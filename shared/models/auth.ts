@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 // Session storage table.
 // (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
@@ -65,7 +65,9 @@ export const oauthAccounts = sqliteTable(
   },
   (table) => [
     index('oauth_accounts_user_id').on(table.userId),
-    index('oauth_accounts_provider_puid').on(table.provider, table.providerUserId),
+    // Unique so a single Google (or Facebook) identity can only be linked to
+    // one local user. Mirrors CREATE UNIQUE INDEX in migration 0008.
+    uniqueIndex('oauth_accounts_provider_puid').on(table.provider, table.providerUserId),
   ],
 );
 

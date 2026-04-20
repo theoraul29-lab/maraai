@@ -162,6 +162,20 @@ async function upsertUserFromGoogle(info: GoogleUserInfo): Promise<string> {
   const providerUserId = info.sub;
   if (!providerUserId) throw new Error('missing_sub');
 
+  // Require a verified email. Two reasons:
+  //   (a) /api/auth/me treats any user row with email=NULL as "anonymous" and
+  //       the frontend will never surface them. Creating an OAuth user without
+  //       email would silently strand them in a half-authenticated state.
+  //   (b) Linking to an existing local row by email is only safe when Google
+  //       has itself verified the user controls that address — otherwise a
+  //       malicious Google account with a spoofed email claim could take over
+  //       a pre-existing email+password account.
+  // We request the `email` scope so Google returns both fields on any normal
+  // consent. Missing/unverified email falls through to explicit errors.
+  if (!info.email) throw new Error('oauth_missing_email');
+  if (info.email_verified === false) throw new Error('oauth_email_not_verified');
+  const email = info.email.toLowerCase();
+
   // 1) Is this Google account already linked?
   const linked = await db
     .select()
@@ -175,15 +189,14 @@ async function upsertUserFromGoogle(info: GoogleUserInfo): Promise<string> {
     .limit(1);
   if (linked[0]) return linked[0].userId;
 
-  const email = info.email ? info.email.toLowerCase() : null;
-  const displayName =
-    info.name || info.given_name || (email ? email.split('@')[0] : null) || 'User';
+  const displayName = info.name || info.given_name || email.split('@')[0] || 'User';
   const picture = info.picture || null;
 
   // 2) Is there an existing local user with this email? Link to it so users
   //    who previously signed up with email + password don't get duplicated
-  //    when they click "Continue with Google" later.
-  if (email) {
+  //    when they click "Continue with Google" later. Safe because we already
+  //    required email_verified above.
+  {
     const existing = await db
       .select()
       .from(users)
@@ -212,7 +225,7 @@ async function upsertUserFromGoogle(info: GoogleUserInfo): Promise<string> {
     const inserted = tx
       .insert(users)
       .values({
-        email: email ?? undefined,
+        email,
         firstName: info.given_name ?? null,
         lastName: info.family_name ?? null,
         displayName,
