@@ -265,6 +265,29 @@ export const notifications = pgTable('notifications', {
     .notNull(),
 });
 
+// === PUSH SUBSCRIPTIONS ===
+// One row per (user, endpoint). Endpoint is unique — browsers reuse the
+// same subscription across refreshes, but rotate it periodically (or when
+// the user reinstalls the app), so we UPSERT by endpoint on subscribe and
+// garbage-collect stale rows when web-push reports 404/410.
+export const pushSubscriptions = pgTable(
+  'push_subscriptions',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    userId: text('user_id').notNull(),
+    endpoint: text('endpoint').notNull(),
+    p256dh: text('p256dh').notNull(),
+    auth: text('auth').notNull(),
+    userAgent: text('user_agent'),
+    createdAt: integer('created_at', { mode: 'timestamp' })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (t) => ({
+    endpointUnique: unique('push_subscriptions_endpoint_unique').on(t.endpoint),
+  }),
+);
+
 // === COMMENTS ===
 export const comments = pgTable('comments', {
   id: integer('id').primaryKey({ autoIncrement: true }),

@@ -64,6 +64,13 @@
       "when": 1776677228000,
       "tag": "0008_oauth_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1776698400000,
+      "tag": "0009_push_subscriptions",
+      "breakpoints": true
     }
   ]
 }
