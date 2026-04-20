@@ -311,15 +311,27 @@ async function upsertSubscription(args: {
     return;
   }
 
-  await db
-    .update(subscriptions)
-    .set({ status: 'cancelled', cancelledAt: now, updatedAt: now })
-    .where(
-      and(
-        eq(subscriptions.userId, userId),
-        eq(subscriptions.status, 'active'),
-      ),
-    );
+  // Only demote prior active subscriptions when the *new* one is already
+  // active. PayPal fires BILLING.SUBSCRIPTION.CREATED with status
+  // APPROVAL_PENDING before the user has approved the checkout; mapping
+  // that to our 'incomplete' status is correct, but if we also cancelled
+  // their existing active sub here, an abandoned checkout would leave the
+  // user with no access until the next billing-portal fix.
+  //
+  // When status=active on first sight (BILLING.SUBSCRIPTION.ACTIVATED
+  // arriving before CREATED, or upsert via PAYMENT.SALE.COMPLETED), this
+  // still runs — `getActivePlanId` always picks the most-recent active row.
+  if (status === 'active') {
+    await db
+      .update(subscriptions)
+      .set({ status: 'cancelled', cancelledAt: now, updatedAt: now })
+      .where(
+        and(
+          eq(subscriptions.userId, userId),
+          eq(subscriptions.status, 'active'),
+        ),
+      );
+  }
 
   await db.insert(subscriptions).values({
     userId,
