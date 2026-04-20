@@ -339,7 +339,7 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
       const bodyText = `📖 ${work.title}\n${work.excerpt || ''}\n${link}`;
       await axios.post(
         `${API_URL}/api/profile/posts`,
-        { body: bodyText, imageUrl: work.coverImage || null, source: 'writers', sourceId: work.id },
+        { content: bodyText, imageUrl: work.coverImage || null, source: 'writers', sourceId: work.id },
         { withCredentials: true },
       );
       setShareToast(t('writers.sharedToYou', 'Shared on your profile'));
