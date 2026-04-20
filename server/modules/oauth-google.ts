@@ -173,7 +173,10 @@ async function upsertUserFromGoogle(info: GoogleUserInfo): Promise<string> {
   // We request the `email` scope so Google returns both fields on any normal
   // consent. Missing/unverified email falls through to explicit errors.
   if (!info.email) throw new Error('oauth_missing_email');
-  if (info.email_verified === false) throw new Error('oauth_email_not_verified');
+  // Must be strictly `true` — `undefined` (field omitted by Google) is NOT a
+  // verification. Otherwise a response that simply drops the field would be
+  // treated as verified and could link a spoofed email to an existing row.
+  if (info.email_verified !== true) throw new Error('oauth_email_not_verified');
   const email = info.email.toLowerCase();
 
   // 1) Is this Google account already linked?
