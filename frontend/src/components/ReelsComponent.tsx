@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
+import TikTokFeed from './TikTokFeed';
+import type { TikTokReel } from './TikTokFeed';
 import '../styles/Reels.css';
 
 const API_URL = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:5000');
@@ -220,60 +222,38 @@ const ReelsComponent: React.FC = () => {
         </div>
       )}
 
-      {/* Feed Mode */}
+      {/* Feed Mode - TikTok-style vertical full-screen */}
       {activeMode === 'feed' && (
-        <div className="reels-feed">
-          <div className="feed-sidebar">
-            <h3>{t('reels.trendingTags')}</h3>
-            <div className="tag-list">
-              {['AI', 'Tech', 'Future', 'Design', 'Music', 'Comedy', 'Trading', 'Tutorial'].map(tag => (
-                <button key={tag} className={`tag-btn ${filterTag === tag ? 'active' : ''}`} onClick={() => setFilterTag(filterTag === tag ? '' : tag)}>#{tag}</button>
-              ))}
-            </div>
+        <div className="reels-feed reels-feed-tiktok">
+          <div className="tiktok-tag-bar">
+            {['AI', 'Tech', 'Future', 'Design', 'Music', 'Comedy', 'Trading', 'Tutorial'].map(tag => (
+              <button
+                key={tag}
+                className={`tiktok-tag-btn ${filterTag === tag ? 'active' : ''}`}
+                onClick={() => setFilterTag(filterTag === tag ? '' : tag)}
+              >#{tag}</button>
+            ))}
           </div>
 
-          <div className="reels-grid">
-            {loading && reels.length === 0 ? (
-              <div className="empty-state"><p>{t('reels.loadingFeed')}</p></div>
-            ) : filteredReels.length === 0 ? (
-              <div className="empty-state"><p>{t('reels.noReels')}</p></div>
-            ) : (
-              <>
-                {filteredReels.map(reel => (
-                  <div key={reel.id} className="reel-card" onClick={() => { setSelectedReel(reel); handleView(reel.id); }}>
-                    <div className="reel-thumbnail">
-                      {(reel.url.includes('youtube') || reel.url.includes('youtu.be')) ? (
-                        <img src={`https://img.youtube.com/vi/${extractYouTubeId(reel.url)}/mqdefault.jpg`} alt={reel.title} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
-                      ) : null}
-                      <div className="reel-overlay">
-                        <span className="reel-duration">{reel.duration}</span>
-                        <span className="reel-views">👁️ {formatNumber(reel.views)}</span>
-                      </div>
-                    </div>
-                    <div className="reel-info">
-                      <div className="reel-creator">
-                        <span className="creator-avatar">{reel.avatar}</span>
-                        <span className="creator-name">{reel.creator}</span>
-                      </div>
-                      <h4>{reel.title}</h4>
-                      <div className="reel-stats">
-                        <span>❤️ {formatNumber(reel.likes)}</span>
-                        <span>💬 {reel.comments}</span>
-                        <span>{reel.isSaved ? '🔖' : '📤'}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                {hasMore && (
-                  <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '16px' }}>
-                    <button className="btn-submit" onClick={() => fetchFeed(false)} disabled={loading}>
-                      {loading ? t('reels.loadingFeed') : t('reels.loadMore')}
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+          <TikTokFeed
+            reels={filteredReels as TikTokReel[]}
+            onLike={handleLike}
+            onSave={handleSave}
+            onView={handleView}
+            onComment={(id) => {
+              const r = reels.find(x => x.id === id);
+              if (r) setSelectedReel(r);
+            }}
+            onShare={async (id) => {
+              try {
+                await axios.post(`${API_URL}/api/videos/${id}/share`);
+                setReels(prev => prev.map(r => r.id === id ? { ...r, shares: r.shares + 1 } : r));
+              } catch { /* silent */ }
+            }}
+            onLoadMore={() => { if (hasMore && !loading) fetchFeed(false); }}
+            loading={loading}
+            hasMore={hasMore}
+          />
         </div>
       )}
 
