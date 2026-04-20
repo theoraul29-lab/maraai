@@ -1,0 +1,244 @@
+/* ===== TipTap Rich Editor (Writers Hub) ===== */
+
+.rt-shell {
+  display: flex;
+  flex-direction: column;
+  background: #12121c;
+  border: 1px solid #2a2a3a;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.rt-loading {
+  padding: 16px;
+  color: #666;
+  text-align: center;
+}
+
+.rt-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px;
+  background: #1a1a2e;
+  border-bottom: 1px solid #2a2a3a;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.rt-sep {
+  width: 1px;
+  background: #2a2a3a;
+  margin: 2px 4px;
+}
+
+.rt-btn {
+  min-width: 36px;
+  min-height: 36px;
+  padding: 6px 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: #ddd;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  font-family: inherit;
+}
+
+.rt-btn:hover {
+  background: #23233a;
+  border-color: #3a3a55;
+}
+
+.rt-btn.is-active {
+  background: #8b5cf6;
+  color: white;
+  border-color: #8b5cf6;
+}
+
+.rt-btn:focus-visible {
+  outline: 2px solid #8b5cf6;
+  outline-offset: 2px;
+}
+
+.rt-content {
+  min-height: 280px;
+  max-height: 60vh;
+  padding: 16px;
+  color: #e5e5e5;
+  font-size: 16px;
+  line-height: 1.7;
+  overflow-y: auto;
+  /* TipTap injects a ProseMirror-editable class, so focus outlines need
+     to live on the wrapping .rt-content selector. */
+}
+
+.rt-content:focus {
+  outline: none;
+}
+
+.rt-content p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: #6c6c80;
+  pointer-events: none;
+  float: left;
+  height: 0;
+}
+
+.rt-content h1,
+.rt-content h2,
+.rt-content h3 {
+  color: #b794f4;
+  font-weight: 700;
+  margin: 0.8em 0 0.4em;
+  line-height: 1.25;
+}
+
+.rt-content h1 { font-size: 1.8rem; }
+.rt-content h2 { font-size: 1.5rem; }
+.rt-content h3 { font-size: 1.25rem; }
+
+.rt-content p { margin: 0 0 0.75em; }
+
+.rt-content a {
+  color: #8b5cf6;
+  text-decoration: underline;
+}
+
+.rt-content blockquote {
+  margin: 1em 0;
+  padding: 0.5em 1em;
+  border-left: 3px solid #8b5cf6;
+  color: #bbb;
+  background: rgba(139, 92, 246, 0.08);
+  border-radius: 0 6px 6px 0;
+}
+
+.rt-content code {
+  background: #23233a;
+  border: 1px solid #2a2a3a;
+  color: #ff9d6b;
+  padding: 0.1em 0.4em;
+  border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.92em;
+}
+
+.rt-content pre {
+  background: #0b0b14;
+  border: 1px solid #2a2a3a;
+  padding: 12px 16px;
+  border-radius: 8px;
+  overflow-x: auto;
+  color: #e5e5e5;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9em;
+}
+
+.rt-content pre code {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  font-size: inherit;
+}
+
+.rt-content ul,
+.rt-content ol {
+  padding-left: 1.4em;
+  margin: 0 0 0.75em;
+}
+
+.rt-content li { margin: 0.25em 0; }
+
+.rt-img,
+.rt-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 0.5em 0;
+}
+
+.rt-content hr {
+  border: 0;
+  border-top: 1px solid #2a2a3a;
+  margin: 1.2em 0;
+}
+
+/* Compact mode (mobile): slightly smaller buttons / content */
+.rt-compact .rt-btn {
+  min-width: 32px;
+  min-height: 32px;
+  padding: 4px 8px;
+  font-size: 13px;
+}
+
+.rt-compact .rt-content {
+  min-height: 200px;
+  font-size: 15px;
+  padding: 12px;
+}
+
+/* ===== Read-mode rendering of sanitised rich HTML ===== */
+.writers-rich-body {
+  color: #e5e5e5;
+  line-height: 1.75;
+  font-size: 17px;
+}
+
+.writers-rich-body h1,
+.writers-rich-body h2,
+.writers-rich-body h3 {
+  color: #b794f4;
+  font-weight: 700;
+  margin: 1.2em 0 0.5em;
+}
+
+.writers-rich-body p { margin: 0 0 1em; }
+
+.writers-rich-body a {
+  color: #8b5cf6;
+  text-decoration: underline;
+}
+
+.writers-rich-body blockquote {
+  margin: 1em 0;
+  padding: 0.6em 1.1em;
+  border-left: 3px solid #8b5cf6;
+  color: #bbb;
+  background: rgba(139, 92, 246, 0.08);
+  border-radius: 0 6px 6px 0;
+}
+
+.writers-rich-body code {
+  background: #23233a;
+  color: #ff9d6b;
+  padding: 0.1em 0.4em;
+  border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.92em;
+}
+
+.writers-rich-body pre {
+  background: #0b0b14;
+  border: 1px solid #2a2a3a;
+  padding: 12px 16px;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+.writers-rich-body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 0.5em 0;
+}
+
+.writers-rich-body ul,
+.writers-rich-body ol {
+  padding-left: 1.4em;
+  margin: 0 0 1em;
+}

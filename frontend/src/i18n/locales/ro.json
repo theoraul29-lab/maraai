@@ -816,7 +816,41 @@
     "insertInText": "📝 Inserează în text",
     "untitled": "Fără titlu",
     "maraNoSuggestion": "Mara nu a putut genera o sugestie.",
-    "maraError": "⚠️ Nu s-a putut contacta Mara AI."
+    "maraError": "⚠️ Nu s-a putut contacta Mara AI.",
+    "tagline": "Platforma dedicată scriitorilor",
+    "home": "Acasă",
+    "heroTitle": "Scrie. Publică. Câștigă cititori.",
+    "heroBody": "Writers Hub este casa scriitorilor pe MaraAI — articole publice, VIP și premium, editor cu format bogat și audiența comunității într-un singur loc.",
+    "ctaWrite": "Începe să scrii",
+    "ctaExplore": "Explorează biblioteca",
+    "featured": "Recomandate",
+    "categoryLabel": "Categorie",
+    "visibilityLabel": "Vizibilitate",
+    "priceLabel": "Preț (EUR)",
+    "readTime": "{{n}} min",
+    "shareOnYou": "Distribuie pe You",
+    "sharedToYou": "Distribuit pe profil",
+    "shareFailed": "Distribuire eșuată",
+    "publishFailed": "Publicare eșuată",
+    "errorAuthRequired": "Conectează-te ca să publici",
+    "errorPlanBlocked": "Planul tău nu permite această vizibilitate",
+    "errorVipRequired": "Abonament VIP necesar pentru acest articol",
+    "errorPurchaseRequired": "Achiziție necesară pentru acest articol",
+    "errorNotFound": "Articol negăsit",
+    "errorGeneric": "Articolul nu s-a putut încărca",
+    "category": {
+      "fiction": "Ficțiune",
+      "nonFiction": "Non-ficțiune",
+      "business": "Business",
+      "poetry": "Poezie",
+      "journal": "Jurnal",
+      "tutorials": "Tutoriale"
+    },
+    "visibility": {
+      "public": "Public",
+      "vip": "VIP",
+      "paid": "Premium"
+    }
   },
   "reels": {
     "feed": "Flux",
