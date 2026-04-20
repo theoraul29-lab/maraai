@@ -15,6 +15,7 @@ import { setupSessionAuth } from './auth.js';
 import { checkRateLimit } from './rate-limit.js';
 import * as authApi from './modules/auth-api.js';
 import * as oauthGoogle from './modules/oauth-google.js';
+import * as oauthFacebook from './modules/oauth-facebook.js';
 import { registerBillingApi } from './billing/api.js';
 import { seedPlans } from './billing/seed.js';
 import { seedTradingAcademy } from './trading/seed.js';
@@ -117,6 +118,10 @@ app.post('/api/auth/oauth/:provider', authApi.oauth);
 // Google OAuth 2.0 — redirect flow. See server/modules/oauth-google.ts.
 app.get('/api/auth/google', oauthGoogle.startGoogle);
 app.get('/api/auth/google/callback', oauthGoogle.googleCallback);
+
+// Facebook OAuth 2.0 — redirect flow. See server/modules/oauth-facebook.ts.
+app.get('/api/auth/facebook', oauthFacebook.startFacebook);
+app.get('/api/auth/facebook/callback', oauthFacebook.facebookCallback);
 
 // Subscription / billing endpoints. Public plan catalogue + authed
 // `/me`, `/subscribe` (503 until PAYMENTS_ENABLED + provider keys), `/cancel`.

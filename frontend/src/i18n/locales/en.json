@@ -89,6 +89,15 @@
       "logout_failed": "Logout failed.",
       "oauth_unsupported": "Unsupported OAuth provider.",
       "oauth_not_enabled": "OAuth sign-in is not yet enabled. Use email and password for now.",
+      "oauth_not_configured": "This sign-in option isn't configured yet. Please contact support.",
+      "oauth_state_mismatch": "Sign-in session expired. Please try again.",
+      "oauth_missing_code": "Sign-in was cancelled or incomplete. Please try again.",
+      "oauth_exchange_failed": "We couldn't verify your account with the provider. Please try again.",
+      "oauth_missing_email": "Your account has no verified email. Please grant email permission and retry.",
+      "oauth_email_not_verified": "Your email isn't verified with the provider. Please verify it and try again.",
+      "oauth_user_upsert_failed": "We couldn't create your profile. Please try again.",
+      "oauth_session_failed": "Sign-in succeeded but the session couldn't be created. Please try again.",
+      "oauth_generic": "Sign-in failed. Please try again.",
       "network_error": "Network error. Please try again.",
       "unknown": "Something went wrong. Please try again."
     }

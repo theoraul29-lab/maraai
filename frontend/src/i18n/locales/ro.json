@@ -89,6 +89,15 @@
       "logout_failed": "Deconectarea a eșuat.",
       "oauth_unsupported": "Furnizor OAuth neacceptat.",
       "oauth_not_enabled": "Autentificarea OAuth nu este încă activă. Folosește email și parolă.",
+      "oauth_not_configured": "Această opțiune de autentificare nu este configurată. Contactează suportul.",
+      "oauth_state_mismatch": "Sesiunea de autentificare a expirat. Încearcă din nou.",
+      "oauth_missing_code": "Autentificarea a fost anulată sau incompletă. Încearcă din nou.",
+      "oauth_exchange_failed": "Nu am putut verifica contul cu furnizorul. Încearcă din nou.",
+      "oauth_missing_email": "Contul tău nu are un email verificat. Acordă permisiunea pentru email și reîncearcă.",
+      "oauth_email_not_verified": "Emailul tău nu este verificat la furnizor. Verifică-l și reîncearcă.",
+      "oauth_user_upsert_failed": "Nu am putut crea profilul tău. Încearcă din nou.",
+      "oauth_session_failed": "Autentificarea a reușit dar sesiunea nu a putut fi creată. Încearcă din nou.",
+      "oauth_generic": "Autentificarea a eșuat. Încearcă din nou.",
       "network_error": "Eroare de rețea. Încearcă din nou.",
       "unknown": "Ceva nu a mers bine. Încearcă din nou."
     }
