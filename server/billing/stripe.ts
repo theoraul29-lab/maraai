@@ -250,21 +250,25 @@ async function upsertSubscription(args: {
 
 function mapStripeStatus(
   status: Stripe.Subscription.Status,
-  _cancelAtPeriodEnd: boolean,
+  cancelAtPeriodEnd: boolean,
 ): 'active' | 'cancelled' | 'past_due' | 'incomplete' {
-  // `cancel_at_period_end=true` is intentionally ignored here — when Stripe
-  // reports `status='active'` with `cancel_at_period_end=true`, the sub is
-  // still active *right now* and will lapse at `periodEnd`; the feature
-  // gate keeps granting access until then simply because we return 'active'
-  // from the `status === 'active'` branch below.
+  // When the user has already scheduled cancellation, report 'cancelled'
+  // even though Stripe still says status='active'. The feature gate
+  // (`getActivePlanId`) intentionally grants access to 'cancelled' rows
+  // with a future `periodEnd`, so this does not change feature access —
+  // it only keeps the UI consistent with the user's stated intent. Without
+  // this branch, the `/api/billing/subscription` cancel endpoint writes
+  // status='cancelled' synchronously, Stripe then fires
+  // `customer.subscription.updated` with status='active' +
+  // cancel_at_period_end=true, and `upsertSubscription` flips the row back
+  // to 'active' — making the user think their cancellation failed.
   //
-  // Previously this function also returned 'active' on
-  // `cancelAtPeriodEnd && status !== 'canceled'`, which silently granted
-  // access to users in `past_due` / `unpaid` / `incomplete` states whenever
-  // their sub was also scheduled to cancel at period end — letting users
-  // with failing payments keep all premium features. Review feedback:
-  // https://github.com/theoraul29-lab/maraai/pull/59#discussion_r... .
-  if (status === 'active' || status === 'trialing') return 'active';
+  // `past_due` / `unpaid` / `incomplete` are reported as-is regardless of
+  // `cancel_at_period_end` so a user with failing payments doesn't keep
+  // premium features just because a cancellation is scheduled.
+  if (status === 'active' || status === 'trialing') {
+    return cancelAtPeriodEnd ? 'cancelled' : 'active';
+  }
   if (status === 'past_due' || status === 'unpaid') return 'past_due';
   if (status === 'canceled') return 'cancelled';
   return 'incomplete';
