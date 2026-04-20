@@ -23,7 +23,7 @@
   "nav": {
     "home": "ホーム",
     "reels": "リール",
-    "trading": "トレーディング",
+    "trading": "Trading Akademie",
     "vip": "VIP",
     "creator": "クリエイター",
     "writers": "ライター",
@@ -94,7 +94,7 @@
     }
   },
   "trading": {
-    "title": "トレーディング戦略アカデミー",
+    "title": "TRADING AKADEMIE",
     "exit": "終了",
     "closeLabel": "トレーディングを閉じる",
     "strategyHub": "戦略ハブ ({{count}})",
@@ -618,7 +618,11 @@
           "Monthly review of AI vs manual performance."
         ]
       }
-    }
+    },
+    "shareOnYou": "📣 Share on You",
+    "shareOnYouLabel": "Publish this strategy as a post on your profile",
+    "sharedToYou": "Shared on your profile",
+    "shareFailed": "Could not share. Try again."
   },
   "vip": {
     "title": "プレミアム VIP モジュール",

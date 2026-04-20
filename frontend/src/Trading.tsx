@@ -79,6 +79,8 @@ export const Trading: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const [askMaraQ, setAskMaraQ] = useState('');
   const [maraAnswer, setMaraAnswer] = useState('');
   const [askingMara, setAskingMara] = useState(false);
+  const [shareBusy, setShareBusy] = useState(false);
+  const [shareToast, setShareToast] = useState<string | null>(null);
   const container = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -131,6 +133,45 @@ export const Trading: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     if (canAccess(s)) {
       setSelectedStrat(s);
       setMaraAnswer('');
+    }
+  };
+
+  // Auto-dismiss share confirmation after 3s so it doesn't stick around.
+  useEffect(() => {
+    if (!shareToast) return;
+    const id = window.setTimeout(() => setShareToast(null), 3000);
+    return () => window.clearTimeout(id);
+  }, [shareToast]);
+
+  const shareToYou = async (strat: Strategy) => {
+    if (!user) return;
+    setShareBusy(true);
+    try {
+      const steps = getStratSteps(strat);
+      const stepLines = Array.isArray(steps)
+        ? steps.map((s, i) => `${i + 1}. ${s}`).join('\n')
+        : '';
+      // Keep the empty-string entries: they are intentional blank-line
+      // separators between the title block, description, and steps. A
+      // `.filter(Boolean)` here would silently run every section together.
+      const body = [
+        `📊 ${t('trading.title')} — ${getStratName(strat)}`,
+        `(${getLevelLabel(strat.level)})`,
+        '',
+        getStratDesc(strat),
+        '',
+        stepLines,
+      ].join('\n');
+      await axios.post(
+        `${API_URL}/api/profile/posts`,
+        { content: body, source: 'trading', sourceId: strat.id },
+        { withCredentials: true },
+      );
+      setShareToast(t('trading.sharedToYou'));
+    } catch {
+      setShareToast(t('trading.shareFailed'));
+    } finally {
+      setShareBusy(false);
     }
   };
 
@@ -243,12 +284,31 @@ export const Trading: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                   <strong>Mara:</strong> {maraAnswer}
                 </div>
               )}
+
+              {user && (
+                <div className="trading-share-row">
+                  <button
+                    type="button"
+                    onClick={() => shareToYou(selectedStrat)}
+                    disabled={shareBusy}
+                    className="trading-share-btn"
+                    title={t('trading.shareOnYouLabel')}
+                  >
+                    {shareBusy ? '…' : t('trading.shareOnYou')}
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <div className="trading-empty-ai">{t('trading.selectStrategy')}</div>
           )}
         </div>
       </div>
+      {shareToast && (
+        <div className="trading-share-toast" role="status" aria-live="polite">
+          {shareToast}
+        </div>
+      )}
     </div>
   );
 };

@@ -23,7 +23,7 @@
   "nav": {
     "home": "الرئيسية",
     "reels": "ريلز",
-    "trading": "التداول",
+    "trading": "Trading Akademie",
     "vip": "VIP",
     "creator": "المبدع",
     "writers": "الكتّاب",
@@ -94,7 +94,7 @@
     }
   },
   "trading": {
-    "title": "أكاديمية استراتيجيات التداول",
+    "title": "TRADING AKADEMIE",
     "exit": "خروج",
     "closeLabel": "إغلاق التداول",
     "strategyHub": "مركز الاستراتيجيات ({{count}})",
@@ -618,7 +618,11 @@
           "Monthly review of AI vs manual performance."
         ]
       }
-    }
+    },
+    "shareOnYou": "📣 Share on You",
+    "shareOnYouLabel": "Publish this strategy as a post on your profile",
+    "sharedToYou": "Shared on your profile",
+    "shareFailed": "Could not share. Try again."
   },
   "vip": {
     "title": "الوحدة المميزة VIP",

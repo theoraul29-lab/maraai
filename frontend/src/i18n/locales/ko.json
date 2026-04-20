@@ -23,7 +23,7 @@
   "nav": {
     "home": "홈",
     "reels": "릴스",
-    "trading": "트레이딩",
+    "trading": "Trading Akademie",
     "vip": "VIP",
     "creator": "크리에이터",
     "writers": "작가",
@@ -80,7 +80,7 @@
     "or": "또는"
   },
   "trading": {
-    "title": "TRADING STRATEGY ACADEMY",
+    "title": "TRADING AKADEMIE",
     "exit": "EXIT",
     "closeLabel": "Close Trading",
     "strategyHub": "STRATEGY HUB ({{count}})",
@@ -604,7 +604,11 @@
           "Monthly review of AI vs manual performance."
         ]
       }
-    }
+    },
+    "shareOnYou": "📣 Share on You",
+    "shareOnYouLabel": "Publish this strategy as a post on your profile",
+    "sharedToYou": "Shared on your profile",
+    "shareFailed": "Could not share. Try again."
   },
   "vip": {
     "title": "PREMIUM VIP MODULE",

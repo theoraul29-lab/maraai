@@ -23,7 +23,7 @@
   "nav": {
     "home": "Главная",
     "reels": "Reels",
-    "trading": "Трейдинг",
+    "trading": "Trading Akademie",
     "vip": "VIP",
     "creator": "Создатель",
     "writers": "Писатели",
@@ -94,7 +94,7 @@
     }
   },
   "trading": {
-    "title": "АКАДЕМИЯ СТРАТЕГИЙ ТРЕЙДИНГА",
+    "title": "TRADING AKADEMIE",
     "exit": "ВЫХОД",
     "closeLabel": "Закрыть трейдинг",
     "strategyHub": "ЦЕНТР СТРАТЕГИЙ ({{count}})",
@@ -618,7 +618,11 @@
           "Monthly review of AI vs manual performance."
         ]
       }
-    }
+    },
+    "shareOnYou": "📣 Share on You",
+    "shareOnYouLabel": "Publish this strategy as a post on your profile",
+    "sharedToYou": "Shared on your profile",
+    "shareFailed": "Could not share. Try again."
   },
   "vip": {
     "title": "PREMIUM VIP-МОДУЛЬ",
