@@ -977,5 +977,19 @@
   "languageSelector": {
     "label": "Język",
     "changeLanguage": "Zmień język"
+  },
+  "pwa": {
+    "installTitle": "Zainstaluj Mara",
+    "installBody": "Dodaj hellomara.net do ekranu głównego, aby uzyskać pełne wrażenia z aplikacji.",
+    "installCta": "Zainstaluj",
+    "installDismiss": "Nie teraz",
+    "installDismissAria": "Zamknij komunikat instalacji",
+    "iosHintTitle": "Zainstaluj Mara",
+    "iosHintBody": "Dotknij Udostępnij, a następnie „Do ekranu początkowego”, aby zainstalować aplikację.",
+    "iosHintDismiss": "Rozumiem",
+    "updateTitle": "Aktualizacja gotowa",
+    "updateBody": "Dostępna jest nowsza wersja Mara.",
+    "updateCta": "Odśwież",
+    "updateDismissAria": "Zamknij aktualizację"
   }
 }

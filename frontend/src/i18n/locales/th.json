@@ -977,5 +977,19 @@
   "languageSelector": {
     "label": "ภาษา",
     "changeLanguage": "เปลี่ยนภาษา"
+  },
+  "pwa": {
+    "installTitle": "ติดตั้ง Mara",
+    "installBody": "เพิ่ม hellomara.net ไปยังหน้าจอหลักเพื่อประสบการณ์แอปเต็มรูปแบบ",
+    "installCta": "ติดตั้ง",
+    "installDismiss": "ไม่ใช่ตอนนี้",
+    "installDismissAria": "ปิดคำเชิญติดตั้ง",
+    "iosHintTitle": "ติดตั้ง Mara",
+    "iosHintBody": "แตะ แชร์ แล้วเลือก \"เพิ่มไปยังหน้าจอหลัก\" เพื่อติดตั้งแอป",
+    "iosHintDismiss": "รับทราบ",
+    "updateTitle": "อัปเดตพร้อม",
+    "updateBody": "มี Mara เวอร์ชันใหม่กว่า",
+    "updateCta": "รีเฟรช",
+    "updateDismissAria": "ปิดการแจ้งอัปเดต"
   }
 }

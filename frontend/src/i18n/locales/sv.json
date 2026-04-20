@@ -977,5 +977,19 @@
   "languageSelector": {
     "label": "Språk",
     "changeLanguage": "Byt språk"
+  },
+  "pwa": {
+    "installTitle": "Installera Mara",
+    "installBody": "Lägg till hellomara.net på startskärmen för en komplett appupplevelse.",
+    "installCta": "Installera",
+    "installDismiss": "Inte nu",
+    "installDismissAria": "Stäng installationsförfrågan",
+    "iosHintTitle": "Installera Mara",
+    "iosHintBody": "Tryck på Dela och sedan \"Lägg till på hemskärmen\" för att installera appen.",
+    "iosHintDismiss": "OK",
+    "updateTitle": "Uppdatering klar",
+    "updateBody": "En nyare version av Mara finns tillgänglig.",
+    "updateCta": "Uppdatera",
+    "updateDismissAria": "Stäng uppdatering"
   }
 }

@@ -991,5 +991,19 @@
   "languageSelector": {
     "label": "اللغة",
     "changeLanguage": "تغيير اللغة"
+  },
+  "pwa": {
+    "installTitle": "تثبيت Mara",
+    "installBody": "أضف hellomara.net إلى الشاشة الرئيسية للاستمتاع بتجربة تطبيق كاملة.",
+    "installCta": "تثبيت",
+    "installDismiss": "ليس الآن",
+    "installDismissAria": "إغلاق دعوة التثبيت",
+    "iosHintTitle": "تثبيت Mara",
+    "iosHintBody": "انقر على مشاركة، ثم «إضافة إلى الشاشة الرئيسية» لتثبيت التطبيق.",
+    "iosHintDismiss": "حسنًا",
+    "updateTitle": "التحديث جاهز",
+    "updateBody": "تتوفر نسخة أحدث من Mara.",
+    "updateCta": "تحديث",
+    "updateDismissAria": "إغلاق التحديث"
   }
 }

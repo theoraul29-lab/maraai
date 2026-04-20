@@ -977,5 +977,19 @@
   "languageSelector": {
     "label": "语言",
     "changeLanguage": "更改语言"
+  },
+  "pwa": {
+    "installTitle": "安装 Mara",
+    "installBody": "将 hellomara.net 添加到主屏幕以获得完整的应用体验。",
+    "installCta": "安装",
+    "installDismiss": "暂不",
+    "installDismissAria": "关闭安装提示",
+    "iosHintTitle": "安装 Mara",
+    "iosHintBody": "点击共享，然后选择「添加到主屏幕」来安装应用。",
+    "iosHintDismiss": "知道了",
+    "updateTitle": "更新就绪",
+    "updateBody": "Mara 有新版本可用。",
+    "updateCta": "刷新",
+    "updateDismissAria": "关闭更新"
   }
 }

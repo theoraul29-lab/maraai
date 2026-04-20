@@ -977,5 +977,19 @@
   "languageSelector": {
     "label": "언어",
     "changeLanguage": "언어 변경"
+  },
+  "pwa": {
+    "installTitle": "Mara 설치",
+    "installBody": "전체 앱 경험을 위해 hellomara.net을 홈 화면에 추가하세요.",
+    "installCta": "설치",
+    "installDismiss": "나중에",
+    "installDismissAria": "설치 안내 닫기",
+    "iosHintTitle": "Mara 설치",
+    "iosHintBody": "공유를 누른 다음 \"홈 화면에 추가\"를 선택하여 앱을 설치하세요.",
+    "iosHintDismiss": "확인",
+    "updateTitle": "업데이트 준비 완료",
+    "updateBody": "Mara의 새 버전이 있습니다.",
+    "updateCta": "새로고침",
+    "updateDismissAria": "업데이트 닫기"
   }
 }

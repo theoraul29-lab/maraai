@@ -1034,5 +1034,19 @@
   "languageSelector": {
     "label": "Limbă",
     "changeLanguage": "Schimbă limba"
+  },
+  "pwa": {
+    "installTitle": "Instalează Mara",
+    "installBody": "Adaugă hellomara.net pe ecranul de start pentru experiența completă de aplicație.",
+    "installCta": "Instalează",
+    "installDismiss": "Nu acum",
+    "installDismissAria": "Închide prompt-ul de instalare",
+    "iosHintTitle": "Instalează Mara",
+    "iosHintBody": "Apasă Share, apoi \"Adaugă pe ecranul de start\" pentru a instala aplicația.",
+    "iosHintDismiss": "Am înțeles",
+    "updateTitle": "Actualizare disponibilă",
+    "updateBody": "O versiune mai nouă de Mara este disponibilă.",
+    "updateCta": "Reîmprospătează",
+    "updateDismissAria": "Închide actualizarea"
   }
 }

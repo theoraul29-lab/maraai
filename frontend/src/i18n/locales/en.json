@@ -1034,5 +1034,19 @@
   "languageSelector": {
     "label": "Language",
     "changeLanguage": "Change language"
+  },
+  "pwa": {
+    "installTitle": "Install Mara",
+    "installBody": "Add hellomara.net to your home screen for a full-screen app experience.",
+    "installCta": "Install",
+    "installDismiss": "Not now",
+    "installDismissAria": "Dismiss install prompt",
+    "iosHintTitle": "Install Mara",
+    "iosHintBody": "Tap Share, then \"Add to Home Screen\" to install the app.",
+    "iosHintDismiss": "Got it",
+    "updateTitle": "Update ready",
+    "updateBody": "A newer version of Mara is available.",
+    "updateCta": "Refresh",
+    "updateDismissAria": "Dismiss update"
   }
 }

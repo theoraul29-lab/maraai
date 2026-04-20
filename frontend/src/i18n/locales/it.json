@@ -977,5 +977,19 @@
   "languageSelector": {
     "label": "Lingua",
     "changeLanguage": "Cambia lingua"
+  },
+  "pwa": {
+    "installTitle": "Installa Mara",
+    "installBody": "Aggiungi hellomara.net alla schermata Home per l'esperienza app completa.",
+    "installCta": "Installa",
+    "installDismiss": "Non ora",
+    "installDismissAria": "Chiudi invito all'installazione",
+    "iosHintTitle": "Installa Mara",
+    "iosHintBody": "Tocca Condividi, poi \"Aggiungi alla schermata Home\" per installare l'app.",
+    "iosHintDismiss": "Ho capito",
+    "updateTitle": "Aggiornamento disponibile",
+    "updateBody": "È disponibile una versione più recente di Mara.",
+    "updateCta": "Aggiorna",
+    "updateDismissAria": "Chiudi aggiornamento"
   }
 }
