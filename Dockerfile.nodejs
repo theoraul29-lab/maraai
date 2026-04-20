@@ -21,8 +21,9 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init
+# Install dumb-init for signal handling and su-exec for dropping privileges
+# at runtime (after fixing volume permissions).
+RUN apk add --no-cache dumb-init su-exec
 
 # Copy from builder
 COPY --from=builder /app/package*.json ./
@@ -33,17 +34,19 @@ COPY --from=builder /app/backend ./backend
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/migrations ./migrations
 
-# Security: don't run as root.
-# Give `nodejs` ownership of /app and create /data (default SQLite home when
-# no DATABASE_URL is set) so better-sqlite3 can open/create files. Without
-# this, boot crashes with SQLITE_CANTOPEN because /app is owned by root.
-# On Railway, attach a Volume at /data to make the SQLite file persist across
-# deploys; otherwise DB is ephemeral.
+# Create nodejs user and give it /app ownership. /data is handled at entrypoint
+# time because Railway mounts volumes as root at container start, which would
+# mask any build-time chown.
 RUN addgroup -g 1001 -S nodejs \
     && adduser -S nodejs -u 1001 \
     && mkdir -p /data \
     && chown -R nodejs:nodejs /app /data
-USER nodejs
+
+# Entrypoint script: ensure /data is writable by nodejs (required when a
+# Railway Volume is mounted there), then drop privileges to nodejs before
+# executing the real command.
+COPY scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Health check (Railway injects PORT)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
@@ -52,8 +55,9 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
 # Expose port
 EXPOSE 5000
 
-# Use dumb-init to handle signals properly
-ENTRYPOINT ["dumb-init", "--"]
+# dumb-init handles signals; entrypoint script fixes /data perms and drops
+# to nodejs before running the app.
+ENTRYPOINT ["dumb-init", "--", "/usr/local/bin/docker-entrypoint.sh"]
 
 # Start application
 CMD ["npm", "run", "start"]
