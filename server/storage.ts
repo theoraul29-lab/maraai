@@ -329,6 +329,9 @@ export interface IStorage {
       displayName?: string;
       bio?: string;
       profileImageUrl?: string | null;
+      coverImageUrl?: string | null;
+      location?: string | null;
+      website?: string | null;
     },
   ): Promise<User | null>;
 

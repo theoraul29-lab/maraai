@@ -229,7 +229,7 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
   // ------- Render ---------------------------------------------------------
 
   const coverStyle: React.CSSProperties = profile?.user.coverImageUrl
-    ? { backgroundImage: `url(${profile.user.coverImageUrl})` }
+    ? { backgroundImage: `url("${profile.user.coverImageUrl}")` }
     : {};
 
   const avatarInitial = (displayName || 'U').trim().charAt(0).toUpperCase();
