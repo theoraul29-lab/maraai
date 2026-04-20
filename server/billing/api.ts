@@ -34,7 +34,7 @@ function stripeConfigured(): boolean {
 }
 
 function paypalConfigured(): boolean {
-  return !!(process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_CLIENT_SECRET);
+  return isPayPalConfigured();
 }
 
 const subscribeBodySchema = z.object({
@@ -360,10 +360,52 @@ export function registerBillingApi(app: Express): void {
     return res.json({ received: true });
   });
 
-  app.post('/api/billing/paypal/webhook', (_req: Request, res: Response) => {
-    if (!paymentsEnabled() || !paypalConfigured()) {
+  // -------------------------------------------------------------------------
+  // POST /api/billing/paypal/webhook
+  // Live PayPal webhook handler. Verifies against PayPal's
+  // /v1/notifications/verify-webhook-signature endpoint (not a signature on
+  // the raw body the way Stripe does — PayPal requires a round-trip call
+  // using the `PAYPAL_WEBHOOK_ID` from the dashboard).
+  // -------------------------------------------------------------------------
+  app.post('/api/billing/paypal/webhook', async (req: Request, res: Response) => {
+    if (!paypalConfigured()) {
       return res.status(503).json({ error: 'paypal_not_configured' });
     }
-    return res.status(501).json({ error: 'webhook_not_implemented' });
+    if (!process.env.PAYPAL_WEBHOOK_ID) {
+      return res.status(503).json({ error: 'paypal_webhook_not_configured' });
+    }
+    const headers = readPayPalHeaders(req.headers as Record<string, unknown>);
+    if (!headers) {
+      return res.status(400).json({ error: 'missing_paypal_headers' });
+    }
+    const rawBody = req.rawBody;
+    if (!(rawBody instanceof Buffer)) {
+      console.error('[billing] paypal webhook missing rawBody');
+      return res.status(400).json({ error: 'missing_raw_body' });
+    }
+    let verified = false;
+    try {
+      verified = await verifyPayPalEvent(rawBody.toString('utf8'), headers);
+    } catch (err) {
+      console.error('[billing] paypal verify call failed:', err);
+      return res.status(502).json({ error: 'paypal_verify_failed' });
+    }
+    if (!verified) {
+      return res.status(400).json({ error: 'invalid_signature' });
+    }
+    let event;
+    try {
+      event = JSON.parse(rawBody.toString('utf8'));
+    } catch {
+      return res.status(400).json({ error: 'invalid_body' });
+    }
+    try {
+      await handlePayPalEvent(event);
+    } catch (err) {
+      console.error('[billing] paypal event handler failed:', event.event_type, err);
+      // 500 makes PayPal retry; our upserts are idempotent.
+      return res.status(500).json({ error: 'handler_failed' });
+    }
+    return res.json({ received: true });
   });
 }
