@@ -140,6 +140,11 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
   const [readingBody, setReadingBody] = useState<string>('');
   const [readingError, setReadingError] = useState<string | null>(null);
 
+  // Per-session like tracker — prevents spam-clicks from pushing multiple
+  // +1's into the DB (backend does unconditional `likes + 1` on each POST,
+  // so the guard has to live client-side until we have a real toggle API).
+  const [likedIds, setLikedIds] = useState<Set<number>>(new Set());
+
   // Share state (which article id is currently "shared to You")
   const [shareBusyId, setShareBusyId] = useState<number | null>(null);
   const [shareToast, setShareToast] = useState<string | null>(null);
@@ -327,6 +332,15 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
   };
 
   const toggleLike = async (workId: number) => {
+    // Short-circuit repeat clicks: backend's `likeWriterPage` unconditionally
+    // increments, so without this guard a user could inflate any article's
+    // like count by spamming the button.
+    if (likedIds.has(workId)) return;
+    setLikedIds((prev) => {
+      const next = new Set(prev);
+      next.add(workId);
+      return next;
+    });
     // Reading mode renders `readingWork.likes`, not `library[i].likes`, so
     // bump both — otherwise the counter in the reader appears frozen even
     // though the request was sent.
@@ -334,7 +348,7 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
     setReadingWork((prev) => (prev && prev.id === workId ? { ...prev, likes: (prev.likes || 0) + 1 } : prev));
     try {
       await axios.post(`${API_URL}/api/writers/${workId}/like`, {}, { withCredentials: true });
-    } catch { /* optimistic */ }
+    } catch { /* optimistic — counter stays incremented locally */ }
   };
 
   const askMaraAI = async () => {
@@ -607,11 +621,13 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
                         <div className="writers-manuscript-content">{w.excerpt || ''}</div>
                         <div className="writers-manuscript-meta">
                           <button
-                            className="writers-like-btn"
+                            className={`writers-like-btn ${likedIds.has(w.id) ? 'liked' : ''}`}
                             onClick={() => toggleLike(w.id)}
                             aria-label={t('writers.likes')}
+                            aria-pressed={likedIds.has(w.id) ? 'true' : 'false'}
+                            disabled={likedIds.has(w.id)}
                           >
-                            🤍 {w.likes ?? 0}
+                            {likedIds.has(w.id) ? '❤️' : '🤍'} {w.likes ?? 0}
                           </button>
                           <button className="writers-read-btn" onClick={() => openReading(w)}>
                             {t('writers.readMore')}
@@ -697,8 +713,13 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
             )}
 
             <div className="writers-reading-footer">
-              <button className="writers-like-btn" onClick={() => toggleLike(readingWork.id)}>
-                🤍 {readingWork.likes ?? 0} {t('writers.likes')}
+              <button
+                className={`writers-like-btn ${likedIds.has(readingWork.id) ? 'liked' : ''}`}
+                onClick={() => toggleLike(readingWork.id)}
+                aria-pressed={likedIds.has(readingWork.id) ? 'true' : 'false'}
+                disabled={likedIds.has(readingWork.id)}
+              >
+                {likedIds.has(readingWork.id) ? '❤️' : '🤍'} {readingWork.likes ?? 0} {t('writers.likes')}
               </button>
               {user && (
                 <button
