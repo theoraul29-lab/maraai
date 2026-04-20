@@ -27,6 +27,40 @@ import { fileURLToPath } from 'url';
 import { UPLOADS_DIR } from '../backend/src/modules/reels.js';
 dotenv.config();
 
+// Process-level safety net for *runtime* bugs in request handlers.
+//
+// Rationale (runtime): since Node v15 an unhandled promise rejection kills
+// the process. In a multi-tenant server that takes down every connected
+// user for a bug that affected only one request. For `unhandledRejection`
+// we log and keep running — individual request handlers are already wrapped
+// in try/catch + the express error middleware returns a proper 500.
+//
+// Rationale (uncaughtException): Node docs explicitly warn that it is
+// unsafe to resume after an uncaught synchronous exception — the call
+// stack unwound through code that assumed it wouldn't throw, so in-memory
+// state (DB transactions, sockets, auth) may be corrupted. We log and
+// exit(1) so the orchestrator (Railway, Docker, etc.) restarts us clean.
+//
+// NOTE: these handlers are installed AFTER the startup IIFE below attaches
+// its own .catch() — so rejections from bootstrap code (migrations, seed)
+// still terminate the process with a clear log line, rather than becoming
+// a zombie (alive but never listening).
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[process] unhandledRejection:', reason);
+  // `promise` is the rejected Promise itself; logging it usually adds no
+  // new information beyond the reason, but we keep a reference so Node
+  // doesn't garbage-collect it mid-inspection in a debugger.
+  void promise;
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('[process] uncaughtException:', err);
+  // Node docs: "It is not safe to resume normal operation after
+  // 'uncaughtException'." Exit so the orchestrator restarts us in a
+  // clean state rather than serving requests on a corrupted runtime.
+  process.exit(1);
+});
+
 const __migrationFilename = fileURLToPath(import.meta.url);
 const __migrationDirname = path.dirname(__migrationFilename);
 
@@ -523,4 +557,12 @@ app.use((req, res, next) => {
   httpServer.listen(requestedPort, runtimeState.host, () => {
     onServerReady(requestedPort);
   });
-})();
+})().catch((err) => {
+  // Bootstrap (migrations, seed, passport setup, etc.) failed before the
+  // server ever started listening. Without this .catch() the rejection
+  // would be swallowed by the `unhandledRejection` handler above and the
+  // process would live on as a zombie — alive enough for liveness probes
+  // to pass, but never bound to a port so no traffic is ever served.
+  console.error('[startup] fatal:', err);
+  process.exit(1);
+});
