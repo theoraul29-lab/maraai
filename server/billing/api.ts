@@ -17,6 +17,14 @@ import { plans, subscriptions } from '../../shared/models/billing.js';
 import { users } from '../../shared/models/auth.js';
 import { PLAN_CATALOGUE } from './plans.js';
 import { getActivePlanId } from './features.js';
+import {
+  isPayPalConfigured,
+  createPayPalSubscription,
+  cancelPayPalSubscription,
+  readWebhookHeaders as readPayPalHeaders,
+  verifyWebhookEvent as verifyPayPalEvent,
+  handlePayPalEvent,
+} from './paypal.js';
 
 function paymentsEnabled(): boolean {
   return process.env.PAYMENTS_ENABLED === 'true';
@@ -27,7 +35,7 @@ function stripeConfigured(): boolean {
 }
 
 function paypalConfigured(): boolean {
-  return !!(process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_CLIENT_SECRET);
+  return isPayPalConfigured();
 }
 
 const subscribeBodySchema = z.object({
@@ -197,14 +205,37 @@ export function registerBillingApi(app: Express): void {
         });
       }
 
-      // Real Checkout session creation will be wired here in a follow-up
-      // once operator keys are in place. We intentionally *do not* create a
-      // DB row yet — it's the webhook's job to persist the subscription
-      // once the provider confirms payment.
+      // PayPal subscription — the frontend redirects to the approval URL;
+      // the subscription row is materialised by the webhook on
+      // `BILLING.SUBSCRIPTION.ACTIVATED`.
+      if (provider === 'paypal') {
+        try {
+          const user = await db
+            .select({ email: users.email })
+            .from(users)
+            .where(eq(users.id, userId))
+            .limit(1);
+          const { url, subscriptionId } = await createPayPalSubscription({
+            userId,
+            userEmail: user[0]?.email ?? null,
+            plan,
+          });
+          return res.json({ url, subscriptionId, provider: 'paypal' });
+        } catch (err) {
+          console.error('[billing] paypal create subscription failed:', err);
+          return res.status(502).json({
+            error: 'paypal_checkout_failed',
+            message: 'Could not create PayPal subscription.',
+          });
+        }
+      }
+
+      // Stripe wiring ships in parallel (P2.0.1) — kept as 501 here so the
+      // branches don't conflict.
       return res.status(501).json({
         error: 'checkout_not_implemented',
         message:
-          'Provider checkout wiring ships in a follow-up PR; this endpoint currently only validates configuration.',
+          'Stripe checkout wiring ships in the parallel P2.0.1 PR.',
         planId,
         provider,
       });
@@ -252,6 +283,18 @@ export function registerBillingApi(app: Express): void {
       const now = new Date();
       const preservedPeriodEnd = sub.periodEnd ?? now;
 
+      // For live PayPal subscriptions, issue a provider-side cancel so the
+      // next billing cycle doesn't charge. Local DB is still marked
+      // 'cancelled' immediately; the webhook reconciles any drift.
+      if (sub.provider === 'paypal' && sub.providerSubscriptionId) {
+        try {
+          await cancelPayPalSubscription(sub.providerSubscriptionId);
+        } catch (err) {
+          console.error('[billing] paypal cancel failed:', err);
+          // Continue: user isn't stuck if the provider call hiccups.
+        }
+      }
+
       await db
         .update(subscriptions)
         .set({
@@ -287,10 +330,52 @@ export function registerBillingApi(app: Express): void {
     return res.status(501).json({ error: 'webhook_not_implemented' });
   });
 
-  app.post('/api/billing/paypal/webhook', (_req: Request, res: Response) => {
-    if (!paymentsEnabled() || !paypalConfigured()) {
+  // -------------------------------------------------------------------------
+  // POST /api/billing/paypal/webhook
+  // Live PayPal webhook handler. Verifies against PayPal's
+  // /v1/notifications/verify-webhook-signature endpoint (not a signature on
+  // the raw body the way Stripe does — PayPal requires a round-trip call
+  // using the `PAYPAL_WEBHOOK_ID` from the dashboard).
+  // -------------------------------------------------------------------------
+  app.post('/api/billing/paypal/webhook', async (req: Request, res: Response) => {
+    if (!paypalConfigured()) {
       return res.status(503).json({ error: 'paypal_not_configured' });
     }
-    return res.status(501).json({ error: 'webhook_not_implemented' });
+    if (!process.env.PAYPAL_WEBHOOK_ID) {
+      return res.status(503).json({ error: 'paypal_webhook_not_configured' });
+    }
+    const headers = readPayPalHeaders(req.headers as Record<string, unknown>);
+    if (!headers) {
+      return res.status(400).json({ error: 'missing_paypal_headers' });
+    }
+    const rawBody = req.rawBody;
+    if (!(rawBody instanceof Buffer)) {
+      console.error('[billing] paypal webhook missing rawBody');
+      return res.status(400).json({ error: 'missing_raw_body' });
+    }
+    let verified = false;
+    try {
+      verified = await verifyPayPalEvent(rawBody.toString('utf8'), headers);
+    } catch (err) {
+      console.error('[billing] paypal verify call failed:', err);
+      return res.status(502).json({ error: 'paypal_verify_failed' });
+    }
+    if (!verified) {
+      return res.status(400).json({ error: 'invalid_signature' });
+    }
+    let event;
+    try {
+      event = JSON.parse(rawBody.toString('utf8'));
+    } catch {
+      return res.status(400).json({ error: 'invalid_body' });
+    }
+    try {
+      await handlePayPalEvent(event);
+    } catch (err) {
+      console.error('[billing] paypal event handler failed:', event.event_type, err);
+      // 500 makes PayPal retry; our upserts are idempotent.
+      return res.status(500).json({ error: 'handler_failed' });
+    }
+    return res.json({ received: true });
   });
 }
