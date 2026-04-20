@@ -282,7 +282,8 @@ export async function updateMe(req: Request, res: Response) {
         res.status(400).json({ error: 'invalid_location', code: 'invalid_location' });
         return;
       } else {
-        patch.location = v.trim();
+        const trimmed = v.trim();
+        patch.location = trimmed.length > 0 ? trimmed : null;
       }
     }
 
