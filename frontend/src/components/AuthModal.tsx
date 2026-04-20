@@ -17,7 +17,7 @@ interface FormValidation {
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
-  const { login, signup, loginWithOAuth } = useAuth();
+  const { login, signup, loginWithOAuth, oauthError, clearOAuthError } = useAuth();
   const { handleError } = useErrorHandler();
   const { t } = useTranslation();
 
@@ -45,6 +45,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       closeButtonRef.current.focus();
     }
   }, [isOpen]);
+
+  // Surface a pending OAuth-redirect error exactly once. The provider shape is
+  // either `oauth_<specific>` (our codes) or `google_<google_error>` (passed
+  // through untouched) — both fall back to a generic translation string.
+  useEffect(() => {
+    if (!oauthError) return;
+    setError(t(`auth.errors.${oauthError}`, t('auth.errors.oauth_generic', 'Sign-in failed. Please try again.')));
+  }, [oauthError, t]);
 
   // Keyboard handling - close on Escape
   useEffect(() => {
@@ -141,6 +149,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
    */
   const handleOAuth = async (provider: 'google' | 'facebook') => {
     setError('');
+    clearOAuthError();
     setLoading(true);
 
     try {
