@@ -130,6 +130,13 @@ export const userPosts = pgTable('user_posts', {
   userId: text('user_id').notNull(),
   content: text('content').notNull(),
   imageUrl: text('image_url'),
+  // Cross-module attribution (Phase 2 P2.2). When a share originates from
+  // Writers Hub / Trading Akademie / a reel, the source kind + source row id
+  // are stored here so the timeline can render a "from X" badge and link
+  // back. Plain user posts leave both columns NULL.
+  // Allowed `sourceKind` values: 'writers' | 'trading' | 'reel' | null.
+  sourceKind: text('source_kind'),
+  sourceId: integer('source_id'),
   createdAt: integer('created_at', { mode: 'timestamp' })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
