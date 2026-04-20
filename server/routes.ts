@@ -53,20 +53,36 @@ export async function registerRoutes(
     return next();
   };
 
-  // Admin guard: match against ADMIN_USER_IDS (deny-by-default)
-  const requireAdmin = (req: any, res: any, next: any) => {
-    const adminIds = (process.env.ADMIN_USER_IDS || '')
+  // Admin guard: match against ADMIN_USER_IDS or ADMIN_EMAILS (deny-by-default).
+  // Email matching is stable across DB resets (e.g. ephemeral SQLite without a
+  // mounted volume), so operators can keep a durable admin without re-patching
+  // the uid list after every redeploy.
+  const parseCsv = (raw: string | undefined) =>
+    (raw || '')
       .split(',')
-      .map((e: string) => e.trim())
+      .map((v) => v.trim())
       .filter(Boolean);
+
+  const requireAdmin = async (req: any, res: any, next: any) => {
+    const adminIds = parseCsv(process.env.ADMIN_USER_IDS);
+    const adminEmails = parseCsv(process.env.ADMIN_EMAILS).map((e) => e.toLowerCase());
 
     const userId: string | undefined = req.user?.uid;
     if (!userId) return res.status(401).json({ message: 'Unauthorized.' });
 
-    if (adminIds.length === 0 || !adminIds.includes(userId)) {
-      return res.status(403).json({ message: 'Forbidden — admin access required.' });
+    if (adminIds.includes(userId)) return next();
+
+    if (adminEmails.length > 0) {
+      try {
+        const user = await storage.getUserById(userId);
+        const email = user?.email?.toLowerCase();
+        if (email && adminEmails.includes(email)) return next();
+      } catch (err) {
+        console.error('[requireAdmin] getUserById failed:', err);
+      }
     }
-    return next();
+
+    return res.status(403).json({ message: 'Forbidden — admin access required.' });
   };
 
   // Inject dependencies into modules
