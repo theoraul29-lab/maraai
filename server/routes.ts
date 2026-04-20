@@ -141,6 +141,13 @@ export async function registerRoutes(
   app.get('/api/profile/:id/following', profileModule.listFollowing);
   app.get('/api/profile/:id/activity', profileModule.getActivity);
   app.get('/api/profile/:id/badges', profileModule.getBadges);
+  app.get('/api/profile/:id/posts', profileModule.listProfilePosts);
+  app.post('/api/profile/posts', requireAuth, profileModule.createProfilePost);
+  app.delete(
+    '/api/profile/posts/:postId',
+    requireAuth,
+    profileModule.deleteProfilePost,
+  );
   app.post('/api/profile/:id/follow', requireAuth, profileModule.followUser);
 
   // Admin endpoints (require admin)

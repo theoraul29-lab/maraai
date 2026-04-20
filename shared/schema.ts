@@ -121,6 +121,20 @@ export const premiumOrders = pgTable('premium_orders', {
   expiresAt: integer('expires_at', { mode: 'timestamp' }),
 });
 
+// === USER POSTS (FB-style statuses on the You profile) ===
+//
+// Plain text + optional image URL. Video posts continue to live in the
+// `videos` table (Reels pipeline); the feed aggregator unifies both streams.
+export const userPosts = pgTable('user_posts', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: text('user_id').notNull(),
+  content: text('content').notNull(),
+  imageUrl: text('image_url'),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
 // === CREATOR POSTS (monthly tracking) ===
 export const creatorPosts = pgTable('creator_posts', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -508,6 +522,8 @@ export type InsertWriterPurchase = z.infer<typeof insertWriterPurchaseSchema>;
 export type CreatorPayout = typeof creatorPayouts.$inferSelect;
 export type InsertCreatorPayout = z.infer<typeof insertCreatorPayoutSchema>;
 export type SavedVideo = typeof savedVideos.$inferSelect;
+export type UserPost = typeof userPosts.$inferSelect;
+export type InsertUserPost = typeof userPosts.$inferInsert;
 export type Feedback = typeof userFeedback.$inferSelect;
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 export type Improvement = typeof aiImprovements.$inferSelect;

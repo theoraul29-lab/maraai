@@ -19,7 +19,18 @@ function currentUserId(req: Request): string | null {
 }
 
 function toPublicProfile(
-  user: { id: string; displayName: string | null; firstName: string | null; lastName: string | null; bio: string | null; profileImageUrl: string | null; createdAt: Date | null },
+  user: {
+    id: string;
+    displayName: string | null;
+    firstName: string | null;
+    lastName: string | null;
+    bio: string | null;
+    profileImageUrl: string | null;
+    coverImageUrl?: string | null;
+    location?: string | null;
+    website?: string | null;
+    createdAt: Date | null;
+  },
 ) {
   return {
     id: user.id,
@@ -27,8 +38,29 @@ function toPublicProfile(
     firstName: user.firstName,
     bio: user.bio,
     profileImageUrl: user.profileImageUrl,
+    coverImageUrl: user.coverImageUrl ?? null,
+    location: user.location ?? null,
+    website: user.website ?? null,
     createdAt: user.createdAt,
   };
+}
+
+function validateOptionalUrl(v: unknown, maxLen = 2048): { ok: true; value: string | null } | { ok: false } {
+  if (v === null || v === '') return { ok: true, value: null };
+  if (typeof v !== 'string' || v.length > maxLen) return { ok: false };
+  let normalized: string;
+  try {
+    const url = new URL(v);
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return { ok: false };
+    // Use the parsed .href so that quotes / control chars are percent-encoded
+    // before the value is stored. This prevents things like
+    //   https://x.com/img"test.jpg
+    // from breaking the frontend's CSS `url("…")` construction.
+    normalized = url.href;
+  } catch {
+    return { ok: false };
+  }
+  return { ok: true, value: normalized };
 }
 
 function parsePagination(
@@ -56,10 +88,11 @@ export async function getProfile(req: Request, res: Response) {
       return;
     }
 
-    const [videos, followerCount, followingCount] = await Promise.all([
+    const [videos, followerCount, followingCount, postCount] = await Promise.all([
       deps.storage.getCreatorVideos(profileId),
       deps.storage.getFollowerCount(profileId),
       deps.storage.getFollowingCount(profileId),
+      deps.storage.countUserPosts(profileId),
     ]);
 
     const viewerId = currentUserId(req);
@@ -71,6 +104,7 @@ export async function getProfile(req: Request, res: Response) {
     res.json({
       user: toPublicProfile(user),
       videoCount: videos.length,
+      postCount,
       followerCount,
       followingCount,
       isFollowing,
@@ -137,9 +171,10 @@ export async function getMe(req: Request, res: Response) {
       res.status(401).json({ error: 'unauthenticated', code: 'unauthenticated' });
       return;
     }
-    const [followerCount, followingCount] = await Promise.all([
+    const [followerCount, followingCount, postCount] = await Promise.all([
       deps.storage.getFollowerCount(userId),
       deps.storage.getFollowingCount(userId),
+      deps.storage.countUserPosts(userId),
     ]);
     res.json({
       user: {
@@ -149,6 +184,7 @@ export async function getMe(req: Request, res: Response) {
       },
       followerCount,
       followingCount,
+      postCount,
       isSelf: true,
     });
   } catch (error) {
@@ -177,6 +213,9 @@ export async function updateMe(req: Request, res: Response) {
       displayName?: string;
       bio?: string;
       profileImageUrl?: string | null;
+      coverImageUrl?: string | null;
+      location?: string | null;
+      website?: string | null;
     } = {};
 
     if ('displayName' in body) {
@@ -209,21 +248,42 @@ export async function updateMe(req: Request, res: Response) {
     }
 
     if ('profileImageUrl' in body) {
-      const v = body.profileImageUrl;
-      if (v === null || v === '') {
-        patch.profileImageUrl = null;
-      } else if (typeof v !== 'string' || v.length > 2048) {
+      const parsed = validateOptionalUrl(body.profileImageUrl);
+      if (!parsed.ok) {
         res.status(400).json({ error: 'invalid_image_url', code: 'invalid_image_url' });
         return;
+      }
+      patch.profileImageUrl = parsed.value;
+    }
+
+    if ('coverImageUrl' in body) {
+      const parsed = validateOptionalUrl(body.coverImageUrl);
+      if (!parsed.ok) {
+        res.status(400).json({ error: 'invalid_cover_url', code: 'invalid_cover_url' });
+        return;
+      }
+      patch.coverImageUrl = parsed.value;
+    }
+
+    if ('website' in body) {
+      const parsed = validateOptionalUrl(body.website);
+      if (!parsed.ok) {
+        res.status(400).json({ error: 'invalid_website', code: 'invalid_website' });
+        return;
+      }
+      patch.website = parsed.value;
+    }
+
+    if ('location' in body) {
+      const v = body.location;
+      if (v === null || v === '') {
+        patch.location = null;
+      } else if (typeof v !== 'string' || v.length > 120) {
+        res.status(400).json({ error: 'invalid_location', code: 'invalid_location' });
+        return;
       } else {
-        try {
-          const url = new URL(v);
-          if (url.protocol !== 'https:' && url.protocol !== 'http:') throw new Error('bad protocol');
-        } catch {
-          res.status(400).json({ error: 'invalid_image_url', code: 'invalid_image_url' });
-          return;
-        }
-        patch.profileImageUrl = v;
+        const trimmed = v.trim();
+        patch.location = trimmed.length > 0 ? trimmed : null;
       }
     }
 
@@ -286,6 +346,96 @@ export async function getActivity(req: Request, res: Response) {
   } catch (error) {
     console.error('[profile] getActivity failed:', error);
     res.status(500).json({ error: 'activity_failed', code: 'activity_failed' });
+  }
+}
+
+// --- FB-style posts (Phase 2 P0 — You) ----------------------------------
+
+export async function listProfilePosts(req: Request, res: Response) {
+  try {
+    const profileId = req.params.id;
+    const { limit, offset } = parsePagination(req, { limit: 20, maxLimit: 100 });
+    const items = await deps.storage.listUserPosts(profileId, { limit, offset });
+    res.json({ items, pagination: { limit, offset } });
+  } catch (error) {
+    console.error('[profile] listProfilePosts failed:', error);
+    res.status(500).json({ error: 'posts_failed', code: 'posts_failed' });
+  }
+}
+
+export async function createProfilePost(req: Request, res: Response) {
+  try {
+    const userId = currentUserId(req);
+    if (!userId) {
+      res.status(401).json({ error: 'unauthenticated', code: 'unauthenticated' });
+      return;
+    }
+    const existing = await deps.storage.getUserById(userId);
+    if (!existing) {
+      res.status(401).json({ error: 'unauthenticated', code: 'unauthenticated' });
+      return;
+    }
+
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    const rawContent = body.content;
+    if (typeof rawContent !== 'string') {
+      res.status(400).json({ error: 'invalid_content', code: 'invalid_content' });
+      return;
+    }
+    const content = rawContent.trim();
+    if (content.length < 1 || content.length > 5000) {
+      res.status(400).json({ error: 'invalid_content', code: 'invalid_content' });
+      return;
+    }
+
+    let imageUrl: string | null = null;
+    if ('imageUrl' in body && body.imageUrl !== undefined) {
+      const parsed = validateOptionalUrl(body.imageUrl);
+      if (!parsed.ok) {
+        res.status(400).json({ error: 'invalid_image_url', code: 'invalid_image_url' });
+        return;
+      }
+      imageUrl = parsed.value;
+    }
+
+    const created = await deps.storage.createUserPost({ userId, content, imageUrl });
+    res.status(201).json(created);
+  } catch (error) {
+    console.error('[profile] createProfilePost failed:', error);
+    res.status(500).json({ error: 'post_create_failed', code: 'post_create_failed' });
+  }
+}
+
+export async function deleteProfilePost(req: Request, res: Response) {
+  try {
+    const userId = currentUserId(req);
+    if (!userId) {
+      res.status(401).json({ error: 'unauthenticated', code: 'unauthenticated' });
+      return;
+    }
+    const postId = Number.parseInt(req.params.postId ?? '', 10);
+    if (!Number.isFinite(postId) || postId <= 0) {
+      res.status(400).json({ error: 'invalid_post_id', code: 'invalid_post_id' });
+      return;
+    }
+    const existing = await deps.storage.getUserPostById(postId);
+    if (!existing) {
+      res.status(404).json({ error: 'not_found', code: 'not_found' });
+      return;
+    }
+    if (existing.userId !== userId) {
+      res.status(403).json({ error: 'forbidden', code: 'forbidden' });
+      return;
+    }
+    const ok = await deps.storage.deleteUserPost(postId, userId);
+    if (!ok) {
+      res.status(404).json({ error: 'not_found', code: 'not_found' });
+      return;
+    }
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('[profile] deleteProfilePost failed:', error);
+    res.status(500).json({ error: 'post_delete_failed', code: 'post_delete_failed' });
   }
 }
 
