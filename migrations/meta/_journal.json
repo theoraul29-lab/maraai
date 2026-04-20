@@ -54,6 +54,13 @@
     {
       "idx": 7,
       "version": "6",
+      "when": 1776600000000,
+      "tag": "0007_you_fb_profile",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
       "when": 1776677228000,
       "tag": "0008_oauth_accounts",
       "breakpoints": true
