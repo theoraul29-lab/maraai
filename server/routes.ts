@@ -22,6 +22,7 @@ import * as adminModule from '../backend/src/modules/admin.js';
 import * as feedbackModule from '../backend/src/modules/feedback.js';
 import * as profileModule from '../backend/src/modules/profile.js';
 import * as notificationsModule from '../backend/src/modules/notifications.js';
+import * as searchModule from '../backend/src/modules/search.js';
 import * as ordersModule from '../backend/src/modules/orders.js';
 import * as adminOrdersModule from '../backend/src/modules/adminOrders.js';
 import * as paymentsModule from '../backend/src/modules/payments.js';
@@ -164,6 +165,10 @@ export async function registerRoutes(
   app.get('/api/notifications/unread-count', requireAuth, notificationsModule.unreadCount);
   app.post('/api/notifications/:id/read', requireAuth, notificationsModule.markRead);
   app.post('/api/notifications/read-all', requireAuth, notificationsModule.markAllRead);
+
+  // Global search (Phase 2 P2.4) — public, returns ranked results across
+  // people/reels/articles/lessons. See backend/src/modules/search.ts.
+  app.get('/api/search', searchModule.search);
 
   // Video and feed endpoints
   app.get(api.videos.list.path, videoModule.listVideos);
