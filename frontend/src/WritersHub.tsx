@@ -327,7 +327,11 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
   };
 
   const toggleLike = async (workId: number) => {
+    // Reading mode renders `readingWork.likes`, not `library[i].likes`, so
+    // bump both — otherwise the counter in the reader appears frozen even
+    // though the request was sent.
     setLibrary((lib) => lib.map((w) => w.id === workId ? { ...w, likes: (w.likes || 0) + 1 } : w));
+    setReadingWork((prev) => (prev && prev.id === workId ? { ...prev, likes: (prev.likes || 0) + 1 } : prev));
     try {
       await axios.post(`${API_URL}/api/writers/${workId}/like`, {}, { withCredentials: true });
     } catch { /* optimistic */ }

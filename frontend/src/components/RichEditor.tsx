@@ -135,7 +135,11 @@ export const RichEditor: React.FC<Props> = ({
   useEffect(() => {
     if (!editor) return;
     const current = editor.getHTML();
-    if (initialHtml && initialHtml !== current) {
+    // Compare against coerced empty string so resetting the parent to `''`
+    // actually clears the editor — otherwise TipTap keeps the old doc while
+    // the parent thinks content is empty, and the next keystroke re-fills
+    // state with stale HTML.
+    if ((initialHtml || '') !== current) {
       editor.commands.setContent(initialHtml, { emitUpdate: false });
     }
   }, [editor, initialHtml]);
