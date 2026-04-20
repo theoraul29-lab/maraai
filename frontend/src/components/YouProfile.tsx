@@ -85,7 +85,7 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
     [profile, userName],
   );
   const handle = useMemo(
-    () => '@' + String(displayName).toLowerCase().replace(/[^a-z0-9]+/g, '') || 'user',
+    () => '@' + (String(displayName).toLowerCase().replace(/[^a-z0-9]+/g, '') || 'user'),
     [displayName],
   );
 
@@ -190,7 +190,10 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
     // Build patch with only-changed fields so we don't send e.g. an empty
     // displayName and trigger invalid_display_name.
     const patch: Record<string, string | null> = {};
-    if (editDraft.displayName.trim().length > 0) patch.displayName = editDraft.displayName.trim();
+    const draftName = editDraft.displayName.trim();
+    if (draftName.length > 0 && draftName !== (profile?.user.displayName || '')) {
+      patch.displayName = draftName;
+    }
     if (editDraft.bio !== (profile?.user.bio || '')) patch.bio = editDraft.bio;
     if (editDraft.profileImageUrl !== (profile?.user.profileImageUrl || '')) {
       patch.profileImageUrl = editDraft.profileImageUrl || null;
