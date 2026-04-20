@@ -30,7 +30,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string) => Promise<void>;
   loginWithOAuth: (provider: 'google' | 'facebook') => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   upgradeTier: (newTier: UserTier) => Promise<void>;
 }
 
@@ -42,30 +42,33 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [oauthError, setOAuthError] = useState<string | null>(null);
   const clearOAuthError = () => setOAuthError(null);
 
-  // Consume `?oauth=google` / `?oauth_error=...` once on mount, then strip
-  // them so a page refresh doesn't re-surface stale state or leak the query
-  // string into analytics.
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const err = params.get('oauth_error');
-    const ok = params.get('oauth');
-    if (!err && !ok) return;
-    if (err) setOAuthError(err);
-    params.delete('oauth_error');
-    params.delete('oauth');
-    const query = params.toString();
-    const next = window.location.pathname + (query ? `?${query}` : '') + window.location.hash;
-    window.history.replaceState({}, '', next);
-  }, []);
-
-  // Initialize from localStorage + refresh against the server session.
+  // Mount: restore from localStorage, consume any ?oauth/?oauth_error query
+  // params, then refresh against the server session.
   //
   // The server session is the source of truth: Google/Facebook OAuth redirects
   // land back on `/` with a freshly-authenticated cookie, at which point the
   // server-side `req.session.userId` is the ONLY place that knows who the
   // logged-in user is. Without this fetch, a successful OAuth login would
   // never reach the React tree.
+  //
+  // `?oauth=<provider>` is our signal that the user JUST completed an OAuth
+  // round-trip (vs. a plain refresh of an already-authenticated tab). We use
+  // it to apply the same trial-window affordance that email/password login &
+  // signup set client-side, so OAuth users don't land on `free` while their
+  // email-signed-up peers get `trial`.
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const err = params.get('oauth_error');
+    const freshOAuth = params.get('oauth');
+    if (err || freshOAuth) {
+      if (err) setOAuthError(err);
+      params.delete('oauth_error');
+      params.delete('oauth');
+      const query = params.toString();
+      const next = window.location.pathname + (query ? `?${query}` : '') + window.location.hash;
+      window.history.replaceState({}, '', next);
+    }
+
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
       try {
@@ -84,11 +87,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (!res.ok) return;
         const payload = await res.json();
         if (cancelled || !payload?.user) return;
+        const trialFields = freshOAuth
+          ? {
+              trialStartTime: Date.now(),
+              trialEndsAt: Date.now() + 60 * 60 * 1000,
+              tier: 'trial' as UserTier,
+            }
+          : {
+              trialStartTime: payload.user.trialStartTime ?? null,
+              trialEndsAt: payload.user.trialEndsAt ?? null,
+              tier: payload.user.tier || 'free',
+            };
         const sessionUser: User = {
           ...payload.user,
-          trialStartTime: payload.user.trialStartTime ?? null,
-          trialEndsAt: payload.user.trialEndsAt ?? null,
-          tier: payload.user.tier || 'free',
+          ...trialFields,
           earnings: payload.user.earnings ?? 0,
           badges: payload.user.badges ?? [],
         };
@@ -220,10 +232,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    // Clear the server session FIRST. The new mount-time /api/auth/me fetch
+    // would otherwise find the still-valid cookie on the next page refresh
+    // and silently re-authenticate the user. Client state is cleared
+    // regardless of server response so a network error can't strand the UI.
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    } catch {
+      /* ignore — we still clear client state below */
+    }
     localStorage.removeItem('user');
     setUser(null);
     setIsAuthenticated(false);
+    setOAuthError(null);
   };
 
   const upgradeTier = async (newTier: UserTier): Promise<void> => {
