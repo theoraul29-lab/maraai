@@ -38,6 +38,11 @@ interface UserPost {
   userId: string;
   content: string;
   imageUrl: string | null;
+  // Cross-module attribution (Phase 2 P2.2). Set when the post originated
+  // from Writers Hub / Trading Akademie / a reel — drives the "from X"
+  // badge below. Plain user posts leave both null.
+  sourceKind: 'writers' | 'trading' | 'reel' | null;
+  sourceId: number | null;
   createdAt: string;
 }
 
@@ -387,6 +392,25 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
                 <p className="you-fb-post-body">{p.content}</p>
                 {p.imageUrl && (
                   <img className="you-fb-post-image" src={p.imageUrl} alt="" loading="lazy" />
+                )}
+                {p.sourceKind && (
+                  <div className="you-fb-post-source">
+                    {p.sourceKind === 'writers' && (
+                      <span className="you-fb-post-source-badge">
+                        ✍️ {t('you.sourceWriters', 'From Writers Hub')}
+                      </span>
+                    )}
+                    {p.sourceKind === 'trading' && (
+                      <span className="you-fb-post-source-badge">
+                        📊 {t('you.sourceTrading', 'From Trading Akademie')}
+                      </span>
+                    )}
+                    {p.sourceKind === 'reel' && (
+                      <span className="you-fb-post-source-badge">
+                        🎬 {t('you.sourceReel', 'From Reels')}
+                      </span>
+                    )}
+                  </div>
                 )}
               </article>
             ))}

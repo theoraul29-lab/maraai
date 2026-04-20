@@ -1436,6 +1436,19 @@
   background: #0f0f1a;
 }
 
+.you-fb-post-source {
+  margin-top: 10px;
+}
+.you-fb-post-source-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #1d1d35;
+  color: #9ea6c4;
+  font-size: 12px;
+  border: 1px solid #2a2a4a;
+}
+
 .you-fb-about,
 .you-fb-settings {
   padding: 24px;
