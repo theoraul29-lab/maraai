@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export interface TikTokReel {
@@ -42,6 +42,23 @@ function formatNumber(n: number): string {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
   if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
   return n.toString();
+}
+
+// Post a YouTube IFrame-API command to an embedded player without reloading
+// the iframe. Requires the iframe src to include `enablejsapi=1`.
+function postYouTubeCommand(
+  iframe: HTMLIFrameElement | null,
+  func: 'playVideo' | 'pauseVideo' | 'mute' | 'unMute'
+) {
+  if (!iframe || !iframe.contentWindow) return;
+  try {
+    iframe.contentWindow.postMessage(
+      JSON.stringify({ event: 'command', func, args: [] }),
+      '*'
+    );
+  } catch {
+    // ignore — player not ready yet
+  }
 }
 
 const TikTokFeed: React.FC<Props> = ({
@@ -91,12 +108,25 @@ const TikTokFeed: React.FC<Props> = ({
   }, [reels, onView]);
 
   // Infinite scroll: trigger load more when near bottom.
+  // Use refs (not props directly) to avoid firing duplicate fetches while a
+  // request is in flight — React state updates are batched and lag behind
+  // rapid scroll events.
+  const loadingRef = useRef<boolean>(Boolean(loading));
+  const fetchingRef = useRef<boolean>(false);
+  useEffect(() => {
+    loadingRef.current = Boolean(loading);
+    // Reset the local guard once the parent confirms its fetch finished.
+    if (!loading) fetchingRef.current = false;
+  }, [loading]);
+
   useEffect(() => {
     const container = containerRef.current;
     if (!container || !onLoadMore || !hasMore) return;
     const onScroll = () => {
+      if (loadingRef.current || fetchingRef.current) return;
       const { scrollTop, scrollHeight, clientHeight } = container;
       if (scrollHeight - (scrollTop + clientHeight) < clientHeight * 0.5) {
+        fetchingRef.current = true;
         onLoadMore();
       }
     };
@@ -166,6 +196,7 @@ const ReelCard: React.FC<ReelCardProps> = ({
 }) => {
   const { t } = useTranslation();
   const videoRef = useRef<HTMLVideoElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const [paused, setPaused] = useState(false);
   const [doubleTapHeart, setDoubleTapHeart] = useState(false);
   const lastTapRef = useRef<number>(0);
@@ -175,8 +206,40 @@ const ReelCard: React.FC<ReelCardProps> = ({
     : '';
   const isNativeVideo = !youTubeId && reel.url !== '#';
 
-  // Autoplay native video when active, pause otherwise.
+  // Stable iframe src — only depends on youTubeId, so the iframe never
+  // reloads when the `muted` or `isActive` props change. Playback and
+  // mute state are controlled post-mount via the YouTube IFrame API
+  // (postMessage). `enablejsapi=1` + `origin=...` is required for the
+  // player to accept those commands.
+  const iframeSrc = useMemo(() => {
+    if (!youTubeId) return '';
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const params = new URLSearchParams({
+      enablejsapi: '1',
+      autoplay: '1',
+      mute: '1', // start muted to satisfy browser autoplay policy
+      loop: '1',
+      playlist: youTubeId,
+      controls: '0',
+      modestbranding: '1',
+      playsinline: '1',
+      rel: '0',
+    });
+    if (origin) params.set('origin', origin);
+    return `https://www.youtube.com/embed/${youTubeId}?${params.toString()}`;
+  }, [youTubeId]);
+
+  // Drive play/pause via IFrame API for YouTube, and via <video> ref for
+  // native video. Both respect isActive + local paused state, without
+  // reloading the embed.
   useEffect(() => {
+    if (youTubeId) {
+      postYouTubeCommand(
+        iframeRef.current,
+        isActive && !paused ? 'playVideo' : 'pauseVideo'
+      );
+      return;
+    }
     const v = videoRef.current;
     if (!v) return;
     if (isActive && !paused) {
@@ -186,7 +249,14 @@ const ReelCard: React.FC<ReelCardProps> = ({
     } else {
       v.pause();
     }
-  }, [isActive, paused]);
+  }, [isActive, paused, youTubeId]);
+
+  // Apply mute state to YouTube iframe without reloading. Native <video>
+  // already binds `muted` via the attribute, so React handles it.
+  useEffect(() => {
+    if (!youTubeId) return;
+    postYouTubeCommand(iframeRef.current, muted ? 'mute' : 'unMute');
+  }, [muted, youTubeId]);
 
   const handleTap = useCallback(() => {
     const now = Date.now();
@@ -200,21 +270,23 @@ const ReelCard: React.FC<ReelCardProps> = ({
       lastTapRef.current = now;
       setTimeout(() => {
         if (lastTapRef.current === now) {
-          // Single tap -> toggle pause (native video only).
-          if (isNativeVideo) setPaused((p) => !p);
+          // Single tap -> toggle pause (native video only; YouTube embed
+          // controls are hidden and handled by IFrame API above).
+          setPaused((p) => !p);
           lastTapRef.current = 0;
         }
       }, 300);
     }
-  }, [reel.id, reel.isLiked, onLike, isNativeVideo]);
+  }, [reel.id, reel.isLiked, onLike]);
 
   return (
     <div className="tiktok-reel" data-reel-id={reel.id}>
       <div className="tiktok-reel-media" onClick={handleTap}>
         {youTubeId && (
           <iframe
+            ref={iframeRef}
             className="tiktok-reel-iframe"
-            src={`https://www.youtube.com/embed/${youTubeId}?autoplay=${isActive ? 1 : 0}&mute=${muted ? 1 : 0}&loop=1&playlist=${youTubeId}&controls=0&modestbranding=1&playsinline=1&rel=0`}
+            src={iframeSrc}
             allow="autoplay; encrypted-media; picture-in-picture"
             allowFullScreen
             title={reel.title}
@@ -236,7 +308,7 @@ const ReelCard: React.FC<ReelCardProps> = ({
         )}
 
         {doubleTapHeart && <div className="tiktok-double-tap-heart" aria-hidden>❤️</div>}
-        {paused && isNativeVideo && (
+        {paused && (isNativeVideo || youTubeId) && (
           <div className="tiktok-reel-paused" aria-hidden>▶️</div>
         )}
       </div>
