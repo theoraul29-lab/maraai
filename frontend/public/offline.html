@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0b0b0f" />
+    <title>Mara AI — Offline</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        height: 100%;
+        width: 100%;
+        background: #0b0b0f;
+        color: #f5f5f7;
+        font-family: Inter, system-ui, -apple-system, Segoe UI, Arial, sans-serif;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+      .card {
+        max-width: 420px;
+        width: 100%;
+        text-align: center;
+      }
+      .logo {
+        width: 96px;
+        height: 96px;
+        margin: 0 auto 24px;
+        border-radius: 24px;
+      }
+      h1 {
+        font-size: 28px;
+        font-weight: 800;
+        margin-bottom: 12px;
+        background: linear-gradient(135deg, #7c3aed 0%, #ec4899 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      p {
+        font-size: 16px;
+        line-height: 1.5;
+        color: #a1a1aa;
+        margin-bottom: 28px;
+      }
+      .dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background: #ec4899;
+        border-radius: 50%;
+        margin-right: 8px;
+        animation: pulse 1.4s ease-in-out infinite;
+      }
+      @keyframes pulse {
+        0%, 100% { opacity: 0.3; }
+        50% { opacity: 1; }
+      }
+      button {
+        background: linear-gradient(135deg, #7c3aed 0%, #ec4899 100%);
+        color: white;
+        border: 0;
+        padding: 14px 28px;
+        font-size: 16px;
+        font-weight: 600;
+        border-radius: 999px;
+        cursor: pointer;
+        font-family: inherit;
+        transition: transform 0.15s ease;
+      }
+      button:hover { transform: translateY(-1px); }
+      button:active { transform: translateY(0); }
+      .small { font-size: 13px; color: #71717a; margin-top: 20px; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <img src="/icons/icon-192.png" alt="Mara" class="logo" />
+      <h1>You're offline</h1>
+      <p><span class="dot"></span>Se reconectează... Mara așteaptă internet ca să revină.</p>
+      <button type="button" onclick="window.location.reload()">Încearcă din nou</button>
+      <div class="small">hellomara.net</div>
+    </div>
+    <script>
+      // Auto-retry when the browser detects connection is back.
+      window.addEventListener('online', () => {
+        window.location.reload();
+      });
+    </script>
+  </body>
+</html>
