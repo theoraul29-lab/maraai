@@ -23,7 +23,7 @@
   "nav": {
     "home": "Acasă",
     "reels": "Reels",
-    "trading": "Trading",
+    "trading": "Trading Akademie",
     "vip": "VIP",
     "creator": "Creator",
     "writers": "Scriitori",
@@ -103,7 +103,7 @@
     }
   },
   "trading": {
-    "title": "ACADEMIA DE STRATEGII DE TRADING",
+    "title": "TRADING AKADEMIE",
     "exit": "IEȘIRE",
     "closeLabel": "Închide Trading",
     "strategyHub": "HUB STRATEGII ({{count}})",
@@ -627,7 +627,11 @@
           "Monthly review of AI vs manual performance."
         ]
       }
-    }
+    },
+    "shareOnYou": "📣 Distribuie pe You",
+    "shareOnYouLabel": "Publică strategia asta ca postare pe profilul tău",
+    "sharedToYou": "Distribuit pe profilul tău",
+    "shareFailed": "Distribuirea nu a reușit. Încearcă din nou."
   },
   "vip": {
     "title": "MODUL PREMIUM VIP",

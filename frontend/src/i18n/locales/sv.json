@@ -23,7 +23,7 @@
   "nav": {
     "home": "Hem",
     "reels": "Reels",
-    "trading": "Trading",
+    "trading": "Trading Akademie",
     "vip": "VIP",
     "creator": "Skapare",
     "writers": "Författare",
@@ -80,7 +80,7 @@
     "or": "ELLER"
   },
   "trading": {
-    "title": "TRADING STRATEGY ACADEMY",
+    "title": "TRADING AKADEMIE",
     "exit": "EXIT",
     "closeLabel": "Close Trading",
     "strategyHub": "STRATEGY HUB ({{count}})",
@@ -604,7 +604,11 @@
           "Monthly review of AI vs manual performance."
         ]
       }
-    }
+    },
+    "shareOnYou": "📣 Share on You",
+    "shareOnYouLabel": "Publish this strategy as a post on your profile",
+    "sharedToYou": "Shared on your profile",
+    "shareFailed": "Could not share. Try again."
   },
   "vip": {
     "title": "PREMIUM VIP MODULE",

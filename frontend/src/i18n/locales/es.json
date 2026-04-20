@@ -23,7 +23,7 @@
   "nav": {
     "home": "Inicio",
     "reels": "Reels",
-    "trading": "Trading",
+    "trading": "Trading Akademie",
     "vip": "VIP",
     "creator": "Creador",
     "writers": "Escritores",
@@ -94,7 +94,7 @@
     }
   },
   "trading": {
-    "title": "ACADEMIA DE ESTRATEGIAS DE TRADING",
+    "title": "TRADING AKADEMIE",
     "exit": "SALIR",
     "closeLabel": "Cerrar Trading",
     "strategyHub": "HUB DE ESTRATEGIAS ({{count}})",
@@ -618,7 +618,11 @@
           "Monthly review of AI vs manual performance."
         ]
       }
-    }
+    },
+    "shareOnYou": "📣 Share on You",
+    "shareOnYouLabel": "Publish this strategy as a post on your profile",
+    "sharedToYou": "Shared on your profile",
+    "shareFailed": "Could not share. Try again."
   },
   "vip": {
     "title": "MÓDULO VIP PREMIUM",

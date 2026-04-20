@@ -23,7 +23,7 @@
   "nav": {
     "home": "होम",
     "reels": "रील्स",
-    "trading": "ट्रेडिंग",
+    "trading": "Trading Akademie",
     "vip": "VIP",
     "creator": "क्रिएटर",
     "writers": "लेखक",
@@ -94,7 +94,7 @@
     }
   },
   "trading": {
-    "title": "ट्रेडिंग रणनीति अकादमी",
+    "title": "TRADING AKADEMIE",
     "exit": "बाहर निकलें",
     "closeLabel": "ट्रेडिंग बंद करें",
     "strategyHub": "रणनीति हब ({{count}})",
@@ -618,7 +618,11 @@
           "Monthly review of AI vs manual performance."
         ]
       }
-    }
+    },
+    "shareOnYou": "📣 Share on You",
+    "shareOnYouLabel": "Publish this strategy as a post on your profile",
+    "sharedToYou": "Shared on your profile",
+    "shareFailed": "Could not share. Try again."
   },
   "vip": {
     "title": "प्रीमियम VIP मॉड्यूल",
