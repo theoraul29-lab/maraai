@@ -8,6 +8,7 @@ import {
   userPreferences,
   premiumOrders,
   creatorPosts,
+  userPosts,
   writerPages,
   writerComments,
   writerPurchases,
@@ -43,6 +44,8 @@ import {
   type CreatorPayout,
   type InsertCreatorPayout,
   type SavedVideo,
+  type UserPost,
+  type InsertUserPost,
   type Feedback,
   type InsertFeedback,
   type Improvement,
@@ -120,6 +123,16 @@ export interface IStorage {
   getFollowerCount(userId: string): Promise<number>;
   getFollowingCount(userId: string): Promise<number>;
   isFollowing(followerId: string, followingId: string): Promise<boolean>;
+
+  // FB-style user posts (Phase 2 P0 — You)
+  createUserPost(input: InsertUserPost): Promise<UserPost>;
+  listUserPosts(
+    userId: string,
+    opts?: { limit?: number; offset?: number },
+  ): Promise<UserPost[]>;
+  getUserPostById(id: number): Promise<UserPost | null>;
+  deleteUserPost(id: number, userId: string): Promise<boolean>;
+  countUserPosts(userId: string): Promise<number>;
 
   getUserPreferences(
     userId: string,
@@ -1629,6 +1642,9 @@ export class DatabaseStorage implements IStorage {
       displayName?: string;
       bio?: string;
       profileImageUrl?: string | null;
+      coverImageUrl?: string | null;
+      location?: string | null;
+      website?: string | null;
     },
   ): Promise<User | null> {
     const [updated] = await db
@@ -1637,6 +1653,49 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, userId))
       .returning();
     return updated || null;
+  }
+
+  // --- FB-style user posts (Phase 2 P0 — You) ------------------------------
+
+  async createUserPost(input: InsertUserPost): Promise<UserPost> {
+    const [row] = await db.insert(userPosts).values(input).returning();
+    return row;
+  }
+
+  async listUserPosts(
+    userId: string,
+    opts?: { limit?: number; offset?: number },
+  ): Promise<UserPost[]> {
+    const limit = Math.min(Math.max(opts?.limit ?? 20, 1), 100);
+    const offset = Math.max(opts?.offset ?? 0, 0);
+    return await db
+      .select()
+      .from(userPosts)
+      .where(eq(userPosts.userId, userId))
+      .orderBy(desc(userPosts.createdAt))
+      .limit(limit)
+      .offset(offset);
+  }
+
+  async getUserPostById(id: number): Promise<UserPost | null> {
+    const [row] = await db.select().from(userPosts).where(eq(userPosts.id, id));
+    return row ?? null;
+  }
+
+  async deleteUserPost(id: number, userId: string): Promise<boolean> {
+    const result = await db
+      .delete(userPosts)
+      .where(and(eq(userPosts.id, id), eq(userPosts.userId, userId)))
+      .returning({ id: userPosts.id });
+    return result.length > 0;
+  }
+
+  async countUserPosts(userId: string): Promise<number> {
+    const [row] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(userPosts)
+      .where(eq(userPosts.userId, userId));
+    return Number(row?.count ?? 0);
   }
 
   // --- Profile / You (PR H) ------------------------------------------------

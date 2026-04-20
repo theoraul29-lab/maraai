@@ -23,6 +23,9 @@ export const users = sqliteTable('users', {
   displayName: text('display_name'),
   bio: text('bio'),
   profileImageUrl: text('profile_image_url'),
+  coverImageUrl: text('cover_image_url'),
+  location: text('location'),
+  website: text('website'),
   createdAt: integer('created_at', { mode: 'timestamp' }).default(
     sql`CURRENT_TIMESTAMP`,
   ),
