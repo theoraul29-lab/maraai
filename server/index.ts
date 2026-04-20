@@ -27,20 +27,24 @@ import { fileURLToPath } from 'url';
 import { UPLOADS_DIR } from '../backend/src/modules/reels.js';
 dotenv.config();
 
-// Process-level safety net. An unhandled promise rejection or a synchronous
-// uncaught exception is almost always a bug in a specific request handler
-// (bad SQL, missing schema column, external API blowing up, etc.). Without
-// these handlers, Node's default behaviour on `unhandledRejection` since
-// v15 is to exit with code 1 — which takes the *entire* HTTP server down
-// for every connected user, not just the one who triggered the bug. We
-// log loudly and keep running; concurrent users stay served, and the
-// platform operator has a clear signal to fix the root cause rather than
-// waking up to a restart-loop.
+// Process-level safety net for *runtime* bugs in request handlers.
 //
-// We intentionally do NOT rethrow — Node's "kill on unhandled" default is
-// too coarse for a multi-tenant server. Individual request handlers are
-// already wrapped in try/catch and the express error middleware (see bottom
-// of this file) returns a proper 500 to the offending request.
+// Rationale (runtime): since Node v15 an unhandled promise rejection kills
+// the process. In a multi-tenant server that takes down every connected
+// user for a bug that affected only one request. For `unhandledRejection`
+// we log and keep running — individual request handlers are already wrapped
+// in try/catch + the express error middleware returns a proper 500.
+//
+// Rationale (uncaughtException): Node docs explicitly warn that it is
+// unsafe to resume after an uncaught synchronous exception — the call
+// stack unwound through code that assumed it wouldn't throw, so in-memory
+// state (DB transactions, sockets, auth) may be corrupted. We log and
+// exit(1) so the orchestrator (Railway, Docker, etc.) restarts us clean.
+//
+// NOTE: these handlers are installed AFTER the startup IIFE below attaches
+// its own .catch() — so rejections from bootstrap code (migrations, seed)
+// still terminate the process with a clear log line, rather than becoming
+// a zombie (alive but never listening).
 process.on('unhandledRejection', (reason, promise) => {
   console.error('[process] unhandledRejection:', reason);
   // `promise` is the rejected Promise itself; logging it usually adds no
@@ -51,6 +55,10 @@ process.on('unhandledRejection', (reason, promise) => {
 
 process.on('uncaughtException', (err) => {
   console.error('[process] uncaughtException:', err);
+  // Node docs: "It is not safe to resume normal operation after
+  // 'uncaughtException'." Exit so the orchestrator restarts us in a
+  // clean state rather than serving requests on a corrupted runtime.
+  process.exit(1);
 });
 
 const __migrationFilename = fileURLToPath(import.meta.url);
@@ -549,4 +557,12 @@ app.use((req, res, next) => {
   httpServer.listen(requestedPort, runtimeState.host, () => {
     onServerReady(requestedPort);
   });
-})();
+})().catch((err) => {
+  // Bootstrap (migrations, seed, passport setup, etc.) failed before the
+  // server ever started listening. Without this .catch() the rejection
+  // would be swallowed by the `unhandledRejection` handler above and the
+  // process would live on as a zombie — alive enough for liveness probes
+  // to pass, but never bound to a port so no traffic is ever served.
+  console.error('[startup] fatal:', err);
+  process.exit(1);
+});
