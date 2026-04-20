@@ -136,8 +136,14 @@ async function exchangeCodeForProfile(
     redirect_uri: redirect,
     code,
   });
-  const tokenRes = await fetch(`${FB_TOKEN_URL}?${tokenParams.toString()}`, {
-    method: 'GET',
+  // Send credentials in the POST body (not the URL) so the app secret can't
+  // leak into intermediate proxy logs, APM traces, or fetch error stacks.
+  // Graph's /oauth/access_token accepts both GET and POST; matches the
+  // Google pattern in oauth-google.ts.
+  const tokenRes = await fetch(FB_TOKEN_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: tokenParams.toString(),
   });
   const token = (await tokenRes.json()) as FacebookTokenResponse;
   if (!tokenRes.ok || !token.access_token) {
