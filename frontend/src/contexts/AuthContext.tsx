@@ -190,46 +190,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const loginWithOAuth = async (provider: 'google' | 'facebook'): Promise<void> => {
-    // Google uses the full authorization-code redirect flow. The user leaves
-    // the SPA entirely — the callback comes back with an authenticated cookie
-    // and the mount-time /api/auth/me fetch picks it up. We intentionally
-    // don't return a resolved Promise; navigation supersedes it.
-    if (provider === 'google') {
-      window.location.href = '/api/auth/google';
+    // Both providers use the full authorization-code redirect flow. The user
+    // leaves the SPA entirely — the callback comes back with an authenticated
+    // cookie and the mount-time /api/auth/me fetch picks it up. We
+    // intentionally don't return a resolved Promise; navigation supersedes
+    // it. If a provider isn't configured on the server (missing client
+    // credentials), the start handler redirects back to `/?oauth_error=
+    // oauth_not_configured` and the mount-time effect surfaces it.
+    if (provider === 'google' || provider === 'facebook') {
+      window.location.href = `/api/auth/${provider}`;
       return new Promise<void>(() => { /* never resolves — page unloads */ });
     }
 
-    // Facebook OAuth is not yet wired; keep the POST stub so the error code
-    // surfaces in the UI (oauth_not_enabled / oauth_unsupported).
-    try {
-      const response = await fetch(`/api/auth/oauth/${provider}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      if (!response.ok) {
-        const payload = await response.json().catch(() => ({}));
-        const err = new Error(payload?.message || `OAuth login failed for ${provider}`) as Error & { code?: string; statusCode?: number };
-        err.code = payload?.code || 'unknown';
-        err.statusCode = response.status;
-        throw err;
-      }
-
-      const userData = await response.json();
-      const newUser: User = {
-        ...userData,
-        trialStartTime: Date.now(),
-        trialEndsAt: Date.now() + 60 * 60 * 1000, // 1 hour trial
-        tier: 'trial',
-      };
-
-      localStorage.setItem('user', JSON.stringify(newUser));
-      setUser(newUser);
-      setIsAuthenticated(true);
-    } catch (error) {
-      console.error('OAuth error:', error);
-      throw error;
-    }
+    // Defensive catch-all: unknown provider. Keeps the compile-time union
+    // exhaustive and turns a typo into a visible error in the UI.
+    throw new Error(`Unsupported OAuth provider: ${provider}`);
   };
 
   const logout = async () => {
