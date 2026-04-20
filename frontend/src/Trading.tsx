@@ -151,6 +151,9 @@ export const Trading: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       const stepLines = Array.isArray(steps)
         ? steps.map((s, i) => `${i + 1}. ${s}`).join('\n')
         : '';
+      // Keep the empty-string entries: they are intentional blank-line
+      // separators between the title block, description, and steps. A
+      // `.filter(Boolean)` here would silently run every section together.
       const body = [
         `📊 ${t('trading.title')} — ${getStratName(strat)}`,
         `(${getLevelLabel(strat.level)})`,
@@ -158,7 +161,7 @@ export const Trading: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         getStratDesc(strat),
         '',
         stepLines,
-      ].filter(Boolean).join('\n');
+      ].join('\n');
       await axios.post(
         `${API_URL}/api/profile/posts`,
         { content: body, source: 'trading', sourceId: strat.id },
