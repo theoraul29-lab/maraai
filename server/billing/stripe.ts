@@ -250,13 +250,21 @@ async function upsertSubscription(args: {
 
 function mapStripeStatus(
   status: Stripe.Subscription.Status,
-  cancelAtPeriodEnd: boolean,
+  _cancelAtPeriodEnd: boolean,
 ): 'active' | 'cancelled' | 'past_due' | 'incomplete' {
-  // `cancel_at_period_end=true` means the sub is still active right now
-  // but will lapse at periodEnd. We keep it as 'active' so feature-gating
-  // continues to grant access until then.
+  // `cancel_at_period_end=true` is intentionally ignored here — when Stripe
+  // reports `status='active'` with `cancel_at_period_end=true`, the sub is
+  // still active *right now* and will lapse at `periodEnd`; the feature
+  // gate keeps granting access until then simply because we return 'active'
+  // from the `status === 'active'` branch below.
+  //
+  // Previously this function also returned 'active' on
+  // `cancelAtPeriodEnd && status !== 'canceled'`, which silently granted
+  // access to users in `past_due` / `unpaid` / `incomplete` states whenever
+  // their sub was also scheduled to cancel at period end — letting users
+  // with failing payments keep all premium features. Review feedback:
+  // https://github.com/theoraul29-lab/maraai/pull/59#discussion_r... .
   if (status === 'active' || status === 'trialing') return 'active';
-  if (cancelAtPeriodEnd && status !== 'canceled') return 'active';
   if (status === 'past_due' || status === 'unpaid') return 'past_due';
   if (status === 'canceled') return 'cancelled';
   return 'incomplete';
