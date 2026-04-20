@@ -55,9 +55,9 @@ export async function likeVideo(req: Request, res: Response) {
     if (userId && result && (result as { liked?: boolean }).liked) {
       try {
         const video = await deps.storage.getVideoById(videoId);
-        if (video?.userId && video.userId !== userId) {
+        if (video?.creatorId && video.creatorId !== userId) {
           void notifyReelLike({
-            videoOwnerId: video.userId,
+            videoOwnerId: video.creatorId,
             likerId: userId,
             videoId,
           });

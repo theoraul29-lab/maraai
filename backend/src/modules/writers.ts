@@ -423,9 +423,9 @@ export async function likeArticle(req: Request, res: Response) {
     if (userId) {
       try {
         const page = await deps.storage.getWriterPageById(id);
-        if (page?.authorId && page.authorId !== userId) {
+        if (page?.userId && page.userId !== userId) {
           void notifyWriterLike({
-            articleOwnerId: page.authorId,
+            articleOwnerId: page.userId,
             likerId: userId,
             articleId: id,
           });
@@ -498,9 +498,9 @@ export async function createComment(req: Request, res: Response) {
       userId,
       content: raw,
     });
-    if (page.authorId && page.authorId !== userId) {
+    if (page.userId && page.userId !== userId) {
       void notifyWriterComment({
-        articleOwnerId: page.authorId,
+        articleOwnerId: page.userId,
         commenterId: userId,
         articleId: id,
         commentPreview: raw,

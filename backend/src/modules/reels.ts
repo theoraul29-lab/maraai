@@ -190,9 +190,9 @@ export async function createComment(req: Request, res: Response) {
       userId,
       content,
     });
-    if (existing.userId && existing.userId !== userId) {
+    if (existing.creatorId && existing.creatorId !== userId) {
       void notifyReelComment({
-        videoOwnerId: existing.userId,
+        videoOwnerId: existing.creatorId,
         commenterId: userId,
         videoId,
         commentPreview: content,
