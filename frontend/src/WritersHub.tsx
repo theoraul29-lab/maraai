@@ -89,13 +89,21 @@ interface Props { onClose: () => void; }
 
 const MAX_DRAFTS = 20;
 
+// Tags whose closing (or self-closing) boundary we treat as a word break
+// when flattening rich HTML to plain text. Without this, TipTap's typical
+// `<p>Hello</p><p>World</p>` collapses to `"HelloWorld"` after tag-stripping,
+// breaking excerpts, word counts, and draft previews.
+const BLOCK_BOUNDARY_RE = /<\/(?:p|div|h[1-6]|li|blockquote|pre|tr|td|th|section|article|dt|dd)>|<br\s*\/?>/gi;
+
 function htmlToPlainText(html: string): string {
   if (!html) return '';
-  // DOMPurify strips tags, but the result is still HTML-entity-encoded
-  // (`&amp;` stays `&amp;`), which would poison excerpts and char counts.
-  // Round-trip through a detached DOM node so textContent gives us real
-  // plain text.
-  const stripped = DOMPurify.sanitize(html, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+  // 1) Insert a space after each block boundary so adjacent block content
+  //    doesn't get concatenated once tags are removed.
+  // 2) DOMPurify strips tags but keeps entity references intact
+  //    (`&amp;` stays `&amp;`), so we round-trip through a detached DOM node
+  //    and read `textContent` to get real plain text.
+  const spaced = html.replace(BLOCK_BOUNDARY_RE, (m) => `${m} `);
+  const stripped = DOMPurify.sanitize(spaced, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
   const el = document.createElement('div');
   el.innerHTML = stripped;
   return (el.textContent || '').replace(/\s+/g, ' ').trim();
