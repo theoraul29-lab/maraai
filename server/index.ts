@@ -27,6 +27,32 @@ import { fileURLToPath } from 'url';
 import { UPLOADS_DIR } from '../backend/src/modules/reels.js';
 dotenv.config();
 
+// Process-level safety net. An unhandled promise rejection or a synchronous
+// uncaught exception is almost always a bug in a specific request handler
+// (bad SQL, missing schema column, external API blowing up, etc.). Without
+// these handlers, Node's default behaviour on `unhandledRejection` since
+// v15 is to exit with code 1 — which takes the *entire* HTTP server down
+// for every connected user, not just the one who triggered the bug. We
+// log loudly and keep running; concurrent users stay served, and the
+// platform operator has a clear signal to fix the root cause rather than
+// waking up to a restart-loop.
+//
+// We intentionally do NOT rethrow — Node's "kill on unhandled" default is
+// too coarse for a multi-tenant server. Individual request handlers are
+// already wrapped in try/catch and the express error middleware (see bottom
+// of this file) returns a proper 500 to the offending request.
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[process] unhandledRejection:', reason);
+  // `promise` is the rejected Promise itself; logging it usually adds no
+  // new information beyond the reason, but we keep a reference so Node
+  // doesn't garbage-collect it mid-inspection in a debugger.
+  void promise;
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('[process] uncaughtException:', err);
+});
+
 const __migrationFilename = fileURLToPath(import.meta.url);
 const __migrationDirname = path.dirname(__migrationFilename);
 
