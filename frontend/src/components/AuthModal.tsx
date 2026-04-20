@@ -52,7 +52,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   useEffect(() => {
     if (!oauthError) return;
     setError(t(`auth.errors.${oauthError}`, t('auth.errors.oauth_generic', 'Sign-in failed. Please try again.')));
-  }, [oauthError, t]);
+    // Drop it from the provider so a later language change (which re-fires
+    // this effect via the `t` dep) or mode toggle (which clears local
+    // `error`) doesn't resurrect a stale message the user has already seen.
+    clearOAuthError();
+  }, [oauthError, t, clearOAuthError]);
 
   // Keyboard handling - close on Escape
   useEffect(() => {
