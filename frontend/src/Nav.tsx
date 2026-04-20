@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { LanguageSelector } from './components/LanguageSelector';
+import { GlobalSearch } from './components/GlobalSearch';
 import './styles/Nav.css';
+import './styles/GlobalSearch.css';
 
 const linkKeys = [
 	{ to: '/', key: 'home', icon: '🏠' },
@@ -34,6 +36,7 @@ const Nav: React.FC = () => {
 						</NavLink>
 					))}
 				</div>
+				<GlobalSearch />
 				<LanguageSelector compact />
 			</div>
 
