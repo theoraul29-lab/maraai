@@ -69,4 +69,11 @@ export default defineConfig({
     outDir: path.resolve(import.meta.dirname, '..', 'dist', 'public'),
     emptyOutDir: true,
   },
+  // `virtual:pwa-register` is a plugin-provided virtual module — the Vite dev
+  // dep-scanner can't resolve it from disk and logs an error that, in our CI
+  // smoke setup, blocks the server from answering /api/health in time.
+  // Telling optimizeDeps to exclude the id skips the scan for this import.
+  optimizeDeps: {
+    exclude: ['virtual:pwa-register'],
+  },
 });
