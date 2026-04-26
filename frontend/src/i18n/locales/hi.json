@@ -991,5 +991,19 @@
   "languageSelector": {
     "label": "भाषा",
     "changeLanguage": "भाषा बदलें"
+  },
+  "pwa": {
+    "installTitle": "Mara इंस्टॉल करें",
+    "installBody": "पूर्ण ऐप अनुभव के लिए hellomara.net को अपनी होम स्क्रीन पर जोड़ें।",
+    "installCta": "इंस्टॉल करें",
+    "installDismiss": "अभी नहीं",
+    "installDismissAria": "इंस्टॉल प्रॉम्प्ट बंद करें",
+    "iosHintTitle": "Mara इंस्टॉल करें",
+    "iosHintBody": "ऐप इंस्टॉल करने के लिए शेयर पर टैप करें, फिर \"होम स्क्रीन में जोड़ें\"।",
+    "iosHintDismiss": "समझ गया",
+    "updateTitle": "अपडेट तैयार",
+    "updateBody": "Mara का नया संस्करण उपलब्ध है।",
+    "updateCta": "रिफ्रेश",
+    "updateDismissAria": "अपडेट बंद करें"
   }
 }

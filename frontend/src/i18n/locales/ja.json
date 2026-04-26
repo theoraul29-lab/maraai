@@ -991,5 +991,19 @@
   "languageSelector": {
     "label": "言語",
     "changeLanguage": "言語を変更"
+  },
+  "pwa": {
+    "installTitle": "Maraをインストール",
+    "installBody": "hellomara.netをホーム画面に追加してフルスクリーンのアプリ体験をお楽しみください。",
+    "installCta": "インストール",
+    "installDismiss": "今はしない",
+    "installDismissAria": "インストール案内を閉じる",
+    "iosHintTitle": "Maraをインストール",
+    "iosHintBody": "共有アイコンをタップしてから「ホーム画面に追加」を選ぶとアプリがインストールされます。",
+    "iosHintDismiss": "わかりました",
+    "updateTitle": "更新の準備完了",
+    "updateBody": "Maraの新しいバージョンがあります。",
+    "updateCta": "更新",
+    "updateDismissAria": "更新通知を閉じる"
   }
 }

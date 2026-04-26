@@ -977,5 +977,19 @@
   "languageSelector": {
     "label": "Језик",
     "changeLanguage": "Промени језик"
+  },
+  "pwa": {
+    "installTitle": "Инсталирај Mara",
+    "installBody": "Додајте hellomara.net на почетни екран за потпун доживљај апликације.",
+    "installCta": "Инсталирај",
+    "installDismiss": "Не сада",
+    "installDismissAria": "Одбаци захтев за инсталацију",
+    "iosHintTitle": "Инсталирај Mara",
+    "iosHintBody": "Додирните Подели, затим „На почетни екран“ да инсталирате апликацију.",
+    "iosHintDismiss": "Разумем",
+    "updateTitle": "Ажурирање спремно",
+    "updateBody": "Доступна је новија верзија Mare.",
+    "updateCta": "Освежи",
+    "updateDismissAria": "Одбаци ажурирање"
   }
 }

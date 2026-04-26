@@ -991,5 +991,19 @@
   "languageSelector": {
     "label": "Язык",
     "changeLanguage": "Сменить язык"
+  },
+  "pwa": {
+    "installTitle": "Установить Mara",
+    "installBody": "Добавьте hellomara.net на главный экран, чтобы получить полноценный опыт приложения.",
+    "installCta": "Установить",
+    "installDismiss": "Не сейчас",
+    "installDismissAria": "Закрыть предложение установки",
+    "iosHintTitle": "Установить Mara",
+    "iosHintBody": "Нажмите Поделиться, затем \"На экран «Домой»\", чтобы установить приложение.",
+    "iosHintDismiss": "Понятно",
+    "updateTitle": "Доступно обновление",
+    "updateBody": "Доступна новая версия Mara.",
+    "updateCta": "Обновить",
+    "updateDismissAria": "Закрыть обновление"
   }
 }

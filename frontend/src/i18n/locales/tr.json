@@ -977,5 +977,19 @@
   "languageSelector": {
     "label": "Dil",
     "changeLanguage": "Dili değiştir"
+  },
+  "pwa": {
+    "installTitle": "Mara'yı yükle",
+    "installBody": "Tam uygulama deneyimi için hellomara.net'i ana ekranınıza ekleyin.",
+    "installCta": "Yükle",
+    "installDismiss": "Şimdi değil",
+    "installDismissAria": "Yükleme isteğini kapat",
+    "iosHintTitle": "Mara'yı yükle",
+    "iosHintBody": "Paylaş'a, ardından \"Ana Ekrana Ekle\"ye dokunarak uygulamayı yükleyin.",
+    "iosHintDismiss": "Anladım",
+    "updateTitle": "Güncelleme hazır",
+    "updateBody": "Mara'nın yeni bir sürümü mevcut.",
+    "updateCta": "Yenile",
+    "updateDismissAria": "Güncellemeyi kapat"
   }
 }

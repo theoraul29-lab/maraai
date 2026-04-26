@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactElement } from 'react';
+import { useTranslation } from 'react-i18next';
 import { subscribePWA, type PWAEvent } from './registerPWA';
 
 /**
@@ -33,6 +34,7 @@ function isIOS(): boolean {
 }
 
 export function InstallPromptBanner(): ReactElement | null {
+  const { t } = useTranslation();
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [showIOSHint, setShowIOSHint] = useState(false);
   const [updateAvailable, setUpdateAvailable] = useState<null | (() => Promise<void>)>(null);
@@ -122,14 +124,19 @@ export function InstallPromptBanner(): ReactElement | null {
     return (
       <div className="mara-pwa-banner mara-pwa-update" role="status" aria-live="polite">
         <div className="mara-pwa-text">
-          <strong>Update ready</strong>
-          <span>A newer version of Mara is available.</span>
+          <strong>{t('pwa.updateTitle')}</strong>
+          <span>{t('pwa.updateBody')}</span>
         </div>
         <div className="mara-pwa-actions">
           <button type="button" className="mara-pwa-primary" onClick={applyUpdate}>
-            Refresh
+            {t('pwa.updateCta')}
           </button>
-          <button type="button" className="mara-pwa-ghost" onClick={dismissUpdate} aria-label="Dismiss update">
+          <button
+            type="button"
+            className="mara-pwa-ghost"
+            onClick={dismissUpdate}
+            aria-label={t('pwa.updateDismissAria')}
+          >
             ✕
           </button>
         </div>
@@ -141,15 +148,20 @@ export function InstallPromptBanner(): ReactElement | null {
     return (
       <div className="mara-pwa-banner" role="dialog" aria-labelledby="mara-pwa-title">
         <div className="mara-pwa-text">
-          <strong id="mara-pwa-title">Install Mara</strong>
-          <span>Add hellomara.net to your home screen for a full-screen app experience.</span>
+          <strong id="mara-pwa-title">{t('pwa.installTitle')}</strong>
+          <span>{t('pwa.installBody')}</span>
         </div>
         <div className="mara-pwa-actions">
           <button type="button" className="mara-pwa-primary" onClick={install}>
-            Install
+            {t('pwa.installCta')}
           </button>
-          <button type="button" className="mara-pwa-ghost" onClick={dismiss} aria-label="Dismiss install prompt">
-            Not now
+          <button
+            type="button"
+            className="mara-pwa-ghost"
+            onClick={dismiss}
+            aria-label={t('pwa.installDismissAria')}
+          >
+            {t('pwa.installDismiss')}
           </button>
         </div>
       </div>
@@ -160,9 +172,8 @@ export function InstallPromptBanner(): ReactElement | null {
     return (
       <div className="mara-pwa-banner" role="dialog" aria-labelledby="mara-pwa-title-ios">
         <div className="mara-pwa-text">
-          <strong id="mara-pwa-title-ios">Install Mara</strong>
+          <strong id="mara-pwa-title-ios">{t('pwa.iosHintTitle')}</strong>
           <span>
-            Tap{' '}
             <svg
               aria-hidden="true"
               viewBox="0 0 24 24"
@@ -179,12 +190,12 @@ export function InstallPromptBanner(): ReactElement | null {
               <path d="M8 7l4-4 4 4" />
               <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" />
             </svg>{' '}
-            Share, then "Add to Home Screen" to install the app.
+            {t('pwa.iosHintBody')}
           </span>
         </div>
         <div className="mara-pwa-actions">
           <button type="button" className="mara-pwa-ghost" onClick={dismiss}>
-            Got it
+            {t('pwa.iosHintDismiss')}
           </button>
         </div>
       </div>

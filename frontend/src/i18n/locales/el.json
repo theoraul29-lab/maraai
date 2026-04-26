@@ -977,5 +977,19 @@
   "languageSelector": {
     "label": "Γλώσσα",
     "changeLanguage": "Αλλαγή γλώσσας"
+  },
+  "pwa": {
+    "installTitle": "Εγκατάσταση του Mara",
+    "installBody": "Προσθέστε το hellomara.net στην αρχική οθόνη σας για πλήρη εμπειρία εφαρμογής.",
+    "installCta": "Εγκατάσταση",
+    "installDismiss": "Όχι τώρα",
+    "installDismissAria": "Κλείσιμο πρότασης εγκατάστασης",
+    "iosHintTitle": "Εγκατάσταση του Mara",
+    "iosHintBody": "Πατήστε Κοινή χρήση και στη συνέχεια «Στην αρχική οθόνη» για εγκατάσταση της εφαρμογής.",
+    "iosHintDismiss": "Εντάξει",
+    "updateTitle": "Η ενημέρωση είναι έτοιμη",
+    "updateBody": "Μια νεότερη έκδοση του Mara είναι διαθέσιμη.",
+    "updateCta": "Ανανέωση",
+    "updateDismissAria": "Κλείσιμο ενημέρωσης"
   }
 }
