@@ -14,7 +14,7 @@
  *    timeline-ul lui `You` (folosește `/api/profile/posts` existent).
  *  - Drafts-urile locale sunt păstrate — HTML în loc de plaintext.
  */
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import DOMPurify from 'dompurify';
@@ -134,6 +134,8 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
   const [visibility, setVisibility] = useState<Visibility>('public');
   const [priceEuros, setPriceEuros] = useState<number>(2);
   const [coverUrl, setCoverUrl] = useState('');
+  const [coverUploading, setCoverUploading] = useState(false);
+  const coverFileRef = useRef<HTMLInputElement>(null);
 
   const [library, setLibrary] = useState<ApiArticle[]>([]);
   const [loading, setLoading] = useState(false);
@@ -544,12 +546,66 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
               )}
             </div>
 
-            <input
-              placeholder={t('writers.coverUrl')}
-              value={coverUrl}
-              onChange={(e) => setCoverUrl(e.target.value)}
-              className="writers-input"
-            />
+            <div className="writers-cover-uploader">
+              {coverUrl && (
+                <img
+                  src={coverUrl}
+                  alt=""
+                  style={{ width: 96, height: 64, objectFit: 'cover', borderRadius: 6, border: '1px solid rgba(168,85,247,0.35)' }}
+                />
+              )}
+              <input
+                ref={coverFileRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                style={{ display: 'none' }}
+                onChange={async (e) => {
+                  const f = e.target.files?.[0];
+                  if (!f) return;
+                  setCoverUploading(true);
+                  try {
+                    const fd = new FormData();
+                    fd.append('image', f);
+                    const res = await axios.post<{ url: string }>(
+                      `${API_URL}/api/uploads/image`,
+                      fd,
+                      { withCredentials: true, headers: { 'Content-Type': 'multipart/form-data' } },
+                    );
+                    setCoverUrl(res.data.url);
+                  } catch {
+                    /* surface no-op; the publish button will reflect the empty cover. */
+                  } finally {
+                    setCoverUploading(false);
+                    if (coverFileRef.current) coverFileRef.current.value = '';
+                  }
+                }}
+              />
+              <button
+                type="button"
+                className="writers-btn-secondary"
+                disabled={coverUploading}
+                onClick={() => coverFileRef.current?.click()}
+              >
+                {coverUploading
+                  ? t('writers.uploading', 'Uploading…')
+                  : t('writers.uploadCover', 'Upload cover')}
+              </button>
+              <input
+                placeholder={t('writers.coverUrl')}
+                value={coverUrl}
+                onChange={(e) => setCoverUrl(e.target.value)}
+                className="writers-input"
+              />
+              {coverUrl && (
+                <button
+                  type="button"
+                  className="writers-btn-secondary"
+                  onClick={() => setCoverUrl('')}
+                >
+                  {t('writers.removeCover', 'Remove')}
+                </button>
+              )}
+            </div>
 
             <RichEditor
               initialHtml={content}
