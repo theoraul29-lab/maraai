@@ -31,6 +31,11 @@ import {
   useState,
 } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AuthButton } from '../components/AuthButton';
+import { LanguageSelector } from '../components/LanguageSelector';
+import { AuthModal } from '../components/AuthModal';
+import { useAuth } from '../contexts/AuthContext';
+import { SubsystemSettings } from './SubsystemSettings';
 import './MobileOrbHome.css';
 
 type OrbId = 'you' | 'reels' | 'trading' | 'writers' | 'vip' | 'creators';
@@ -139,7 +144,13 @@ export type MobileOrbHomeProps = {
 
 export function MobileOrbHome({ items = ITEMS }: MobileOrbHomeProps) {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const count = items.length;
+
+  // Header overlay state — settings panel + auth modal for the
+  // mobile-only "Create account" CTA.
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   // Continuous offset in "items". Integer values mean an item is exactly
   // centred. We allow negative + unbounded; we mod-it-back when picking
@@ -436,6 +447,49 @@ export function MobileOrbHome({ items = ITEMS }: MobileOrbHomeProps) {
         <span className="mara-orb-home__brand-name">Mara AI</span>
         <span className="mara-orb-home__brand-tag">Hybrid</span>
       </header>
+
+      {/* Top action bar — login/register, language, settings.
+          Sits above the orb chain (z-index 5) and uses
+          `pointer-events: auto` so the orb viewport's drag handler
+          doesn't swallow taps on these controls. */}
+      <div className="mara-orb-home__actions">
+        <div className="mara-orb-home__actions-left">
+          <AuthButton />
+          {!user && (
+            <button
+              type="button"
+              className="mara-orb-home__register-btn"
+              onClick={() => setAuthModalOpen(true)}
+            >
+              Create account
+            </button>
+          )}
+        </div>
+        <div className="mara-orb-home__actions-right">
+          <LanguageSelector compact />
+          <button
+            type="button"
+            className="mara-orb-home__settings-btn"
+            aria-label="Subsystem settings"
+            onClick={() => setSettingsOpen(true)}
+          >
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden>
+              <path
+                fill="currentColor"
+                d="M19.14 12.94c.04-.31.06-.62.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.07 7.07 0 0 0-1.62-.94l-.36-2.54A.5.5 0 0 0 13.9 2h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.55-1.62.94l-2.39-.96a.5.5 0 0 0-.61.22L2.66 8.48a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.62-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.14.24.43.34.68.22l2.39-.96c.5.39 1.03.7 1.62.94l.36 2.54c.05.24.26.42.5.42h3.84c.24 0 .45-.18.5-.42l.36-2.54c.59-.24 1.13-.55 1.62-.94l2.39.96c.25.1.54 0 .68-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58ZM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+      {settingsOpen && (
+        <SubsystemSettings
+          onClose={() => setSettingsOpen(false)}
+          onRequestLogin={() => setAuthModalOpen(true)}
+        />
+      )}
 
       <div
         className="mara-orb-home__viewport"
