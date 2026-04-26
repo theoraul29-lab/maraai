@@ -45,19 +45,11 @@ function toPublicProfile(
   };
 }
 
+// Strict variant — only absolute http/https URLs. Used for fields like
+// `website` where a same-origin relative path is semantically wrong.
 function validateOptionalUrl(v: unknown, maxLen = 2048): { ok: true; value: string | null } | { ok: false } {
   if (v === null || v === '') return { ok: true, value: null };
   if (typeof v !== 'string' || v.length > maxLen) return { ok: false };
-
-  // Accept same-origin relative paths produced by /api/uploads/image and
-  // /api/reels/upload. They live under our own /uploads/* and /videos/*
-  // static mounts so there is no cross-origin attack surface, and we
-  // explicitly restrict the prefix list rather than allowing arbitrary
-  // `/foo` strings.
-  if (v.startsWith('/uploads/') || v.startsWith('/videos/')) {
-    if (v.includes('..') || v.includes('"') || /\s/.test(v)) return { ok: false };
-    return { ok: true, value: v };
-  }
 
   let normalized: string;
   try {
@@ -72,6 +64,21 @@ function validateOptionalUrl(v: unknown, maxLen = 2048): { ok: true; value: stri
     return { ok: false };
   }
   return { ok: true, value: normalized };
+}
+
+// Image-URL variant — also accepts same-origin relative paths produced by
+// /api/uploads/image and /api/reels/upload. They live under our own
+// /uploads/* and /videos/* static mounts so there is no cross-origin
+// attack surface, and we explicitly restrict the prefix list rather than
+// allowing arbitrary `/foo` strings.
+function validateOptionalImageUrl(v: unknown, maxLen = 2048): { ok: true; value: string | null } | { ok: false } {
+  if (v === null || v === '') return { ok: true, value: null };
+  if (typeof v !== 'string' || v.length > maxLen) return { ok: false };
+  if (v.startsWith('/uploads/') || v.startsWith('/videos/')) {
+    if (v.includes('..') || v.includes('"') || /\s/.test(v)) return { ok: false };
+    return { ok: true, value: v };
+  }
+  return validateOptionalUrl(v, maxLen);
 }
 
 function parsePagination(
@@ -259,7 +266,7 @@ export async function updateMe(req: Request, res: Response) {
     }
 
     if ('profileImageUrl' in body) {
-      const parsed = validateOptionalUrl(body.profileImageUrl);
+      const parsed = validateOptionalImageUrl(body.profileImageUrl);
       if (!parsed.ok) {
         res.status(400).json({ error: 'invalid_image_url', code: 'invalid_image_url' });
         return;
@@ -268,7 +275,7 @@ export async function updateMe(req: Request, res: Response) {
     }
 
     if ('coverImageUrl' in body) {
-      const parsed = validateOptionalUrl(body.coverImageUrl);
+      const parsed = validateOptionalImageUrl(body.coverImageUrl);
       if (!parsed.ok) {
         res.status(400).json({ error: 'invalid_cover_url', code: 'invalid_cover_url' });
         return;
@@ -401,7 +408,7 @@ export async function createProfilePost(req: Request, res: Response) {
 
     let imageUrl: string | null = null;
     if ('imageUrl' in body && body.imageUrl !== undefined) {
-      const parsed = validateOptionalUrl(body.imageUrl);
+      const parsed = validateOptionalImageUrl(body.imageUrl);
       if (!parsed.ok) {
         res.status(400).json({ error: 'invalid_image_url', code: 'invalid_image_url' });
         return;
