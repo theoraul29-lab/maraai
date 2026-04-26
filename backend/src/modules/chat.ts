@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import { storage } from '../../../server/storage';
-import { getMaraResponse } from '../../../server/ai';
+import { route as routeAi } from '../../../server/maraai/ai-router';
 
 export async function getChatHistory(req: Request, res: Response) {
   try {
@@ -37,14 +37,17 @@ export async function sendChatMessage(req: Request, res: Response) {
     // Get user prefs for personality
     const prefs = await storage.getUserPreferences(userId);
 
-    // Get Mara response
-    const { response, detectedMood } = await getMaraResponse(
-      message,
-      formattedHistory,
-      prefs ? { personality: prefs.personality, language: language || prefs.language } : { language },
-      module,
+    // Get Mara response via the hybrid AI router (local → central → p2p).
+    // Behavior is identical to the previous direct getMaraResponse call when
+    // the user is in centralized mode (the default).
+    const { response, detectedMood, route, fallback, latencyMs } = await routeAi(message, {
       userId,
-    );
+      module,
+      prefs: prefs
+        ? { personality: prefs.personality, language: language || prefs.language }
+        : { language },
+      history: formattedHistory,
+    });
 
     // Save AI response
     const aiMsg = await storage.createChatMessage({
@@ -53,7 +56,7 @@ export async function sendChatMessage(req: Request, res: Response) {
       userId,
     });
 
-    res.json({ message: userMsg, aiResponse: aiMsg, detectedMood });
+    res.json({ message: userMsg, aiResponse: aiMsg, detectedMood, route, fallback, latencyMs });
   } catch (error) {
     res.status(500).json({ message: 'Failed to send message' });
   }
