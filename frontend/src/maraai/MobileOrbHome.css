@@ -44,6 +44,16 @@
       transparent 40%
     );
   pointer-events: none;
+  /* Very slow continuous hue drift on the BACKGROUND glow only — never
+     on the orb itself. 90s linear so the colour change reads as ambient
+     atmosphere, not a beat. The orb stays solid. */
+  animation: maraOrbBgHue 90s linear infinite;
+  will-change: filter;
+}
+
+@keyframes maraOrbBgHue {
+  0%   { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
 }
 
 .mara-orb-home__particle {
@@ -201,29 +211,10 @@
     0 0 90px rgba(168, 85, 247, 0.28),
     inset 0 -12px 36px rgba(86, 21, 158, 0.55),
     inset 0 8px 18px rgba(255, 255, 255, 0.28);
-  /* Glow stays constant. The animation drives only a slow hue drift so
-     the centre orb gently shifts colour (purple → magenta → indigo →
-     purple) instead of throbbing in brightness. Linear timing avoids
-     any ease-in/out emphasis that would read as a beat. */
-  animation: maraOrbCenterAmbient 16s linear infinite;
-}
-
-@keyframes maraOrbCenterAmbient {
-  0% {
-    filter:
-      drop-shadow(0 0 14px rgba(199, 125, 255, 0.32))
-      hue-rotate(-18deg);
-  }
-  50% {
-    filter:
-      drop-shadow(0 0 14px rgba(199, 125, 255, 0.32))
-      hue-rotate(18deg);
-  }
-  100% {
-    filter:
-      drop-shadow(0 0 14px rgba(199, 125, 255, 0.32))
-      hue-rotate(-18deg);
-  }
+  /* Centre orb is fully static — no animation, no pulse, no hue drift.
+     The only ambient colour change on the screen lives on the
+     background glow (see .mara-orb-home__bg-glow above). */
+  filter: drop-shadow(0 0 14px rgba(199, 125, 255, 0.32));
 }
 
 .mara-orb-home .mara-orb--tap {
@@ -301,6 +292,24 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
+}
+
+/* AuthButton lives at top-left of the viewport by default
+   (`position: fixed; top: 20px; left: 20px;`). Inside the mobile orb
+   header it must instead participate in the flex row, otherwise it
+   stacks ON TOP of the brand badge / Create-account button. Force
+   it back to static so the flex layout governs its position, and
+   show the "Login" label even on narrow viewports so the button is
+   readable next to "Create account". */
+.mara-orb-home__actions .auth-button-login,
+.mara-orb-home__actions .auth-button-profile {
+  position: static;
+  top: auto;
+  left: auto;
+}
+
+.mara-orb-home__actions .auth-button-text {
+  display: inline;
 }
 
 /* Brand row stays above particles, but below the action bar. */
