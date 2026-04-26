@@ -139,8 +139,12 @@
 }
 
 /* A single orb. All visual properties are driven by inline transform/
-   opacity/filter for cheap GPU compositing. */
-.mara-orb {
+   opacity/filter for cheap GPU compositing.
+
+   Every orb-internal selector is scoped under `.mara-orb-home` so it
+   does not collide with the desktop orbital home which uses a global
+   `.mara-orb` class for its centre orb. */
+.mara-orb-home .mara-orb {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -163,18 +167,18 @@
       rgba(86, 21, 158, 1) 100%
     );
   box-shadow:
-    0 0 32px rgba(168, 85, 247, 0.55),
-    inset 0 -10px 30px rgba(86, 21, 158, 0.6),
-    inset 0 6px 14px rgba(255, 255, 255, 0.25);
-  border: 1px solid rgba(199, 125, 255, 0.6);
+    0 0 28px rgba(168, 85, 247, 0.45),
+    inset 0 -10px 30px rgba(86, 21, 158, 0.55),
+    inset 0 6px 14px rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(199, 125, 255, 0.55);
   will-change: transform, opacity, filter;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: box-shadow 240ms ease;
+  transition: box-shadow 600ms ease;
   pointer-events: auto;
 }
 
-.mara-orb__icon {
+.mara-orb-home .mara-orb__icon {
   width: 36px;
   height: 36px;
   display: grid;
@@ -182,7 +186,7 @@
   filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.4));
 }
 
-.mara-orb__label {
+.mara-orb-home .mara-orb__label {
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.05em;
@@ -191,26 +195,26 @@
   pointer-events: none;
 }
 
-.mara-orb--center {
+.mara-orb-home .mara-orb--center {
   box-shadow:
-    0 0 56px rgba(199, 125, 255, 0.85),
-    0 0 110px rgba(168, 85, 247, 0.45),
-    inset 0 -12px 36px rgba(86, 21, 158, 0.65),
-    inset 0 8px 18px rgba(255, 255, 255, 0.35);
-  animation: maraOrbCenterPulse 3.6s ease-in-out infinite;
+    0 0 44px rgba(199, 125, 255, 0.55),
+    0 0 90px rgba(168, 85, 247, 0.28),
+    inset 0 -12px 36px rgba(86, 21, 158, 0.55),
+    inset 0 8px 18px rgba(255, 255, 255, 0.28);
+  animation: maraOrbCenterPulse 7.2s ease-in-out infinite;
 }
 
 @keyframes maraOrbCenterPulse {
   0%,
   100% {
-    filter: drop-shadow(0 0 0 rgba(199, 125, 255, 0));
+    filter: drop-shadow(0 0 4px rgba(199, 125, 255, 0.18));
   }
   50% {
-    filter: drop-shadow(0 0 14px rgba(199, 125, 255, 0.7));
+    filter: drop-shadow(0 0 16px rgba(199, 125, 255, 0.45));
   }
 }
 
-.mara-orb--tap {
+.mara-orb-home .mara-orb--tap {
   /* Triggered briefly on tap for "press" feedback. The transform is
      handled in JS so it stacks with the per-frame physics transform. */
 }

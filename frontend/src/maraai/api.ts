@@ -18,9 +18,22 @@ async function jsonFetch<T>(input: RequestInfo, init?: RequestInit): Promise<T> 
   });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
-    throw Object.assign(new Error(`HTTP ${res.status}: ${text || res.statusText}`), {
+    let message = res.statusText;
+    let parsed: unknown = null;
+    if (text) {
+      try {
+        parsed = JSON.parse(text);
+        if (parsed && typeof parsed === 'object' && 'message' in parsed) {
+          const m = (parsed as { message?: unknown }).message;
+          if (typeof m === 'string' && m.length > 0) message = m;
+        }
+      } catch {
+        message = text;
+      }
+    }
+    throw Object.assign(new Error(message || `HTTP ${res.status}`), {
       status: res.status,
-      body: text,
+      body: parsed ?? text,
     });
   }
   return (await res.json()) as T;
