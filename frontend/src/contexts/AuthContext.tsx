@@ -238,6 +238,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const response = await fetch('/api/user/upgrade', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ userId: user.id, newTier }),
       });
 
