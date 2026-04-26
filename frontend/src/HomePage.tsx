@@ -9,6 +9,7 @@ import './OrbitalStyles.css';
 import ChatWidget from './components/ChatWidget';
 import { AuthButton } from './components/AuthButton';
 import { LanguageSelector } from './components/LanguageSelector';
+import { MobileOrbHome } from './maraai/MobileOrbHome';
 
 const moduleKeys = [
   { id: 'you', titleKey: 'home.you', to: '/you', icon: '👤', color: '#a855f7' },
@@ -325,6 +326,12 @@ function HomePage() {
     role: 'button',
     label: t('home.navigateToModule'),
   });
+
+  // Mobile gets the new infinite-orb selector. The legacy orbital layout
+  // below stays in place for desktop / tablet, untouched.
+  if (isMobile) {
+    return <MobileOrbHome />;
+  }
 
   return (
     <main
