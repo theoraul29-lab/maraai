@@ -100,7 +100,7 @@ async function findCredentialsByEmail(email: string) {
  * `setupSessionAuth`) is thrown away, and the authenticated state is
  * bound to a fresh, unpredictable id.
  */
-function setSessionUser(req: Request, userId: string): Promise<void> {
+export function setSessionUser(req: Request, userId: string): Promise<void> {
   return new Promise((resolve, reject) => {
     req.session.regenerate((err) => {
       if (err) return reject(err);

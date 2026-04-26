@@ -41,6 +41,7 @@ import { getActiveProvider, checkAnthropicHealth, isLLMConfigured } from './llm'
 import { getLibraryProgress, addAndReadCustomBook, getKnowledgeStats, brainManager } from './mara-brain/index';
 import { learningRateLimiter } from './mara-brain/rate-limiter';
 import { chatRateLimit } from './rate-limit.js';
+import { registerMaraAIRoutes } from './maraai/routes.js';
 
 export async function registerRoutes(
   httpServer: Server,
@@ -263,9 +264,15 @@ export async function registerRoutes(
   app.get('/api/creator/analytics', requireAuth, videoModule.creatorAnalytics);
   app.delete('/api/creator/videos/:id', requireAuth, videoModule.deleteCreatorVideo);
 
-  // Chat endpoints (require auth; chat send is rate-limited to match WebSocket)
+  // Chat endpoints (require auth; chat send is rate-limited to match WebSocket).
+  // Internally `sendChatMessage` now goes through the hybrid AI router so that
+  // local/central/p2p routing + transparency logging happens on every reply.
   app.get(api.chat.list.path, requireAuth, chatModule.getChatHistory);
   app.post(api.chat.send.path, requireAuth, chatRateLimit, chatModule.sendChatMessage);
+
+  // MaraAI hybrid-platform layer (Phase 3): consent, mode, P2P, transparency,
+  // hybrid AI router, email OTP, internal event bus status.
+  registerMaraAIRoutes(app, requireAuth);
 
   // TTS/STT endpoints
   app.post('/api/mara-speak', ttsModule.maraSpeak);

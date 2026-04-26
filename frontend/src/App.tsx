@@ -18,6 +18,8 @@ import ResetPassword from './ResetPassword';
 import ResetPasswordConfirmation from './ResetPasswordConfirmation';
 import HomePage from './HomePage';
 import AdminBrain from './AdminBrain';
+import { OnboardingFlow } from './maraai/OnboardingFlow';
+import { TransparencyDashboard } from './maraai/TransparencyDashboard';
 
 function App() {
   const navigate = useNavigate();
@@ -41,6 +43,11 @@ function App() {
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/reset-password/confirmation" element={<ResetPasswordConfirmation />} />
               <Route path="/admin/brain" element={<AdminBrain />} />
+              <Route
+                path="/onboarding"
+                element={<OnboardingFlow onClose={() => navigate('/')} />}
+              />
+              <Route path="/transparency" element={<TransparencyDashboard />} />
             </Routes>
           </ErrorBoundary>
           {/* Mara Chat Widget - appears on all pages */}

@@ -32,6 +32,12 @@ interface AuthContextType {
   loginWithOAuth: (provider: 'google' | 'facebook') => Promise<void>;
   logout: () => Promise<void>;
   upgradeTier: (newTier: UserTier) => Promise<void>;
+  /**
+   * Re-fetch /api/auth/me and update local user state. Used by flows that
+   * authenticate the user out-of-band (e.g. email-OTP verification, which
+   * establishes a session server-side without ever calling login/signup).
+   */
+  refresh: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -244,6 +250,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const refresh = async (): Promise<void> => {
+    try {
+      const res = await fetch('/api/auth/me', { credentials: 'include' });
+      if (!res.ok) return;
+      const payload = await res.json();
+      if (!payload?.user) return;
+      const sessionUser: User = {
+        ...payload.user,
+        trialStartTime: payload.user.trialStartTime ?? null,
+        trialEndsAt: payload.user.trialEndsAt ?? null,
+        tier: payload.user.tier || 'free',
+        earnings: payload.user.earnings ?? 0,
+        badges: payload.user.badges ?? [],
+      };
+      localStorage.setItem('user', JSON.stringify(sessionUser));
+      setUser(sessionUser);
+      setIsAuthenticated(true);
+    } catch {
+      /* ignore */
+    }
+  };
+
   const userTier = user?.tier || 'free';
   const { isActive: isTrialActive, remaining: trialTimeRemaining } = user
     ? calculateTrialStatus(user)
@@ -264,6 +292,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         loginWithOAuth,
         logout,
         upgradeTier,
+        refresh,
       }}
     >
       {children}

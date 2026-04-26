@@ -71,6 +71,13 @@
       "when": 1776698400000,
       "tag": "0009_push_subscriptions",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1777196400000,
+      "tag": "0010_maraai_platform",
+      "breakpoints": true
     }
   ]
 }
