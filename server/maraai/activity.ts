@@ -14,6 +14,7 @@ export type ActivityKind =
   | 'mode.changed'
   | 'p2p.node.registered'
   | 'p2p.node.heartbeat'
+  | 'p2p.node.deleted'
   | 'p2p.kill_switch'
   | 'ai.route'
   | 'ai.error'

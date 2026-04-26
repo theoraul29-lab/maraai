@@ -5,6 +5,10 @@
 
 import type { Express, Request, Response } from 'express';
 import { z } from 'zod';
+import { eq } from 'drizzle-orm';
+import { db } from '../db.js';
+import { users } from '../../shared/schema.js';
+import { setSessionUser } from '../modules/auth-api.js';
 import {
   getConsent,
   updateConsent,
@@ -200,7 +204,31 @@ export function registerMaraAIRoutes(
     if (!parsed.success) return res.status(400).json({ message: 'Invalid request.', errors: parsed.error.flatten() });
     const out = await verifyOtp(parsed.data.email, parsed.data.code);
     if (!out.ok) return res.status(400).json(out);
-    res.json(out);
+
+    // Find-or-create the user row for this verified email and bind it to a
+    // fresh authenticated session. This is what closes the loop for the
+    // email-OTP register path: the client never has to know an actual
+    // password, and returning users sign in by simply re-verifying their
+    // email — no password mismatch, no random-password retry.
+    try {
+      const email = out.email.toLowerCase();
+      const existing = await db.select().from(users).where(eq(users.email, email)).limit(1);
+      let userId = existing[0]?.id;
+      if (!userId) {
+        const inserted = db
+          .insert(users)
+          .values({ email, firstName: email.split('@')[0], displayName: email.split('@')[0] })
+          .returning()
+          .all();
+        userId = inserted[0]?.id;
+        if (!userId) throw new Error('users.insert returned no row');
+      }
+      await setSessionUser(req, userId);
+      return res.json({ ...out, userId });
+    } catch (err) {
+      console.error('[maraai/otp] session bind failed:', err);
+      return res.status(500).json({ ok: false, reason: 'session_create_failed' });
+    }
   });
 
   // --- Internal event bus status (no user data, fine to expose to authed users) ---

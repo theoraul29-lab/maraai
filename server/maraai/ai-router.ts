@@ -184,8 +184,8 @@ async function finish(
       route: routeName,
       module: opts.module ?? null,
       latencyMs,
-      tokensIn: estimateTokens(response),
-      tokensOut: 0,
+      tokensIn: 0,
+      tokensOut: estimateTokens(response),
       success: 1,
       error: null,
     });

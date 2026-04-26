@@ -248,6 +248,6 @@ export async function deleteNode(userId: string, nodeId: string): Promise<boolea
   if (!row || row.userId !== userId) return false;
   online.delete(nodeId);
   await db.delete(p2pNodes).where(and(eq(p2pNodes.nodeId, nodeId), eq(p2pNodes.userId, userId)));
-  await logActivity(userId, 'p2p.node.heartbeat', { nodeId, deleted: true });
+  await logActivity(userId, 'p2p.node.deleted', { nodeId });
   return true;
 }

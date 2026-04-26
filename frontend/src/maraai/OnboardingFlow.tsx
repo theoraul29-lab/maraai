@@ -3,9 +3,13 @@
 // 5 steps per the spec:
 //   1. Welcome (privacy-first AI explainer)
 //   2. Auth gate — Google OAuth | Email+Password | Email OTP
-//   3. Consent gate — granular toggles + bandwidth slider
-//   4. Mode select — Centralized | Hybrid | Advanced
+//   3. Mode select — Centralized | Hybrid | Advanced
+//   4. Consent gate — granular toggles + bandwidth slider (gated by mode)
 //   5. Activate — final review + flip the bit
+//
+// Mode comes BEFORE consent so the P2P/background toggles in the consent
+// step can correctly reflect the user's chosen mode (centralized mode
+// disables them, hybrid/advanced unlocks them).
 //
 // Until the flow is completed, every advanced feature is locked. Auth and
 // consent state come straight from the existing AuthContext + /api/consent.
@@ -129,7 +133,7 @@ export function OnboardingFlow({ onClose, initialStep = 'welcome' }: OnboardingF
       } else {
         await auth.login(emailRaw, password);
       }
-      setStep('consent');
+      setStep('mode');
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -158,17 +162,11 @@ export function OnboardingFlow({ onClose, initialStep = 'welcome' }: OnboardingF
       const out = await verifyEmailOtp(otpEmail, code);
       if (!out.ok) throw new Error(out.reason || 'OTP verification failed.');
       setOtpStage('verified');
-      // OTP verified — but the user still needs an authenticated session to
-      // hit /api/consent. We hand off to the email/password flow with a
-      // generated password so the existing local-auth path takes over.
-      // (Production deployments would replace this with a magic-link login.)
-      const generated = `mara-otp-${Math.random().toString(36).slice(2, 12)}!A1`;
-      try {
-        await auth.signup(otpEmail, generated, otpEmail.split('@')[0]);
-      } catch {
-        await auth.login(otpEmail, generated);
-      }
-      setStep('consent');
+      // /api/auth/otp/verify already bound an authenticated session
+      // server-side. Just refresh the AuthContext so the React tree
+      // reflects the new user.
+      await auth.refresh();
+      setStep('mode');
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -189,7 +187,7 @@ export function OnboardingFlow({ onClose, initialStep = 'welcome' }: OnboardingF
         acceptTerms: consentForm.acceptTerms,
       });
       setConsentState(next);
-      setStep('mode');
+      setStep('activate');
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -203,7 +201,7 @@ export function OnboardingFlow({ onClose, initialStep = 'welcome' }: OnboardingF
     try {
       const next = await setMode(mode);
       setConsentState(next);
-      setStep('activate');
+      setStep('consent');
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -242,7 +240,7 @@ export function OnboardingFlow({ onClose, initialStep = 'welcome' }: OnboardingF
         {error ? <div className="maraai-onboarding-error">{error}</div> : null}
 
         {step === 'welcome' ? (
-          <WelcomeStep onContinue={() => setStep(auth.isAuthenticated ? 'consent' : 'auth')} />
+          <WelcomeStep onContinue={() => setStep(auth.isAuthenticated ? 'mode' : 'auth')} />
         ) : null}
 
         {step === 'auth' ? (
@@ -260,6 +258,10 @@ export function OnboardingFlow({ onClose, initialStep = 'welcome' }: OnboardingF
           />
         ) : null}
 
+        {step === 'mode' ? (
+          <ModeStep mode={mode} onSelect={setSelectedMode} onContinue={handleModeSelect} busy={busy} />
+        ) : null}
+
         {step === 'consent' ? (
           <ConsentStep
             form={consentForm}
@@ -269,10 +271,6 @@ export function OnboardingFlow({ onClose, initialStep = 'welcome' }: OnboardingF
             onContinue={handleConsentSave}
             busy={busy}
           />
-        ) : null}
-
-        {step === 'mode' ? (
-          <ModeStep mode={mode} onSelect={setSelectedMode} onContinue={handleModeSelect} busy={busy} />
         ) : null}
 
         {step === 'activate' ? (
@@ -295,7 +293,7 @@ export function OnboardingFlow({ onClose, initialStep = 'welcome' }: OnboardingF
 }
 
 function stepIndex(step: Step): number {
-  return { welcome: 1, auth: 2, consent: 3, mode: 4, activate: 5, done: 5 }[step];
+  return { welcome: 1, auth: 2, mode: 3, consent: 4, activate: 5, done: 5 }[step];
 }
 
 function WelcomeStep({ onContinue }: { onContinue: () => void }) {
