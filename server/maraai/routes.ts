@@ -193,6 +193,16 @@ export function registerMaraAIRoutes(
     if (!parsed.success) return res.status(400).json({ message: 'Invalid request.', errors: parsed.error.flatten() });
     try {
       const out = await requestOtp(parsed.data.email, parsed.data.purpose);
+      // Production with no transport configured: tell the caller the
+      // mail service is not set up so the UI can show a real error
+      // instead of silently advancing into a code-entry step.
+      if (!out.delivered) {
+        return res.status(503).json({
+          delivered: false,
+          reason: out.reason,
+          message: 'Email delivery is not configured on this server.',
+        });
+      }
       res.json(out);
     } catch (err: any) {
       res.status(err?.status ?? 500).json({ message: err?.message ?? 'OTP request failed.' });

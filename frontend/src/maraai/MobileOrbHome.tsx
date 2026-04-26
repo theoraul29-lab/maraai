@@ -33,7 +33,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import './MobileOrbHome.css';
 
-type OrbId = 'chat' | 'trading' | 'knowledge' | 'automation' | 'pro' | 'memory';
+type OrbId = 'you' | 'reels' | 'trading' | 'writers' | 'vip' | 'creators';
 
 type OrbItem = {
   id: OrbId;
@@ -52,11 +52,19 @@ const TAP_THRESHOLD_MS = 240;
 const MAX_FLICK_VELOCITY = 0.012; // items/ms (≈ 1.5 items per 125ms)
 
 const ICONS: Record<OrbId, ReactNode> = {
-  chat: (
+  you: (
     <svg viewBox="0 0 24 24" width="32" height="32" aria-hidden>
       <path
         fill="currentColor"
-        d="M12 3a8 8 0 0 0-7.93 9.13L3 20.5a.5.5 0 0 0 .67.46l5.4-2A8 8 0 1 0 12 3Z"
+        d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Zm0 2c-4 0-7.5 2.2-7.5 5v2h15v-2c0-2.8-3.5-5-7.5-5Z"
+      />
+    </svg>
+  ),
+  reels: (
+    <svg viewBox="0 0 24 24" width="32" height="32" aria-hidden>
+      <path
+        fill="currentColor"
+        d="M4 4h16v3H4V4Zm0 13h16v3H4v-3Zm0-6.5h16v3H4v-3Zm6 4.5 5-3-5-3v6Z"
       />
     </svg>
   ),
@@ -68,7 +76,7 @@ const ICONS: Record<OrbId, ReactNode> = {
       />
     </svg>
   ),
-  knowledge: (
+  writers: (
     <svg viewBox="0 0 24 24" width="32" height="32" aria-hidden>
       <path
         fill="currentColor"
@@ -76,15 +84,7 @@ const ICONS: Record<OrbId, ReactNode> = {
       />
     </svg>
   ),
-  automation: (
-    <svg viewBox="0 0 24 24" width="32" height="32" aria-hidden>
-      <path
-        fill="currentColor"
-        d="M19.4 13a7.86 7.86 0 0 0 .1-1 7.86 7.86 0 0 0-.1-1l2-1.6a.5.5 0 0 0 .12-.64L19.6 5.4a.5.5 0 0 0-.6-.22l-2.36.96a7.4 7.4 0 0 0-1.74-1l-.36-2.5a.5.5 0 0 0-.5-.42h-3.88a.5.5 0 0 0-.5.42l-.36 2.5a7.4 7.4 0 0 0-1.74 1L5.2 5.18a.5.5 0 0 0-.6.22L2.68 8.76a.5.5 0 0 0 .12.64L4.6 11a7.86 7.86 0 0 0-.1 1 7.86 7.86 0 0 0 .1 1l-2 1.6a.5.5 0 0 0-.12.64l1.92 3.36a.5.5 0 0 0 .6.22l2.36-.96a7.4 7.4 0 0 0 1.74 1l.36 2.5a.5.5 0 0 0 .5.42h3.88a.5.5 0 0 0 .5-.42l.36-2.5a7.4 7.4 0 0 0 1.74-1l2.36.96a.5.5 0 0 0 .6-.22l1.92-3.36a.5.5 0 0 0-.12-.64L19.4 13ZM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Z"
-      />
-    </svg>
-  ),
-  pro: (
+  vip: (
     <svg viewBox="0 0 24 24" width="32" height="32" aria-hidden>
       <path
         fill="currentColor"
@@ -92,23 +92,23 @@ const ICONS: Record<OrbId, ReactNode> = {
       />
     </svg>
   ),
-  memory: (
+  creators: (
     <svg viewBox="0 0 24 24" width="32" height="32" aria-hidden>
       <path
         fill="currentColor"
-        d="M12 3c4.97 0 9 1.79 9 4v10c0 2.21-4.03 4-9 4s-9-1.79-9-4V7c0-2.21 4.03-4 9-4Zm0 2c-3.86 0-7 1.12-7 2s3.14 2 7 2 7-1.12 7-2-3.14-2-7-2Zm-7 5.5V12c0 .88 3.14 2 7 2s7-1.12 7-2v-1.5c-1.74.95-4.34 1.5-7 1.5s-5.26-.55-7-1.5Zm0 5V17c0 .88 3.14 2 7 2s7-1.12 7-2v-1.5c-1.74.95-4.34 1.5-7 1.5s-5.26-.55-7-1.5Z"
+        d="M12 2 14.4 8.6 21 9.3l-5 4.4 1.6 6.6L12 16.9 6.4 20.3 8 13.7 3 9.3l6.6-.7L12 2Zm0 4.7-1 2.7-2.9.3 2.2 1.9-.7 2.8 2.4-1.5 2.4 1.5-.7-2.8 2.2-1.9-2.9-.3-1-2.7Z"
       />
     </svg>
   ),
 };
 
 const ITEMS: OrbItem[] = [
-  { id: 'chat', label: 'Mara Chat', to: '/you', icon: ICONS.chat },
-  { id: 'trading', label: 'Trading', to: '/trading-academy', icon: ICONS.trading },
-  { id: 'knowledge', label: 'Knowledge', to: '/writers-hub', icon: ICONS.knowledge },
-  { id: 'automation', label: 'Automation', to: '/admin/brain', icon: ICONS.automation },
-  { id: 'pro', label: 'Pro Mode', to: '/membership', icon: ICONS.pro },
-  { id: 'memory', label: 'Memory', to: '/transparency', icon: ICONS.memory },
+  { id: 'you', label: 'You', to: '/you', icon: ICONS.you },
+  { id: 'reels', label: 'Reels', to: '/reels', icon: ICONS.reels },
+  { id: 'trading', label: 'Trading Akademie', to: '/trading-academy', icon: ICONS.trading },
+  { id: 'writers', label: 'Writers', to: '/writers-hub', icon: ICONS.writers },
+  { id: 'vip', label: 'VIP', to: '/membership', icon: ICONS.vip },
+  { id: 'creators', label: 'Creators', to: '/creator-panel', icon: ICONS.creators },
 ];
 
 const PARTICLE_COUNT = 14;
@@ -335,10 +335,15 @@ export function MobileOrbHome({ items = ITEMS }: MobileOrbHomeProps) {
       const now = performance.now();
       const elapsed = now - drag.startTime;
 
+      // Always consume any pending tap target. If we don't reset here, a
+      // drag that moved past the tap threshold would leave the ref dirty
+      // and the next bare-background pointerup would mis-trigger snap or
+      // navigation against a stale slot.
+      const slot = tappedSlotRef.current;
+      tappedSlotRef.current = null;
+
       // Tap detection: tiny, fast, and ended on an orb → navigate.
       if (!drag.moved && elapsed < TAP_THRESHOLD_MS) {
-        const slot = tappedSlotRef.current;
-        tappedSlotRef.current = null;
         if (slot != null) {
           const itemIndex = mod(Math.round(offsetRef.current) + slot);
           const item = items[itemIndex];

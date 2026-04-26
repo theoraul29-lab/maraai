@@ -5,6 +5,11 @@
 // log the code to the console so engineers can finish the flow without
 // configuring a mail service. The hashed code goes to `email_otp_codes`
 // with a 10-minute TTL.
+//
+// In production with no transport configured, requestOtp returns
+// `delivered: false, reason: 'no_transport'` so the caller (UI) can
+// surface a real error instead of silently advancing into a code-entry
+// step the user can never complete.
 
 import { desc, eq, lt } from 'drizzle-orm';
 import { createHash, randomInt } from 'crypto';
@@ -30,10 +35,34 @@ function normalizeEmail(raw: string): string {
   return raw.trim().toLowerCase();
 }
 
-export async function requestOtp(emailRaw: string, purpose: OtpPurpose = 'register') {
+export type RequestOtpResult =
+  | { delivered: true; expiresAtMs: number }
+  | { delivered: false; reason: 'no_transport' };
+
+export async function requestOtp(
+  emailRaw: string,
+  purpose: OtpPurpose = 'register',
+): Promise<RequestOtpResult> {
   const email = normalizeEmail(emailRaw);
   if (!email.includes('@')) {
     throw Object.assign(new Error('Invalid email.'), { status: 400 });
+  }
+
+  const isProd = process.env.NODE_ENV === 'production';
+  const transport = (process.env.MARAAI_OTP_TRANSPORT || '').trim();
+
+  // In production, refuse to claim delivery if no real transport is
+  // wired up. Logging the code to stdout is fine for dev/CI but is not
+  // delivery — the user can't see it. We log activity for ops visibility
+  // but do NOT insert a code that no one can ever retrieve.
+  if (isProd && !transport) {
+    await logActivity(null, 'auth.otp.requested', {
+      email,
+      purpose,
+      delivered: false,
+      reason: 'no_transport',
+    });
+    return { delivered: false, reason: 'no_transport' };
   }
 
   const code = generateCode();
@@ -48,16 +77,16 @@ export async function requestOtp(emailRaw: string, purpose: OtpPurpose = 'regist
     expiresAt,
   });
 
-  // Best-effort transport. The value of MARAAI_OTP_TRANSPORT is reserved
-  // for future use (smtp, ses, sendgrid). Today we always log to console
-  // so dev/CI flows are completable.
-  if (process.env.NODE_ENV !== 'production') {
+  // Best-effort transport. MARAAI_OTP_TRANSPORT is reserved for future
+  // use (smtp, ses, sendgrid). When unset in dev we log the code to
+  // stdout so engineers can complete the flow.
+  if (!isProd) {
     console.log(`[maraai/otp] ${purpose} code for ${email}: ${code}`);
   } else {
-    console.log(`[maraai/otp] ${purpose} code dispatched to ${email}`);
+    console.log(`[maraai/otp] ${purpose} code dispatched via ${transport} to ${email}`);
   }
 
-  await logActivity(null, 'auth.otp.requested', { email, purpose });
+  await logActivity(null, 'auth.otp.requested', { email, purpose, delivered: true });
 
   return { delivered: true, expiresAtMs: expiresAt.getTime() };
 }

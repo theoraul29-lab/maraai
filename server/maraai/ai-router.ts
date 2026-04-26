@@ -55,14 +55,18 @@ const DEGRADE_RESPONSE = {
 };
 
 /** Pick a route given the user's consent + system availability. Pure-ish. */
-export async function decideRoute(opts: { userId?: string; message: string }): Promise<RouteDecision> {
+export async function decideRoute(opts: {
+  userId?: string;
+  message: string;
+  lang?: string | null;
+}): Promise<RouteDecision> {
   const consent = opts.userId ? await getConsent(opts.userId) : null;
 
   // Local AI is always available — but only worth using when it actually has
   // a confident answer for this message. The actual `tryLocalAI` call is in
   // `route()` so we don't double-evaluate it here; this stub just surfaces
   // the headline reason for the transparency log.
-  const local = tryLocalAI(opts.message, consent ? 'en' : 'en');
+  const local = tryLocalAI(opts.message, opts.lang ?? null);
   if (local && local.confidence >= 0.7) {
     return { route: 'local', reason: 'local-confident' };
   }
