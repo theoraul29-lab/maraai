@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
+import { AuthModal } from './AuthModal';
 import './MaraChatWidget.css';
 
 interface ChatMessage {
@@ -30,6 +31,7 @@ export function MaraChatWidget() {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [currentMood, setCurrentMood] = useState('neutral');
+  const [authModalOpen, setAuthModalOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Load chat history on component mount
@@ -154,7 +156,9 @@ export function MaraChatWidget() {
     return emojis[mood] || '😐';
   };
 
-  if (!user) return null;
+  // Always render — a logged-out user sees the FAB and gets a "login to
+  // chat" CTA inside the modal. This is the only chat surface on the
+  // mobile home, so hiding it would leave guests with no entry point.
 
   return (
     <>
@@ -171,8 +175,39 @@ export function MaraChatWidget() {
         {isOpen ? '✕' : '💬'}
       </button>
 
+      <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+
       {/* Chat Modal */}
-      {isOpen && (
+      {isOpen && !user && (
+        <div className="mara-chat-modal">
+          <div className="mara-chat-header">
+            <div className="mara-chat-title">
+              <span className="mara-mood-emoji">💬</span>
+              <h3>Mara AI</h3>
+            </div>
+            <button className="mara-close-btn" onClick={() => setIsOpen(false)}>✕</button>
+          </div>
+          <div className="mara-chat-messages">
+            <div className="mara-welcome">
+              <p className="mara-greeting">
+                {t('chat.loginRequired', 'Sign in to chat with Mara. Your history stays on your account.')}
+              </p>
+              <div className="mara-quick-actions">
+                <button
+                  onClick={() => {
+                    setIsOpen(false);
+                    setAuthModalOpen(true);
+                  }}
+                >
+                  {t('chat.loginCta', 'Sign in / Create account')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isOpen && user && (
         <div className="mara-chat-modal">
           <div className="mara-chat-header" style={{borderColor: MOOD_TO_COLOR[currentMood]}}>
             <div className="mara-chat-title">

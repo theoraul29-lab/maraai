@@ -11,6 +11,7 @@ import { db } from './db';
 import { eq } from 'drizzle-orm';
 import * as videoModule from '../backend/src/modules/video.js';
 import * as reelsModule from '../backend/src/modules/reels.js';
+import * as uploadsModule from '../backend/src/modules/uploads.js';
 import * as writersModule from '../backend/src/modules/writers.js';
 import * as tradingAcademyModule from '../backend/src/modules/trading-academy.js';
 import * as creatorsModule from '../backend/src/modules/creators.js';
@@ -192,6 +193,28 @@ export async function registerRoutes(
     },
     reelsModule.uploadReel,
   );
+  // --- Generic image upload (avatar, cover, post image, writers cover) ----
+  // Auth-required, multipart/form-data field name `image`. Returns a public
+  // URL the caller can store in any *ImageUrl column via the existing
+  // PATCH /api/profile/me / POST /api/profile/posts / POST /api/writers
+  // endpoints — those still validate URL shape so we keep one source of
+  // truth for what an image URL looks like.
+  app.post(
+    '/api/uploads/image',
+    requireAuth,
+    (req: any, res: any, next: any) => {
+      uploadsModule.imageUploadMiddleware(req, res, (err: unknown) => {
+        if (err) {
+          const msg = err instanceof Error ? err.message : 'upload error';
+          const status = msg.includes('File too large') ? 413 : 400;
+          return res.status(status).json({ error: msg });
+        }
+        return next();
+      });
+    },
+    uploadsModule.uploadImage,
+  );
+
   app.post('/api/videos/:id/share', requireAuth, reelsModule.shareReel);
   app.get('/api/videos/:id/comments', reelsModule.listComments);
   app.post('/api/videos/:id/comments', requireAuth, reelsModule.createComment);

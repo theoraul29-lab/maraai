@@ -252,3 +252,58 @@
   white-space: nowrap;
   border: 0;
 }
+
+/* Top action bar — login / register / language / settings.
+   Sits above the orb chain (z-index 5) and forces pointer-events
+   back on so the brand row's `pointer-events: none` doesn't bleed in. */
+.mara-orb-home__actions {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0) + 44px);
+  left: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  z-index: 5;
+  pointer-events: auto;
+}
+
+.mara-orb-home__actions-left,
+.mara-orb-home__actions-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mara-orb-home__register-btn {
+  background: linear-gradient(135deg, #a855f7, #c77dff);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(168, 85, 247, 0.35);
+}
+
+.mara-orb-home__settings-btn {
+  background: rgba(168, 85, 247, 0.18);
+  color: #fff;
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  border-radius: 999px;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* Brand row stays above particles, but below the action bar. */
+.mara-orb-home__brand {
+  z-index: 4;
+}

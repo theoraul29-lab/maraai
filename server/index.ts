@@ -25,6 +25,7 @@ import { db } from './db.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { UPLOADS_DIR } from '../backend/src/modules/reels.js';
+import { IMAGE_UPLOADS_DIR } from '../backend/src/modules/uploads.js';
 dotenv.config();
 
 // Process-level safety net for *runtime* bugs in request handlers.
@@ -255,6 +256,23 @@ app.use((req, res, next) => {
       next();
     },
     express.static(UPLOADS_DIR, {
+      maxAge: '7d',
+      immutable: true,
+      fallthrough: false,
+    }),
+  );
+
+  // Same shape, different volume: user-uploaded images (avatar, cover,
+  // post image, writers cover). Filenames are content-hashed so we can
+  // cache aggressively, and `nosniff` keeps the static tree honest in
+  // case a future MIME slips through the upload whitelist.
+  app.use(
+    '/uploads/images',
+    (_req, res, next) => {
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      next();
+    },
+    express.static(IMAGE_UPLOADS_DIR, {
       maxAge: '7d',
       immutable: true,
       fallthrough: false,
