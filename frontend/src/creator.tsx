@@ -377,7 +377,19 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
                 >
                   {uploading ? t('creator.publishing') : t('creator.publishReel')}
                 </button>
-                <button className="creator-button secondary" onClick={() => { setUploadTitle(''); setUploadDesc(''); setUploadUrl(''); setUploadTags(''); }}>
+                <button
+                  className="creator-button secondary"
+                  onClick={() => {
+                    setUploadTitle('');
+                    setUploadDesc('');
+                    setUploadUrl('');
+                    setUploadTags('');
+                    if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl);
+                    setVideoFile(null);
+                    setVideoPreviewUrl('');
+                    if (videoFileRef.current) videoFileRef.current.value = '';
+                  }}
+                >
                   {t('creator.reset')}
                 </button>
               </div>

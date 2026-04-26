@@ -235,8 +235,16 @@ export function SubsystemSettings({ onClose, onRequestLogin }: Props) {
                       bandwidthShareGbMonth: Number(e.target.value),
                     })
                   }
-                  onPointerUp={() =>
-                    patch({ bandwidthShareGbMonth: consent.bandwidthShareGbMonth })
+                  // Read the slider's current DOM value at release time —
+                  // `consent` from the render closure can be one render
+                  // behind the latest `onChange`, which would have us
+                  // POST the pre-drag value and silently revert the UI.
+                  onPointerUp={(e) =>
+                    patch({
+                      bandwidthShareGbMonth: Number(
+                        (e.target as HTMLInputElement).value,
+                      ),
+                    })
                   }
                   disabled={saving || !consent.p2pEnabled}
                 />
