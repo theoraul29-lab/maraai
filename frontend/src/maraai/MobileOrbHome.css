@@ -201,16 +201,28 @@
     0 0 90px rgba(168, 85, 247, 0.28),
     inset 0 -12px 36px rgba(86, 21, 158, 0.55),
     inset 0 8px 18px rgba(255, 255, 255, 0.28);
-  animation: maraOrbCenterPulse 7.2s ease-in-out infinite;
+  /* Glow stays constant. The animation drives only a slow hue drift so
+     the centre orb gently shifts colour (purple → magenta → indigo →
+     purple) instead of throbbing in brightness. Linear timing avoids
+     any ease-in/out emphasis that would read as a beat. */
+  animation: maraOrbCenterAmbient 16s linear infinite;
 }
 
-@keyframes maraOrbCenterPulse {
-  0%,
-  100% {
-    filter: drop-shadow(0 0 4px rgba(199, 125, 255, 0.18));
+@keyframes maraOrbCenterAmbient {
+  0% {
+    filter:
+      drop-shadow(0 0 14px rgba(199, 125, 255, 0.32))
+      hue-rotate(-18deg);
   }
   50% {
-    filter: drop-shadow(0 0 16px rgba(199, 125, 255, 0.45));
+    filter:
+      drop-shadow(0 0 14px rgba(199, 125, 255, 0.32))
+      hue-rotate(18deg);
+  }
+  100% {
+    filter:
+      drop-shadow(0 0 14px rgba(199, 125, 255, 0.32))
+      hue-rotate(-18deg);
   }
 }
 
