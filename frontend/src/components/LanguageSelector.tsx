@@ -1,17 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { SUPPORTED_LANGUAGES, changeLanguage } from '../i18n';
+import { useLanguage } from '../i18n/useLanguage';
 
 interface LanguageSelectorProps {
   compact?: boolean;
 }
 
 export const LanguageSelector: React.FC<LanguageSelectorProps> = ({ compact = false }) => {
-  const { i18n } = useTranslation();
+  const { language, available, setLanguage } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const currentLang = SUPPORTED_LANGUAGES.find(l => l.code === i18n.language) || SUPPORTED_LANGUAGES[0];
+  const currentLang = available.find(l => l.code === language) || available[0];
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -33,7 +32,8 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({ compact = fa
   }, [isOpen]);
 
   const handleSelect = async (code: string) => {
-    await changeLanguage(code);
+    // setLanguage handles localStorage + server sync (when authenticated).
+    await setLanguage(code);
     setIsOpen(false);
   };
 
@@ -83,11 +83,11 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({ compact = fa
             boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
           }}
         >
-          {SUPPORTED_LANGUAGES.map(lang => (
+          {available.map(lang => (
             <button
               key={lang.code}
               role="option"
-              aria-selected={lang.code === i18n.language}
+              aria-selected={lang.code === language}
               onClick={() => handleSelect(lang.code)}
               style={{
                 display: 'flex',
@@ -95,20 +95,20 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({ compact = fa
                 gap: '8px',
                 width: '100%',
                 padding: '8px 12px',
-                background: lang.code === i18n.language ? 'rgba(168,85,247,0.2)' : 'transparent',
+                background: lang.code === language ? 'rgba(168,85,247,0.2)' : 'transparent',
                 border: 'none',
                 borderRadius: '6px',
-                color: lang.code === i18n.language ? '#a855f7' : '#ccc',
+                color: lang.code === language ? '#a855f7' : '#ccc',
                 cursor: 'pointer',
                 fontSize: '13px',
                 textAlign: 'left',
                 transition: 'background 0.15s',
               }}
               onMouseEnter={e => {
-                if (lang.code !== i18n.language) (e.target as HTMLElement).style.background = 'rgba(255,255,255,0.06)';
+                if (lang.code !== language) (e.target as HTMLElement).style.background = 'rgba(255,255,255,0.06)';
               }}
               onMouseLeave={e => {
-                if (lang.code !== i18n.language) (e.target as HTMLElement).style.background = 'transparent';
+                if (lang.code !== language) (e.target as HTMLElement).style.background = 'transparent';
               }}
             >
               <span>{lang.flag}</span>

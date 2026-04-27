@@ -31,6 +31,7 @@ import {
   useState,
 } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { AuthButton } from '../components/AuthButton';
 import { LanguageSelector } from '../components/LanguageSelector';
 import { AuthModal } from '../components/AuthModal';
@@ -145,6 +146,7 @@ export type MobileOrbHomeProps = {
 export function MobileOrbHome({ items = ITEMS }: MobileOrbHomeProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const count = items.length;
 
   // Header overlay state — settings panel + auth modal for the
@@ -429,7 +431,7 @@ export function MobileOrbHome({ items = ITEMS }: MobileOrbHomeProps) {
     <main
       className="mara-orb-home"
       role="application"
-      aria-label="Mara AI mobile home selector"
+      aria-label={t('home.mobileAriaLabel')}
     >
       <div className="mara-orb-home__bg-glow" aria-hidden />
 
@@ -461,7 +463,7 @@ export function MobileOrbHome({ items = ITEMS }: MobileOrbHomeProps) {
               className="mara-orb-home__register-btn"
               onClick={() => setAuthModalOpen(true)}
             >
-              Create account
+              {t('home.createAccount')}
             </button>
           )}
         </div>
@@ -470,7 +472,7 @@ export function MobileOrbHome({ items = ITEMS }: MobileOrbHomeProps) {
           <button
             type="button"
             className="mara-orb-home__settings-btn"
-            aria-label="Subsystem settings"
+            aria-label={t('home.subsystemSettings')}
             onClick={() => setSettingsOpen(true)}
           >
             <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden>

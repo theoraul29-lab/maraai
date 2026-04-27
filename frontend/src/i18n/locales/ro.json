@@ -45,7 +45,10 @@
     "trading": "Trading",
     "vip": "VIP",
     "creators": "Creatori",
-    "writers": "Scriitori"
+    "writers": "Scriitori",
+    "mobileAriaLabel": "Selector mobil Mara AI",
+    "subsystemSettings": "Setări subsisteme",
+    "createAccount": "Creează cont"
   },
   "auth": {
     "welcomeBack": "Bine ai revenit",
@@ -57,10 +60,10 @@
     "emailRequired": "Email-ul este obligatoriu",
     "emailInvalid": "Introdu o adresă de email validă",
     "passwordRequired": "Parola este obligatorie",
-    "passwordMinLength": "Parola trebuie să aibă cel puțin 8 caractere",
+    "passwordMinLength": "Parola trebuie să aibă cel puțin 6 caractere",
     "nameRequired": "Numele este obligatoriu",
     "nameMinLength": "Numele trebuie să aibă cel puțin 2 caractere",
-    "passwordHint": "✓ Parola trebuie să aibă cel puțin 8 caractere",
+    "passwordHint": "✓ Parola trebuie să aibă cel puțin 6 caractere",
     "login": "Autentificare",
     "createAccount": "Creează cont",
     "signingIn": "Se autentifică...",
@@ -79,7 +82,7 @@
     "switchToLogin": "Treci la autentificare",
     "or": "SAU",
     "errors": {
-      "signup_body_invalid": "Email, parolă (minim 8 caractere) și nume sunt obligatorii.",
+      "signup_body_invalid": "Email, parolă (minim 6 caractere) și nume sunt obligatorii.",
       "login_body_invalid": "Email și parolă sunt obligatorii.",
       "email_exists": "Există deja un cont cu acest email.",
       "invalid_credentials": "Email sau parolă invalide.",
@@ -100,7 +103,16 @@
       "oauth_generic": "Autentificarea a eșuat. Încearcă din nou.",
       "network_error": "Eroare de rețea. Încearcă din nou.",
       "unknown": "Ceva nu a mers bine. Încearcă din nou."
-    }
+    },
+    "logout": "Deconectare",
+    "logoutAriaLabel": "Deconectare din cont",
+    "earnings": "Câștiguri",
+    "upgradeToPremium": "Upgrade la Premium",
+    "upgradeAriaLabel": "Upgrade la abonament Premium",
+    "creatorPanel": "Panou Creator",
+    "creatorAriaLabel": "Deschide panoul de creator",
+    "profileMenuFor": "Meniu profil pentru {{name}}",
+    "loginOrSignup": "Autentificare sau înregistrare"
   },
   "trading": {
     "title": "TRADING AKADEMIE",
