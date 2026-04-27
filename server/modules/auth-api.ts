@@ -30,7 +30,10 @@ const BCRYPT_ROUNDS = 8;
 // Pre-computed bcrypt hash (of a random throwaway string) used only to
 // equalise response timing in `login()` when the email does not exist, so
 // attackers can't enumerate registered emails via timing side-channels.
-const DUMMY_BCRYPT_HASH = '$2a$10$zvolThg7zhnrni8khQnWXOaqChfBo1KU6L3uBzYFN0kr4VkDrbmJ.';
+// MUST stay at the same cost factor as BCRYPT_ROUNDS — bcrypt.compare reads
+// the cost from the stored hash, so a mismatch reintroduces a timing
+// side-channel between "email not found" and "wrong password".
+const DUMMY_BCRYPT_HASH = '$2a$08$1Mfpb6XDnx22Ot53i699SuCNeo7xZFZhXBDpLgKqFhSsvzeRG5gHK';
 
 const emailSchema = z.string().trim().email().max(320);
 // Spec: password min length ≥ 6. We accept anything from 6 to 200 chars.
@@ -192,7 +195,10 @@ export async function signup(req: Request, res: Response) {
 
   const email = parsed.data.email.toLowerCase();
   const { password, name } = parsed.data;
-  console.log('[auth] signup begin', { email, t: 0 });
+  // Intentionally do NOT log `email` — that's PII under GDPR and the
+  // log line would otherwise end up in Railway's stdout aggregator. The
+  // user.id from post-tx is the safe correlator across signup phases.
+  console.log('[auth] signup begin', { t: 0 });
 
   // Defence in depth: check both the users table and the credentials table.
   // A match in either means this email is unusable for a new signup (possibly
