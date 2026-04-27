@@ -45,7 +45,10 @@
     "trading": "Trading",
     "vip": "VIP",
     "creators": "Creators",
-    "writers": "Writers"
+    "writers": "Writers",
+    "mobileAriaLabel": "Mara AI mobile home selector",
+    "subsystemSettings": "Subsystem settings",
+    "createAccount": "Create account"
   },
   "auth": {
     "welcomeBack": "Welcome Back",
@@ -57,10 +60,10 @@
     "emailRequired": "Email is required",
     "emailInvalid": "Please enter a valid email address",
     "passwordRequired": "Password is required",
-    "passwordMinLength": "Password must be at least 8 characters",
+    "passwordMinLength": "Password must be at least 6 characters",
     "nameRequired": "Name is required",
     "nameMinLength": "Name must be at least 2 characters",
-    "passwordHint": "✓ Password must be at least 8 characters",
+    "passwordHint": "✓ Password must be at least 6 characters",
     "login": "Login",
     "createAccount": "Create Account",
     "signingIn": "Signing Account...",
@@ -79,7 +82,7 @@
     "switchToLogin": "Switch to login",
     "or": "OR",
     "errors": {
-      "signup_body_invalid": "Email, password (min 8 chars) and name are required.",
+      "signup_body_invalid": "Email, password (min 6 chars) and name are required.",
       "login_body_invalid": "Email and password are required.",
       "email_exists": "An account with this email already exists.",
       "invalid_credentials": "Invalid email or password.",
@@ -100,7 +103,16 @@
       "oauth_generic": "Sign-in failed. Please try again.",
       "network_error": "Network error. Please try again.",
       "unknown": "Something went wrong. Please try again."
-    }
+    },
+    "logout": "Logout",
+    "logoutAriaLabel": "Logout from account",
+    "earnings": "Earnings",
+    "upgradeToPremium": "Upgrade to Premium",
+    "upgradeAriaLabel": "Upgrade to Premium membership",
+    "creatorPanel": "Creator Panel",
+    "creatorAriaLabel": "Open creator panel",
+    "profileMenuFor": "Profile menu for {{name}}",
+    "loginOrSignup": "Login or sign up"
   },
   "trading": {
     "title": "TRADING AKADEMIE",
