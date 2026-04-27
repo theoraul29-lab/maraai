@@ -186,7 +186,7 @@ function flashBadRequest(res: Response, code: AuthErrorCode, message: string) {
   return authError(res, 400, code, message);
 }
 
-export async function signup(req: Request, res: Response) {
+async function signupHandler(req: Request, res: Response) {
   const t0 = Date.now();
   const parsed = signupBodySchema.safeParse(req.body);
   if (!parsed.success) {
@@ -276,7 +276,7 @@ export async function signup(req: Request, res: Response) {
   return res.status(201).json(toPayload({ ...user, preferredLanguage: null }));
 }
 
-export async function login(req: Request, res: Response) {
+async function loginHandler(req: Request, res: Response) {
   const t0 = Date.now();
   console.log('[auth] login begin', { t: 0 });
   const parsed = loginBodySchema.safeParse(req.body);
@@ -327,7 +327,7 @@ export async function login(req: Request, res: Response) {
   return res.status(200).json(toPayload({ ...user[0], preferredLanguage: language }));
 }
 
-export async function logout(req: Request, res: Response) {
+async function logoutHandler(req: Request, res: Response) {
   const t0 = Date.now();
   const previousUid = req.session?.userId;
   console.log('[auth] logout begin', {
@@ -347,7 +347,7 @@ export async function logout(req: Request, res: Response) {
   });
 }
 
-export async function me(req: Request, res: Response) {
+async function meHandler(req: Request, res: Response) {
   const t0 = Date.now();
   const uid = req.session?.userId;
   if (!uid) {
@@ -377,7 +377,7 @@ export async function me(req: Request, res: Response) {
   return res.status(200).json({ user: toPayload({ ...row[0], preferredLanguage: language }) });
 }
 
-export async function oauth(req: Request, res: Response) {
+async function oauthHandler(req: Request, res: Response) {
   const provider = String(req.params.provider || '').toLowerCase();
   if (!['google', 'facebook'].includes(provider)) {
     return authError(res, 400, 'oauth_unsupported', 'Unsupported OAuth provider.');
@@ -388,3 +388,41 @@ export async function oauth(req: Request, res: Response) {
 
 // Touch sql to avoid unused-import tree-shake complaint on strict tsc configs.
 void sql;
+
+/**
+ * Express 4 does NOT await the return value of route handlers. If an
+ * `async` handler throws (e.g. a Drizzle query rejects because the live
+ * SQLite schema is missing a column the in-memory schema declares), the
+ * rejection becomes an unhandledRejection and the response is never
+ * written — the request hangs until the upstream proxy gives up. That
+ * exact failure mode took /api/auth/me + /api/auth/signup down on prod
+ * (Railway logs 2026-04-27, fixed by PR #77's safety guard, but the
+ * wrapper below is the general defence: any future schema↔disk drift
+ * fails fast with 500 instead of hanging).
+ *
+ * Keep the wrapper minimal — individual handlers are still expected to
+ * handle expected errors (zod parse, bcrypt failure, …) themselves; this
+ * is purely the last-resort safety net for *unexpected* failures.
+ */
+function wrapAsync(
+  phase: string,
+  handler: (req: Request, res: Response) => Promise<unknown>,
+): (req: Request, res: Response) => void {
+  return (req, res) => {
+    handler(req, res).catch((err) => {
+      console.error(`[auth] ${phase} unhandled error:`, err);
+      if (!res.headersSent) {
+        res.status(500).json({
+          code: 'internal_error',
+          message: 'An unexpected error occurred. Please try again.',
+        });
+      }
+    });
+  };
+}
+
+export const signup = wrapAsync('signup', signupHandler);
+export const login = wrapAsync('login', loginHandler);
+export const logout = wrapAsync('logout', logoutHandler);
+export const me = wrapAsync('me', meHandler);
+export const oauth = wrapAsync('oauth', oauthHandler);
