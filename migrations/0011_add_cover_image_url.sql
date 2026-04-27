@@ -14,3 +14,9 @@
 -- The guard in server/index.ts runs on every startup and is therefore
 -- self-healing: it will add the column on any database that is missing it,
 -- regardless of which Drizzle migration entries are present.
+
+-- Drizzle's migrator throws `The supplied SQL string contains no statements`
+-- if a migration file is comments-only, so include a no-op statement here.
+-- (No `statement-breakpoint` after it: a trailing breakpoint produces an
+-- empty second statement which crashes the migrator with the same error.)
+SELECT 1;
