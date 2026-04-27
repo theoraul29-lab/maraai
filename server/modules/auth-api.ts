@@ -277,8 +277,11 @@ export async function signup(req: Request, res: Response) {
 }
 
 export async function login(req: Request, res: Response) {
+  const t0 = Date.now();
+  console.log('[auth] login begin', { t: 0 });
   const parsed = loginBodySchema.safeParse(req.body);
   if (!parsed.success) {
+    console.log('[auth] login body-invalid', { ms: Date.now() - t0 });
     return flashBadRequest(res, 'login_body_invalid', 'Email and password are required.');
   }
 
@@ -286,15 +289,18 @@ export async function login(req: Request, res: Response) {
   const { password } = parsed.data;
 
   const creds = await findCredentialsByEmail(email);
+  console.log('[auth] login post-creds-lookup', { ms: Date.now() - t0, found: Boolean(creds) });
   if (!creds) {
     // Uniform error message AND matching latency: run a dummy bcrypt.compare
     // so the "user not found" path takes the same ~100ms as a real compare.
     // Without this, an attacker could enumerate valid emails via timing.
     await bcrypt.compare(password, DUMMY_BCRYPT_HASH).catch(() => false);
+    console.log('[auth] login invalid-credentials (no user)', { ms: Date.now() - t0 });
     return authError(res, 401, 'invalid_credentials', 'Invalid email or password.');
   }
 
   const ok = await bcrypt.compare(password, creds.passwordHash);
+  console.log('[auth] login post-bcrypt', { ms: Date.now() - t0, ok });
   if (!ok) {
     return authError(res, 401, 'invalid_credentials', 'Invalid email or password.');
   }
@@ -305,6 +311,7 @@ export async function login(req: Request, res: Response) {
     .where(eq(users.id, creds.userId))
     .limit(1);
   if (!user[0]) {
+    console.error('[auth] login user_missing — credentials row points to deleted user', { userId: creds.userId });
     return authError(res, 500, 'user_missing', 'User record missing.');
   }
 
@@ -314,25 +321,37 @@ export async function login(req: Request, res: Response) {
     console.error('[auth] session.regenerate failed after login:', err);
     return authError(res, 500, 'session_create_failed', 'Failed to create session. Please try again.');
   }
+  console.log('[auth] login post-session', { ms: Date.now() - t0, userId: user[0].id });
   const language = await fetchUserLanguage(user[0].id);
+  console.log('[auth] login done', { ms: Date.now() - t0, userId: user[0].id });
   return res.status(200).json(toPayload({ ...user[0], preferredLanguage: language }));
 }
 
 export async function logout(req: Request, res: Response) {
+  const t0 = Date.now();
+  const previousUid = req.session?.userId;
+  console.log('[auth] logout begin', {
+    t: 0,
+    uid: previousUid ? `${String(previousUid).slice(0, 8)}…` : 'anon',
+  });
   req.session.destroy((err) => {
     if (err) {
       // Session destroy failure shouldn't block the client — just warn.
       // The client clears local state anyway.
+      console.error('[auth] logout failed', { ms: Date.now() - t0, err });
       return authError(res, 500, 'logout_failed', 'Logout failed.');
     }
     res.clearCookie('connect.sid');
+    console.log('[auth] logout done', { ms: Date.now() - t0 });
     return res.status(200).json({ ok: true });
   });
 }
 
 export async function me(req: Request, res: Response) {
+  const t0 = Date.now();
   const uid = req.session?.userId;
   if (!uid) {
+    console.log('[auth] me anon (no session userId)', { ms: Date.now() - t0 });
     return res.status(200).json({ user: null });
   }
 
@@ -341,13 +360,20 @@ export async function me(req: Request, res: Response) {
     .from(users)
     .where(eq(users.id, uid))
     .limit(1);
+  console.log('[auth] me post-users-lookup', {
+    ms: Date.now() - t0,
+    uidPrefix: String(uid).slice(0, 8),
+    found: Boolean(row[0]),
+  });
 
   if (!row[0] || !row[0].email) {
     // Anonymous session id (not a real registered user).
+    console.log('[auth] me anon (id is anonymous)', { ms: Date.now() - t0 });
     return res.status(200).json({ user: null, anonymousId: uid });
   }
 
   const language = await fetchUserLanguage(row[0].id);
+  console.log('[auth] me done', { ms: Date.now() - t0, userId: row[0].id });
   return res.status(200).json({ user: toPayload({ ...row[0], preferredLanguage: language }) });
 }
 
