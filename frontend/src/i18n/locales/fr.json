@@ -79,7 +79,7 @@
     "switchToLogin": "Passer à la connexion",
     "or": "OU",
     "errors": {
-      "signup_body_invalid": "Email, mot de passe (min. 8 caractères) et nom sont requis.",
+      "signup_body_invalid": "Email, mot de passe (min. 6 caractères) et nom sont requis.",
       "login_body_invalid": "Email et mot de passe sont requis.",
       "email_exists": "Un compte avec cet email existe déjà.",
       "invalid_credentials": "Email ou mot de passe invalides.",

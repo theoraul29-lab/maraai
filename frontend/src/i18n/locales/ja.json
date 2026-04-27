@@ -79,7 +79,7 @@
     "switchToLogin": "ログインに切り替え",
     "or": "または",
     "errors": {
-      "signup_body_invalid": "メール、パスワード(8文字以上)、名前は必須です。",
+      "signup_body_invalid": "メール、パスワード(6文字以上)、名前は必須です。",
       "login_body_invalid": "メールとパスワードは必須です。",
       "email_exists": "このメールのアカウントは既に存在します。",
       "invalid_credentials": "メールまたはパスワードが無効です。",

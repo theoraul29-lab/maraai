@@ -82,7 +82,7 @@
     "switchToLogin": "Treci la autentificare",
     "or": "SAU",
     "errors": {
-      "signup_body_invalid": "Email, parolă (minim 8 caractere) și nume sunt obligatorii.",
+      "signup_body_invalid": "Email, parolă (minim 6 caractere) și nume sunt obligatorii.",
       "login_body_invalid": "Email și parolă sunt obligatorii.",
       "email_exists": "Există deja un cont cu acest email.",
       "invalid_credentials": "Email sau parolă invalide.",

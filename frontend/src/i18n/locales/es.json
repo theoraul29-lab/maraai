@@ -79,7 +79,7 @@
     "switchToLogin": "Ir a inicio de sesión",
     "or": "O",
     "errors": {
-      "signup_body_invalid": "Email, contraseña (mín. 8 caracteres) y nombre son obligatorios.",
+      "signup_body_invalid": "Email, contraseña (mín. 6 caracteres) y nombre son obligatorios.",
       "login_body_invalid": "Email y contraseña son obligatorios.",
       "email_exists": "Ya existe una cuenta con este email.",
       "invalid_credentials": "Email o contraseña inválidos.",

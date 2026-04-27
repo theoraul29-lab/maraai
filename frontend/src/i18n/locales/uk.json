@@ -79,7 +79,7 @@
     "switchToLogin": "До входу",
     "or": "АБО",
     "errors": {
-      "signup_body_invalid": "Email, пароль (мін. 8 символів) і ім'я обов'язкові.",
+      "signup_body_invalid": "Email, пароль (мін. 6 символів) і ім'я обов'язкові.",
       "login_body_invalid": "Email і пароль обов'язкові.",
       "email_exists": "Обліковий запис з цим email вже існує.",
       "invalid_credentials": "Невірний email або пароль.",

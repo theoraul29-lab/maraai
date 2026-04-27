@@ -79,7 +79,7 @@
     "switchToLogin": "Zur Anmeldung wechseln",
     "or": "ODER",
     "errors": {
-      "signup_body_invalid": "E-Mail, Passwort (mind. 8 Zeichen) und Name sind erforderlich.",
+      "signup_body_invalid": "E-Mail, Passwort (mind. 6 Zeichen) und Name sind erforderlich.",
       "login_body_invalid": "E-Mail und Passwort sind erforderlich.",
       "email_exists": "Ein Konto mit dieser E-Mail existiert bereits.",
       "invalid_credentials": "Ungültige E-Mail oder Passwort.",
