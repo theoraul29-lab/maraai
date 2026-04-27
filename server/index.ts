@@ -21,7 +21,7 @@ import { seedPlans } from './billing/seed.js';
 import { seedTradingAcademy } from './trading/seed.js';
 import { z } from 'zod';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
-import { db } from './db.js';
+import { db, rawSqlite } from './db.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { UPLOADS_DIR } from '../backend/src/modules/reels.js';
@@ -72,6 +72,29 @@ function runMigrations() {
     console.log('[migrations] Drizzle migrations applied successfully');
   } catch (err) {
     console.error('[migrations] Failed to run migrations:', err);
+    throw err;
+  }
+
+  // Safety guard: ensure cover_image_url exists on the users table.
+  //
+  // Migration 0007_you_fb_profile added this column, but production databases
+  // that were created before that migration ran (or where the migration was
+  // recorded as applied without the DDL executing) are missing it, causing:
+  //   SqliteError: no such column: "cover_image_url"
+  //
+  // SQLite does not support ALTER TABLE … ADD COLUMN IF NOT EXISTS, so we
+  // inspect PRAGMA table_info first and only issue the ALTER TABLE when the
+  // column is absent. This guard is idempotent and runs on every startup.
+  try {
+    type ColumnInfo = { name: string };
+    const columns = rawSqlite.pragma('table_info(users)') as ColumnInfo[];
+    const hasCoverImageUrl = columns.some((col) => col.name === 'cover_image_url');
+    if (!hasCoverImageUrl) {
+      rawSqlite.exec("ALTER TABLE `users` ADD COLUMN `cover_image_url` text;");
+      console.log('[migrations] Added missing cover_image_url column to users table');
+    }
+  } catch (err) {
+    console.error('[migrations] Failed to apply cover_image_url safety guard:', err);
     throw err;
   }
 }
