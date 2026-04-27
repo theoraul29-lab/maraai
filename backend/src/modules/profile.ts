@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import type { IStorage } from '../../../server/storage';
+import { notifyFollow } from '../../../server/notifications/producer.js';
 
 let deps: { storage: IStorage };
 
@@ -164,6 +165,8 @@ export async function followUser(req: Request, res: Response) {
       return;
     }
     const result = await deps.storage.followUser(followerId, followingId);
+    // Fire-and-forget notification. Must never break the follow op.
+    void notifyFollow(followerId, followingId);
     res.json(result);
   } catch (error) {
     console.error('[profile] followUser failed:', error);
