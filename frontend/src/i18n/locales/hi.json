@@ -57,10 +57,10 @@
     "emailRequired": "ईमेल आवश्यक है",
     "emailInvalid": "वैध ईमेल दर्ज करें",
     "passwordRequired": "पासवर्ड आवश्यक है",
-    "passwordMinLength": "पासवर्ड कम से कम 8 अक्षरों का होना चाहिए",
+    "passwordMinLength": "पासवर्ड कम से कम 6 अक्षरों का होना चाहिए",
     "nameRequired": "नाम आवश्यक है",
     "nameMinLength": "नाम कम से कम 2 अक्षरों का होना चाहिए",
-    "passwordHint": "✓ पासवर्ड कम से कम 8 अक्षरों का होना चाहिए",
+    "passwordHint": "✓ पासवर्ड कम से कम 6 अक्षरों का होना चाहिए",
     "login": "लॉगिन",
     "createAccount": "खाता बनाएं",
     "signingIn": "लॉगिन हो रहा है...",
@@ -79,7 +79,7 @@
     "switchToLogin": "लॉगिन पर जाएं",
     "or": "या",
     "errors": {
-      "signup_body_invalid": "ईमेल, पासवर्ड (कम से कम 8 अक्षर) और नाम आवश्यक हैं।",
+      "signup_body_invalid": "ईमेल, पासवर्ड (कम से कम 6 अक्षर) और नाम आवश्यक हैं।",
       "login_body_invalid": "ईमेल और पासवर्ड आवश्यक हैं।",
       "email_exists": "इस ईमेल वाला खाता पहले से मौजूद है।",
       "invalid_credentials": "अमान्य ईमेल या पासवर्ड।",
@@ -991,5 +991,19 @@
   "languageSelector": {
     "label": "भाषा",
     "changeLanguage": "भाषा बदलें"
+  },
+  "pwa": {
+    "installTitle": "Mara इंस्टॉल करें",
+    "installBody": "पूर्ण ऐप अनुभव के लिए hellomara.net को अपनी होम स्क्रीन पर जोड़ें।",
+    "installCta": "इंस्टॉल करें",
+    "installDismiss": "अभी नहीं",
+    "installDismissAria": "इंस्टॉल प्रॉम्प्ट बंद करें",
+    "iosHintTitle": "Mara इंस्टॉल करें",
+    "iosHintBody": "ऐप इंस्टॉल करने के लिए शेयर पर टैप करें, फिर \"होम स्क्रीन में जोड़ें\"।",
+    "iosHintDismiss": "समझ गया",
+    "updateTitle": "अपडेट तैयार",
+    "updateBody": "Mara का नया संस्करण उपलब्ध है।",
+    "updateCta": "रिफ्रेश",
+    "updateDismissAria": "अपडेट बंद करें"
   }
 }

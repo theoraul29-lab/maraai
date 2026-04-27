@@ -1434,6 +1434,25 @@ export class DatabaseStorage implements IStorage {
       .insert(notifications)
       .values(notification)
       .returning();
+    // Fire a web push in parallel (best-effort; never throws). Loaded
+    // lazily so the push module isn't imported until a notification is
+    // actually created — keeps startup cost low and sidesteps circular
+    // imports between storage and push.
+    void (async () => {
+      try {
+        const mod = await import('./push/vapid.js');
+        if (!mod.isConfigured()) return;
+        await mod.sendToUser(created.userId, {
+          title: created.title,
+          body: created.message,
+          relatedId: created.relatedId ?? null,
+          kind: created.type,
+          tag: `${created.type}:${created.id}`,
+        });
+      } catch (err) {
+        console.error('[notifications] push dispatch failed:', err);
+      }
+    })();
     return created;
   }
 

@@ -57,10 +57,10 @@
     "emailRequired": "Email is required",
     "emailInvalid": "Please enter a valid email address",
     "passwordRequired": "Password is required",
-    "passwordMinLength": "Password must be at least 8 characters",
+    "passwordMinLength": "Password must be at least 6 characters",
     "nameRequired": "Name is required",
     "nameMinLength": "Name must be at least 2 characters",
-    "passwordHint": "✓ Password must be at least 8 characters",
+    "passwordHint": "✓ Password must be at least 6 characters",
     "login": "Inloggen",
     "createAccount": "Account aanmaken",
     "signingIn": "Signing Account...",
@@ -977,5 +977,19 @@
   "languageSelector": {
     "label": "Taal",
     "changeLanguage": "Taal wijzigen"
+  },
+  "pwa": {
+    "installTitle": "Mara installeren",
+    "installBody": "Voeg hellomara.net toe aan je beginscherm voor de volledige app-ervaring.",
+    "installCta": "Installeren",
+    "installDismiss": "Niet nu",
+    "installDismissAria": "Installatiemelding sluiten",
+    "iosHintTitle": "Mara installeren",
+    "iosHintBody": "Tik op Delen en vervolgens \"Zet op beginscherm\" om de app te installeren.",
+    "iosHintDismiss": "Begrepen",
+    "updateTitle": "Update gereed",
+    "updateBody": "Er is een nieuwere versie van Mara beschikbaar.",
+    "updateCta": "Vernieuwen",
+    "updateDismissAria": "Update sluiten"
   }
 }

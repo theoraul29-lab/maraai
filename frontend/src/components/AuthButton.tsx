@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { useAccessible, useAccessibleDropdown } from '../hooks/useAccessible';
 import { useTouchGesture } from '../hooks/useTouchGesture';
@@ -7,6 +8,7 @@ import { AuthModal } from './AuthModal';
 import './AuthButton.css';
 
 export const AuthButton: React.FC = () => {
+  const { t } = useTranslation();
   const { user, isAuthenticated, isTrialActive, trialTimeRemaining, logout } = useAuth();
   const { handleError } = useErrorHandler();
   
@@ -93,7 +95,7 @@ export const AuthButton: React.FC = () => {
 
   if (!isAuthenticated) {
     const loginAccessibility = useAccessible({
-      label: 'Login or sign up',
+      label: t('auth.loginOrSignup'),
       role: 'button',
       initialFocused: false,
     });
@@ -109,7 +111,7 @@ export const AuthButton: React.FC = () => {
           <span className="auth-button-icon" aria-hidden="true">
             🔓
           </span>
-          <span className="auth-button-text">Login</span>
+          <span className="auth-button-text">{t('auth.login')}</span>
         </button>
         <AuthModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
       </>
@@ -134,7 +136,7 @@ export const AuthButton: React.FC = () => {
           onTouchEnd={() => handleTouchEnd()}
           {...dropdownAccessibility.button}
           type="button"
-          aria-label={`Profile menu for ${userName}`}
+          aria-label={t('auth.profileMenuFor', { name: userName })}
         >
           <div
             className="auth-button-avatar"
@@ -174,7 +176,7 @@ export const AuthButton: React.FC = () => {
           >
             {/* Earnings Display */}
             <div className="auth-dropdown-item disabled" role="menuitem" tabIndex={-1}>
-              <span>Earnings</span>
+              <span>{t('auth.earnings')}</span>
               <span className="earnings-value">${userEarnings.toFixed(2)}</span>
             </div>
 
@@ -185,9 +187,9 @@ export const AuthButton: React.FC = () => {
               className="auth-dropdown-item"
               onClick={() => handleNavigate('/membership')}
               role="menuitem"
-              aria-label="Upgrade to Premium membership"
+              aria-label={t('auth.upgradeAriaLabel')}
             >
-              <span>Upgrade to Premium</span>
+              <span>{t('auth.upgradeToPremium')}</span>
               <span aria-hidden="true">→</span>
             </button>
 
@@ -196,9 +198,9 @@ export const AuthButton: React.FC = () => {
               className="auth-dropdown-item"
               onClick={() => handleNavigate('/creator-panel')}
               role="menuitem"
-              aria-label="Open creator panel"
+              aria-label={t('auth.creatorAriaLabel')}
             >
-              <span>Creator Panel</span>
+              <span>{t('auth.creatorPanel')}</span>
               <span aria-hidden="true">→</span>
             </button>
 
@@ -209,9 +211,9 @@ export const AuthButton: React.FC = () => {
               className="auth-dropdown-item logout"
               onClick={handleLogout}
               role="menuitem"
-              aria-label="Logout from account"
+              aria-label={t('auth.logoutAriaLabel')}
             >
-              <span>Logout</span>
+              <span>{t('auth.logout')}</span>
               <span aria-hidden="true">🚪</span>
             </button>
           </div>

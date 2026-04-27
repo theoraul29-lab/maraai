@@ -57,10 +57,10 @@
     "emailRequired": "O e-mail é obrigatório",
     "emailInvalid": "Insira um e-mail válido",
     "passwordRequired": "A senha é obrigatória",
-    "passwordMinLength": "A senha deve ter pelo menos 8 caracteres",
+    "passwordMinLength": "A senha deve ter pelo menos 6 caracteres",
     "nameRequired": "O nome é obrigatório",
     "nameMinLength": "O nome deve ter pelo menos 2 caracteres",
-    "passwordHint": "✓ A senha deve ter pelo menos 8 caracteres",
+    "passwordHint": "✓ A senha deve ter pelo menos 6 caracteres",
     "login": "Entrar",
     "createAccount": "Criar conta",
     "signingIn": "Entrando...",
@@ -79,7 +79,7 @@
     "switchToLogin": "Ir para login",
     "or": "OU",
     "errors": {
-      "signup_body_invalid": "Email, senha (mín. 8 caracteres) e nome são obrigatórios.",
+      "signup_body_invalid": "Email, senha (mín. 6 caracteres) e nome são obrigatórios.",
       "login_body_invalid": "Email e senha são obrigatórios.",
       "email_exists": "Já existe uma conta com este email.",
       "invalid_credentials": "Email ou senha inválidos.",
@@ -991,5 +991,19 @@
   "languageSelector": {
     "label": "Idioma",
     "changeLanguage": "Mudar idioma"
+  },
+  "pwa": {
+    "installTitle": "Instalar Mara",
+    "installBody": "Adicione hellomara.net ao ecrã inicial para a experiência completa de aplicação.",
+    "installCta": "Instalar",
+    "installDismiss": "Agora não",
+    "installDismissAria": "Dispensar pedido de instalação",
+    "iosHintTitle": "Instalar Mara",
+    "iosHintBody": "Toque em Partilhar e depois \"Adicionar ao ecrã inicial\" para instalar a app.",
+    "iosHintDismiss": "Entendi",
+    "updateTitle": "Atualização disponível",
+    "updateBody": "Está disponível uma versão mais recente do Mara.",
+    "updateCta": "Atualizar",
+    "updateDismissAria": "Dispensar atualização"
   }
 }

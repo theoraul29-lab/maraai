@@ -1,0 +1,195 @@
+.maraai-transparency {
+  padding: 24px 18px 80px;
+  max-width: 1100px;
+  margin: 0 auto;
+  color: #e8ecf6;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.maraai-transparency-header h1 {
+  margin: 0 0 4px;
+  font-size: 26px;
+}
+.maraai-transparency-header p {
+  margin: 0 0 18px;
+  color: #98a2b3;
+  font-size: 13px;
+}
+
+.maraai-transparency-error {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #ffd0d0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  margin-bottom: 14px;
+  font-size: 13px;
+}
+
+.maraai-transparency-warnings {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+}
+
+.maraai-transparency-warnings li {
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: #ffe2a0;
+}
+
+.maraai-transparency-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.maraai-transparency-card {
+  background: #0e1320;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 14px 14px 10px;
+}
+
+.maraai-transparency-card h2 {
+  margin: 0 0 10px;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  color: #b6bfd2;
+}
+
+.maraai-transparency-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  font-size: 13px;
+  color: #c8d0e0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  gap: 8px;
+}
+
+.maraai-transparency-row:last-child {
+  border-bottom: none;
+}
+
+.maraai-transparency-row select {
+  background: #131a2c;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 13px;
+}
+
+.maraai-transparency-toggle {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 2px 12px;
+  background: transparent;
+  color: #c8d0e0;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.maraai-transparency-toggle.is-on {
+  background: rgba(139, 92, 246, 0.4);
+  border-color: rgba(139, 92, 246, 0.7);
+  color: white;
+}
+
+.maraai-transparency-toggle:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.maraai-transparency-kill {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  color: #ffb8b8;
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.maraai-transparency-kill:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.maraai-transparency-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  color: #c8d0e0;
+}
+
+.maraai-transparency-table th,
+.maraai-transparency-table td {
+  text-align: left;
+  padding: 6px 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.maraai-transparency-table th {
+  color: #98a2b3;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.maraai-transparency-muted {
+  color: #6c7689;
+  font-size: 12px;
+  margin: 4px 0;
+}
+
+.maraai-transparency-activity {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.maraai-transparency-activity li {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  grid-template-areas:
+    'kind time'
+    'meta meta';
+  gap: 4px 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 12px;
+}
+
+.maraai-transparency-activity-kind {
+  grid-area: kind;
+  font-weight: 600;
+  color: #c8a8ff;
+}
+
+.maraai-transparency-activity-time {
+  grid-area: time;
+  text-align: right;
+  color: #98a2b3;
+}
+
+.maraai-transparency-activity code {
+  grid-area: meta;
+  color: #98a2b3;
+  word-break: break-all;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+}
+
+.maraai-transparency-loading {
+  color: #98a2b3;
+  font-size: 14px;
+}

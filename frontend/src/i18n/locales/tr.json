@@ -57,10 +57,10 @@
     "emailRequired": "Email is required",
     "emailInvalid": "Please enter a valid email address",
     "passwordRequired": "Password is required",
-    "passwordMinLength": "Password must be at least 8 characters",
+    "passwordMinLength": "Password must be at least 6 characters",
     "nameRequired": "Name is required",
     "nameMinLength": "Name must be at least 2 characters",
-    "passwordHint": "✓ Password must be at least 8 characters",
+    "passwordHint": "✓ Password must be at least 6 characters",
     "login": "Giriş yap",
     "createAccount": "Hesap oluştur",
     "signingIn": "Signing Account...",
@@ -977,5 +977,19 @@
   "languageSelector": {
     "label": "Dil",
     "changeLanguage": "Dili değiştir"
+  },
+  "pwa": {
+    "installTitle": "Mara'yı yükle",
+    "installBody": "Tam uygulama deneyimi için hellomara.net'i ana ekranınıza ekleyin.",
+    "installCta": "Yükle",
+    "installDismiss": "Şimdi değil",
+    "installDismissAria": "Yükleme isteğini kapat",
+    "iosHintTitle": "Mara'yı yükle",
+    "iosHintBody": "Paylaş'a, ardından \"Ana Ekrana Ekle\"ye dokunarak uygulamayı yükleyin.",
+    "iosHintDismiss": "Anladım",
+    "updateTitle": "Güncelleme hazır",
+    "updateBody": "Mara'nın yeni bir sürümü mevcut.",
+    "updateCta": "Yenile",
+    "updateDismissAria": "Güncellemeyi kapat"
   }
 }

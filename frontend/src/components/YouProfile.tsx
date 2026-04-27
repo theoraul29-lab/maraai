@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -6,6 +6,20 @@ import { LanguageSelector } from './LanguageSelector';
 import '../styles/YouProfile.css';
 
 const API_URL = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:5000');
+
+// Multipart upload to /api/uploads/image. Returns the public URL the
+// existing PATCH /api/profile/me / POST /api/profile/posts handlers
+// already accept as a string. Throwing here lets the caller surface a
+// localized error in whatever UI it owns.
+async function uploadImageFile(file: File): Promise<string> {
+  const fd = new FormData();
+  fd.append('image', file);
+  const res = await axios.post<{ url: string }>(`${API_URL}/api/uploads/image`, fd, {
+    withCredentials: true,
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return res.data.url;
+}
 
 // ---------------------------------------------------------------------------
 // Types — reflect `/api/profile/me` and `/api/profile/:id/posts` payloads.
@@ -59,6 +73,15 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
   const [postImageUrl, setPostImageUrl] = useState('');
   const [posting, setPosting] = useState(false);
   const [postError, setPostError] = useState<string | null>(null);
+  const [postImageUploading, setPostImageUploading] = useState(false);
+  const composerFileRef = useRef<HTMLInputElement>(null);
+
+  // Edit-modal upload state — kept separate so a slow cover upload doesn't
+  // disable the avatar picker and vice versa.
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [coverUploading, setCoverUploading] = useState(false);
+  const avatarFileRef = useRef<HTMLInputElement>(null);
+  const coverFileRef = useRef<HTMLInputElement>(null);
 
   // Edit-profile modal state
   const [editing, setEditing] = useState(false);
@@ -328,12 +351,55 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
                   maxLength={5000}
                 />
               </div>
-              <input
-                className="you-fb-composer-image"
-                placeholder={t('you.imageUrlPlaceholder', 'Image URL (optional)')}
-                value={postImageUrl}
-                onChange={e => setPostImageUrl(e.target.value)}
-              />
+              <div className="you-fb-upload-row">
+                {postImageUrl && (
+                  <img
+                    className="you-fb-upload-preview you-fb-upload-preview-wide"
+                    src={postImageUrl}
+                    alt=""
+                  />
+                )}
+                <input
+                  ref={composerFileRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  style={{ display: 'none' }}
+                  onChange={async (e) => {
+                    const f = e.target.files?.[0];
+                    if (!f) return;
+                    setPostImageUploading(true);
+                    setPostError(null);
+                    try {
+                      const url = await uploadImageFile(f);
+                      setPostImageUrl(url);
+                    } catch {
+                      setPostError('upload_failed');
+                    } finally {
+                      setPostImageUploading(false);
+                      if (composerFileRef.current) composerFileRef.current.value = '';
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  className="you-fb-btn"
+                  disabled={postImageUploading}
+                  onClick={() => composerFileRef.current?.click()}
+                >
+                  📷 {postImageUploading
+                    ? t('you.uploading', 'Uploading…')
+                    : t('you.addPhoto', 'Add photo')}
+                </button>
+                {postImageUrl && (
+                  <button
+                    type="button"
+                    className="you-fb-btn"
+                    onClick={() => setPostImageUrl('')}
+                  >
+                    {t('you.removePhoto', 'Remove')}
+                  </button>
+                )}
+              </div>
               {postError && (
                 <p className="you-fb-error">
                   {postError === 'invalid_content' ? t('you.postTooShort', 'Post cannot be empty or too long.') :
@@ -473,23 +539,109 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
             </label>
 
             <label className="you-fb-field">
-              <span>{t('you.profileImageUrl', 'Profile image URL')}</span>
-              <input
-                type="url"
-                value={editDraft.profileImageUrl}
-                onChange={e => setEditDraft(d => ({ ...d, profileImageUrl: e.target.value }))}
-                placeholder="https://..."
-              />
+              <span>{t('you.profileImage', 'Profile photo')}</span>
+              <div className="you-fb-upload-row">
+                {editDraft.profileImageUrl && (
+                  <img
+                    className="you-fb-upload-preview"
+                    src={editDraft.profileImageUrl}
+                    alt=""
+                  />
+                )}
+                <input
+                  ref={avatarFileRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  style={{ display: 'none' }}
+                  onChange={async (e) => {
+                    const f = e.target.files?.[0];
+                    if (!f) return;
+                    setAvatarUploading(true);
+                    setEditError(null);
+                    try {
+                      const url = await uploadImageFile(f);
+                      setEditDraft(d => ({ ...d, profileImageUrl: url }));
+                    } catch {
+                      setEditError('upload_failed');
+                    } finally {
+                      setAvatarUploading(false);
+                      if (avatarFileRef.current) avatarFileRef.current.value = '';
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  className="you-fb-btn"
+                  disabled={avatarUploading}
+                  onClick={() => avatarFileRef.current?.click()}
+                >
+                  {avatarUploading
+                    ? t('you.uploading', 'Uploading…')
+                    : t('you.uploadPhoto', 'Upload photo')}
+                </button>
+                {editDraft.profileImageUrl && (
+                  <button
+                    type="button"
+                    className="you-fb-btn"
+                    onClick={() => setEditDraft(d => ({ ...d, profileImageUrl: '' }))}
+                  >
+                    {t('you.removePhoto', 'Remove')}
+                  </button>
+                )}
+              </div>
             </label>
 
             <label className="you-fb-field">
-              <span>{t('you.coverImageUrl', 'Cover image URL')}</span>
-              <input
-                type="url"
-                value={editDraft.coverImageUrl}
-                onChange={e => setEditDraft(d => ({ ...d, coverImageUrl: e.target.value }))}
-                placeholder="https://..."
-              />
+              <span>{t('you.coverImage', 'Cover photo')}</span>
+              <div className="you-fb-upload-row">
+                {editDraft.coverImageUrl && (
+                  <img
+                    className="you-fb-upload-preview you-fb-upload-preview-wide"
+                    src={editDraft.coverImageUrl}
+                    alt=""
+                  />
+                )}
+                <input
+                  ref={coverFileRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  style={{ display: 'none' }}
+                  onChange={async (e) => {
+                    const f = e.target.files?.[0];
+                    if (!f) return;
+                    setCoverUploading(true);
+                    setEditError(null);
+                    try {
+                      const url = await uploadImageFile(f);
+                      setEditDraft(d => ({ ...d, coverImageUrl: url }));
+                    } catch {
+                      setEditError('upload_failed');
+                    } finally {
+                      setCoverUploading(false);
+                      if (coverFileRef.current) coverFileRef.current.value = '';
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  className="you-fb-btn"
+                  disabled={coverUploading}
+                  onClick={() => coverFileRef.current?.click()}
+                >
+                  {coverUploading
+                    ? t('you.uploading', 'Uploading…')
+                    : t('you.uploadCover', 'Upload cover')}
+                </button>
+                {editDraft.coverImageUrl && (
+                  <button
+                    type="button"
+                    className="you-fb-btn"
+                    onClick={() => setEditDraft(d => ({ ...d, coverImageUrl: '' }))}
+                  >
+                    {t('you.removePhoto', 'Remove')}
+                  </button>
+                )}
+              </div>
             </label>
 
             <label className="you-fb-field">

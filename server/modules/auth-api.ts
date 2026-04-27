@@ -16,11 +16,16 @@
 import type { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { db } from '../db.js';
-import { users, localAuthCredentials } from '../../shared/schema.js';
+import { users, localAuthCredentials, userPreferences } from '../../shared/schema.js';
 import { eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 
-const BCRYPT_ROUNDS = 10;
+// 8 rounds gives ~25-50ms hash on commodity Railway CPUs while still being
+// well within the OWASP-recommended bcrypt cost. 10 rounds was burning
+// ~200-500ms of event-loop time per signup with bcryptjs (pure JS), which
+// is enough to cause cascading hangs when paired with a contended SQLite
+// write lock on a slow volume.
+const BCRYPT_ROUNDS = 8;
 
 // Pre-computed bcrypt hash (of a random throwaway string) used only to
 // equalise response timing in `login()` when the email does not exist, so
@@ -28,7 +33,8 @@ const BCRYPT_ROUNDS = 10;
 const DUMMY_BCRYPT_HASH = '$2a$10$zvolThg7zhnrni8khQnWXOaqChfBo1KU6L3uBzYFN0kr4VkDrbmJ.';
 
 const emailSchema = z.string().trim().email().max(320);
-const passwordSchema = z.string().min(8).max(200);
+// Spec: password min length ≥ 6. We accept anything from 6 to 200 chars.
+const passwordSchema = z.string().min(6).max(200);
 const nameSchema = z.string().trim().min(1).max(120);
 
 const signupBodySchema = z.object({
@@ -52,9 +58,21 @@ interface AuthUserPayload {
   createdAt: number;
   avatar?: string | null;
   bio?: string | null;
+  preferredLanguage?: string | null;
 }
 
-function toPayload(u: { id: string; email: string | null; displayName: string | null; firstName: string | null; bio: string | null; profileImageUrl: string | null; createdAt: Date | null | number | undefined }): AuthUserPayload {
+type UserPayloadInput = {
+  id: string;
+  email: string | null;
+  displayName: string | null;
+  firstName: string | null;
+  bio: string | null;
+  profileImageUrl: string | null;
+  createdAt: Date | null | number | undefined;
+  preferredLanguage?: string | null;
+};
+
+function toPayload(u: UserPayloadInput): AuthUserPayload {
   const displayName = u.displayName || u.firstName || (u.email ? u.email.split('@')[0] : 'User');
   const createdAtMs = u.createdAt instanceof Date
     ? u.createdAt.getTime()
@@ -71,6 +89,7 @@ function toPayload(u: { id: string; email: string | null; displayName: string | 
     createdAt: createdAtMs,
     avatar: u.profileImageUrl,
     bio: u.bio,
+    preferredLanguage: u.preferredLanguage ?? null,
   };
 }
 
@@ -93,6 +112,31 @@ async function findCredentialsByEmail(email: string) {
 }
 
 /**
+ * Look up the user's stored language preference (BCP-47 code) from the
+ * `user_preferences` table, or null if none has been written yet.
+ *
+ * Used to enrich the `/api/auth/me` / signup / login response so the
+ * client can sync i18n state in a single round-trip after login (server
+ * value wins over localStorage, per spec §2.5).
+ *
+ * Failures are swallowed and logged: missing/old preferences should
+ * never block a session.
+ */
+async function fetchUserLanguage(userId: string): Promise<string | null> {
+  try {
+    const rows = await db
+      .select({ language: userPreferences.language })
+      .from(userPreferences)
+      .where(eq(userPreferences.userId, userId))
+      .limit(1);
+    return rows[0]?.language ?? null;
+  } catch (err) {
+    console.warn('[auth] fetchUserLanguage failed:', err);
+    return null;
+  }
+}
+
+/**
  * Regenerate the session ID and attach the authenticated user id.
  *
  * Regenerating the id on login/signup prevents session fixation: the
@@ -100,7 +144,7 @@ async function findCredentialsByEmail(email: string) {
  * `setupSessionAuth`) is thrown away, and the authenticated state is
  * bound to a fresh, unpredictable id.
  */
-function setSessionUser(req: Request, userId: string): Promise<void> {
+export function setSessionUser(req: Request, userId: string): Promise<void> {
   return new Promise((resolve, reject) => {
     req.session.regenerate((err) => {
       if (err) return reject(err);
@@ -140,13 +184,15 @@ function flashBadRequest(res: Response, code: AuthErrorCode, message: string) {
 }
 
 export async function signup(req: Request, res: Response) {
+  const t0 = Date.now();
   const parsed = signupBodySchema.safeParse(req.body);
   if (!parsed.success) {
-    return flashBadRequest(res, 'signup_body_invalid', 'Email, password (min 8 chars) and name are required.');
+    return flashBadRequest(res, 'signup_body_invalid', 'Email, password (min 6 chars) and name are required.');
   }
 
   const email = parsed.data.email.toLowerCase();
   const { password, name } = parsed.data;
+  console.log('[auth] signup begin', { email, t: 0 });
 
   // Defence in depth: check both the users table and the credentials table.
   // A match in either means this email is unusable for a new signup (possibly
@@ -155,6 +201,7 @@ export async function signup(req: Request, res: Response) {
     findCredentialsByEmail(email),
     findUserByEmail(email),
   ]);
+  console.log('[auth] signup post-existence-check', { ms: Date.now() - t0 });
   if (existingCreds || existingUser) {
     return authError(res, 409, 'email_exists', 'An account with this email already exists.');
   }
@@ -167,6 +214,7 @@ export async function signup(req: Request, res: Response) {
     console.error('[auth] bcrypt.hash failed:', err);
     return authError(res, 500, 'account_create_failed', 'Failed to create account. Please try again.');
   }
+  console.log('[auth] signup post-bcrypt', { ms: Date.now() - t0 });
 
   // Wrap both inserts in a single transaction so we never end up with an
   // orphaned `users` row if the `local_auth_credentials` insert fails. Drizzle
@@ -208,13 +256,18 @@ export async function signup(req: Request, res: Response) {
     return authError(res, 500, 'account_create_failed', 'Failed to create account. Please try again.');
   }
 
+  console.log('[auth] signup post-tx', { ms: Date.now() - t0, userId: user.id });
+
   try {
     await setSessionUser(req, user.id);
   } catch (err) {
     console.error('[auth] session.regenerate failed after signup:', err);
     return authError(res, 500, 'session_create_failed', 'Failed to create session. Please try again.');
   }
-  return res.status(201).json(toPayload(user));
+  console.log('[auth] signup done', { ms: Date.now() - t0, userId: user.id });
+  // Brand-new user has no language preference yet; return null so the
+  // client falls back to localStorage / browser-detected language.
+  return res.status(201).json(toPayload({ ...user, preferredLanguage: null }));
 }
 
 export async function login(req: Request, res: Response) {
@@ -255,7 +308,8 @@ export async function login(req: Request, res: Response) {
     console.error('[auth] session.regenerate failed after login:', err);
     return authError(res, 500, 'session_create_failed', 'Failed to create session. Please try again.');
   }
-  return res.status(200).json(toPayload(user[0]));
+  const language = await fetchUserLanguage(user[0].id);
+  return res.status(200).json(toPayload({ ...user[0], preferredLanguage: language }));
 }
 
 export async function logout(req: Request, res: Response) {
@@ -287,7 +341,8 @@ export async function me(req: Request, res: Response) {
     return res.status(200).json({ user: null, anonymousId: uid });
   }
 
-  return res.status(200).json({ user: toPayload(row[0]) });
+  const language = await fetchUserLanguage(row[0].id);
+  return res.status(200).json({ user: toPayload({ ...row[0], preferredLanguage: language }) });
 }
 
 export async function oauth(req: Request, res: Response) {

@@ -57,10 +57,10 @@
     "emailRequired": "Email is required",
     "emailInvalid": "Please enter a valid email address",
     "passwordRequired": "Password is required",
-    "passwordMinLength": "Password must be at least 8 characters",
+    "passwordMinLength": "Password must be at least 6 characters",
     "nameRequired": "Name is required",
     "nameMinLength": "Name must be at least 2 characters",
-    "passwordHint": "✓ Password must be at least 8 characters",
+    "passwordHint": "✓ Password must be at least 6 characters",
     "login": "เข้าสู่ระบบ",
     "createAccount": "สร้างบัญชี",
     "signingIn": "Signing Account...",
@@ -977,5 +977,19 @@
   "languageSelector": {
     "label": "ภาษา",
     "changeLanguage": "เปลี่ยนภาษา"
+  },
+  "pwa": {
+    "installTitle": "ติดตั้ง Mara",
+    "installBody": "เพิ่ม hellomara.net ไปยังหน้าจอหลักเพื่อประสบการณ์แอปเต็มรูปแบบ",
+    "installCta": "ติดตั้ง",
+    "installDismiss": "ไม่ใช่ตอนนี้",
+    "installDismissAria": "ปิดคำเชิญติดตั้ง",
+    "iosHintTitle": "ติดตั้ง Mara",
+    "iosHintBody": "แตะ แชร์ แล้วเลือก \"เพิ่มไปยังหน้าจอหลัก\" เพื่อติดตั้งแอป",
+    "iosHintDismiss": "รับทราบ",
+    "updateTitle": "อัปเดตพร้อม",
+    "updateBody": "มี Mara เวอร์ชันใหม่กว่า",
+    "updateCta": "รีเฟรช",
+    "updateDismissAria": "ปิดการแจ้งอัปเดต"
   }
 }

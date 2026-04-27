@@ -74,7 +74,9 @@
   justify-content: center;
   width: 56px;
   height: 56px;
-  animation: moodPulse 2s ease-in-out infinite;
+  /* Slow ambient pulse: ≥5s, smooth easing (spec §3.2). The previous
+     2s cadence read as a brightness blink on mobile. */
+  animation: moodPulse 6s ease-in-out infinite;
 }
 
 .emoji-inner {
@@ -92,7 +94,7 @@
   border-radius: 50%;
   opacity: 0.3;
   filter: blur(8px);
-  animation: glowPulse 2s ease-in-out infinite;
+  animation: glowPulse 6s ease-in-out infinite;
 }
 
 @keyframes moodPulse {
@@ -165,7 +167,7 @@
   border-radius: 50%;
   border: 2px solid var(--mood-color);
   opacity: calc(var(--mood-energy) * 0.3);
-  animation: energyRing 2s ease-in-out infinite;
+  animation: energyRing 5s ease-in-out infinite;
   pointer-events: none;
 }
 
@@ -224,7 +226,7 @@
   display: block;
   position: relative;
   z-index: 2;
-  animation: moodPulse 2s ease-in-out infinite;
+  animation: moodPulse 6s ease-in-out infinite;
 }
 
 .badge-pulse {
@@ -233,7 +235,7 @@
   height: 40px;
   border-radius: 50%;
   opacity: 0.4;
-  animation: badgePulse 2s ease-in-out infinite;
+  animation: badgePulse 5s ease-in-out infinite;
 }
 
 @keyframes badgePulse {

@@ -57,10 +57,10 @@
     "emailRequired": "Email is required",
     "emailInvalid": "Please enter a valid email address",
     "passwordRequired": "Password is required",
-    "passwordMinLength": "Password must be at least 8 characters",
+    "passwordMinLength": "Password must be at least 6 characters",
     "nameRequired": "Name is required",
     "nameMinLength": "Name must be at least 2 characters",
-    "passwordHint": "✓ Password must be at least 8 characters",
+    "passwordHint": "✓ Password must be at least 6 characters",
     "login": "Đăng nhập",
     "createAccount": "Tạo tài khoản",
     "signingIn": "Signing Account...",
@@ -977,5 +977,19 @@
   "languageSelector": {
     "label": "Ngôn ngữ",
     "changeLanguage": "Đổi ngôn ngữ"
+  },
+  "pwa": {
+    "installTitle": "Cài đặt Mara",
+    "installBody": "Thêm hellomara.net vào màn hình chính để có trải nghiệm ứng dụng đầy đủ.",
+    "installCta": "Cài đặt",
+    "installDismiss": "Không phải bây giờ",
+    "installDismissAria": "Đóng lời mời cài đặt",
+    "iosHintTitle": "Cài đặt Mara",
+    "iosHintBody": "Nhấn Chia sẻ, sau đó \"Thêm vào màn hình chính\" để cài ứng dụng.",
+    "iosHintDismiss": "Đã hiểu",
+    "updateTitle": "Đã có cập nhật",
+    "updateBody": "Phiên bản Mara mới hơn đã có.",
+    "updateCta": "Làm mới",
+    "updateDismissAria": "Đóng thông báo cập nhật"
   }
 }
