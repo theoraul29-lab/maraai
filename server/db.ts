@@ -122,3 +122,8 @@ sqlite.exec(`
 `);
 
 export const db = drizzle(sqlite, { schema });
+
+// Expose the raw better-sqlite3 handle so startup code (e.g. the
+// cover_image_url safety guard in server/index.ts) can run PRAGMA queries
+// and DDL that Drizzle's query builder doesn't expose directly.
+export { sqlite as rawSqlite };
