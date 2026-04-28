@@ -79,12 +79,11 @@ function runMigrations() {
 const app = express();
 
 // Helmet sets secure HTTP response headers. contentSecurityPolicy is disabled
-// here because the frontend's Vite-built assets inject inline scripts; a strict
-// CSP for the SPA should be added as a separate hardening step once nonces or
-// hashes are wired into the Vite build.
+// in development because Vite's HMR injects inline scripts that would be blocked
+// by a strict CSP. In production the default helmet CSP is applied.
 app.use(
   helmet({
-    contentSecurityPolicy: false,
+    contentSecurityPolicy: process.env.NODE_ENV === 'production' ? undefined : false,
     crossOriginEmbedderPolicy: false,
   }),
 );
