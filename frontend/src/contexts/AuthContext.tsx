@@ -29,9 +29,10 @@ interface AuthContextType {
   clearOAuthError: () => void;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string) => Promise<void>;
-  loginWithOAuth: (provider: 'google' | 'facebook') => Promise<void>;
+  loginWithOAuth: (provider: 'google') => Promise<void>;
   logout: () => Promise<void>;
   upgradeTier: (newTier: UserTier) => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -45,7 +46,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Mount: restore from localStorage, consume any ?oauth/?oauth_error query
   // params, then refresh against the server session.
   //
-  // The server session is the source of truth: Google/Facebook OAuth redirects
+  // The server session is the source of truth: Google OAuth redirects
   // land back on `/` with a freshly-authenticated cookie, at which point the
   // server-side `req.session.userId` is the ONLY place that knows who the
   // logged-in user is. Without this fetch, a successful OAuth login would
@@ -191,7 +192,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const loginWithOAuth = async (provider: 'google' | 'facebook'): Promise<void> => {
+  const loginWithOAuth = async (provider: 'google'): Promise<void> => {
     // Both providers use the full authorization-code redirect flow. The user
     // leaves the SPA entirely — the callback comes back with an authenticated
     // cookie and the mount-time /api/auth/me fetch picks it up. We
@@ -199,7 +200,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // it. If a provider isn't configured on the server (missing client
     // credentials), the start handler redirects back to `/?oauth_error=
     // oauth_not_configured` and the mount-time effect surfaces it.
-    if (provider === 'google' || provider === 'facebook') {
+    if (provider === 'google') {
       window.location.href = `/api/auth/${provider}`;
       return new Promise<void>(() => { /* never resolves — page unloads */ });
     }
@@ -231,6 +232,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const response = await fetch('/api/user/upgrade', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id, newTier }),
       });
@@ -243,6 +245,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch (error) {
       console.error('Upgrade error:', error);
       throw error;
+    }
+  };
+
+  const refreshUser = async (): Promise<void> => {
+    try {
+      const res = await fetch('/api/auth/me', { credentials: 'include' });
+      if (!res.ok) return;
+      const payload = await res.json();
+      if (!payload?.user) return;
+      const sessionUser: User = {
+        ...payload.user,
+        trialStartTime: payload.user.trialStartTime ?? null,
+        trialEndsAt: payload.user.trialEndsAt ?? null,
+        tier: payload.user.tier || 'free',
+        earnings: payload.user.earnings ?? 0,
+        badges: payload.user.badges ?? [],
+      };
+      localStorage.setItem('user', JSON.stringify(sessionUser));
+      setUser(sessionUser);
+      setIsAuthenticated(true);
+    } catch {
+      /* ignore */
     }
   };
 
@@ -266,6 +290,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         loginWithOAuth,
         logout,
         upgradeTier,
+        refreshUser,
       }}
     >
       {children}

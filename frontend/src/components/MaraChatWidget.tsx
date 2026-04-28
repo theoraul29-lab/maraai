@@ -54,6 +54,7 @@ export function MaraChatWidget() {
   const loadChatHistory = async () => {
     try {
       const response = await fetch('/api/chat', {
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -98,6 +99,7 @@ export function MaraChatWidget() {
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },

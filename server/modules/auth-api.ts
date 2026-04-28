@@ -304,7 +304,7 @@ export async function me(req: Request, res: Response) {
 
 export async function oauth(req: Request, res: Response) {
   const provider = String(req.params.provider || '').toLowerCase();
-  if (!['google', 'facebook'].includes(provider)) {
+  if (provider !== 'google') {
     return authError(res, 400, 'oauth_unsupported', 'Unsupported OAuth provider.');
   }
   // Real OAuth wiring (Google/Facebook app + callback) tracked separately.

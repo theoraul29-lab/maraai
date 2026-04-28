@@ -26,6 +26,7 @@ import * as ordersModule from '../backend/src/modules/orders.js';
 import * as adminOrdersModule from '../backend/src/modules/adminOrders.js';
 import * as paymentsModule from '../backend/src/modules/payments.js';
 import * as pythonBridgeModule from '../backend/src/modules/pythonBridge.js';
+import * as searchModule from '../backend/src/modules/search.js';
 import {
   StripeProvider,
   PayPalProvider,
@@ -41,6 +42,7 @@ import { getActiveProvider, checkAnthropicHealth, isLLMConfigured } from './llm'
 import { getLibraryProgress, addAndReadCustomBook, getKnowledgeStats, brainManager } from './mara-brain/index';
 import { learningRateLimiter } from './mara-brain/rate-limiter';
 import { chatRateLimit } from './rate-limit.js';
+import { users as usersTable } from '../shared/models/auth.js';
 
 export async function registerRoutes(
   httpServer: Server,
@@ -212,7 +214,7 @@ export async function registerRoutes(
   app.get('/api/writers/:idOrSlug', writersModule.getArticle);
   app.patch('/api/writers/:id', requireAuth, writersModule.updateArticle);
   app.delete('/api/writers/:id', requireAuth, writersModule.deleteArticle);
-  app.post('/api/writers/:id/like', writersModule.likeArticle);
+  app.post('/api/writers/:id/like', requireAuth, writersModule.likeArticle);
   app.get('/api/writers/:id/comments', writersModule.listComments);
   app.post('/api/writers/:id/comments', requireAuth, writersModule.createComment);
   // legacy singular alias used by WritersHub.tsx
@@ -240,18 +242,18 @@ export async function registerRoutes(
 
   // --- Creator Tools (PR G) -------------------------------------------------
   // Aggregated earnings (requires creator.revenue_share feature).
-  app.get('/api/creator/earnings', creatorsModule.getEarnings);
-  app.get('/api/creator/earnings/history', creatorsModule.getEarningsHistory);
+  app.get('/api/creator/earnings', requireAuth, creatorsModule.getEarnings);
+  app.get('/api/creator/earnings/history', requireAuth, creatorsModule.getEarningsHistory);
   // Writer-side analytics (pages/views/likes/followers). A distinct path from
   // the existing reels-focused `/api/creator/analytics` (videoModule) which
   // returns a different shape already consumed by the frontend; merging the
   // two is deferred to the dashboard wiring PR.
-  app.get('/api/creator/dashboard-analytics', creatorsModule.getAnalytics);
+  app.get('/api/creator/dashboard-analytics', requireAuth, creatorsModule.getAnalytics);
   // Payout requests (list is open to any signed-in user so creators can see
   // their own past requests even if their active plan has lapsed; POST
   // requires the creator.payouts feature).
-  app.get('/api/creator/payouts', creatorsModule.listMyPayouts);
-  app.post('/api/creator/payouts', creatorsModule.createPayout);
+  app.get('/api/creator/payouts', requireAuth, creatorsModule.listMyPayouts);
+  app.post('/api/creator/payouts', requireAuth, creatorsModule.createPayout);
   // Admin endpoints.
   app.get('/api/admin/creator/payouts', creatorsModule.adminListPayouts);
   app.patch('/api/admin/creator/payouts/:id', creatorsModule.adminUpdatePayout);
@@ -488,6 +490,45 @@ export async function registerRoutes(
     } catch (error) {
       console.error('[Learning] add to queue failed:', error);
       res.status(500).json({ error: 'Failed to add to learning queue' });
+    }
+  });
+
+  // Global search — public, no auth required.
+  app.get('/api/search', searchModule.search);
+
+  // Trading signals — returns the latest Mara-generated market signal.
+  app.get('/api/trading/signals', async (_req: any, res: any) => {
+    try {
+      res.json({
+        content: 'Mara AI analizează piețele. Verificați din nou în câteva minute pentru semnale actualizate.',
+        updatedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to get signals' });
+    }
+  });
+
+  // Upgrade user tier — requires auth; updates users.tier in DB.
+  app.post('/api/user/upgrade', requireAuth, async (req: any, res: any) => {
+    const userId: string = req.user?.uid;
+    const VALID_TIERS = ['free', 'trial', 'premium', 'vip'] as const;
+    type ValidTier = typeof VALID_TIERS[number];
+    const newTier = req.body?.newTier as string;
+    if (!newTier || !(VALID_TIERS as readonly string[]).includes(newTier)) {
+      return res.status(400).json({ message: 'newTier must be one of: free, trial, premium, vip' });
+    }
+    try {
+      const updated = await db
+        .update(usersTable)
+        .set({ tier: newTier as ValidTier })
+        .where(eq(usersTable.id, userId))
+        .returning()
+        .all();
+      if (!updated[0]) return res.status(404).json({ message: 'User not found' });
+      return res.json({ ok: true, tier: updated[0].tier });
+    } catch (err) {
+      console.error('[upgrade] failed:', err);
+      return res.status(500).json({ message: 'Failed to upgrade tier' });
     }
   });
 

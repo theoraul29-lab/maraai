@@ -12,7 +12,7 @@
  * typos fail loudly instead of silently granting nothing.
  */
 
-export type PlanTier = 'free' | 'pro' | 'vip' | 'creator';
+export type PlanTier = 'free' | 'trial' | 'pro' | 'vip' | 'creator';
 export type PlanPeriod = 'monthly' | 'yearly' | 'none';
 
 export interface PlanDefinition {
@@ -74,6 +74,15 @@ export const PLAN_CATALOGUE: readonly PlanDefinition[] = [
     priceCents: 0,
     currency: 'EUR',
     features: FREE_FEATURES,
+  },
+  {
+    // 1-hour trial granted on every new signup. Same feature scope as pro.
+    id: 'trial',
+    tier: 'trial',
+    period: 'none',
+    priceCents: 0,
+    currency: 'EUR',
+    features: PRO_FEATURES,
   },
   {
     id: 'pro_monthly',

@@ -181,7 +181,7 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
   const fetchLibrary = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_URL}/api/writers/library`);
+      const res = await axios.get(`${API_URL}/api/writers/library`, { withCredentials: true });
       // New endpoint returns `{ items, limit, offset }`; old endpoint returns
       // a bare array. Accept both so we don't break in-flight deployments.
       const raw = res.data?.items ?? res.data ?? [];
