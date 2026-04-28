@@ -500,7 +500,7 @@ export async function registerRoutes(
   app.get('/api/trading/signals', async (_req: any, res: any) => {
     try {
       res.json({
-        content: 'Mara AI analizează piețele. Verificați din nou în câteva minute pentru semnale actualizate.',
+        content: 'Mara AI is analyzing markets. Check back in a few minutes for updated signals.',
         updatedAt: new Date().toISOString(),
       });
     } catch (error) {
