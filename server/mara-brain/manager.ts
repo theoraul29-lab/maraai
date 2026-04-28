@@ -226,9 +226,10 @@ class BrainManagerImpl {
       this._lastError = msg;
       logger(`Auto brain cycle failed: ${msg}`, 'mara-brain');
     } finally {
+      const endedAt = Date.now();
       this._running = false;
-      this._lastRunAt = Date.now();
-      this._lastDurationMs = Date.now() - startedAt;
+      this._lastRunAt = endedAt;
+      this._lastDurationMs = endedAt - startedAt;
       this._startedAt = null;
     }
   }

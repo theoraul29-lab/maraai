@@ -1,5 +1,6 @@
 import type { Express, Request, Response, NextFunction } from 'express';
 import session from 'express-session';
+import { randomUUID } from 'crypto';
 
 declare module 'express-session' {
   interface SessionData {
@@ -17,7 +18,7 @@ declare global {
 }
 
 function makeId() {
-  return `u_${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
+  return `u_${randomUUID().replace(/-/g, '')}`;
 }
 
 export function setupSessionAuth(app: Express) {

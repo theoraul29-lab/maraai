@@ -63,7 +63,7 @@
     "passwordHint": "✓ Password must be at least 8 characters",
     "login": "Login",
     "createAccount": "Create Account",
-    "signingIn": "Signing Account...",
+    "signingIn": "Signing in...",
     "creatingAccount": "Creating Account...",
     "google": "Google",
     "facebook": "Facebook",

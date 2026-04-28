@@ -1,4 +1,5 @@
 // import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { Route, Routes, useNavigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -8,11 +9,12 @@ import './App.css';
 import Nav from './Nav';
 import { MaraChatWidget } from './components/MaraChatWidget';
 
-import { Trading as TradingAcademy } from './Trading';
-import { VIP } from './VIP';
-import { Creator as Creators } from './creator';
-import Reels from './reels';
-import { WritersHub } from './WritersHub';
+// Heavy route modules are lazy-loaded to reduce initial bundle size.
+const TradingAcademy = lazy(() => import('./Trading').then((m) => ({ default: m.Trading })));
+const VIPPage = lazy(() => import('./VIP').then((m) => ({ default: m.VIP })));
+const Creators = lazy(() => import('./creator').then((m) => ({ default: m.Creator })));
+const Reels = lazy(() => import('./reels'));
+const WritersHubPage = lazy(() => import('./WritersHub').then((m) => ({ default: m.WritersHub })));
 import You from './you';
 import ResetPassword from './ResetPassword';
 import ResetPasswordConfirmation from './ResetPasswordConfirmation';
@@ -29,20 +31,22 @@ function App() {
       <AuthProvider>
         <div className="App">
           {!isHomePage && <Nav />}
-          <ErrorBoundary level="section">
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/trading-academy" element={<TradingAcademy onClose={() => navigate('/')} />} />
-              <Route path="/membership" element={<VIP onClose={() => navigate('/')} />} />
-              <Route path="/creator-panel" element={<Creators onClose={() => navigate('/')} />} />
-              <Route path="/you" element={<You />} />
-              <Route path="/reels" element={<Reels />} />
-              <Route path="/writers-hub" element={<WritersHub onClose={() => navigate('/')} />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/reset-password/confirmation" element={<ResetPasswordConfirmation />} />
-              <Route path="/admin/brain" element={<AdminBrain />} />
-            </Routes>
-          </ErrorBoundary>
+          <Suspense fallback={<div style={{ color: '#fff', padding: 40 }}>Loading…</div>}>
+            <ErrorBoundary level="section">
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/trading-academy" element={<TradingAcademy onClose={() => navigate('/')} />} />
+                <Route path="/membership" element={<VIPPage onClose={() => navigate('/')} />} />
+                <Route path="/creator-panel" element={<Creators onClose={() => navigate('/')} />} />
+                <Route path="/you" element={<You />} />
+                <Route path="/reels" element={<Reels />} />
+                <Route path="/writers-hub" element={<WritersHubPage onClose={() => navigate('/')} />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/reset-password/confirmation" element={<ResetPasswordConfirmation />} />
+                <Route path="/admin/brain" element={<AdminBrain />} />
+              </Routes>
+            </ErrorBoundary>
+          </Suspense>
           {/* Mara Chat Widget - appears on all pages */}
           <ErrorBoundary level="component">
             <MaraChatWidget />

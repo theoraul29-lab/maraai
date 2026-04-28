@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import { logError } from './logger.js';
 import type { Request, Response, NextFunction } from 'express';
 import { registerRoutes } from './routes.js';
@@ -9,10 +10,9 @@ import { createServer } from 'http';
 import { brainManager } from './mara-brain/index.js';
 import { getMaraResponse } from './ai.js';
 import { WebSocketServer } from 'ws';
-import url from 'url';
 import { storage } from './storage.js';
 import { setupSessionAuth } from './auth.js';
-import { checkRateLimit } from './rate-limit.js';
+import { checkRateLimit, authRateLimit } from './rate-limit.js';
 import * as authApi from './modules/auth-api.js';
 import * as oauthGoogle from './modules/oauth-google.js';
 import * as oauthFacebook from './modules/oauth-facebook.js';
@@ -77,6 +77,17 @@ function runMigrations() {
 
 
 const app = express();
+
+// Helmet sets secure HTTP response headers. contentSecurityPolicy is disabled
+// here because the frontend's Vite-built assets inject inline scripts; a strict
+// CSP for the SPA should be added as a separate hardening step once nonces or
+// hashes are wired into the Vite build.
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+  }),
+);
 
 type RuntimeState = {
   requestedPort: number | null;
@@ -143,11 +154,13 @@ app.get('/api/health', (_req, res) => {
 });
 
 // Real auth endpoints (email + password). Backs the frontend AuthContext.
-app.post('/api/auth/signup', authApi.signup);
-app.post('/api/auth/login', authApi.login);
+app.post('/api/auth/signup', authRateLimit, authApi.signup);
+app.post('/api/auth/login', authRateLimit, authApi.login);
 app.post('/api/auth/logout', authApi.logout);
 app.get('/api/auth/me', authApi.me);
 app.post('/api/auth/oauth/:provider', authApi.oauth);
+app.post('/api/auth/request-reset', authRateLimit, authApi.requestReset);
+app.post('/api/auth/confirm-reset', authRateLimit, authApi.confirmReset);
 
 // Google OAuth 2.0 — redirect flow. See server/modules/oauth-google.ts.
 app.get('/api/auth/google', oauthGoogle.startGoogle);
@@ -186,6 +199,26 @@ export function log(message: string, source = 'express') {
   console.log(`${formattedTime} [${source}] ${message}`);
 }
 
+const SENSITIVE_LOG_FIELDS = new Set([
+  'password', 'passwordHash', 'password_hash',
+  'resetToken', 'reset_token', 'token',
+  'passwordConfirm', 'newPassword',
+]);
+
+function sanitizeForLog(obj: Record<string, any>): Record<string, any> {
+  const out: Record<string, any> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (SENSITIVE_LOG_FIELDS.has(k)) {
+      out[k] = '[REDACTED]';
+    } else if (v && typeof v === 'object' && !Array.isArray(v)) {
+      out[k] = sanitizeForLog(v as Record<string, any>);
+    } else {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
 app.use((req, res, next) => {
   const start = Date.now();
   const { path } = req;
@@ -203,8 +236,8 @@ app.use((req, res, next) => {
     const duration = Date.now() - start;
     if (path.startsWith('/api')) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) { // Va fi populat doar dacă nu suntem în producție
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+      if (capturedJsonResponse) {
+        logLine += ` :: ${JSON.stringify(sanitizeForLog(capturedJsonResponse))}`;
       }
 
       log(logLine);
@@ -340,12 +373,11 @@ app.use((req, res, next) => {
   };
 
   wss.on('connection', (ws: any, req: any) => {
-    const userId = url.parse(req.url || '', true).query.userId as string;
-    // ID-ul utilizatorului va veni de la JWT Auth
-    const authUserId = req.user?.uid;
-    const finalUserId = userId || authUserId;
+    // Use the session-authenticated user id exclusively. Ignoring any
+    // client-supplied ?userId= query param prevents trivial identity spoofing.
+    const finalUserId = req.user?.uid;
     if (finalUserId) {
-      log(`P2P user connected: ${userId}`, 'p2p-ws');
+      log(`P2P user connected: ${finalUserId}`, 'p2p-ws');
       userConnections.set(finalUserId, ws);
       ws.userId = finalUserId;
     } else {

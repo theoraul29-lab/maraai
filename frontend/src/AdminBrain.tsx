@@ -3,6 +3,7 @@
 // Users without admin rights see a 403 message.
 
 import { useEffect, useState, useCallback } from 'react';
+import { useAuth } from './contexts/AuthContext';
 
 type BrainStatus = {
   enabled: boolean;
@@ -98,6 +99,7 @@ function priorityColor(p: string): string {
 }
 
 export default function AdminBrain() {
+  const { isAuthenticated } = useAuth();
   const [status, setStatus] = useState<BrainStatus | null>(null);
   const [logs, setLogs] = useState<BrainLog[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -248,6 +250,18 @@ export default function AdminBrain() {
       setQueueMsg(err instanceof Error ? err.message : String(err));
     }
   }, [newTopic, newReason, loadLearning]);
+
+  if (!isAuthenticated) {
+    return (
+      <div style={{ padding: 24, fontFamily: 'sans-serif' }}>
+        <h1>Admin · Mara Brain</h1>
+        <p style={{ color: '#c00' }}>
+          You must be signed in to access this page.{' '}
+          <a href="/" style={{ color: '#00c' }}>Go to home</a>
+        </p>
+      </div>
+    );
+  }
 
   if (forbidden) {
     return (
