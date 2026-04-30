@@ -57,6 +57,12 @@ interface AuthContextType {
   logout: () => Promise<void>;
   upgradeTier: (newTier: UserTier) => Promise<void>;
   refreshUser: () => Promise<void>;
+  /**
+   * Re-fetch /api/auth/me and update local user state. Used by flows that
+   * authenticate the user out-of-band (e.g. email-OTP verification, which
+   * establishes a session server-side without ever calling login/signup).
+   */
+  refresh: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -156,7 +162,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ email, password }),
       });
 
@@ -193,7 +198,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ email, password, name }),
       });
 
@@ -282,7 +286,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ userId: user.id, newTier }),
       });
 
@@ -319,6 +322,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  // Alias for refreshUser — used by OnboardingFlow OTP verification flow.
+  const refresh = refreshUser;
+
   const userTier = user?.tier || 'free';
   const { isActive: isTrialActive, remaining: trialTimeRemaining } = user
     ? calculateTrialStatus(user)
@@ -340,6 +346,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         logout,
         upgradeTier,
         refreshUser,
+        refresh,
       }}
     >
       {children}
