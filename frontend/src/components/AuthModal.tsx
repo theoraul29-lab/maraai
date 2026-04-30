@@ -151,7 +151,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   /**
    * Handle OAuth with error handling
    */
-  const handleOAuth = async (provider: 'google' | 'facebook') => {
+  const handleOAuth = async (provider: 'google') => {
     setError('');
     clearOAuthError();
     setLoading(true);
@@ -343,15 +343,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
             aria-label={t('auth.signInWith', { provider: 'Google' })}
           >
             Google
-          </button>
-          <button
-            type="button"
-            className="auth-oauth-btn facebook"
-            onClick={() => handleOAuth('facebook')}
-            disabled={loading}
-            aria-label={t('auth.signInWith', { provider: 'Facebook' })}
-          >
-            Facebook
           </button>
         </div>
 

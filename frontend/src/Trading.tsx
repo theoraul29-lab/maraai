@@ -182,7 +182,7 @@ export const Trading: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       const res = await axios.post(`${API_URL}/api/chat`, {
         message: `[Trading Strategy: ${selectedStrat.name}] ${askMaraQ}`,
         userId: user?.id || 'anon',
-      });
+      }, { withCredentials: true });
       setMaraAnswer(res.data.response || res.data.message || t('trading.maraNoResponse'));
     } catch { setMaraAnswer(t('trading.maraError')); }
     finally { setAskingMara(false); setAskMaraQ(''); }

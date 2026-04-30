@@ -443,10 +443,14 @@ export class DatabaseStorage implements IStorage {
       return await db
         .select()
         .from(videos)
-        .where(eq(videos.type, topic))
+        .where(and(eq(videos.type, topic), sql`${videos.url} != '#'`))
         .orderBy(desc(videos.createdAt));
     }
-    return await db.select().from(videos).orderBy(desc(videos.createdAt));
+    return await db
+      .select()
+      .from(videos)
+      .where(sql`${videos.url} != '#'`)
+      .orderBy(desc(videos.createdAt));
   }
 
   async createVideo(video: InsertVideo): Promise<Video> {
