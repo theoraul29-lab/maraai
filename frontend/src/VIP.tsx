@@ -41,7 +41,7 @@ export const VIP: React.FC<Props> = ({ onClose }) => {
   useEffect(() => {
     const checkSubscription = async () => {
       try {
-        const res = await axios.get(`${API_URL}/api/premium/status`);
+        const res = await axios.get(`${API_URL}/api/premium/status`, { withCredentials: true });
         setStatus(res.data.isPremium ? 'active' : 'inactive');
         if (res.data.expiresAt) setExpiresAt(res.data.expiresAt);
         if (Array.isArray(res.data.orders)) setOrders(res.data.orders);
@@ -67,7 +67,7 @@ export const VIP: React.FC<Props> = ({ onClose }) => {
         amount: prices[selectedPlan],
         method: 'bank_transfer',
         reference: transferRef.trim(),
-      });
+      }, { withCredentials: true });
       setSuccess(t('vip.orderSent'));
       setTransferRef('');
       if (res.data) setOrders(prev => [res.data, ...prev]);
@@ -88,7 +88,7 @@ export const VIP: React.FC<Props> = ({ onClose }) => {
         amount: prices[selectedPlan],
         method: 'paypal',
         reference: `PayPal-${Date.now()}`,
-      });
+      }, { withCredentials: true });
       setSuccess(t('vip.paypalOrderSent'));
       if (res.data) setOrders(prev => [res.data, ...prev]);
       setTimeout(() => { setSuccess(''); setView('orders'); }, 3000);

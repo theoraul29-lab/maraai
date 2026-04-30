@@ -3,6 +3,9 @@
 
 import { llmGenerate, isLLMConfigured } from '../llm.js';
 import { storage } from '../storage.js';
+import { db } from '../db.js';
+import { maraKnowledgeBase } from '../../shared/schema.js';
+import { sql, inArray } from 'drizzle-orm';
 
 export type KnowledgeCategory =
   | 'user_pattern'
@@ -107,26 +110,44 @@ export async function getKnowledgeContext(topics: string[], maxTokens = 2000): P
 
   const lines: string[] = ['[Mara Knowledge Context]'];
   let charCount = 0;
+  const accessedIds: number[] = [];
 
   for (const entry of unique) {
     const line = `• [${entry.category}] ${entry.topic}: ${entry.content}`;
     if (charCount + line.length > maxTokens) break;
     lines.push(line);
     charCount += line.length;
-    await storage.incrementKnowledgeAccess(entry.id);
+    accessedIds.push(entry.id);
+  }
+
+  // Batch all access increments in a single UPDATE … WHERE id IN (…)
+  if (accessedIds.length > 0) {
+    await db
+      .update(maraKnowledgeBase)
+      .set({ accessCount: sql`${maraKnowledgeBase.accessCount} + 1` })
+      .where(inArray(maraKnowledgeBase.id, accessedIds));
   }
 
   return lines.length > 1 ? lines.join('\n') : '';
 }
 
 /**
- * Get stats on what Mara knows
+ * Get stats on what Mara knows — uses a single GROUP BY query instead of
+ * loading every row into memory.
  */
 export async function getKnowledgeStats(): Promise<Record<string, number>> {
-  const all = await storage.getAllKnowledge(10000);
-  const stats: Record<string, number> = { total: all.length };
-  for (const entry of all) {
-    stats[entry.category] = (stats[entry.category] || 0) + 1;
+  const rows = await db
+    .select({
+      category: maraKnowledgeBase.category,
+      count: sql<number>`count(*)`,
+    })
+    .from(maraKnowledgeBase)
+    .groupBy(maraKnowledgeBase.category);
+
+  const stats: Record<string, number> = { total: 0 };
+  for (const row of rows) {
+    stats[row.category] = row.count;
+    stats.total += row.count;
   }
   return stats;
 }

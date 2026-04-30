@@ -60,7 +60,7 @@ interface YouProfileProps {
 }
 
 const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const { t } = useTranslation();
 
   const [profile, setProfile] = useState<ProfilePayload | null>(null);
@@ -238,6 +238,7 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
     try {
       await axios.patch(`${API_URL}/api/profile/me`, patch, { withCredentials: true });
       await fetchProfile();
+      await refreshUser();
       setEditing(false);
     } catch (err: unknown) {
       const code =

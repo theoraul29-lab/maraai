@@ -1,8 +1,6 @@
 import type { Express, Request, Response, NextFunction } from 'express';
 import session from 'express-session';
-import path from 'path';
-import fs from 'fs';
-import connectSqlite3 from 'connect-sqlite3';
+import { randomUUID } from 'crypto';
 
 declare module 'express-session' {
   interface SessionData {
@@ -20,7 +18,7 @@ declare global {
 }
 
 function makeId() {
-  return `u_${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
+  return `u_${randomUUID().replace(/-/g, '')}`;
 }
 
 /**

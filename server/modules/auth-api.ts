@@ -2,22 +2,25 @@
  * Email + password authentication endpoints (local auth mode).
  *
  * Backs the existing frontend `AuthContext` / `AuthModal`:
- *   POST /api/auth/signup      -> create user + credentials, set session
- *   POST /api/auth/login       -> verify credentials, set session
- *   POST /api/auth/logout      -> clear session, re-assign anonymous id
- *   GET  /api/auth/me          -> current user (null when anonymous)
+ *   POST /api/auth/signup         -> create user + credentials, set session
+ *   POST /api/auth/login          -> verify credentials, set session
+ *   POST /api/auth/logout         -> clear session, re-assign anonymous id
+ *   GET  /api/auth/me             -> current user (null when anonymous)
  *   POST /api/auth/oauth/:provider -> 501 placeholder (wire real OAuth later)
+ *   POST /api/auth/request-reset  -> send password-reset email (or log token in dev)
+ *   POST /api/auth/confirm-reset  -> consume token + set new password
  *
  * Session cookie is already configured by `setupSessionAuth`. We only update
  * `req.session.userId` so that all downstream code (chat, subscriptions, etc.)
  * sees a stable, real user id.
  */
 
+import { randomBytes } from 'crypto';
 import type { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { db } from '../db.js';
-import { users, localAuthCredentials, userPreferences } from '../../shared/schema.js';
-import { eq, sql } from 'drizzle-orm';
+import { users, localAuthCredentials, passwordResetTokens } from '../../shared/schema.js';
+import { eq, sql, and, gt } from 'drizzle-orm';
 import { z } from 'zod';
 
 // 8 rounds gives ~25-50ms hash on commodity Railway CPUs while still being
@@ -59,23 +62,14 @@ interface AuthUserPayload {
   badges: string[];
   earnings: number;
   createdAt: number;
+  trialStartTime?: number | null;
+  trialEndsAt?: number | null;
   avatar?: string | null;
   bio?: string | null;
   preferredLanguage?: string | null;
 }
 
-type UserPayloadInput = {
-  id: string;
-  email: string | null;
-  displayName: string | null;
-  firstName: string | null;
-  bio: string | null;
-  profileImageUrl: string | null;
-  createdAt: Date | null | number | undefined;
-  preferredLanguage?: string | null;
-};
-
-function toPayload(u: UserPayloadInput): AuthUserPayload {
+function toPayload(u: { id: string; email: string | null; displayName: string | null; firstName: string | null; bio: string | null; profileImageUrl: string | null; createdAt: Date | null | number | undefined; tier?: string | null; trialStartTime?: number | null; trialEndsAt?: number | null }): AuthUserPayload {
   const displayName = u.displayName || u.firstName || (u.email ? u.email.split('@')[0] : 'User');
   const createdAtMs = u.createdAt instanceof Date
     ? u.createdAt.getTime()
@@ -86,7 +80,9 @@ function toPayload(u: UserPayloadInput): AuthUserPayload {
     id: u.id,
     email: u.email ?? '',
     name: displayName,
-    tier: 'free',
+    tier: (u.tier as AuthUserPayload['tier']) || 'free',
+    trialStartTime: u.trialStartTime ?? null,
+    trialEndsAt: u.trialEndsAt ?? null,
     badges: [],
     earnings: 0,
     createdAt: createdAtMs,
@@ -226,6 +222,8 @@ async function signupHandler(req: Request, res: Response) {
   // orphaned `users` row if the `local_auth_credentials` insert fails. Drizzle
   // on better-sqlite3 exposes a synchronous transaction helper that rolls back
   // on any thrown error inside the callback.
+  const trialStartTime = Date.now();
+  const trialEndsAt = trialStartTime + 60 * 60 * 1000; // 1 hour trial
   let user: typeof users.$inferSelect;
   try {
     user = db.transaction((tx) => {
@@ -235,6 +233,9 @@ async function signupHandler(req: Request, res: Response) {
           email,
           firstName: name,
           displayName: name,
+          tier: 'trial',
+          trialStartTime,
+          trialEndsAt,
         })
         .returning()
         .all();
@@ -379,50 +380,103 @@ async function meHandler(req: Request, res: Response) {
 
 async function oauthHandler(req: Request, res: Response) {
   const provider = String(req.params.provider || '').toLowerCase();
-  if (!['google', 'facebook'].includes(provider)) {
+  if (provider !== 'google') {
     return authError(res, 400, 'oauth_unsupported', 'Unsupported OAuth provider.');
   }
   // Real OAuth wiring (Google/Facebook app + callback) tracked separately.
   return authError(res, 501, 'oauth_not_enabled', `OAuth (${provider}) not yet enabled. Use email + password for now.`, { provider });
 }
 
-// Touch sql to avoid unused-import tree-shake complaint on strict tsc configs.
-void sql;
+const requestResetSchema = z.object({ email: emailSchema });
+const confirmResetSchema = z.object({
+  token: z.string().min(1).max(200),
+  password: passwordSchema,
+});
 
 /**
- * Express 4 does NOT await the return value of route handlers. If an
- * `async` handler throws (e.g. a Drizzle query rejects because the live
- * SQLite schema is missing a column the in-memory schema declares), the
- * rejection becomes an unhandledRejection and the response is never
- * written — the request hangs until the upstream proxy gives up. That
- * exact failure mode took /api/auth/me + /api/auth/signup down on prod
- * (Railway logs 2026-04-27, fixed by PR #77's safety guard, but the
- * wrapper below is the general defence: any future schema↔disk drift
- * fails fast with 500 instead of hanging).
- *
- * Keep the wrapper minimal — individual handlers are still expected to
- * handle expected errors (zod parse, bcrypt failure, …) themselves; this
- * is purely the last-resort safety net for *unexpected* failures.
+ * POST /api/auth/request-reset
+ * Generates a one-time token for the given email. In production, send this
+ * token via email (see TODO below). In dev, the token is included in the
+ * response so it can be used directly without email infrastructure.
  */
-function wrapAsync(
-  phase: string,
-  handler: (req: Request, res: Response) => Promise<unknown>,
-): (req: Request, res: Response) => void {
-  return (req, res) => {
-    handler(req, res).catch((err) => {
-      console.error(`[auth] ${phase} unhandled error:`, err);
-      if (!res.headersSent) {
-        res.status(500).json({
-          code: 'internal_error',
-          message: 'An unexpected error occurred. Please try again.',
-        });
-      }
-    });
-  };
+export async function requestReset(req: Request, res: Response) {
+  const parsed = requestResetSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return flashBadRequest(res, 'signup_body_invalid', 'A valid email address is required.');
+  }
+
+  const email = parsed.data.email.toLowerCase();
+
+  // Always respond with 200 to avoid email enumeration
+  const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  if (!user) {
+    return res.status(200).json({ ok: true });
+  }
+
+  // Invalidate any existing unexpired tokens for this user
+  await db.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, user.id));
+
+  const token = randomBytes(32).toString('hex');
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+  await db.insert(passwordResetTokens).values({ userId: user.id, token, expiresAt });
+
+  const isProduction = process.env.NODE_ENV === 'production';
+  if (!isProduction) {
+    // Dev mode: surface the token so it can be used without email infrastructure.
+    console.log(`[auth] password-reset token for ${email}: ${token}`);
+    return res.status(200).json({ ok: true, devToken: token });
+  }
+
+  // TODO: send the token via your email provider (e.g. Resend / SendGrid).
+  // Example: await sendResetEmail(email, token);
+  return res.status(200).json({ ok: true });
 }
 
-export const signup = wrapAsync('signup', signupHandler);
-export const login = wrapAsync('login', loginHandler);
-export const logout = wrapAsync('logout', logoutHandler);
-export const me = wrapAsync('me', meHandler);
-export const oauth = wrapAsync('oauth', oauthHandler);
+/**
+ * POST /api/auth/confirm-reset
+ * Validates the token and updates the password.
+ */
+export async function confirmReset(req: Request, res: Response) {
+  const parsed = confirmResetSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return flashBadRequest(res, 'login_body_invalid', 'Token and a new password (min 8 chars) are required.');
+  }
+
+  const { token, password } = parsed.data;
+  const now = new Date();
+
+  const [tokenRow] = await db
+    .select()
+    .from(passwordResetTokens)
+    .where(
+      and(
+        eq(passwordResetTokens.token, token),
+        gt(passwordResetTokens.expiresAt, now),
+      ),
+    )
+    .limit(1);
+
+  if (!tokenRow || tokenRow.usedAt) {
+    return authError(res, 400, 'login_body_invalid', 'Invalid or expired password reset token.');
+  }
+
+  const newHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+
+  // Mark token as used and update password in a single transaction
+  db.transaction((tx) => {
+    tx.update(passwordResetTokens)
+      .set({ usedAt: now })
+      .where(eq(passwordResetTokens.id, tokenRow.id))
+      .run();
+    tx.update(localAuthCredentials)
+      .set({ passwordHash: newHash })
+      .where(eq(localAuthCredentials.userId, tokenRow.userId))
+      .run();
+  });
+
+  return res.status(200).json({ ok: true });
+}
+
+// Touch sql/and/gt to avoid unused-import tree-shake complaint on strict tsc configs.
+void sql; void and; void gt;

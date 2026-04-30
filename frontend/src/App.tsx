@@ -1,4 +1,5 @@
 // import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { Route, Routes, useNavigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -8,11 +9,12 @@ import './App.css';
 import Nav from './Nav';
 import { MaraChatWidget } from './components/MaraChatWidget';
 
-import { Trading as TradingAcademy } from './Trading';
-import { VIP } from './VIP';
-import { Creator as Creators } from './creator';
-import Reels from './reels';
-import { WritersHub } from './WritersHub';
+// Heavy route modules are lazy-loaded to reduce initial bundle size.
+const TradingAcademy = lazy(() => import('./Trading').then((m) => ({ default: m.Trading })));
+const VIPPage = lazy(() => import('./VIP').then((m) => ({ default: m.VIP })));
+const Creators = lazy(() => import('./creator').then((m) => ({ default: m.Creator })));
+const Reels = lazy(() => import('./reels'));
+const WritersHubPage = lazy(() => import('./WritersHub').then((m) => ({ default: m.WritersHub })));
 import You from './you';
 import ResetPassword from './ResetPassword';
 import ResetPasswordConfirmation from './ResetPasswordConfirmation';

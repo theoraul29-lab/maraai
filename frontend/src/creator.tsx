@@ -66,9 +66,9 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
     setError('');
     try {
       const [analyticsRes, videosRes, statusRes] = await Promise.all([
-        axios.get(`${API_URL}/api/creator/analytics`).catch(() => ({ data: null })),
-        axios.get(`${API_URL}/api/creator/my-videos`).catch(() => ({ data: [] })),
-        axios.get(`${API_URL}/api/creator/post-status`).catch(() => ({ data: { canPost: true, postsToday: 0, maxDaily: 5 } })),
+        axios.get(`${API_URL}/api/creator/analytics`, { withCredentials: true }).catch(() => ({ data: null })),
+        axios.get(`${API_URL}/api/creator/my-videos`, { withCredentials: true }).catch(() => ({ data: [] })),
+        axios.get(`${API_URL}/api/creator/post-status`, { withCredentials: true }).catch(() => ({ data: { canPost: true, postsToday: 0, maxDaily: 5 } })),
       ]);
 
       if (analyticsRes.data) {
@@ -119,24 +119,12 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
     setUploading(true);
     setError('');
     try {
-      if (videoFile) {
-        const fd = new FormData();
-        fd.append('video', videoFile);
-        fd.append('title', uploadTitle);
-        fd.append('description', uploadDesc);
-        fd.append('type', 'creator');
-        await axios.post(`${API_URL}/api/reels/upload`, fd, {
-          withCredentials: true,
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
-      } else {
-        await axios.post(`${API_URL}/api/creator/post-reel`, {
-          title: uploadTitle,
-          url: uploadUrl,
-          description: uploadDesc,
-          tags: uploadTags.split(',').map(t => t.trim()).filter(Boolean),
-        });
-      }
+      await axios.post(`${API_URL}/api/creator/post-reel`, {
+        title: uploadTitle,
+        url: uploadUrl,
+        description: uploadDesc,
+        tags: uploadTags.split(',').map(t => t.trim()).filter(Boolean),
+      }, { withCredentials: true });
       setUploadSuccess(true);
       setUploadTitle('');
       setUploadDesc('');
@@ -157,7 +145,7 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
 
   const handleDelete = async (id: number) => {
     try {
-      await axios.delete(`${API_URL}/api/creator/videos/${id}`);
+      await axios.delete(`${API_URL}/api/creator/videos/${id}`, { withCredentials: true });
       setVideos(videos.filter(v => v.id !== id));
       setDeleteId(null);
       fetchData();

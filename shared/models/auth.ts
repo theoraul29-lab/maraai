@@ -28,6 +28,9 @@ export const users = sqliteTable('users', {
   coverImageUrl: text('cover_image_url'),
   location: text('location'),
   website: text('website'),
+  tier: text('tier').default('free').notNull(),
+  trialStartTime: integer('trial_start_time'),
+  trialEndsAt: integer('trial_ends_at'),
   createdAt: integer('created_at', { mode: 'timestamp' }).default(
     sql`CURRENT_TIMESTAMP`,
   ),
@@ -77,3 +80,18 @@ export const oauthAccounts = sqliteTable(
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type OAuthAccount = typeof oauthAccounts.$inferSelect;
+
+// One-time password reset tokens. Each request generates a new random token
+// that expires after 1 hour. Token is sent via email (or logged in dev mode).
+export const passwordResetTokens = sqliteTable('password_reset_tokens', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  token: text('token').notNull().unique(),
+  expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+  usedAt: integer('used_at', { mode: 'timestamp' }),
+  createdAt: integer('created_at', { mode: 'timestamp' }).default(
+    sql`CURRENT_TIMESTAMP`,
+  ),
+});
