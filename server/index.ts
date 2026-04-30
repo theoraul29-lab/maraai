@@ -11,14 +11,8 @@ import { brainManager } from './mara-brain/index.js';
 import { getMaraResponse } from './ai.js';
 import { WebSocketServer } from 'ws';
 import { storage } from './storage.js';
-import { setupSessionAuth } from './auth.js';
-import { checkRateLimit, authRateLimit } from './rate-limit.js';
-import * as authApi from './modules/auth-api.js';
-import * as oauthGoogle from './modules/oauth-google.js';
-
-import { registerBillingApi } from './billing/api.js';
-import { seedPlans } from './billing/seed.js';
-import { seedTradingAcademy } from './trading/seed.js';
+import { setupSessionAuth, csrfProtection } from './auth.js';
+import { checkRateLimit } from './rateLimit.js';
 import { z } from 'zod';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { db, rawSqlite } from './db.js';
@@ -149,6 +143,10 @@ const runtimeState: RuntimeState = {
   startedAt: null,
 };
 
+// --- START RATE LIMITER LOGIC (moved to server/rateLimit.ts) ---
+// Re-imported for use in the WebSocket chat handler below.
+// --- END RATE LIMITER LOGIC ---
+
 // --- CORS configuration ---
 const allowedOrigins = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(',')
@@ -199,24 +197,9 @@ app.get('/api/health', (_req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
-// Real auth endpoints (email + password). Backs the frontend AuthContext.
-app.post('/api/auth/signup', authRateLimit, authApi.signup);
-app.post('/api/auth/login', authRateLimit, authApi.login);
-app.post('/api/auth/logout', authApi.logout);
-app.get('/api/auth/me', authApi.me);
-app.post('/api/auth/oauth/:provider', authApi.oauth);
-app.post('/api/auth/request-reset', authRateLimit, authApi.requestReset);
-app.post('/api/auth/confirm-reset', authRateLimit, authApi.confirmReset);
-
-// Google OAuth 2.0 — redirect flow. See server/modules/oauth-google.ts.
-app.get('/api/auth/google', oauthGoogle.startGoogle);
-app.get('/api/auth/google/callback', oauthGoogle.googleCallback);
-
-// Facebook OAuth removed — use Google OAuth or email/password.
-
-// Subscription / billing endpoints. Public plan catalogue + authed
-// `/me`, `/subscribe` (503 until PAYMENTS_ENABLED + provider keys), `/cancel`.
-registerBillingApi(app);
+app.get('/api/auth/me', (req: any, res) => {
+  res.json({ uid: req.user?.uid ?? null, csrfToken: req.session?.csrfToken ?? null });
+});
 
 app.get('/api/runtime', (_req, res) => {
   const displayHost =

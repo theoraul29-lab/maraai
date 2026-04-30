@@ -8,7 +8,7 @@ export function injectDeps(d: typeof deps) {
 
 export async function processStripePayment(req: Request, res: Response) {
   try {
-    const userId = req.user?.claims?.sub || (req.user as any)?.uid;
+    const userId = (req.user as any)?.uid;
     const { amount, currency, paymentMethodId } = req.body;
 
     if (!amount || !paymentMethodId) {
@@ -30,7 +30,7 @@ export async function processStripePayment(req: Request, res: Response) {
 
 export async function processPayPalPayment(req: Request, res: Response) {
   try {
-    const userId = req.user?.claims?.sub || (req.user as any)?.uid;
+    const userId = (req.user as any)?.uid;
     const { amount, currency, orderId } = req.body;
 
     if (!amount || !orderId) {

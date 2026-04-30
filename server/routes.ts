@@ -9,6 +9,7 @@ import {
 } from '../shared/schema';
 import { db } from './db';
 import { eq } from 'drizzle-orm';
+import { csrfProtection } from './auth';
 import * as videoModule from '../backend/src/modules/video.js';
 import * as reelsModule from '../backend/src/modules/reels.js';
 import * as uploadsModule from '../backend/src/modules/uploads.js';
@@ -59,12 +60,14 @@ export async function registerRoutes(
     return next();
   };
 
-  // Admin guard: match against ADMIN_USER_IDS or ADMIN_EMAILS (deny-by-default).
-  // Email matching is stable across DB resets (e.g. ephemeral SQLite without a
-  // mounted volume), so operators can keep a durable admin without re-patching
-  // the uid list after every redeploy.
-  const parseCsv = (raw: string | undefined) =>
-    (raw || '')
+  // Apply CSRF protection to all state-changing routes.
+  // Note: setupSessionAuth() is called in server/index.ts before registerRoutes(),
+  // so req.session is populated by the time this middleware runs.
+  app.use(csrfProtection);
+
+  // Admin guard: match against ADMIN_USER_IDS (deny-by-default)
+  const requireAdmin = (req: any, res: any, next: any) => {
+    const adminIds = (process.env.ADMIN_USER_IDS || '')
       .split(',')
       .map((v) => v.trim())
       .filter(Boolean);
@@ -308,15 +311,9 @@ export async function registerRoutes(
   app.get('/api/creator/analytics', requireAuth, videoModule.creatorAnalytics);
   app.delete('/api/creator/videos/:id', requireAuth, videoModule.deleteCreatorVideo);
 
-  // Chat endpoints (require auth; chat send is rate-limited to match WebSocket).
-  // Internally `sendChatMessage` now goes through the hybrid AI router so that
-  // local/central/p2p routing + transparency logging happens on every reply.
+  // Chat endpoints (require auth)
   app.get(api.chat.list.path, requireAuth, chatModule.getChatHistory);
-  app.post(api.chat.send.path, requireAuth, chatRateLimit, chatModule.sendChatMessage);
-
-  // MaraAI hybrid-platform layer (Phase 3): consent, mode, P2P, transparency,
-  // hybrid AI router, email OTP, internal event bus status.
-  registerMaraAIRoutes(app, requireAuth);
+  app.post(api.chat.send.path, requireAuth, chatModule.sendChatMessage);
 
   // TTS/STT endpoints
   app.post('/api/mara-speak', ttsModule.maraSpeak);

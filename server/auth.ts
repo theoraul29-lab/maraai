@@ -1,13 +1,11 @@
 import type { Express, Request, Response, NextFunction } from 'express';
 import session from 'express-session';
-import { randomUUID } from 'crypto';
-import fs from 'fs';
-import path from 'path';
-import connectSqlite3 from 'connect-sqlite3';
+import { randomBytes } from 'crypto';
 
 declare module 'express-session' {
   interface SessionData {
     userId?: string;
+    csrfToken?: string;
   }
 }
 
@@ -46,13 +44,52 @@ function resolveSessionStoreDir(): string {
   return path.resolve(process.cwd());
 }
 
-export function setupSessionAuth(app: Express) {
-  const isProduction = process.env.NODE_ENV === 'production';
+/**
+ * Express middleware that enforces CSRF token validation for state-changing
+ * requests (POST, PUT, PATCH, DELETE).
+ *
+ * The frontend should:
+ *   1. Call GET /api/auth/me to receive the csrfToken in the response.
+ *   2. Include it as the X-CSRF-Token header on all mutating requests.
+ *
+ * Validation is skipped when:
+ *   - The request method is safe (GET, HEAD, OPTIONS).
+ *   - NODE_ENV is not 'production' AND no CORS_ORIGINS are configured
+ *     (local development without configured origins).
+ */
+export function csrfProtection(req: Request, res: Response, next: NextFunction) {
+  const safeMethods = ['GET', 'HEAD', 'OPTIONS'];
+  if (safeMethods.includes(req.method)) return next();
 
-  // Railway terminates TLS at the edge (proxy). Needed for secure cookies
-  // and for express-session to consider the request HTTPS so it's willing
-  // to set the Secure cookie attribute.
-  if (isProduction) {
+  const allowedOrigins = process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean)
+    : [];
+
+  // Skip in open-dev mode (no origins configured and not production)
+  if (process.env.NODE_ENV !== 'production' && allowedOrigins.length === 0) {
+    return next();
+  }
+
+  const sessionToken: string | undefined = (req.session as any)?.csrfToken;
+  const headerToken = req.headers['x-csrf-token'];
+
+  if (!sessionToken || !headerToken || sessionToken !== headerToken) {
+    return res.status(403).json({ message: 'CSRF validation failed. Reload the page and try again.' });
+  }
+
+  return next();
+}
+
+export function setupSessionAuth(app: Express) {
+  if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
+    throw new Error(
+      'SESSION_SECRET environment variable is required in production. ' +
+        'Set a long random string (e.g. openssl rand -hex 32).',
+    );
+  }
+
+  // Railway terminates TLS at the edge (proxy). Needed for secure cookies.
+  if (process.env.NODE_ENV === 'production') {
     app.set('trust proxy', 1);
   }
 
@@ -117,33 +154,10 @@ export function setupSessionAuth(app: Express) {
     }),
   );
 
-  // Lightweight session-read log. Lets us correlate "user disappeared on
-  // refresh" reports with what the server actually saw on /api/auth/me.
-  // Only fires for /api routes so we don't spam static asset reads.
+  // Attach a stable anonymous user per session + generate CSRF token
   app.use((req: Request, _res: Response, next: NextFunction) => {
-    if (req.path.startsWith('/api/auth/')) {
-      const sid = req.sessionID ? `${req.sessionID.slice(0, 8)}…` : 'none';
-      const uid = req.session?.userId ? `${String(req.session.userId).slice(0, 8)}…` : 'anon';
-      console.log('[auth] session read', { path: req.path, sid, uid });
-    }
-    next();
-  });
-
-  // Attach a stable anonymous user per session. Lots of downstream
-  // endpoints (analytics, voting, reels watch tracking) depend on
-  // req.user.uid being non-null even for unauthenticated browsers, so
-  // we keep this behaviour but log when a brand-new anonymous id is
-  // minted for an /api/auth/* request.
-  app.use((req: Request, _res: Response, next: NextFunction) => {
-    if (!req.session.userId) {
-      req.session.userId = makeId();
-      if (req.path.startsWith('/api/auth/')) {
-        console.log('[auth] anonymous id minted', {
-          path: req.path,
-          uid: `${String(req.session.userId).slice(0, 8)}…`,
-        });
-      }
-    }
+    if (!req.session.userId) req.session.userId = makeId();
+    if (!req.session.csrfToken) req.session.csrfToken = randomBytes(32).toString('hex');
     req.user = { uid: req.session.userId, email: null };
     next();
   });

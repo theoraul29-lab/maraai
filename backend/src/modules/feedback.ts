@@ -3,7 +3,7 @@ import { storage } from '../../../server/storage';
 
 export async function moderate(req: Request, res: Response) {
   try {
-    const userId = req.user?.claims?.sub || (req.user as any)?.uid;
+    const userId = (req.user as any)?.uid;
     const { message, category } = req.body;
 
     if (!message || typeof message !== 'string') {
