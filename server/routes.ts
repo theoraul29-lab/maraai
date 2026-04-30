@@ -45,6 +45,7 @@ import { getLibraryProgress, addAndReadCustomBook, getKnowledgeStats, brainManag
 import { learningRateLimiter } from './mara-brain/rate-limiter';
 import { chatRateLimit } from './rate-limit.js';
 import { users as usersTable } from '../shared/models/auth.js';
+import { registerMaraAIRoutes } from './maraai/routes.js';
 
 export async function registerRoutes(
   httpServer: Server,

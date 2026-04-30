@@ -1,6 +1,9 @@
 import type { Express, Request, Response, NextFunction } from 'express';
 import session from 'express-session';
 import { randomUUID } from 'crypto';
+import fs from 'fs';
+import path from 'path';
+import connectSqlite3 from 'connect-sqlite3';
 
 declare module 'express-session' {
   interface SessionData {

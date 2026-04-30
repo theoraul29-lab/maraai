@@ -480,3 +480,32 @@ export async function confirmReset(req: Request, res: Response) {
 
 // Touch sql/and/gt to avoid unused-import tree-shake complaint on strict tsc configs.
 void sql; void and; void gt;
+
+/**
+ * Thin async error-catcher so Express 4 (which doesn't handle async
+ * route errors natively) doesn't silently swallow rejections. The
+ * individual handlers already catch expected errors and send responses;
+ * this is purely the last-resort safety net for *unexpected* failures.
+ */
+function wrapAsync(
+  phase: string,
+  handler: (req: Request, res: Response) => Promise<unknown>,
+): (req: Request, res: Response) => void {
+  return (req, res) => {
+    handler(req, res).catch((err) => {
+      console.error(`[auth] ${phase} unhandled error:`, err);
+      if (!res.headersSent) {
+        res.status(500).json({
+          code: 'internal_error',
+          message: 'An unexpected error occurred. Please try again.',
+        });
+      }
+    });
+  };
+}
+
+export const signup = wrapAsync('signup', signupHandler);
+export const login = wrapAsync('login', loginHandler);
+export const logout = wrapAsync('logout', logoutHandler);
+export const me = wrapAsync('me', meHandler);
+export const oauth = wrapAsync('oauth', oauthHandler);
