@@ -522,7 +522,7 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
                 className="you-fb-meta-item you-fb-link"
                 href={profile.user.website}
                 target="_blank"
-                rel="noreferrer noopener"
+                rel="noopener noreferrer"
               >
                 🔗 {profile.user.website.replace(/^https?:\/\//, '')}
               </a>
@@ -782,7 +782,7 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
           <div className="you-fb-about-row">
             <strong>🔗 {t('you.website', 'Website')}:</strong>
             {profile?.user.website ? (
-              <a href={profile.user.website} target="_blank" rel="noreferrer noopener">
+              <a href={profile.user.website} target="_blank" rel="noopener noreferrer">
                 {profile.user.website}
               </a>
             ) : (
@@ -1120,7 +1120,7 @@ const VideosTab: React.FC<{ profileId: string }> = ({ profileId }) => {
   return (
     <div className="you-fb-videos-grid">
       {videos.map(v => (
-        <a key={v.id} href={v.url} target="_blank" rel="noreferrer noopener" className="you-fb-video-card">
+        <a key={v.id} href={v.url} target="_blank" rel="noopener noreferrer" className="you-fb-video-card">
           {v.thumbnailUrl ? (
             <img className="you-fb-video-thumb" src={v.thumbnailUrl} alt={v.title} loading="lazy" />
           ) : (
