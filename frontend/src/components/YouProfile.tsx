@@ -65,6 +65,7 @@ interface CommentItem {
   userId: string;
   content: string;
   createdAt: string;
+  userName?: string | null;
 }
 
 interface FollowUser {
@@ -175,34 +176,7 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
       );
       const items = res.data.items || [];
       setPosts(items);
-      // Batch-load like counts
-      if (items.length > 0) {
-        const likeResults = await Promise.allSettled(
-          items.map(p =>
-            axios.post<{ liked: boolean; likeCount: number }>(
-              `${API_URL}/api/profile/posts/${p.id}/like`,
-              {},
-              { withCredentials: true },
-            ).then(r => ({ id: p.id, liked: r.data.liked, count: r.data.likeCount }))
-              .catch(() => null),
-          ),
-        );
-        setPostLikeState(prev => {
-          const next = new Map(prev);
-          for (const r of likeResults) {
-            if (r.status === 'fulfilled' && r.value) {
-              next.set(r.value.id, { liked: r.value.liked, count: r.value.count });
-            }
-          }
-          return next;
-        });
-        // Undo the side-effect: we called POST to get state, so we toggle back if it was liked
-        // Actually, let's use a GET-friendly approach: skip the toggle on load and just show 0s.
-        // The POST approach modifies state which is wrong. Let's clear it and just fetch via toggle
-        // only on user action. We set liked=false, count=0 by default and that's fine.
-        setPostLikeState(new Map());
-      }
-    } catch {
+          } catch {
       setPosts([]);
     }
   }, []);
@@ -210,15 +184,15 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
   const fetchFriends = useCallback(async (profileId: string) => {
     setFriendsLoading(true);
     try {
-      const [follRes, folwRes] = await Promise.all([
+      const [follRes, followRes] = await Promise.all([
         axios.get<{ items: FollowUser[] }>(`${API_URL}/api/profile/${profileId}/followers?limit=100`),
         axios.get<{ items: FollowUser[] }>(`${API_URL}/api/profile/${profileId}/following?limit=100`),
       ]);
       setFollowers(follRes.data.items || []);
-      setFollowing(folwRes.data.items || []);
+      setFollowing(followRes.data.items || []);
       // Track who the current user is following for the follow button
       if (profile?.isSelf) {
-        setFollowingIds(new Set((folwRes.data.items || []).map(u => u.id)));
+        setFollowingIds(new Set((followRes.data.items || []).map(u => u.id)));
       }
     } catch { /* silent */ }
     setFriendsLoading(false);
@@ -753,7 +727,7 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
                     <div className="you-fb-comments">
                       {comments.map(c => (
                         <div key={c.id} className="you-fb-comment">
-                          <span className="you-fb-comment-user">{c.userId.slice(0, 8)}</span>
+                          <span className="you-fb-comment-user">{c.userName || c.userId.slice(0, 8)}</span>
                           <span className="you-fb-comment-content">{c.content}</span>
                           {(profile?.isSelf || c.userId === profile?.user.id) && (
                             <button

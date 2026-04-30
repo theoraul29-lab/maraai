@@ -85,7 +85,7 @@ import {
   type TradingCertificate,
   type PostComment,
 } from "../shared/schema";
-import { eq, desc, and, sql, lt, gte, like, or, count, inArray } from "drizzle-orm";
+import { eq, desc, asc, and, sql, lt, gte, like, or, count, inArray } from "drizzle-orm";
 import type { User } from "../shared/models/auth";
 
 export interface IStorage {
@@ -418,7 +418,7 @@ export interface IStorage {
   getPostLikeCounts(postIds: number[]): Promise<Map<number, number>>;
   getUserLikedPosts(userId: string, postIds: number[]): Promise<Set<number>>;
   createPostComment(input: { postId: number; userId: string; content: string }): Promise<PostComment>;
-  listPostComments(postId: number, opts?: { limit?: number }): Promise<PostComment[]>;
+  listPostComments(postId: number, opts?: { limit?: number }): Promise<(PostComment & { userName: string | null })[]>;
   deletePostComment(commentId: number, userId: string): Promise<boolean>;
 
   // --- Direct Messaging ----------------------------------------------------
@@ -2413,14 +2413,23 @@ export class DatabaseStorage implements IStorage {
     return inserted;
   }
 
-  async listPostComments(postId: number, opts?: { limit?: number }): Promise<PostComment[]> {
+  async listPostComments(postId: number, opts?: { limit?: number }): Promise<(PostComment & { userName: string | null })[]> {
     const limit = opts?.limit ?? 50;
-    return await db
-      .select()
+    const rows = await db
+      .select({
+        id: postComments.id,
+        postId: postComments.postId,
+        userId: postComments.userId,
+        content: postComments.content,
+        createdAt: postComments.createdAt,
+        userName: sql<string | null>`coalesce(${users.displayName}, ${users.firstName}, ${users.email})`,
+      })
       .from(postComments)
+      .leftJoin(users, eq(users.id, postComments.userId))
       .where(eq(postComments.postId, postId))
-      .orderBy(postComments.createdAt)
+      .orderBy(asc(postComments.createdAt))
       .limit(limit);
+    return rows;
   }
 
   async deletePostComment(commentId: number, userId: string): Promise<boolean> {
@@ -2536,7 +2545,7 @@ export class DatabaseStorage implements IStorage {
           ? and(eq(directMessages.conversationId, convId), lt(directMessages.id, opts.before))
           : eq(directMessages.conversationId, convId),
       )
-      .orderBy(directMessages.createdAt)
+      .orderBy(asc(directMessages.createdAt))
       .limit(limit);
     const rows = await q;
     return rows.map((r) => ({
