@@ -1542,3 +1542,23 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* --- Image-upload row used by composer + edit-profile modal -------------- */
+.you-fb-upload-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+.you-fb-upload-preview {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid rgba(168, 85, 247, 0.35);
+}
+.you-fb-upload-preview-wide {
+  width: 96px;
+  height: 56px;
+}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from './contexts/AuthContext';
@@ -54,6 +54,9 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
   const [uploadTags, setUploadTags] = useState('');
   const [uploading, setUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState<string>('');
+  const videoFileRef = useRef<HTMLInputElement>(null);
 
   // Delete confirmation
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -96,7 +99,15 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
   }, [onClose]);
 
   const handleUpload = async () => {
-    if (!uploadTitle.trim() || !uploadUrl.trim()) {
+    if (!uploadTitle.trim()) {
+      setError(t('creator.titleUrlRequired'));
+      return;
+    }
+    // Two valid paths: (a) attach a real video file → multipart upload
+    // through /api/reels/upload (auth-required, written to the video
+    // volume); (b) paste an external URL (YouTube, Vimeo) → fall back to
+    // /api/creator/post-reel which only stores the URL string.
+    if (!videoFile && !uploadUrl.trim()) {
       setError(t('creator.titleUrlRequired'));
       return;
     }
@@ -119,11 +130,14 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
       setUploadDesc('');
       setUploadUrl('');
       setUploadTags('');
+      if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl);
+      setVideoFile(null);
+      setVideoPreviewUrl('');
       setTimeout(() => setUploadSuccess(false), 3000);
       fetchData();
       setActiveTab('dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.message || t('creator.publishError'));
+      setError(err.response?.data?.message || err.response?.data?.error || t('creator.publishError'));
     } finally {
       setUploading(false);
     }
@@ -286,13 +300,37 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
               </label>
 
               <label className="creator-form-label">
-                {t('creator.uploadUrl')}
+                {t('creator.uploadVideoFile', 'Video file (mp4, webm, mov)')}
+                <input
+                  ref={videoFileRef}
+                  type="file"
+                  accept="video/mp4,video/webm,video/quicktime,video/x-matroska"
+                  className="creator-form-input"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0] || null;
+                    if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl);
+                    setVideoFile(f);
+                    setVideoPreviewUrl(f ? URL.createObjectURL(f) : '');
+                  }}
+                />
+                {videoPreviewUrl && (
+                  <video
+                    src={videoPreviewUrl}
+                    controls
+                    style={{ marginTop: 8, maxWidth: '100%', borderRadius: 8 }}
+                  />
+                )}
+              </label>
+
+              <label className="creator-form-label">
+                {t('creator.uploadUrlOrPaste', 'Or paste a URL (YouTube etc.)')}
                 <input
                   type="url"
                   className="creator-form-input"
                   placeholder={t('creator.uploadUrlPlaceholder')}
                   value={uploadUrl}
                   onChange={e => setUploadUrl(e.target.value)}
+                  disabled={!!videoFile}
                 />
               </label>
 
@@ -327,7 +365,19 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
                 >
                   {uploading ? t('creator.publishing') : t('creator.publishReel')}
                 </button>
-                <button className="creator-button secondary" onClick={() => { setUploadTitle(''); setUploadDesc(''); setUploadUrl(''); setUploadTags(''); }}>
+                <button
+                  className="creator-button secondary"
+                  onClick={() => {
+                    setUploadTitle('');
+                    setUploadDesc('');
+                    setUploadUrl('');
+                    setUploadTags('');
+                    if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl);
+                    setVideoFile(null);
+                    setVideoPreviewUrl('');
+                    if (videoFileRef.current) videoFileRef.current.value = '';
+                  }}
+                >
                   {t('creator.reset')}
                 </button>
               </div>

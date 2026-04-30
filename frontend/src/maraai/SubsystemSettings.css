@@ -1,0 +1,138 @@
+.mara-settings-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.78);
+  z-index: 2200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  backdrop-filter: blur(4px);
+}
+
+.mara-settings-panel {
+  width: min(560px, 100%);
+  max-height: 88vh;
+  overflow-y: auto;
+  background: linear-gradient(180deg, #0e0a1f, #1a0f2e);
+  border: 1px solid rgba(168, 85, 247, 0.28);
+  border-radius: 16px;
+  color: #fff;
+  padding: 20px 22px 24px;
+  box-shadow: 0 12px 40px rgba(168, 85, 247, 0.28);
+}
+
+.mara-settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.mara-settings-header h2 {
+  margin: 0;
+  font-size: 18px;
+  letter-spacing: 0.4px;
+}
+.mara-settings-close {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+}
+
+.mara-settings-section {
+  border-top: 1px solid rgba(168, 85, 247, 0.18);
+  padding-top: 14px;
+  margin-top: 14px;
+}
+.mara-settings-section:first-of-type {
+  border-top: none;
+  margin-top: 0;
+  padding-top: 0;
+}
+.mara-settings-section h3 {
+  margin: 0 0 10px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: rgba(199, 125, 255, 0.92);
+}
+
+.mara-settings-modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.mara-settings-mode {
+  flex: 1 1 30%;
+  background: rgba(168, 85, 247, 0.08);
+  border: 1px solid rgba(168, 85, 247, 0.32);
+  color: #fff;
+  border-radius: 10px;
+  padding: 10px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.mara-settings-mode.active {
+  background: linear-gradient(135deg, #a855f7, #c77dff);
+  border-color: transparent;
+}
+.mara-settings-mode:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mara-settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px dashed rgba(168, 85, 247, 0.18);
+  font-size: 14px;
+}
+.mara-settings-row:last-child {
+  border-bottom: none;
+}
+.mara-settings-row input[type='range'] {
+  width: 60%;
+  accent-color: #a855f7;
+}
+.mara-settings-row input[type='checkbox'] {
+  width: 20px;
+  height: 20px;
+  accent-color: #a855f7;
+}
+
+.mara-settings-empty {
+  text-align: center;
+  padding: 24px 8px;
+  color: rgba(255, 255, 255, 0.78);
+}
+.mara-settings-cta,
+.mara-settings-kill {
+  margin-top: 10px;
+  background: linear-gradient(135deg, #a855f7, #c77dff);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.mara-settings-kill {
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
+}
+.mara-settings-help {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0 0 8px;
+}
+.mara-settings-error {
+  margin-top: 12px;
+  color: #fca5a5;
+  font-size: 13px;
+}

@@ -51,6 +51,17 @@ const dbPath = resolveDbPath();
 const sqlite = new Database(dbPath);
 sqlite.pragma('journal_mode = WAL');
 sqlite.pragma('foreign_keys = ON');
+// Bound the time better-sqlite3 will block on a write lock. Without an
+// explicit timeout, contended writes can wait indefinitely (which on
+// Railway has been observed to make /api/auth/signup hang past the
+// edge proxy's response deadline). 5s is well above any healthy
+// transaction time and still fails fast on real deadlocks.
+sqlite.pragma('busy_timeout = 5000');
+// WAL+NORMAL is the recommended combo for write throughput on commodity
+// disks; FULL fsyncs every commit, which can stall multi-second on slow
+// network volumes. NORMAL still survives application crashes because of
+// WAL; only OS-level crashes between checkpoints can lose the last txn.
+sqlite.pragma('synchronous = NORMAL');
 
 // Auto-create Mara Brain tables if they don't exist
 sqlite.exec(`
@@ -111,3 +122,8 @@ sqlite.exec(`
 `);
 
 export const db = drizzle(sqlite, { schema });
+
+// Expose the raw better-sqlite3 handle so startup code (e.g. the
+// cover_image_url safety guard in server/index.ts) can run PRAGMA queries
+// and DDL that Drizzle's query builder doesn't expose directly.
+export { sqlite as rawSqlite };

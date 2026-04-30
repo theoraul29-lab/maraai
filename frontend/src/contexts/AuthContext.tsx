@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { changeLanguage as changeI18nLanguage } from '../i18n';
 
 export type UserTier = 'free' | 'trial' | 'premium' | 'vip';
 
@@ -16,6 +17,29 @@ export interface User {
   avatar?: string;
   banner?: string;
   bio?: string;
+  /**
+   * BCP-47 language code (e.g. 'en', 'ro') stored in `user_preferences`.
+   * On login/refresh this wins over localStorage so a user's language
+   * choice follows them across devices (spec §2.5).
+   */
+  preferredLanguage?: string | null;
+}
+
+/**
+ * Apply the server-stored language preference to i18n WITHOUT echoing
+ * the change back to the server (we just got it from there).
+ *
+ * Called immediately after every successful auth response. If the
+ * server has no preference yet (brand-new account), do nothing — the
+ * existing localStorage / browser-detected language stays in effect.
+ */
+async function applyServerLanguage(code: string | null | undefined): Promise<void> {
+  if (!code) return;
+  try {
+    await changeI18nLanguage(code);
+  } catch (err) {
+    console.warn('[auth] failed to apply server language:', err);
+  }
 }
 
 interface AuthContextType {
@@ -108,6 +132,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         localStorage.setItem('user', JSON.stringify(sessionUser));
         setUser(sessionUser);
         setIsAuthenticated(true);
+        // Server-stored language wins on app load (spec §2.5).
+        void applyServerLanguage(payload.user.preferredLanguage);
       } catch {
         /* keep localStorage state */
       }
@@ -130,6 +156,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ email, password }),
       });
 
@@ -152,6 +179,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       localStorage.setItem('user', JSON.stringify(newUser));
       setUser(newUser);
       setIsAuthenticated(true);
+      // Sync i18n to the user's stored preference (server wins on login).
+      void applyServerLanguage(userData.preferredLanguage);
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -164,6 +193,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ email, password, name }),
       });
 
@@ -186,6 +216,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       localStorage.setItem('user', JSON.stringify(newUser));
       setUser(newUser);
       setIsAuthenticated(true);
+      // Brand-new signup: server returns null preferredLanguage, so
+      // applyServerLanguage is a no-op and current i18n state (chosen on
+      // the public landing page) is retained. Fire-and-forget POST
+      // below pins the current language to the new account so the next
+      // login from another device picks it up.
+      void applyServerLanguage(userData.preferredLanguage);
+      try {
+        const currentLang = localStorage.getItem('mara_lang') || 'en';
+        // Don't await — the signup CTA shouldn't block on this side-effect.
+        void fetch('/api/user/language', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ language: currentLang }),
+        });
+      } catch {
+        /* non-fatal: user can change language manually later */
+      }
     } catch (error) {
       console.error('Signup error:', error);
       throw error;
@@ -234,6 +282,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ userId: user.id, newTier }),
       });
 

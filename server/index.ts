@@ -21,10 +21,11 @@ import { seedPlans } from './billing/seed.js';
 import { seedTradingAcademy } from './trading/seed.js';
 import { z } from 'zod';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
-import { db } from './db.js';
+import { db, rawSqlite } from './db.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { UPLOADS_DIR } from '../backend/src/modules/reels.js';
+import { IMAGE_UPLOADS_DIR } from '../backend/src/modules/uploads.js';
 dotenv.config();
 
 // Process-level safety net for *runtime* bugs in request handlers.
@@ -71,6 +72,52 @@ function runMigrations() {
     console.log('[migrations] Drizzle migrations applied successfully');
   } catch (err) {
     console.error('[migrations] Failed to run migrations:', err);
+    throw err;
+  }
+
+  // Safety guard: ensure the users table has every column declared by the
+  // current schema. Migration 0007_you_fb_profile added cover_image_url,
+  // location and website, but production databases that were created from
+  // a snapshot taken before that migration ran (or where 0007 was recorded
+  // as applied without the DDL actually executing) are missing them,
+  // causing:
+  //   SqliteError: no such column: "cover_image_url"
+  //
+  // Drizzle's `db.select().from(users)` expands to an explicit column list
+  // from the in-memory schema, so any missing column makes /api/auth/me +
+  // /api/auth/signup throw — and Express 4 silently swallows the rejection
+  // in async handlers, hanging the request past the upstream proxy
+  // deadline. See server/modules/auth-api.ts wrapAsync() for the
+  // last-resort net.
+  //
+  // SQLite has no ALTER TABLE … ADD COLUMN IF NOT EXISTS, so we PRAGMA
+  // table_info first and only issue the ALTER TABLE when the column is
+  // absent. Each column is wrapped in its own try/catch so a transient
+  // failure on one (e.g. duplicate-column race with another boot) does
+  // not skip the rest.
+  try {
+    type ColumnInfo = { name: string };
+    const columns = rawSqlite.pragma('table_info(users)') as ColumnInfo[];
+    const have = new Set(columns.map((c) => c.name));
+    const required: Array<[string, string]> = [
+      ['cover_image_url', 'text'],
+      ['location', 'text'],
+      ['website', 'text'],
+    ];
+    for (const [name, type] of required) {
+      if (have.has(name)) continue;
+      try {
+        rawSqlite.exec(`ALTER TABLE \`users\` ADD COLUMN \`${name}\` ${type};`);
+        console.log(`[migrations] Added missing users.${name} column`);
+      } catch (colErr) {
+        console.error(
+          `[migrations] Failed to add users.${name} column (non-fatal):`,
+          colErr,
+        );
+      }
+    }
+  } catch (err) {
+    console.error('[migrations] Failed to inspect users table for safety guard:', err);
     throw err;
   }
 }
@@ -285,6 +332,23 @@ app.use((req, res, next) => {
       next();
     },
     express.static(UPLOADS_DIR, {
+      maxAge: '7d',
+      immutable: true,
+      fallthrough: false,
+    }),
+  );
+
+  // Same shape, different volume: user-uploaded images (avatar, cover,
+  // post image, writers cover). Filenames are content-hashed so we can
+  // cache aggressively, and `nosniff` keeps the static tree honest in
+  // case a future MIME slips through the upload whitelist.
+  app.use(
+    '/uploads/images',
+    (_req, res, next) => {
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      next();
+    },
+    express.static(IMAGE_UPLOADS_DIR, {
       maxAge: '7d',
       immutable: true,
       fallthrough: false,

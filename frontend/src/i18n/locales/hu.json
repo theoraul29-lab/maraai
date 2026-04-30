@@ -57,10 +57,10 @@
     "emailRequired": "Email is required",
     "emailInvalid": "Please enter a valid email address",
     "passwordRequired": "Password is required",
-    "passwordMinLength": "Password must be at least 8 characters",
+    "passwordMinLength": "Password must be at least 6 characters",
     "nameRequired": "Name is required",
     "nameMinLength": "Name must be at least 2 characters",
-    "passwordHint": "✓ Password must be at least 8 characters",
+    "passwordHint": "✓ Password must be at least 6 characters",
     "login": "Bejelentkezés",
     "createAccount": "Fiók létrehozása",
     "signingIn": "Signing Account...",
@@ -977,5 +977,19 @@
   "languageSelector": {
     "label": "Nyelv",
     "changeLanguage": "Nyelv váltása"
+  },
+  "pwa": {
+    "installTitle": "Mara telepítése",
+    "installBody": "Add hozzá a hellomara.net-et a kezdőképernyőhöz a teljes alkalmazás-élményért.",
+    "installCta": "Telepítés",
+    "installDismiss": "Most nem",
+    "installDismissAria": "Telepítési felkérés bezárása",
+    "iosHintTitle": "Mara telepítése",
+    "iosHintBody": "Koppints a Megosztás, majd a „Főképernyőre” lehetőségre az alkalmazás telepítéséhez.",
+    "iosHintDismiss": "Értem",
+    "updateTitle": "Frissítés kész",
+    "updateBody": "A Mara újabb verziója érhető el.",
+    "updateCta": "Frissítés",
+    "updateDismissAria": "Frissítés bezárása"
   }
 }

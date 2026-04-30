@@ -57,10 +57,10 @@
     "emailRequired": "L'email è obbligatoria",
     "emailInvalid": "Inserisci un'email valida",
     "passwordRequired": "La password è obbligatoria",
-    "passwordMinLength": "La password deve avere almeno 8 caratteri",
+    "passwordMinLength": "La password deve avere almeno 6 caratteri",
     "nameRequired": "Il nome è obbligatorio",
     "nameMinLength": "Il nome deve avere almeno 2 caratteri",
-    "passwordHint": "✓ La password deve avere almeno 8 caratteri",
+    "passwordHint": "✓ La password deve avere almeno 6 caratteri",
     "login": "Accedi",
     "createAccount": "Crea account",
     "signingIn": "Accesso...",
@@ -977,5 +977,19 @@
   "languageSelector": {
     "label": "Lingua",
     "changeLanguage": "Cambia lingua"
+  },
+  "pwa": {
+    "installTitle": "Installa Mara",
+    "installBody": "Aggiungi hellomara.net alla schermata Home per l'esperienza app completa.",
+    "installCta": "Installa",
+    "installDismiss": "Non ora",
+    "installDismissAria": "Chiudi invito all'installazione",
+    "iosHintTitle": "Installa Mara",
+    "iosHintBody": "Tocca Condividi, poi \"Aggiungi alla schermata Home\" per installare l'app.",
+    "iosHintDismiss": "Ho capito",
+    "updateTitle": "Aggiornamento disponibile",
+    "updateBody": "È disponibile una versione più recente di Mara.",
+    "updateCta": "Aggiorna",
+    "updateDismissAria": "Chiudi aggiornamento"
   }
 }

@@ -20,6 +20,8 @@ import ResetPassword from './ResetPassword';
 import ResetPasswordConfirmation from './ResetPasswordConfirmation';
 import HomePage from './HomePage';
 import AdminBrain from './AdminBrain';
+import { OnboardingFlow } from './maraai/OnboardingFlow';
+import { TransparencyDashboard } from './maraai/TransparencyDashboard';
 
 function App() {
   const navigate = useNavigate();
@@ -31,22 +33,25 @@ function App() {
       <AuthProvider>
         <div className="App">
           {!isHomePage && <Nav />}
-          <Suspense fallback={<div style={{ color: '#fff', padding: 40 }}>Loading…</div>}>
-            <ErrorBoundary level="section">
-              <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/trading-academy" element={<TradingAcademy onClose={() => navigate('/')} />} />
-                <Route path="/membership" element={<VIPPage onClose={() => navigate('/')} />} />
-                <Route path="/creator-panel" element={<Creators onClose={() => navigate('/')} />} />
-                <Route path="/you" element={<You />} />
-                <Route path="/reels" element={<Reels />} />
-                <Route path="/writers-hub" element={<WritersHubPage onClose={() => navigate('/')} />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/reset-password/confirmation" element={<ResetPasswordConfirmation />} />
-                <Route path="/admin/brain" element={<AdminBrain />} />
-              </Routes>
-            </ErrorBoundary>
-          </Suspense>
+          <ErrorBoundary level="section">
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/trading-academy" element={<TradingAcademy onClose={() => navigate('/')} />} />
+              <Route path="/membership" element={<VIP onClose={() => navigate('/')} />} />
+              <Route path="/creator-panel" element={<Creators onClose={() => navigate('/')} />} />
+              <Route path="/you" element={<You />} />
+              <Route path="/reels" element={<Reels />} />
+              <Route path="/writers-hub" element={<WritersHub onClose={() => navigate('/')} />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/reset-password/confirmation" element={<ResetPasswordConfirmation />} />
+              <Route path="/admin/brain" element={<AdminBrain />} />
+              <Route
+                path="/onboarding"
+                element={<OnboardingFlow onClose={() => navigate('/')} />}
+              />
+              <Route path="/transparency" element={<TransparencyDashboard />} />
+            </Routes>
+          </ErrorBoundary>
           {/* Mara Chat Widget - appears on all pages */}
           <ErrorBoundary level="component">
             <MaraChatWidget />

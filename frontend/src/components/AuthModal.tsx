@@ -96,7 +96,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     if (!password) {
       newValidation.password.push(t('auth.passwordRequired'));
       isValid = false;
-    } else if (password.length < 8) {
+    } else if (password.length < 6) {
       newValidation.password.push(t('auth.passwordMinLength'));
       isValid = false;
     }

@@ -11,6 +11,7 @@ import { db } from './db';
 import { eq } from 'drizzle-orm';
 import * as videoModule from '../backend/src/modules/video.js';
 import * as reelsModule from '../backend/src/modules/reels.js';
+import * as uploadsModule from '../backend/src/modules/uploads.js';
 import * as writersModule from '../backend/src/modules/writers.js';
 import * as tradingAcademyModule from '../backend/src/modules/trading-academy.js';
 import * as creatorsModule from '../backend/src/modules/creators.js';
@@ -21,7 +22,8 @@ import * as userPrefsModule from '../backend/src/modules/userPrefs.js';
 import * as adminModule from '../backend/src/modules/admin.js';
 import * as feedbackModule from '../backend/src/modules/feedback.js';
 import * as profileModule from '../backend/src/modules/profile.js';
-import * as pushModule from '../backend/src/modules/push.js';
+import * as notificationsModule from '../backend/src/modules/notifications.js';
+import * as searchModule from '../backend/src/modules/search.js';
 import * as ordersModule from '../backend/src/modules/orders.js';
 import * as adminOrdersModule from '../backend/src/modules/adminOrders.js';
 import * as paymentsModule from '../backend/src/modules/payments.js';
@@ -161,10 +163,15 @@ export async function registerRoutes(
   // Feedback/moderation endpoint (require auth)
   app.post('/api/moderate', requireAuth, feedbackModule.moderate);
 
-  // --- Web Push (Phase 2 P2.1.4) --------------------------------------------
-  app.get('/api/push/public-key', pushModule.publicKey);
-  app.post('/api/push/subscribe', requireAuth, pushModule.subscribe);
-  app.post('/api/push/unsubscribe', requireAuth, pushModule.unsubscribe);
+  // --- Notifications (Phase 2 P2.1) -----------------------------------------
+  app.get('/api/notifications', requireAuth, notificationsModule.listNotifications);
+  app.get('/api/notifications/unread-count', requireAuth, notificationsModule.unreadCount);
+  app.post('/api/notifications/:id/read', requireAuth, notificationsModule.markRead);
+  app.post('/api/notifications/read-all', requireAuth, notificationsModule.markAllRead);
+
+  // Global search (Phase 2 P2.4) — public, returns ranked results across
+  // people/reels/articles/lessons. See backend/src/modules/search.ts.
+  app.get('/api/search', searchModule.search);
 
   // Video and feed endpoints
   app.get(api.videos.list.path, videoModule.listVideos);
@@ -193,6 +200,28 @@ export async function registerRoutes(
     },
     reelsModule.uploadReel,
   );
+  // --- Generic image upload (avatar, cover, post image, writers cover) ----
+  // Auth-required, multipart/form-data field name `image`. Returns a public
+  // URL the caller can store in any *ImageUrl column via the existing
+  // PATCH /api/profile/me / POST /api/profile/posts / POST /api/writers
+  // endpoints — those still validate URL shape so we keep one source of
+  // truth for what an image URL looks like.
+  app.post(
+    '/api/uploads/image',
+    requireAuth,
+    (req: any, res: any, next: any) => {
+      uploadsModule.imageUploadMiddleware(req, res, (err: unknown) => {
+        if (err) {
+          const msg = err instanceof Error ? err.message : 'upload error';
+          const status = msg.includes('File too large') ? 413 : 400;
+          return res.status(status).json({ error: msg });
+        }
+        return next();
+      });
+    },
+    uploadsModule.uploadImage,
+  );
+
   app.post('/api/videos/:id/share', requireAuth, reelsModule.shareReel);
   app.get('/api/videos/:id/comments', reelsModule.listComments);
   app.post('/api/videos/:id/comments', requireAuth, reelsModule.createComment);
@@ -265,9 +294,15 @@ export async function registerRoutes(
   app.get('/api/creator/analytics', requireAuth, videoModule.creatorAnalytics);
   app.delete('/api/creator/videos/:id', requireAuth, videoModule.deleteCreatorVideo);
 
-  // Chat endpoints (require auth; chat send is rate-limited to match WebSocket)
+  // Chat endpoints (require auth; chat send is rate-limited to match WebSocket).
+  // Internally `sendChatMessage` now goes through the hybrid AI router so that
+  // local/central/p2p routing + transparency logging happens on every reply.
   app.get(api.chat.list.path, requireAuth, chatModule.getChatHistory);
   app.post(api.chat.send.path, requireAuth, chatRateLimit, chatModule.sendChatMessage);
+
+  // MaraAI hybrid-platform layer (Phase 3): consent, mode, P2P, transparency,
+  // hybrid AI router, email OTP, internal event bus status.
+  registerMaraAIRoutes(app, requireAuth);
 
   // TTS/STT endpoints
   app.post('/api/mara-speak', ttsModule.maraSpeak);

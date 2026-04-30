@@ -13,6 +13,7 @@ import { z } from 'zod';
 export * from './models/auth.ts';
 export * from './models/billing.ts';
 export * from './models/chat.ts';
+export * from './models/maraai-platform.ts';
 
 // === VIDEOS ===
 export const videos = pgTable('videos', {
