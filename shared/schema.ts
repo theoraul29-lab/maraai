@@ -136,6 +136,50 @@ export const userPosts = pgTable('user_posts', {
     .notNull(),
 });
 
+// === POST LIKES ===
+export const postLikes = pgTable('post_likes', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  postId: integer('post_id').notNull(),
+  userId: text('user_id').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
+// === POST COMMENTS ===
+export const postComments = pgTable('post_comments', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  postId: integer('post_id').notNull(),
+  userId: text('user_id').notNull(),
+  content: text('content').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
+// === CONVERSATIONS (Direct Messaging) ===
+export const conversations = pgTable('conversations', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userAId: text('user_a_id').notNull(),
+  userBId: text('user_b_id').notNull(),
+  lastMessageAt: integer('last_message_at', { mode: 'timestamp' }),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
+// === DIRECT MESSAGES ===
+export const directMessages = pgTable('direct_messages', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  conversationId: integer('conversation_id').notNull(),
+  senderId: text('sender_id').notNull(),
+  content: text('content').notNull(),
+  read: integer('read').default(0).notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
 // === CREATOR POSTS (monthly tracking) ===
 export const creatorPosts = pgTable('creator_posts', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -635,3 +679,12 @@ export type TradingLesson = typeof tradingLessons.$inferSelect;
 export type InsertTradingLesson = typeof tradingLessons.$inferInsert;
 export type TradingLessonProgress = typeof tradingLessonProgress.$inferSelect;
 export type TradingCertificate = typeof tradingCertificates.$inferSelect;
+
+export type PostLike = typeof postLikes.$inferSelect;
+export type InsertPostLike = typeof postLikes.$inferInsert;
+export type PostComment = typeof postComments.$inferSelect;
+export type InsertPostComment = typeof postComments.$inferInsert;
+export type Conversation = typeof conversations.$inferSelect;
+export type InsertConversation = typeof conversations.$inferInsert;
+export type DirectMessage = typeof directMessages.$inferSelect;
+export type InsertDirectMessage = typeof directMessages.$inferInsert;

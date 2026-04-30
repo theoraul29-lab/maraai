@@ -500,3 +500,97 @@ export async function getBadges(req: Request, res: Response) {
     res.status(500).json({ error: 'badges_failed', code: 'badges_failed' });
   }
 }
+
+// --- Post Likes & Comments (Feature 2) -------------------------------------
+
+export async function likePost(req: Request, res: Response) {
+  try {
+    const userId = currentUserId(req);
+    if (!userId) {
+      res.status(401).json({ error: 'unauthenticated', code: 'unauthenticated' });
+      return;
+    }
+    const postId = Number.parseInt(req.params.postId ?? '', 10);
+    if (!Number.isFinite(postId) || postId <= 0) {
+      res.status(400).json({ error: 'invalid_post_id', code: 'invalid_post_id' });
+      return;
+    }
+    const result = await deps.storage.togglePostLike(userId, postId);
+    res.json(result);
+  } catch (error) {
+    console.error('[profile] likePost failed:', error);
+    res.status(500).json({ error: 'like_failed', code: 'like_failed' });
+  }
+}
+
+export async function listPostComments(req: Request, res: Response) {
+  try {
+    const postId = Number.parseInt(req.params.postId ?? '', 10);
+    if (!Number.isFinite(postId) || postId <= 0) {
+      res.status(400).json({ error: 'invalid_post_id', code: 'invalid_post_id' });
+      return;
+    }
+    const rawLimit = Number.parseInt(String(req.query.limit ?? ''), 10);
+    const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(rawLimit, 1), 200) : 50;
+    const items = await deps.storage.listPostComments(postId, { limit });
+    res.json({ items });
+  } catch (error) {
+    console.error('[profile] listPostComments failed:', error);
+    res.status(500).json({ error: 'comments_failed', code: 'comments_failed' });
+  }
+}
+
+export async function createPostComment(req: Request, res: Response) {
+  try {
+    const userId = currentUserId(req);
+    if (!userId) {
+      res.status(401).json({ error: 'unauthenticated', code: 'unauthenticated' });
+      return;
+    }
+    const postId = Number.parseInt(req.params.postId ?? '', 10);
+    if (!Number.isFinite(postId) || postId <= 0) {
+      res.status(400).json({ error: 'invalid_post_id', code: 'invalid_post_id' });
+      return;
+    }
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    const rawContent = body.content;
+    if (typeof rawContent !== 'string') {
+      res.status(400).json({ error: 'invalid_content', code: 'invalid_content' });
+      return;
+    }
+    const content = rawContent.trim();
+    if (content.length < 1 || content.length > 1000) {
+      res.status(400).json({ error: 'invalid_content', code: 'invalid_content' });
+      return;
+    }
+    const comment = await deps.storage.createPostComment({ postId, userId, content });
+    res.status(201).json(comment);
+  } catch (error) {
+    console.error('[profile] createPostComment failed:', error);
+    res.status(500).json({ error: 'comment_create_failed', code: 'comment_create_failed' });
+  }
+}
+
+export async function deletePostComment(req: Request, res: Response) {
+  try {
+    const userId = currentUserId(req);
+    if (!userId) {
+      res.status(401).json({ error: 'unauthenticated', code: 'unauthenticated' });
+      return;
+    }
+    const commentId = Number.parseInt(req.params.commentId ?? '', 10);
+    if (!Number.isFinite(commentId) || commentId <= 0) {
+      res.status(400).json({ error: 'invalid_comment_id', code: 'invalid_comment_id' });
+      return;
+    }
+    const ok = await deps.storage.deletePostComment(commentId, userId);
+    if (!ok) {
+      res.status(404).json({ error: 'not_found', code: 'not_found' });
+      return;
+    }
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('[profile] deletePostComment failed:', error);
+    res.status(500).json({ error: 'comment_delete_failed', code: 'comment_delete_failed' });
+  }
+}

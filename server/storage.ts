@@ -27,6 +27,10 @@ import {
   maraSelfReflection,
   maraPlatformInsights,
   users,
+  postLikes,
+  postComments,
+  conversations,
+  directMessages,
   type Video,
   type InsertVideo,
   type VideoComment,
@@ -79,6 +83,7 @@ import {
   type InsertTradingLesson,
   type TradingLessonProgress,
   type TradingCertificate,
+  type PostComment,
 } from "../shared/schema";
 import { eq, desc, and, sql, lt, gte, like, or, count, inArray } from "drizzle-orm";
 import type { User } from "../shared/models/auth";
@@ -405,6 +410,31 @@ export interface IStorage {
       likes: number;
     }>
   >;
+
+  // --- Post Likes & Comments -----------------------------------------------
+  togglePostLike(userId: string, postId: number): Promise<{ liked: boolean; likeCount: number }>;
+  getPostLikeCount(postId: number): Promise<number>;
+  hasUserLikedPost(userId: string, postId: number): Promise<boolean>;
+  getPostLikeCounts(postIds: number[]): Promise<Map<number, number>>;
+  getUserLikedPosts(userId: string, postIds: number[]): Promise<Set<number>>;
+  createPostComment(input: { postId: number; userId: string; content: string }): Promise<PostComment>;
+  listPostComments(postId: number, opts?: { limit?: number }): Promise<PostComment[]>;
+  deletePostComment(commentId: number, userId: string): Promise<boolean>;
+
+  // --- Direct Messaging ----------------------------------------------------
+  getOrCreateConversation(userAId: string, userBId: string): Promise<{ id: number; userAId: string; userBId: string }>;
+  listUserConversations(userId: string): Promise<Array<{
+    id: number;
+    otherId: string;
+    otherName: string | null;
+    otherAvatar: string | null;
+    lastMessageAt: Date | null;
+    lastMessage: string | null;
+    unreadCount: number;
+  }>>;
+  sendDirectMessage(convId: number, senderId: string, content: string): Promise<{ id: number; conversationId: number; senderId: string; content: string; createdAt: Date }>;
+  listDirectMessages(convId: number, opts?: { limit?: number; before?: number }): Promise<Array<{ id: number; senderId: string; content: string; read: number; createdAt: Date }>>;
+  markConversationRead(convId: number, userId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2313,6 +2343,222 @@ export class DatabaseStorage implements IStorage {
       .from(tradingCertificates)
       .where(eq(tradingCertificates.userId, userId))
       .orderBy(desc(tradingCertificates.issuedAt));
+  }
+
+  // --- Post Likes & Comments -----------------------------------------------
+
+  async togglePostLike(userId: string, postId: number): Promise<{ liked: boolean; likeCount: number }> {
+    const existing = await db
+      .select()
+      .from(postLikes)
+      .where(and(eq(postLikes.userId, userId), eq(postLikes.postId, postId)))
+      .limit(1);
+
+    if (existing.length > 0) {
+      await db
+        .delete(postLikes)
+        .where(and(eq(postLikes.userId, userId), eq(postLikes.postId, postId)));
+      const likeCount = await this.getPostLikeCount(postId);
+      return { liked: false, likeCount };
+    } else {
+      await db.insert(postLikes).values({ userId, postId });
+      const likeCount = await this.getPostLikeCount(postId);
+      return { liked: true, likeCount };
+    }
+  }
+
+  async getPostLikeCount(postId: number): Promise<number> {
+    const [row] = await db
+      .select({ c: count() })
+      .from(postLikes)
+      .where(eq(postLikes.postId, postId));
+    return row?.c ?? 0;
+  }
+
+  async hasUserLikedPost(userId: string, postId: number): Promise<boolean> {
+    const rows = await db
+      .select()
+      .from(postLikes)
+      .where(and(eq(postLikes.userId, userId), eq(postLikes.postId, postId)))
+      .limit(1);
+    return rows.length > 0;
+  }
+
+  async getPostLikeCounts(postIds: number[]): Promise<Map<number, number>> {
+    if (postIds.length === 0) return new Map();
+    const rows = await db
+      .select({ postId: postLikes.postId, c: count() })
+      .from(postLikes)
+      .where(inArray(postLikes.postId, postIds))
+      .groupBy(postLikes.postId);
+    const m = new Map<number, number>();
+    for (const r of rows) m.set(r.postId, r.c);
+    return m;
+  }
+
+  async getUserLikedPosts(userId: string, postIds: number[]): Promise<Set<number>> {
+    if (postIds.length === 0) return new Set();
+    const rows = await db
+      .select({ postId: postLikes.postId })
+      .from(postLikes)
+      .where(and(eq(postLikes.userId, userId), inArray(postLikes.postId, postIds)));
+    return new Set(rows.map((r) => r.postId));
+  }
+
+  async createPostComment(input: { postId: number; userId: string; content: string }): Promise<PostComment> {
+    const [inserted] = await db
+      .insert(postComments)
+      .values(input)
+      .returning();
+    return inserted;
+  }
+
+  async listPostComments(postId: number, opts?: { limit?: number }): Promise<PostComment[]> {
+    const limit = opts?.limit ?? 50;
+    return await db
+      .select()
+      .from(postComments)
+      .where(eq(postComments.postId, postId))
+      .orderBy(postComments.createdAt)
+      .limit(limit);
+  }
+
+  async deletePostComment(commentId: number, userId: string): Promise<boolean> {
+    const result = await db
+      .delete(postComments)
+      .where(and(eq(postComments.id, commentId), eq(postComments.userId, userId)))
+      .returning();
+    return result.length > 0;
+  }
+
+  // --- Direct Messaging ----------------------------------------------------
+
+  async getOrCreateConversation(userAId: string, userBId: string): Promise<{ id: number; userAId: string; userBId: string }> {
+    // Normalize order so (A,B) and (B,A) resolve to same row
+    const [a, b] = [userAId, userBId].sort();
+    const existing = await db
+      .select()
+      .from(conversations)
+      .where(and(eq(conversations.userAId, a), eq(conversations.userBId, b)))
+      .limit(1);
+    if (existing.length > 0) {
+      return { id: existing[0].id, userAId: existing[0].userAId, userBId: existing[0].userBId };
+    }
+    const [inserted] = await db
+      .insert(conversations)
+      .values({ userAId: a, userBId: b })
+      .returning();
+    return { id: inserted.id, userAId: inserted.userAId, userBId: inserted.userBId };
+  }
+
+  async listUserConversations(userId: string): Promise<Array<{
+    id: number;
+    otherId: string;
+    otherName: string | null;
+    otherAvatar: string | null;
+    lastMessageAt: Date | null;
+    lastMessage: string | null;
+    unreadCount: number;
+  }>> {
+    const convRows = await db
+      .select()
+      .from(conversations)
+      .where(or(eq(conversations.userAId, userId), eq(conversations.userBId, userId)))
+      .orderBy(desc(conversations.lastMessageAt));
+
+    const results = await Promise.all(
+      convRows.map(async (conv) => {
+        const otherId = conv.userAId === userId ? conv.userBId : conv.userAId;
+        const otherUser = await db
+          .select({ displayName: users.displayName, firstName: users.firstName, profileImageUrl: users.profileImageUrl })
+          .from(users)
+          .where(eq(users.id, otherId))
+          .limit(1);
+        const other = otherUser[0];
+
+        const lastMsgRow = await db
+          .select()
+          .from(directMessages)
+          .where(eq(directMessages.conversationId, conv.id))
+          .orderBy(desc(directMessages.createdAt))
+          .limit(1);
+
+        const [unreadRow] = await db
+          .select({ c: count() })
+          .from(directMessages)
+          .where(
+            and(
+              eq(directMessages.conversationId, conv.id),
+              eq(directMessages.read, 0),
+              sql`${directMessages.senderId} != ${userId}`,
+            ),
+          );
+
+        return {
+          id: conv.id,
+          otherId,
+          otherName: other?.displayName ?? other?.firstName ?? null,
+          otherAvatar: other?.profileImageUrl ?? null,
+          lastMessageAt: conv.lastMessageAt,
+          lastMessage: lastMsgRow[0]?.content ?? null,
+          unreadCount: unreadRow?.c ?? 0,
+        };
+      }),
+    );
+    return results;
+  }
+
+  async sendDirectMessage(convId: number, senderId: string, content: string): Promise<{ id: number; conversationId: number; senderId: string; content: string; createdAt: Date }> {
+    const [inserted] = await db
+      .insert(directMessages)
+      .values({ conversationId: convId, senderId, content })
+      .returning();
+    await db
+      .update(conversations)
+      .set({ lastMessageAt: new Date() })
+      .where(eq(conversations.id, convId));
+    return {
+      id: inserted.id,
+      conversationId: inserted.conversationId,
+      senderId: inserted.senderId,
+      content: inserted.content,
+      createdAt: inserted.createdAt ?? new Date(),
+    };
+  }
+
+  async listDirectMessages(convId: number, opts?: { limit?: number; before?: number }): Promise<Array<{ id: number; senderId: string; content: string; read: number; createdAt: Date }>> {
+    const limit = opts?.limit ?? 50;
+    let q = db
+      .select()
+      .from(directMessages)
+      .where(
+        opts?.before
+          ? and(eq(directMessages.conversationId, convId), lt(directMessages.id, opts.before))
+          : eq(directMessages.conversationId, convId),
+      )
+      .orderBy(directMessages.createdAt)
+      .limit(limit);
+    const rows = await q;
+    return rows.map((r) => ({
+      id: r.id,
+      senderId: r.senderId,
+      content: r.content,
+      read: r.read,
+      createdAt: r.createdAt ?? new Date(),
+    }));
+  }
+
+  async markConversationRead(convId: number, userId: string): Promise<void> {
+    await db
+      .update(directMessages)
+      .set({ read: 1 })
+      .where(
+        and(
+          eq(directMessages.conversationId, convId),
+          eq(directMessages.read, 0),
+          sql`${directMessages.senderId} != ${userId}`,
+        ),
+      );
   }
 }
 

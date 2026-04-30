@@ -1562,3 +1562,261 @@
   width: 96px;
   height: 56px;
 }
+
+/* ---- Touch-target baseline -------------------------------------------- */
+.you-fb-btn,
+.you-fb-tab,
+.you-fb-post-delete,
+.you-fb-post-action-btn,
+.you-fb-comment-delete {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* ---- Cover click-to-change -------------------------------------------- */
+.you-fb-cover-clickable {
+  cursor: pointer;
+  position: relative;
+}
+.you-fb-cover-overlay {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+.you-fb-cover-clickable:hover .you-fb-cover-overlay {
+  opacity: 1;
+}
+/* Always visible on touch devices */
+@media (hover: none) {
+  .you-fb-cover-overlay {
+    opacity: 1;
+  }
+}
+
+/* ---- Avatar click-to-change ------------------------------------------- */
+.you-fb-avatar-click-wrap {
+  position: relative;
+  display: inline-block;
+  border-radius: 50%;
+}
+.you-fb-avatar-clickable {
+  cursor: pointer;
+}
+.you-fb-avatar-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+.you-fb-avatar-clickable:hover .you-fb-avatar-overlay {
+  opacity: 1;
+}
+@media (hover: none) {
+  .you-fb-avatar-overlay {
+    opacity: 1;
+  }
+}
+
+/* ---- Post actions (like / comment) ------------------------------------- */
+.you-fb-post-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(168, 85, 247, 0.15);
+}
+.you-fb-post-action-btn {
+  background: none;
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  color: #aaa;
+  border-radius: 8px;
+  padding: 4px 14px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: background 0.15s, color 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.you-fb-post-action-btn:hover {
+  background: rgba(168, 85, 247, 0.1);
+  color: #fff;
+}
+.you-fb-post-action-active {
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+.you-fb-post-action-active:hover { color: #ef4444; }
+
+/* ---- Comments section -------------------------------------------------- */
+.you-fb-comments {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.you-fb-comment {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  color: #ccc;
+}
+.you-fb-comment-user {
+  color: #a855f7;
+  font-weight: 600;
+  flex-shrink: 0;
+  font-size: 0.8rem;
+}
+.you-fb-comment-content { flex: 1; word-break: break-word; }
+.you-fb-comment-delete {
+  background: none;
+  border: none;
+  color: #555;
+  cursor: pointer;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.you-fb-comment-delete:hover { color: #ef4444; }
+.you-fb-comment-form {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+.you-fb-comment-input {
+  flex: 1;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  border-radius: 20px;
+  color: #fff;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  outline: none;
+  min-height: 36px;
+}
+.you-fb-comment-input:focus { border-color: #a855f7; }
+.you-fb-comment-input::placeholder { color: #666; }
+
+/* ---- Friends tab ------------------------------------------------------- */
+.you-fb-friends {
+  padding: 16px;
+}
+.you-fb-friends-subtabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.you-fb-friends-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.you-fb-friend-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(168,85,247,0.1);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+.you-fb-friend-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: rgba(168, 85, 247, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #fff;
+  font-size: 1rem;
+}
+.you-fb-friend-name {
+  flex: 1;
+  color: #e5e5e5;
+  font-size: 0.9rem;
+}
+
+/* ---- Photos tab -------------------------------------------------------- */
+.you-fb-photos {
+  padding: 16px;
+}
+.you-fb-photos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+}
+.you-fb-photo-thumb {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid rgba(168,85,247,0.2);
+}
+
+/* ---- Videos tab -------------------------------------------------------- */
+.you-fb-videos-grid {
+  padding: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+.you-fb-video-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-decoration: none;
+  color: #e5e5e5;
+}
+.you-fb-video-thumb {
+  width: 100%;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid rgba(168,85,247,0.2);
+}
+.you-fb-video-placeholder {
+  background: rgba(168,85,247,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: #a855f7;
+}
+.you-fb-video-title {
+  font-size: 0.8rem;
+  color: #ccc;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+

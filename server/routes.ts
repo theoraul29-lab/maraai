@@ -28,6 +28,7 @@ import * as ordersModule from '../backend/src/modules/orders.js';
 import * as adminOrdersModule from '../backend/src/modules/adminOrders.js';
 import * as paymentsModule from '../backend/src/modules/payments.js';
 import * as pythonBridgeModule from '../backend/src/modules/pythonBridge.js';
+import * as messengerModule from '../backend/src/modules/messenger.js';
 import {
   StripeProvider,
   PayPalProvider,
@@ -147,6 +148,12 @@ export async function registerRoutes(
   app.get('/api/profile/:id/badges', profileModule.getBadges);
   app.get('/api/profile/:id/posts', profileModule.listProfilePosts);
   app.post('/api/profile/posts', requireAuth, profileModule.createProfilePost);
+  // Post likes & comments — must be registered BEFORE the delete-post route
+  // so that Express does not match `/posts/:postId` before `/posts/comments/:commentId`.
+  app.post('/api/profile/posts/:postId/like', requireAuth, profileModule.likePost);
+  app.get('/api/profile/posts/:postId/comments', profileModule.listPostComments);
+  app.post('/api/profile/posts/:postId/comments', requireAuth, profileModule.createPostComment);
+  app.delete('/api/profile/posts/comments/:commentId', requireAuth, profileModule.deletePostComment);
   app.delete(
     '/api/profile/posts/:postId',
     requireAuth,
@@ -167,6 +174,13 @@ export async function registerRoutes(
   app.get('/api/notifications/unread-count', requireAuth, notificationsModule.unreadCount);
   app.post('/api/notifications/:id/read', requireAuth, notificationsModule.markRead);
   app.post('/api/notifications/read-all', requireAuth, notificationsModule.markAllRead);
+
+  // --- Direct Messaging (Feature 5) ------------------------------------------
+  app.get('/api/messenger/conversations', requireAuth, messengerModule.listConversations);
+  app.post('/api/messenger/conversations', requireAuth, messengerModule.getOrCreateConv);
+  app.get('/api/messenger/conversations/:convId/messages', requireAuth, messengerModule.getMessages);
+  app.post('/api/messenger/conversations/:convId/messages', requireAuth, messengerModule.sendMessage);
+  app.post('/api/messenger/conversations/:convId/read', requireAuth, messengerModule.markRead);
 
   // Global search (Phase 2 P2.4) — public, returns ranked results across
   // people/reels/articles/lessons. See backend/src/modules/search.ts.
