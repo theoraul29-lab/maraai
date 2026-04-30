@@ -8,6 +8,83 @@
       "when": 1773006275851,
       "tag": "0000_optimal_captain_marvel",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1776512500000,
+      "tag": "0001_users_auth_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1776520100000,
+      "tag": "0002_billing",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1776537300000,
+      "tag": "0003_reels",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1776540000000,
+      "tag": "0004_writers_hub",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1776543356000,
+      "tag": "0005_trading_academy",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1776548500000,
+      "tag": "0006_creator_tools",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1776600000000,
+      "tag": "0007_you_fb_profile",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1776677228000,
+      "tag": "0008_oauth_accounts",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1776698400000,
+      "tag": "0009_push_subscriptions",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1777196400000,
+      "tag": "0010_maraai_platform",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1777370400000,
+      "tag": "0011_add_cover_image_url",
+      "breakpoints": true
     }
   ]
 }

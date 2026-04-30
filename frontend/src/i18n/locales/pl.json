@@ -23,7 +23,7 @@
   "nav": {
     "home": "Strona główna",
     "reels": "Reels",
-    "trading": "Trading",
+    "trading": "Trading Akademie",
     "vip": "VIP",
     "creator": "Twórca",
     "writers": "Pisarze",
@@ -57,10 +57,10 @@
     "emailRequired": "Email jest wymagany",
     "emailInvalid": "Podaj prawidłowy email",
     "passwordRequired": "Hasło jest wymagane",
-    "passwordMinLength": "Hasło musi mieć co najmniej 8 znaków",
+    "passwordMinLength": "Hasło musi mieć co najmniej 6 znaków",
     "nameRequired": "Imię jest wymagane",
     "nameMinLength": "Imię musi mieć co najmniej 2 znaki",
-    "passwordHint": "✓ Password must be at least 8 characters",
+    "passwordHint": "✓ Password must be at least 6 characters",
     "login": "Zaloguj",
     "createAccount": "Utwórz konto",
     "signingIn": "Signing Account...",
@@ -80,7 +80,7 @@
     "or": "LUB"
   },
   "trading": {
-    "title": "TRADING STRATEGY ACADEMY",
+    "title": "TRADING AKADEMIE",
     "exit": "EXIT",
     "closeLabel": "Close Trading",
     "strategyHub": "STRATEGY HUB ({{count}})",
@@ -604,7 +604,11 @@
           "Monthly review of AI vs manual performance."
         ]
       }
-    }
+    },
+    "shareOnYou": "📣 Share on You",
+    "shareOnYouLabel": "Publish this strategy as a post on your profile",
+    "sharedToYou": "Shared on your profile",
+    "shareFailed": "Could not share. Try again."
   },
   "vip": {
     "title": "PREMIUM VIP MODULE",
@@ -973,5 +977,19 @@
   "languageSelector": {
     "label": "Język",
     "changeLanguage": "Zmień język"
+  },
+  "pwa": {
+    "installTitle": "Zainstaluj Mara",
+    "installBody": "Dodaj hellomara.net do ekranu głównego, aby uzyskać pełne wrażenia z aplikacji.",
+    "installCta": "Zainstaluj",
+    "installDismiss": "Nie teraz",
+    "installDismissAria": "Zamknij komunikat instalacji",
+    "iosHintTitle": "Zainstaluj Mara",
+    "iosHintBody": "Dotknij Udostępnij, a następnie „Do ekranu początkowego”, aby zainstalować aplikację.",
+    "iosHintDismiss": "Rozumiem",
+    "updateTitle": "Aktualizacja gotowa",
+    "updateBody": "Dostępna jest nowsza wersja Mara.",
+    "updateCta": "Odśwież",
+    "updateDismissAria": "Zamknij aktualizację"
   }
 }

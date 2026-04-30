@@ -83,11 +83,29 @@ function ChatWidget() {
 
       const data = await response.json();
 
+      // Backend returns { message: { content, ... }, aiResponse: { content, ... }, detectedMood }
+      // (see server POST /api/chat). Older/other providers may return { reply } or { text }.
+      // Always coerce to string — rendering a raw object throws in React and unmounts the tree.
+      const pickText = (v: unknown): string | null => {
+        if (typeof v === 'string') return v;
+        if (v && typeof v === 'object' && 'content' in v && typeof (v as { content: unknown }).content === 'string') {
+          return (v as { content: string }).content;
+        }
+        return null;
+      };
+
+      const replyText =
+        pickText(data?.aiResponse) ||
+        pickText(data?.reply) ||
+        pickText(data?.message) ||
+        pickText(data?.text) ||
+        t('chat.chatError');
+
       // Add assistant message
       const assistantMessage: Message = {
         id: `msg-${Date.now()}-resp`,
         role: 'assistant',
-        text: data.reply || data.message || data.text || t('chat.chatError'),
+        text: replyText,
         timestamp: Date.now(),
       };
 

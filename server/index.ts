@@ -1,24 +1,60 @@
 import dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import { logError } from './logger.js';
 import type { Request, Response, NextFunction } from 'express';
 import { registerRoutes } from './routes.js';
 import { serveStatic } from './static.js';
 import { createServer } from 'http';
-import { runBrainCycle, runInitialLearning } from './mara-brain/index.js';
-import { getMaraResponse, generateMarketingPost } from './ai.js';
+import { brainManager } from './mara-brain/index.js';
+import { getMaraResponse } from './ai.js';
 import { WebSocketServer } from 'ws';
-import url from 'url';
 import { storage } from './storage.js';
 import { setupSessionAuth, csrfProtection } from './auth.js';
 import { checkRateLimit } from './rateLimit.js';
 import { z } from 'zod';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
-import { db } from './db.js';
+import { db, rawSqlite } from './db.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { UPLOADS_DIR } from '../backend/src/modules/reels.js';
+import { IMAGE_UPLOADS_DIR } from '../backend/src/modules/uploads.js';
 dotenv.config();
+
+// Process-level safety net for *runtime* bugs in request handlers.
+//
+// Rationale (runtime): since Node v15 an unhandled promise rejection kills
+// the process. In a multi-tenant server that takes down every connected
+// user for a bug that affected only one request. For `unhandledRejection`
+// we log and keep running — individual request handlers are already wrapped
+// in try/catch + the express error middleware returns a proper 500.
+//
+// Rationale (uncaughtException): Node docs explicitly warn that it is
+// unsafe to resume after an uncaught synchronous exception — the call
+// stack unwound through code that assumed it wouldn't throw, so in-memory
+// state (DB transactions, sockets, auth) may be corrupted. We log and
+// exit(1) so the orchestrator (Railway, Docker, etc.) restarts us clean.
+//
+// NOTE: these handlers are installed AFTER the startup IIFE below attaches
+// its own .catch() — so rejections from bootstrap code (migrations, seed)
+// still terminate the process with a clear log line, rather than becoming
+// a zombie (alive but never listening).
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[process] unhandledRejection:', reason);
+  // `promise` is the rejected Promise itself; logging it usually adds no
+  // new information beyond the reason, but we keep a reference so Node
+  // doesn't garbage-collect it mid-inspection in a debugger.
+  void promise;
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('[process] uncaughtException:', err);
+  // Node docs: "It is not safe to resume normal operation after
+  // 'uncaughtException'." Exit so the orchestrator restarts us in a
+  // clean state rather than serving requests on a corrupted runtime.
+  process.exit(1);
+});
 
 const __migrationFilename = fileURLToPath(import.meta.url);
 const __migrationDirname = path.dirname(__migrationFilename);
@@ -32,10 +68,66 @@ function runMigrations() {
     console.error('[migrations] Failed to run migrations:', err);
     throw err;
   }
+
+  // Safety guard: ensure the users table has every column declared by the
+  // current schema. Migration 0007_you_fb_profile added cover_image_url,
+  // location and website, but production databases that were created from
+  // a snapshot taken before that migration ran (or where 0007 was recorded
+  // as applied without the DDL actually executing) are missing them,
+  // causing:
+  //   SqliteError: no such column: "cover_image_url"
+  //
+  // Drizzle's `db.select().from(users)` expands to an explicit column list
+  // from the in-memory schema, so any missing column makes /api/auth/me +
+  // /api/auth/signup throw — and Express 4 silently swallows the rejection
+  // in async handlers, hanging the request past the upstream proxy
+  // deadline. See server/modules/auth-api.ts wrapAsync() for the
+  // last-resort net.
+  //
+  // SQLite has no ALTER TABLE … ADD COLUMN IF NOT EXISTS, so we PRAGMA
+  // table_info first and only issue the ALTER TABLE when the column is
+  // absent. Each column is wrapped in its own try/catch so a transient
+  // failure on one (e.g. duplicate-column race with another boot) does
+  // not skip the rest.
+  try {
+    type ColumnInfo = { name: string };
+    const columns = rawSqlite.pragma('table_info(users)') as ColumnInfo[];
+    const have = new Set(columns.map((c) => c.name));
+    const required: Array<[string, string]> = [
+      ['cover_image_url', 'text'],
+      ['location', 'text'],
+      ['website', 'text'],
+    ];
+    for (const [name, type] of required) {
+      if (have.has(name)) continue;
+      try {
+        rawSqlite.exec(`ALTER TABLE \`users\` ADD COLUMN \`${name}\` ${type};`);
+        console.log(`[migrations] Added missing users.${name} column`);
+      } catch (colErr) {
+        console.error(
+          `[migrations] Failed to add users.${name} column (non-fatal):`,
+          colErr,
+        );
+      }
+    }
+  } catch (err) {
+    console.error('[migrations] Failed to inspect users table for safety guard:', err);
+    throw err;
+  }
 }
 
 
 const app = express();
+
+// Helmet sets secure HTTP response headers. contentSecurityPolicy is disabled
+// in development because Vite's HMR injects inline scripts that would be blocked
+// by a strict CSP. In production the default helmet CSP is applied.
+app.use(
+  helmet({
+    contentSecurityPolicy: process.env.NODE_ENV === 'production' ? undefined : false,
+    crossOriginEmbedderPolicy: false,
+  }),
+);
 
 type RuntimeState = {
   requestedPort: number | null;
@@ -71,7 +163,11 @@ app.use(
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
-      return callback(new Error('CORS not allowed'), false);
+      // Deny by omitting CORS headers, but never throw — a thrown error here
+      // becomes an uncaught middleware error and Express returns 500 for
+      // *every* request (including same-origin asset loads from index.html),
+      // which turns the app into a black page on any misconfigured origin.
+      return callback(null, false);
     },
     credentials: true,
   }),
@@ -130,6 +226,26 @@ export function log(message: string, source = 'express') {
   console.log(`${formattedTime} [${source}] ${message}`);
 }
 
+const SENSITIVE_LOG_FIELDS = new Set([
+  'password', 'passwordHash', 'password_hash',
+  'resetToken', 'reset_token', 'token',
+  'passwordConfirm', 'newPassword',
+]);
+
+function sanitizeForLog(obj: Record<string, any>): Record<string, any> {
+  const out: Record<string, any> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (SENSITIVE_LOG_FIELDS.has(k)) {
+      out[k] = '[REDACTED]';
+    } else if (v && typeof v === 'object' && !Array.isArray(v)) {
+      out[k] = sanitizeForLog(v as Record<string, any>);
+    } else {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
 app.use((req, res, next) => {
   const start = Date.now();
   const { path } = req;
@@ -147,8 +263,8 @@ app.use((req, res, next) => {
     const duration = Date.now() - start;
     if (path.startsWith('/api')) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) { // Va fi populat doar dacă nu suntem în producție
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+      if (capturedJsonResponse) {
+        logLine += ` :: ${JSON.stringify(sanitizeForLog(capturedJsonResponse))}`;
       }
 
       log(logLine);
@@ -160,6 +276,67 @@ app.use((req, res, next) => {
 
 (async () => {
   runMigrations();
+
+  // Upsert the canonical plan catalogue (Free / Pro / VIP / Creator ×
+  // monthly+yearly) so `GET /api/billing/plans` always has fresh rows and
+  // operators can tweak pricing without writing a new migration.
+  try {
+    await seedPlans();
+    console.log('[billing] plans seeded');
+  } catch (err) {
+    console.error('[billing] seed failed:', err);
+    throw err;
+  }
+
+  // Trading Academy catalogue (PR F). Additive — missing rows are
+  // inserted, existing rows are updated with the current content above.
+  try {
+    await seedTradingAcademy();
+    console.log('[trading] academy catalogue seeded');
+  } catch (err) {
+    // Do NOT throw: if the content seed fails, the API is still usable
+    // (just with an empty catalogue). We'd rather boot than crash-loop.
+    console.error('[trading] seed failed (continuing):', err);
+  }
+
+  // Serve uploaded reel files from the configured volume. Mounted BEFORE
+  // registerRoutes so it wins over any `/videos` proxy or catch-all later.
+  // `maxAge` allows aggressive browser caching — the filename is content-
+  // hashed so invalidation is not a concern.
+  //
+  // Defense-in-depth: set `X-Content-Type-Options: nosniff` so a browser
+  // never second-guesses the Content-Type. Extensions are already derived
+  // from the server-validated MIME whitelist (see backend/src/modules/reels.ts),
+  // but we treat the static tree as untrusted user content anyway.
+  app.use(
+    '/videos/files',
+    (_req, res, next) => {
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      next();
+    },
+    express.static(UPLOADS_DIR, {
+      maxAge: '7d',
+      immutable: true,
+      fallthrough: false,
+    }),
+  );
+
+  // Same shape, different volume: user-uploaded images (avatar, cover,
+  // post image, writers cover). Filenames are content-hashed so we can
+  // cache aggressively, and `nosniff` keeps the static tree honest in
+  // case a future MIME slips through the upload whitelist.
+  app.use(
+    '/uploads/images',
+    (_req, res, next) => {
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      next();
+    },
+    express.static(IMAGE_UPLOADS_DIR, {
+      maxAge: '7d',
+      immutable: true,
+      fallthrough: false,
+    }),
+  );
 
   await registerRoutes(httpServer, app);
 
@@ -179,14 +356,72 @@ app.use((req, res, next) => {
     },
   });
   const userConnections = new Map<string, any>();
+  // In-memory index of which connected peers are currently caching which
+  // video IDs (Reels P2P distribution). This lives only in process memory —
+  // on restart peers re-announce via `p2p-have-video`.
+  //
+  // videoSeeders: videoId -> Set<userId>
+  // peerSeeds:    userId  -> Set<videoId>  (so we can clean up on disconnect)
+  const videoSeeders = new Map<number, Set<string>>();
+  const peerSeeds = new Map<string, Set<number>>();
+
+  // Per-connection cap on how many videos a single peer can claim to be
+  // seeding. Without this a malicious client can flood `p2p-have-video`
+  // with unique IDs and grow the maps without bound until the server OOMs.
+  const MAX_SEEDS_PER_USER = Number.parseInt(
+    process.env.P2P_MAX_SEEDS_PER_USER ?? '',
+    10,
+  ) || 500;
+
+  const addSeed = (userId: string, videoId: number) => {
+    let owned = peerSeeds.get(userId);
+    if (owned && owned.size >= MAX_SEEDS_PER_USER && !owned.has(videoId)) {
+      // Silently reject — client can drop something before adding more.
+      return;
+    }
+    let seeders = videoSeeders.get(videoId);
+    if (!seeders) {
+      seeders = new Set<string>();
+      videoSeeders.set(videoId, seeders);
+    }
+    seeders.add(userId);
+    if (!owned) {
+      owned = new Set<number>();
+      peerSeeds.set(userId, owned);
+    }
+    owned.add(videoId);
+  };
+  const removeSeed = (userId: string, videoId: number) => {
+    const seeders = videoSeeders.get(videoId);
+    if (seeders) {
+      seeders.delete(userId);
+      if (seeders.size === 0) videoSeeders.delete(videoId);
+    }
+    const owned = peerSeeds.get(userId);
+    if (owned) {
+      owned.delete(videoId);
+      if (owned.size === 0) peerSeeds.delete(userId);
+    }
+  };
+  const clearSeedsForUser = (userId: string) => {
+    const owned = peerSeeds.get(userId);
+    if (!owned) return;
+    for (const videoId of owned) {
+      const seeders = videoSeeders.get(videoId);
+      if (seeders) {
+        seeders.delete(userId);
+        if (seeders.size === 0) videoSeeders.delete(videoId);
+      }
+    }
+    peerSeeds.delete(userId);
+  };
 
   wss.on('connection', (ws: any, req: any) => {
-    const userId = url.parse(req.url || '', true).query.userId as string;
-    // ID-ul utilizatorului va veni de la JWT Auth
-    const authUserId = req.user?.uid;
-    const finalUserId = userId || authUserId;
+    // Use the session-authenticated user id exclusively. Ignoring any
+    // client-supplied ?userId= query param prevents trivial identity spoofing.
+    const finalUserId = req.user?.uid;
     if (finalUserId) {
-      log(`P2P user connected: ${userId}`, 'p2p-ws');
+      log(`P2P user connected: ${finalUserId}`, 'p2p-ws');
       userConnections.set(finalUserId, ws);
       ws.userId = finalUserId;
     } else {
@@ -224,6 +459,43 @@ app.use((req, res, next) => {
             );
           }
           break;
+
+        // --- Reel P2P seed advertising (PR D) ---
+        //
+        // Peers announce which video IDs they currently have cached
+        // locally so that other peers can fetch bytes P2P via WebRTC
+        // instead of hammering the origin / CDN. The server keeps the
+        // index in-memory only; peers re-advertise on reconnect.
+        case 'p2p-have-video': {
+          if (!ws.userId) break;
+          const vid = Number((data as any).videoId);
+          if (!Number.isFinite(vid)) break;
+          addSeed(ws.userId, vid);
+          break;
+        }
+        case 'p2p-drop-video': {
+          if (!ws.userId) break;
+          const vid = Number((data as any).videoId);
+          if (!Number.isFinite(vid)) break;
+          removeSeed(ws.userId, vid);
+          break;
+        }
+        case 'p2p-want-video': {
+          const vid = Number((data as any).videoId);
+          if (!Number.isFinite(vid)) break;
+          const seeders = videoSeeders.get(vid);
+          const peers = seeders
+            ? Array.from(seeders).filter((uid) => uid !== ws.userId).slice(0, 8)
+            : [];
+          ws.send(
+            JSON.stringify({
+              type: 'p2p-peer-list',
+              videoId: vid,
+              peers,
+            }),
+          );
+          break;
+        }
 
         // --- AI Chat Handler ---
         case 'chat':
@@ -296,6 +568,7 @@ app.use((req, res, next) => {
       if (ws.userId) {
         log(`P2P user disconnected: ${ws.userId}`, 'p2p-ws');
         userConnections.delete(ws.userId);
+        clearSeedsForUser(ws.userId);
       } else {
         log('Anonymous P2P user disconnected.', 'p2p-ws');
       }
@@ -350,69 +623,22 @@ app.use((req, res, next) => {
       'runtime',
     );
 
-    const BRAIN_INTERVAL = 6 * 60 * 60 * 1000;
-    const SELF_POST_INTERVAL = 4 * 60 * 60 * 1000;
-
-    async function runAutoBrainCycle() {
-      try {
-        log('Auto brain cycle starting...', 'mara-brain');
-        const result = await runBrainCycle();
-        await storage.createBrainLog({
-          research: result.research,
-          productIdeas: result.productIdeas,
-          devTasks: result.devTasks,
-          growthIdeas: result.growthIdeas,
-        });
-        log(`Auto brain cycle completed. Learned ${result.knowledgeLearned} new pieces of knowledge.`, 'mara-brain');
-      } catch (err) {
-        log(`Auto brain cycle failed: ${err}`, 'mara-brain');
-      }
-    }
-
-    async function runAutoSelfPost() {
-      try {
-        log('Auto self-marketing post starting...', 'mara-marketing');
-        const postContent = await generateMarketingPost();
-        await storage.createVideo({
-          url: '#',
-          type: 'creator',
-          title: 'Mara AI Insight',
-          description: postContent,
-          creatorId: 'mara-ai',
-        });
-        log(
-          `Auto self-marketing post published`,
-          'mara-marketing',
-        );
-      } catch (err) {
-        log(`Auto self-marketing post failed: ${err}`, 'mara-marketing');
-      }
-    }
-
-    // Run initial learning bootstrap only when explicitly enabled (non-blocking)
-    if (process.env.PROCESS_AI_TASKS === 'true') {
-      runInitialLearning().catch((err) => {
-        log(`Initial learning failed: ${err}`, 'mara-brain');
-      });
-
-      // Run first brain cycle after 30 seconds (let server fully start)
-      setTimeout(runAutoBrainCycle, 30 * 1000);
-      setInterval(runAutoBrainCycle, BRAIN_INTERVAL);
-      setInterval(runAutoSelfPost, SELF_POST_INTERVAL);
-      log(
-        'Mara auto-scheduler started: brain cycle every 6h, self-post every 4h',
-        'mara-scheduler',
-      );
-    } else {
-      log(
-        'Mara AI tasks disabled (initial learning + brain cycles). Set PROCESS_AI_TASKS=true to enable.',
-        'mara-scheduler',
-      );
-    }
+    // Mara Brain scheduler — enabled by default (PR C). To kill:
+    //   BRAIN_ENABLED=false or PROCESS_AI_TASKS=false.
+    // See server/mara-brain/manager.ts for full lifecycle + status.
+    brainManager.start(log);
   }
 
   // Logica simplificată pentru pornirea serverului, ideală pentru Cloud Run
   httpServer.listen(requestedPort, runtimeState.host, () => {
     onServerReady(requestedPort);
   });
-})();
+})().catch((err) => {
+  // Bootstrap (migrations, seed, passport setup, etc.) failed before the
+  // server ever started listening. Without this .catch() the rejection
+  // would be swallowed by the `unhandledRejection` handler above and the
+  // process would live on as a zombie — alive enough for liveness probes
+  // to pass, but never bound to a port so no traffic is ever served.
+  console.error('[startup] fatal:', err);
+  process.exit(1);
+});

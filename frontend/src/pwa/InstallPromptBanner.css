@@ -1,0 +1,105 @@
+.mara-pwa-banner {
+  position: fixed;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: min(560px, calc(100vw - 24px));
+  width: max-content;
+  background: rgba(11, 11, 15, 0.96);
+  color: #f5f5f7;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 14px 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+  animation: mara-pwa-slide-up 0.35s ease-out;
+}
+
+.mara-pwa-update {
+  border-color: rgba(124, 58, 237, 0.4);
+  box-shadow: 0 10px 30px rgba(124, 58, 237, 0.25);
+}
+
+.mara-pwa-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.mara-pwa-text strong {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.mara-pwa-text span {
+  color: #a1a1aa;
+  font-size: 13px;
+}
+
+.mara-pwa-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.mara-pwa-primary {
+  background: linear-gradient(135deg, #7c3aed 0%, #ec4899 100%);
+  color: white;
+  border: 0;
+  padding: 8px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.mara-pwa-primary:hover { transform: translateY(-1px); }
+.mara-pwa-primary:active { transform: translateY(0); opacity: 0.9; }
+
+.mara-pwa-ghost {
+  background: transparent;
+  color: #a1a1aa;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.mara-pwa-ghost:hover {
+  color: #f5f5f7;
+  border-color: rgba(255, 255, 255, 0.24);
+}
+
+@keyframes mara-pwa-slide-up {
+  from { opacity: 0; transform: translate(-50%, 12px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+@media (max-width: 520px) {
+  .mara-pwa-banner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    width: calc(100vw - 24px);
+  }
+  .mara-pwa-actions {
+    justify-content: flex-end;
+  }
+}

@@ -4,6 +4,7 @@
 import { storage } from '../storage.js';
 import { getKnowledgeContext, searchKnowledge, learnFromText } from './knowledge-base.js';
 import { buildPersonalityPrompt, detectEmotion, detectToxicity, getToxicityLevel, type ToxicityState } from './personality.js';
+import { getPlatformContext } from './platform-context.js';
 
 export interface UserMemoryContext {
   userId: string;
@@ -77,8 +78,11 @@ export async function buildUserContext(
 export function buildSystemInstruction(context: UserMemoryContext, language?: string): string {
   const parts: string[] = [context.personalityPrompt];
 
-  // Language instruction
+  // Platform context — Mara knows she lives on MaraAI and can guide users.
   const lang = language || context.preferences?.language || 'ro';
+  parts.push('', getPlatformContext(lang));
+
+  // Language instruction (keep lang var below for the block after knowledge)
   if (lang === 'ro') {
     parts.push('\n# LIMBĂ\nRăspunde în limba română.');
   } else if (lang === 'en') {

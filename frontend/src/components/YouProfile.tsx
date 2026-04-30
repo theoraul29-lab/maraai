@@ -1,299 +1,1138 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { LanguageSelector } from './LanguageSelector';
+import Messenger from './Messenger';
 import '../styles/YouProfile.css';
 
 const API_URL = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:5000');
 
-interface UserStats {
-  totalPosts: number;
-  totalLikes: number;
-  followers: number;
-  following: number;
-  streakDays: number;
-  xp: number;
-  level: number;
-  mood: string;
-  productiveHours: string[];
-  topCategories: string[];
+// Multipart upload to /api/uploads/image. Returns the public URL the
+// existing PATCH /api/profile/me / POST /api/profile/posts handlers
+// already accept as a string. Throwing here lets the caller surface a
+// localized error in whatever UI it owns.
+async function uploadImageFile(file: File): Promise<string> {
+  const fd = new FormData();
+  fd.append('image', file);
+  const res = await axios.post<{ url: string }>(`${API_URL}/api/uploads/image`, fd, {
+    withCredentials: true,
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return res.data.url;
 }
 
-interface VaultItem {
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+interface ProfileUser {
   id: string;
-  type: 'screenshot' | 'note' | 'insight';
-  content: string;
-  createdAt: number;
-  mood?: string;
+  displayName: string | null;
+  firstName: string | null;
+  bio: string | null;
+  profileImageUrl: string | null;
+  coverImageUrl: string | null;
+  location: string | null;
+  website: string | null;
+  createdAt: string | null;
+  email?: string;
 }
 
-interface AvatarCustomization {
-  glowColor: string;
-  glowIntensity: number;
-  neonEffect: boolean;
-  particleEffect: boolean;
+interface ProfilePayload {
+  user: ProfileUser;
+  followerCount: number;
+  followingCount: number;
+  postCount: number;
+  isSelf: boolean;
+  isFollowing?: boolean;
+}
+
+interface UserPost {
+  id: number;
+  userId: string;
+  content: string;
+  imageUrl: string | null;
+  createdAt: string;
+  likeCount?: number;
+  liked?: boolean;
+  commentCount?: number;
+}
+
+interface CommentItem {
+  id: number;
+  postId: number;
+  userId: string;
+  content: string;
+  createdAt: string;
+  userName?: string | null;
+}
+
+interface FollowUser {
+  id: string;
+  displayName: string | null;
+  firstName: string | null;
+  profileImageUrl: string | null;
+  followedAt: string | null;
 }
 
 interface YouProfileProps {
   userName?: string;
 }
 
-const VAULT_KEY = 'mara_vault_items';
-const AVATAR_KEY = 'mara_avatar_custom';
-
 const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
-  const { user, logout } = useAuth();
-  const { t, i18n } = useTranslation();
-  const [activeTab, setActiveTab] = useState<'profile' | 'insights' | 'vault' | 'customize' | 'settings'>('profile');
-  const [stats, setStats] = useState<UserStats>({
-    totalPosts: 0, totalLikes: 0, followers: 0, following: 0,
-    streakDays: 0, xp: 0, level: 1, mood: 'neutral',
-    productiveHours: ['14:00', '21:00'], topCategories: ['General'],
-  });
+  const { user, logout, refreshUser } = useAuth();
+  const { t } = useTranslation();
+
+  const [profile, setProfile] = useState<ProfilePayload | null>(null);
+  const [posts, setPosts] = useState<UserPost[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'timeline' | 'about' | 'friends' | 'photos' | 'videos' | 'settings'>('timeline');
 
-  // Vault with localStorage persistence
-  const [vaultItems, setVaultItems] = useState<VaultItem[]>(() => {
-    try { return JSON.parse(localStorage.getItem(VAULT_KEY) || '[]'); } catch { return []; }
+  // Composer state
+  const [postContent, setPostContent] = useState('');
+  const [postImageUrl, setPostImageUrl] = useState('');
+  const [posting, setPosting] = useState(false);
+  const [postError, setPostError] = useState<string | null>(null);
+  const [postImageUploading, setPostImageUploading] = useState(false);
+  const composerFileRef = useRef<HTMLInputElement>(null);
+
+  // Edit-modal upload state
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [coverUploading, setCoverUploading] = useState(false);
+  const avatarFileRef = useRef<HTMLInputElement>(null);
+  const coverFileRef = useRef<HTMLInputElement>(null);
+
+  // Direct tap-to-change refs (outside modal)
+  const [directAvatarUploading, setDirectAvatarUploading] = useState(false);
+  const [directCoverUploading, setDirectCoverUploading] = useState(false);
+  const directAvatarRef = useRef<HTMLInputElement>(null);
+  const directCoverRef = useRef<HTMLInputElement>(null);
+
+  // Edit-profile modal state
+  const [editing, setEditing] = useState(false);
+  const [editDraft, setEditDraft] = useState<{
+    displayName: string;
+    bio: string;
+    profileImageUrl: string;
+    coverImageUrl: string;
+    location: string;
+    website: string;
+  }>({
+    displayName: '',
+    bio: '',
+    profileImageUrl: '',
+    coverImageUrl: '',
+    location: '',
+    website: '',
   });
-  const [newVaultItem, setNewVaultItem] = useState('');
-  const [vaultItemType, setVaultItemType] = useState<'note' | 'screenshot' | 'insight'>('note');
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
 
-  // Avatar with persistence
-  const [avatar, setAvatar] = useState<AvatarCustomization>(() => {
-    try { return JSON.parse(localStorage.getItem(AVATAR_KEY) || 'null') || { glowColor: '#a855f7', glowIntensity: 0.8, neonEffect: true, particleEffect: true }; }
-    catch { return { glowColor: '#a855f7', glowIntensity: 0.8, neonEffect: true, particleEffect: true }; }
-  });
+  // Post likes & comments state
+  const [postLikeState, setPostLikeState] = useState<Map<number, { liked: boolean; count: number }>>(new Map());
+  const [postComments, setPostComments] = useState<Map<number, CommentItem[]>>(new Map());
+  const [expandedComments, setExpandedComments] = useState<Set<number>>(new Set());
+  const [commentInputs, setCommentInputs] = useState<Map<number, string>>(new Map());
+  const [commentSubmitting, setCommentSubmitting] = useState<Set<number>>(new Set());
 
-  // Settings
-  const [settingsName, setSettingsName] = useState(user?.name || userName);
-  const [settingsBio, setSettingsBio] = useState(user?.bio || '');
-  const [settingsSaved, setSettingsSaved] = useState(false);
+  // Friends tab state
+  const [friendsSubTab, setFriendsSubTab] = useState<'followers' | 'following'>('followers');
+  const [followers, setFollowers] = useState<FollowUser[]>([]);
+  const [following, setFollowing] = useState<FollowUser[]>([]);
+  const [friendsLoading, setFriendsLoading] = useState(false);
+  const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
 
-  const xpForNextLevel = 5000;
-  const xpProgress = stats.xp > 0 ? (stats.xp % xpForNextLevel) / xpForNextLevel : 0;
+  // Messenger state
+  const [messengerOpen, setMessengerOpen] = useState(false);
+  const [messengerRecipient, setMessengerRecipient] = useState<{ id: string; name: string } | undefined>();
 
-  const moodColors: Record<string, string> = {
-    happy: '#00ff7f', excited: '#ff6b00', sad: '#6b8cff', angry: '#ff2222',
-    calm: '#00e5ff', curious: '#c77dff', neutral: '#888888',
-  };
+  const displayName = useMemo(
+    () => profile?.user.displayName || profile?.user.firstName || userName || 'User',
+    [profile, userName],
+  );
+  const handle = useMemo(
+    () => '@' + (String(displayName).toLowerCase().replace(/[^a-z0-9]+/g, '') || 'user'),
+    [displayName],
+  );
 
-  // Fetch real stats from API
-  const fetchStats = useCallback(async () => {
-    setLoading(true);
+  // ------- Data fetchers --------------------------------------------------
+
+  const fetchProfile = useCallback(async () => {
     try {
-      const [profileRes, analyticsRes] = await Promise.all([
-        axios.get(`${API_URL}/api/profile/${user?.id || 'me'}`).catch(() => ({ data: null })),
-        axios.get(`${API_URL}/api/creator/analytics`).catch(() => ({ data: null })),
-      ]);
-
-      const p = profileRes.data;
-      const a = analyticsRes.data;
-      setStats({
-        totalPosts: a?.totalReels || p?.videos || 0,
-        totalLikes: a?.totalLikes || 0,
-        followers: p?.followers || 0,
-        following: p?.following || 0,
-        streakDays: p?.streakDays || 0,
-        xp: p?.xp || (a?.totalLikes || 0) * 2 + (a?.totalViews || 0),
-        level: p?.level || Math.max(1, Math.floor(((a?.totalLikes || 0) * 2 + (a?.totalViews || 0)) / xpForNextLevel) + 1),
-        mood: p?.mood || 'neutral',
-        productiveHours: ['14:00', '21:00'],
-        topCategories: a?.topCategories || ['General'],
+      const res = await axios.get<ProfilePayload>(`${API_URL}/api/profile/me`, {
+        withCredentials: true,
       });
-    } catch { /* use defaults */ }
-    finally { setLoading(false); }
-  }, [user?.id]);
-
-  useEffect(() => { fetchStats(); }, [fetchStats]);
-
-  // Persist vault
-  useEffect(() => { localStorage.setItem(VAULT_KEY, JSON.stringify(vaultItems)); }, [vaultItems]);
-  // Persist avatar
-  useEffect(() => { localStorage.setItem(AVATAR_KEY, JSON.stringify(avatar)); }, [avatar]);
-
-  const addVaultItem = () => {
-    if (!newVaultItem.trim()) return;
-    const item: VaultItem = { id: Date.now().toString(), type: vaultItemType, content: newVaultItem, createdAt: Date.now(), mood: stats.mood };
-    setVaultItems([item, ...vaultItems]);
-    setNewVaultItem('');
-  };
-
-  const deleteVaultItem = (id: string) => { setVaultItems(vaultItems.filter(i => i.id !== id)); };
-  const updateAvatarColor = (color: string) => { setAvatar({ ...avatar, glowColor: color }); };
-  const toggleEffect = (effect: 'neonEffect' | 'particleEffect') => { setAvatar({ ...avatar, [effect]: !avatar[effect] }); };
-
-  const handleSaveSettings = async () => {
-    try {
-      await axios.post(`${API_URL}/api/profile/${user?.id || 'me'}`, { name: settingsName, bio: settingsBio });
-      setSettingsSaved(true);
-      setTimeout(() => setSettingsSaved(false), 3000);
+      setProfile(res.data);
     } catch {
-      setSettingsSaved(true);
-      setTimeout(() => setSettingsSaved(false), 2000);
+      setProfile(null);
+    }
+  }, []);
+
+  const fetchPosts = useCallback(async (profileId: string) => {
+    try {
+      const res = await axios.get<{ items: UserPost[] }>(
+        `${API_URL}/api/profile/${profileId}/posts?limit=20`,
+      );
+      const items = res.data.items || [];
+      setPosts(items);
+          } catch {
+      setPosts([]);
+    }
+  }, []);
+
+  const fetchFriends = useCallback(async (profileId: string) => {
+    setFriendsLoading(true);
+    try {
+      const [follRes, followRes] = await Promise.all([
+        axios.get<{ items: FollowUser[] }>(`${API_URL}/api/profile/${profileId}/followers?limit=100`),
+        axios.get<{ items: FollowUser[] }>(`${API_URL}/api/profile/${profileId}/following?limit=100`),
+      ]);
+      setFollowers(follRes.data.items || []);
+      setFollowing(followRes.data.items || []);
+      // Track who the current user is following for the follow button
+      if (profile?.isSelf) {
+        setFollowingIds(new Set((followRes.data.items || []).map(u => u.id)));
+      }
+    } catch { /* silent */ }
+    setFriendsLoading(false);
+  }, [profile?.isSelf]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      await fetchProfile();
+      if (cancelled) return;
+      setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [fetchProfile]);
+
+  useEffect(() => {
+    if (profile?.user.id) {
+      fetchPosts(profile.user.id);
+    }
+  }, [profile?.user.id, fetchPosts]);
+
+  useEffect(() => {
+    if (activeTab === 'friends' && profile?.user.id) {
+      fetchFriends(profile.user.id);
+    }
+  }, [activeTab, profile?.user.id, fetchFriends]);
+
+  // ------- Composer -------------------------------------------------------
+
+  const submitPost = async () => {
+    const trimmed = postContent.trim();
+    if (!trimmed) return;
+    setPosting(true);
+    setPostError(null);
+    try {
+      const body: { content: string; imageUrl?: string } = { content: trimmed };
+      const img = postImageUrl.trim();
+      if (img) body.imageUrl = img;
+      const res = await axios.post<UserPost>(
+        `${API_URL}/api/profile/posts`,
+        body,
+        { withCredentials: true },
+      );
+      setPosts(prev => [res.data, ...prev]);
+      setProfile(p => (p ? { ...p, postCount: (p.postCount || 0) + 1 } : p));
+      setPostContent('');
+      setPostImageUrl('');
+    } catch (err: unknown) {
+      const code =
+        (err as { response?: { data?: { code?: string } } })?.response?.data?.code ||
+        'post_failed';
+      setPostError(code);
+    } finally {
+      setPosting(false);
     }
   };
 
+  const deletePost = async (postId: number) => {
+    try {
+      await axios.delete(`${API_URL}/api/profile/posts/${postId}`, { withCredentials: true });
+      setPosts(prev => prev.filter(p => p.id !== postId));
+      setProfile(p => (p ? { ...p, postCount: Math.max(0, (p.postCount || 0) - 1) } : p));
+    } catch { /* silent */ }
+  };
+
+  // ------- Post Likes -------------------------------------------------------
+
+  const toggleLike = async (postId: number) => {
+    try {
+      const res = await axios.post<{ liked: boolean; likeCount: number }>(
+        `${API_URL}/api/profile/posts/${postId}/like`,
+        {},
+        { withCredentials: true },
+      );
+      setPostLikeState(prev => {
+        const next = new Map(prev);
+        next.set(postId, { liked: res.data.liked, count: res.data.likeCount });
+        return next;
+      });
+    } catch { /* silent */ }
+  };
+
+  // ------- Post Comments ----------------------------------------------------
+
+  const toggleComments = async (postId: number) => {
+    setExpandedComments(prev => {
+      const next = new Set(prev);
+      if (next.has(postId)) {
+        next.delete(postId);
+      } else {
+        next.add(postId);
+      }
+      return next;
+    });
+    if (!expandedComments.has(postId) && !postComments.has(postId)) {
+      try {
+        const res = await axios.get<{ items: CommentItem[] }>(
+          `${API_URL}/api/profile/posts/${postId}/comments?limit=50`,
+        );
+        setPostComments(prev => new Map(prev).set(postId, res.data.items || []));
+      } catch { /* silent */ }
+    }
+  };
+
+  const submitComment = async (postId: number) => {
+    const content = (commentInputs.get(postId) || '').trim();
+    if (!content) return;
+    setCommentSubmitting(prev => new Set(prev).add(postId));
+    try {
+      const res = await axios.post<CommentItem>(
+        `${API_URL}/api/profile/posts/${postId}/comments`,
+        { content },
+        { withCredentials: true },
+      );
+      setPostComments(prev => {
+        const next = new Map(prev);
+        next.set(postId, [...(next.get(postId) || []), res.data]);
+        return next;
+      });
+      setCommentInputs(prev => { const n = new Map(prev); n.delete(postId); return n; });
+    } catch { /* silent */ }
+    setCommentSubmitting(prev => { const n = new Set(prev); n.delete(postId); return n; });
+  };
+
+  const deleteComment = async (postId: number, commentId: number) => {
+    try {
+      await axios.delete(`${API_URL}/api/profile/posts/comments/${commentId}`, { withCredentials: true });
+      setPostComments(prev => {
+        const next = new Map(prev);
+        next.set(postId, (next.get(postId) || []).filter(c => c.id !== commentId));
+        return next;
+      });
+    } catch { /* silent */ }
+  };
+
+  // ------- Follow toggle (friends tab) -------------------------------------
+
+  const toggleFollow = async (targetId: string) => {
+    try {
+      const res = await axios.post<{ following: boolean }>(
+        `${API_URL}/api/profile/${targetId}/follow`,
+        {},
+        { withCredentials: true },
+      );
+      setFollowingIds(prev => {
+        const next = new Set(prev);
+        if (res.data.following) next.add(targetId);
+        else next.delete(targetId);
+        return next;
+      });
+    } catch { /* silent */ }
+  };
+
+  // ------- Direct tap-to-change handlers ----------------------------------
+
+  const handleDirectAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setDirectAvatarUploading(true);
+    try {
+      const url = await uploadImageFile(f);
+      await axios.patch(`${API_URL}/api/profile/me`, { profileImageUrl: url }, { withCredentials: true });
+      setProfile(p => p ? { ...p, user: { ...p.user, profileImageUrl: url } } : p);
+    } catch { /* silent */ }
+    setDirectAvatarUploading(false);
+    if (directAvatarRef.current) directAvatarRef.current.value = '';
+  };
+
+  const handleDirectCoverChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setDirectCoverUploading(true);
+    try {
+      const url = await uploadImageFile(f);
+      await axios.patch(`${API_URL}/api/profile/me`, { coverImageUrl: url }, { withCredentials: true });
+      setProfile(p => p ? { ...p, user: { ...p.user, coverImageUrl: url } } : p);
+    } catch { /* silent */ }
+    setDirectCoverUploading(false);
+    if (directCoverRef.current) directCoverRef.current.value = '';
+  };
+
+  // ------- Edit-profile modal --------------------------------------------
+
+  const openEdit = () => {
+    if (!profile) return;
+    setEditDraft({
+      displayName: profile.user.displayName || '',
+      bio: profile.user.bio || '',
+      profileImageUrl: profile.user.profileImageUrl || '',
+      coverImageUrl: profile.user.coverImageUrl || '',
+      location: profile.user.location || '',
+      website: profile.user.website || '',
+    });
+    setEditError(null);
+    setEditing(true);
+  };
+
+  const saveEdit = async () => {
+    setSavingEdit(true);
+    setEditError(null);
+    const patch: Record<string, string | null> = {};
+    const draftName = editDraft.displayName.trim();
+    if (draftName.length > 0 && draftName !== (profile?.user.displayName || '')) {
+      patch.displayName = draftName;
+    }
+    if (editDraft.bio !== (profile?.user.bio || '')) patch.bio = editDraft.bio;
+    if (editDraft.profileImageUrl !== (profile?.user.profileImageUrl || '')) {
+      patch.profileImageUrl = editDraft.profileImageUrl || null;
+    }
+    if (editDraft.coverImageUrl !== (profile?.user.coverImageUrl || '')) {
+      patch.coverImageUrl = editDraft.coverImageUrl || null;
+    }
+    if (editDraft.location !== (profile?.user.location || '')) {
+      patch.location = editDraft.location || null;
+    }
+    if (editDraft.website !== (profile?.user.website || '')) {
+      patch.website = editDraft.website || null;
+    }
+    if (Object.keys(patch).length === 0) {
+      setEditing(false);
+      setSavingEdit(false);
+      return;
+    }
+    try {
+      await axios.patch(`${API_URL}/api/profile/me`, patch, { withCredentials: true });
+      await fetchProfile();
+      await refreshUser();
+      setEditing(false);
+    } catch (err: unknown) {
+      const code =
+        (err as { response?: { data?: { code?: string } } })?.response?.data?.code ||
+        'update_failed';
+      setEditError(code);
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  // ------- Render ---------------------------------------------------------
+
+  const coverStyle: React.CSSProperties = profile?.user.coverImageUrl
+    ? { backgroundImage: `url("${profile.user.coverImageUrl}")` }
+    : {};
+
+  const avatarInitial = (displayName || 'U').trim().charAt(0).toUpperCase();
+
+  // Photos derived from posts
+  const photoUrls = useMemo(
+    () => posts.filter(p => p.imageUrl).map(p => p.imageUrl as string),
+    [posts],
+  );
+
   return (
-    <div className="you-profile-container">
-      {/* Header */}
-      <div className="you-header">
-        <div className="you-avatar-display">
-          <div className="holographic-avatar" style={{
-            background: `radial-gradient(circle at 35% 35%, ${avatar.glowColor}40, ${avatar.glowColor}10)`,
-            borderColor: avatar.glowColor,
-            boxShadow: avatar.neonEffect ? `0 0 30px ${avatar.glowColor}80, 0 0 60px ${avatar.glowColor}40` : 'none',
-          }}>
-            <div className="avatar-initials">{userName.charAt(0).toUpperCase()}</div>
-            {avatar.particleEffect && <div className="avatar-particles"></div>}
+    <div className="you-fb-container">
+      {/* Hidden file inputs for direct tap-to-change */}
+      <input
+        ref={directAvatarRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/gif"
+        style={{ display: 'none' }}
+        onChange={handleDirectAvatarChange}
+      />
+      <input
+        ref={directCoverRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/gif"
+        style={{ display: 'none' }}
+        onChange={handleDirectCoverChange}
+      />
+
+      {/* --- Cover banner ------------------------------------------------ */}
+      <div
+        className={`you-fb-cover${profile?.isSelf ? ' you-fb-cover-clickable' : ''}`}
+        style={coverStyle}
+        onClick={profile?.isSelf && !directCoverUploading ? () => directCoverRef.current?.click() : undefined}
+        role={profile?.isSelf ? 'button' : undefined}
+        aria-label={profile?.isSelf ? t('you.changeCover', 'Change cover photo') : undefined}
+      >
+        {!profile?.user.coverImageUrl && <div className="you-fb-cover-placeholder" />}
+        {profile?.isSelf && (
+          <div className="you-fb-cover-overlay">
+            {directCoverUploading ? '⏳' : '📷'}
+          </div>
+        )}
+        {profile?.isSelf && (
+          <button className="you-fb-cover-edit" onClick={(e) => { e.stopPropagation(); openEdit(); }} aria-label={t('you.editProfile', 'Edit profile')}>
+            📷 {t('you.editCover', 'Edit cover')}
+          </button>
+        )}
+      </div>
+
+      {/* --- Identity row ------------------------------------------------ */}
+      <div className="you-fb-identity">
+        <div className="you-fb-avatar-wrap">
+          <div
+            className={`you-fb-avatar-click-wrap${profile?.isSelf ? ' you-fb-avatar-clickable' : ''}`}
+            onClick={profile?.isSelf && !directAvatarUploading ? () => directAvatarRef.current?.click() : undefined}
+            role={profile?.isSelf ? 'button' : undefined}
+            aria-label={profile?.isSelf ? t('you.changeAvatar', 'Change profile photo') : undefined}
+          >
+            {profile?.user.profileImageUrl ? (
+              <img
+                className="you-fb-avatar"
+                src={profile.user.profileImageUrl}
+                alt={displayName}
+              />
+            ) : (
+              <div className="you-fb-avatar you-fb-avatar-fallback">{avatarInitial}</div>
+            )}
+            {profile?.isSelf && (
+              <div className="you-fb-avatar-overlay">
+                {directAvatarUploading ? '⏳' : '📷'}
+              </div>
+            )}
           </div>
         </div>
-        <div className="you-header-info">
-          <h1>{settingsName || userName}</h1>
-          <p className="user-handle">@{(settingsName || userName).toLowerCase().replace(/\s/g, '')}</p>
-          <div className="you-badges">
-            <span className="badge-level">L{stats.level}</span>
-            {stats.streakDays > 0 && <span className="badge-streak">🔥 {stats.streakDays}d</span>}
-            <span className="badge-mood" style={{ background: moodColors[stats.mood] + '30', color: moodColors[stats.mood] }}>{stats.mood}</span>
+        <div className="you-fb-identity-main">
+          <h1 className="you-fb-name">{displayName}</h1>
+          <p className="you-fb-handle">{handle}</p>
+          {profile?.user.bio && <p className="you-fb-bio">{profile.user.bio}</p>}
+          <div className="you-fb-meta">
+            {profile?.user.location && (
+              <span className="you-fb-meta-item">📍 {profile.user.location}</span>
+            )}
+            {profile?.user.website && (
+              <a
+                className="you-fb-meta-item you-fb-link"
+                href={profile.user.website}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                🔗 {profile.user.website.replace(/^https?:\/\//, '')}
+              </a>
+            )}
           </div>
+          <div className="you-fb-counts">
+            <span><strong>{profile?.postCount ?? 0}</strong> {t('you.posts', 'posts')}</span>
+            <span><strong>{profile?.followerCount ?? 0}</strong> {t('you.followersLabel', 'followers')}</span>
+            <span><strong>{profile?.followingCount ?? 0}</strong> {t('you.following', 'following')}</span>
+          </div>
+        </div>
+        <div className="you-fb-actions">
+          {profile?.isSelf && (
+            <button className="you-fb-btn you-fb-btn-primary" onClick={openEdit}>
+              ✏️ {t('you.editProfile', 'Edit profile')}
+            </button>
+          )}
+          {!profile?.isSelf && profile?.user.id && (
+            <>
+              <button
+                className={`you-fb-btn ${profile.isFollowing ? 'you-fb-btn-ghost' : 'you-fb-btn-primary'}`}
+                onClick={() => toggleFollow(profile.user.id)}
+              >
+                {profile.isFollowing ? t('you.unfollow', 'Unfollow') : t('you.follow', 'Follow')}
+              </button>
+              <button
+                className="you-fb-btn you-fb-btn-ghost"
+                onClick={() => {
+                  setMessengerRecipient({ id: profile.user.id, name: displayName });
+                  setMessengerOpen(true);
+                }}
+              >
+                💬 {t('you.message', 'Message')}
+              </button>
+            </>
+          )}
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="you-tabs">
-        {(['profile', 'insights', 'vault', 'customize', 'settings'] as const).map(tab => (
-          <button key={tab} onClick={() => setActiveTab(tab)} className={`tab-button ${activeTab === tab ? 'active' : ''}`}>
-            {tab === 'profile' && t('you.profileTab')}
-            {tab === 'insights' && t('you.insightsTab')}
-            {tab === 'vault' && t('you.vaultTab')}
-            {tab === 'customize' && t('you.customizeTab')}
-            {tab === 'settings' && t('you.settingsTab')}
+      {/* --- Tab bar ---------------------------------------------------- */}
+      <div className="you-fb-tabs">
+        {(['timeline', 'about', 'friends', 'photos', 'videos', 'settings'] as const).map(tab => (
+          <button
+            key={tab}
+            className={`you-fb-tab ${activeTab === tab ? 'active' : ''}`}
+            onClick={() => setActiveTab(tab)}
+          >
+            {tab === 'timeline' && t('you.timeline', 'Timeline')}
+            {tab === 'about' && t('you.about', 'About')}
+            {tab === 'friends' && t('you.friends', 'Friends')}
+            {tab === 'photos' && t('you.photos', 'Photos')}
+            {tab === 'videos' && t('you.videos', 'Videos')}
+            {tab === 'settings' && t('you.settingsTab', 'Settings')}
           </button>
         ))}
       </div>
 
-      {/* Content */}
-      <div className="you-content">
-        {activeTab === 'profile' && (
-          <div className="you-section">
-            <h2>{t('you.statistics')}</h2>
-            {loading ? <p style={{ color: '#888' }}>{t('you.loading')}</p> : (
-              <>
-                <div className="stats-grid">
-                  <div className="stat-card"><div className="stat-value">{stats.followers}</div><div className="stat-label">{t('you.followersLabel')}</div></div>
-                  <div className="stat-card"><div className="stat-value">{stats.following}</div><div className="stat-label">{t('you.following')}</div></div>
-                  <div className="stat-card"><div className="stat-value">{stats.totalPosts}</div><div className="stat-label">{t('you.posts')}</div></div>
-                  <div className="stat-card"><div className="stat-value">{stats.totalLikes >= 1000 ? (stats.totalLikes / 1000).toFixed(1) + 'K' : stats.totalLikes}</div><div className="stat-label">{t('you.totalLikes')}</div></div>
-                </div>
-                <div className="xp-section">
-                  <h3>{t('you.xpProgress', { level: stats.level })}</h3>
-                  <div className="xp-bar"><div className="xp-fill" style={{ width: `${xpProgress * 100}%` }}></div></div>
-                  <p>{stats.xp % xpForNextLevel} / {xpForNextLevel} XP</p>
-                </div>
-              </>
+      {/* --- Timeline tab: composer + feed ----------------------------- */}
+      {activeTab === 'timeline' && (
+        <div className="you-fb-timeline">
+          {profile?.isSelf && (
+            <div className="you-fb-composer">
+              <div className="you-fb-composer-top">
+                {profile.user.profileImageUrl ? (
+                  <img className="you-fb-composer-avatar" src={profile.user.profileImageUrl} alt="" />
+                ) : (
+                  <div className="you-fb-composer-avatar you-fb-avatar-fallback">{avatarInitial}</div>
+                )}
+                <textarea
+                  className="you-fb-composer-textarea"
+                  placeholder={t('you.whatOnYourMind', "What's on your mind?")}
+                  value={postContent}
+                  onChange={e => setPostContent(e.target.value)}
+                  rows={3}
+                  maxLength={5000}
+                />
+              </div>
+              <div className="you-fb-upload-row">
+                {postImageUrl && (
+                  <img
+                    className="you-fb-upload-preview you-fb-upload-preview-wide"
+                    src={postImageUrl}
+                    alt=""
+                  />
+                )}
+                <input
+                  ref={composerFileRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  style={{ display: 'none' }}
+                  onChange={async (e) => {
+                    const f = e.target.files?.[0];
+                    if (!f) return;
+                    setPostImageUploading(true);
+                    setPostError(null);
+                    try {
+                      const url = await uploadImageFile(f);
+                      setPostImageUrl(url);
+                    } catch {
+                      setPostError('upload_failed');
+                    } finally {
+                      setPostImageUploading(false);
+                      if (composerFileRef.current) composerFileRef.current.value = '';
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  className="you-fb-btn"
+                  disabled={postImageUploading}
+                  onClick={() => composerFileRef.current?.click()}
+                >
+                  📷 {postImageUploading
+                    ? t('you.uploading', 'Uploading…')
+                    : t('you.addPhoto', 'Add photo')}
+                </button>
+                {postImageUrl && (
+                  <button
+                    type="button"
+                    className="you-fb-btn"
+                    onClick={() => setPostImageUrl('')}
+                  >
+                    {t('you.removePhoto', 'Remove')}
+                  </button>
+                )}
+              </div>
+              {postError && (
+                <p className="you-fb-error">
+                  {postError === 'invalid_content' ? t('you.postTooShort', 'Post cannot be empty or too long.') :
+                   postError === 'invalid_image_url' ? t('you.badImageUrl', 'Image URL is invalid.') :
+                   t('you.postFailed', 'Could not publish post.')}
+                </p>
+              )}
+              <div className="you-fb-composer-actions">
+                <button
+                  className="you-fb-btn you-fb-btn-primary"
+                  onClick={submitPost}
+                  disabled={posting || postContent.trim().length === 0}
+                >
+                  {posting ? t('you.posting', 'Posting...') : t('you.post', 'Post')}
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="you-fb-feed">
+            {loading && <p className="you-fb-muted">{t('you.loading', 'Loading...')}</p>}
+            {!loading && posts.length === 0 && (
+              <p className="you-fb-muted">
+                {profile?.isSelf
+                  ? t('you.emptyFeedSelf', 'No posts yet. Share what you are thinking!')
+                  : t('you.emptyFeed', 'No posts yet.')}
+              </p>
+            )}
+            {posts.map(p => {
+              const likeInfo = postLikeState.get(p.id) ?? { liked: false, count: 0 };
+              const comments = postComments.get(p.id) ?? [];
+              const isExpanded = expandedComments.has(p.id);
+              return (
+                <article key={p.id} className="you-fb-post">
+                  <header className="you-fb-post-head">
+                    {profile?.user.profileImageUrl ? (
+                      <img className="you-fb-post-avatar" src={profile.user.profileImageUrl} alt="" />
+                    ) : (
+                      <div className="you-fb-post-avatar you-fb-avatar-fallback">{avatarInitial}</div>
+                    )}
+                    <div className="you-fb-post-meta">
+                      <strong>{displayName}</strong>
+                      <time>{new Date(p.createdAt).toLocaleString()}</time>
+                    </div>
+                    {profile?.isSelf && (
+                      <button
+                        className="you-fb-post-delete"
+                        onClick={() => deletePost(p.id)}
+                        aria-label={t('you.deletePost', 'Delete post')}
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </header>
+                  <p className="you-fb-post-body">{p.content}</p>
+                  {p.imageUrl && (
+                    <img className="you-fb-post-image" src={p.imageUrl} alt="" loading="lazy" />
+                  )}
+                  {/* Like + Comment actions */}
+                  <div className="you-fb-post-actions">
+                    <button
+                      className={`you-fb-post-action-btn${likeInfo.liked ? ' you-fb-post-action-active' : ''}`}
+                      onClick={() => toggleLike(p.id)}
+                    >
+                      ❤️ {likeInfo.count > 0 ? likeInfo.count : ''} {t('you.like', 'Like')}
+                    </button>
+                    <button
+                      className="you-fb-post-action-btn"
+                      onClick={() => toggleComments(p.id)}
+                    >
+                      💬 {comments.length > 0 ? comments.length : ''} {t('you.comment', 'Comment')}
+                    </button>
+                  </div>
+                  {/* Comments section */}
+                  {isExpanded && (
+                    <div className="you-fb-comments">
+                      {comments.map(c => (
+                        <div key={c.id} className="you-fb-comment">
+                          <span className="you-fb-comment-user">{c.userName || c.userId.slice(0, 8)}</span>
+                          <span className="you-fb-comment-content">{c.content}</span>
+                          {(profile?.isSelf || c.userId === profile?.user.id) && (
+                            <button
+                              className="you-fb-comment-delete"
+                              onClick={() => deleteComment(p.id, c.id)}
+                              aria-label={t('you.deleteComment', 'Delete')}
+                            >
+                              ✕
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                      {user && (
+                        <div className="you-fb-comment-form">
+                          <input
+                            className="you-fb-comment-input"
+                            placeholder={t('you.writeComment', 'Write a comment…')}
+                            value={commentInputs.get(p.id) || ''}
+                            onChange={e => setCommentInputs(prev => new Map(prev).set(p.id, e.target.value))}
+                            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitComment(p.id); } }}
+                            maxLength={1000}
+                          />
+                          <button
+                            className="you-fb-btn you-fb-btn-primary"
+                            onClick={() => submitComment(p.id)}
+                            disabled={commentSubmitting.has(p.id) || !(commentInputs.get(p.id) || '').trim()}
+                          >
+                            {t('you.send', 'Send')}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* --- About tab -------------------------------------------------- */}
+      {activeTab === 'about' && (
+        <div className="you-fb-about">
+          <div className="you-fb-about-row">
+            <strong>{t('you.bio', 'Bio')}:</strong>
+            <span>{profile?.user.bio || t('you.notSet', '—')}</span>
+          </div>
+          <div className="you-fb-about-row">
+            <strong>📍 {t('you.location', 'Location')}:</strong>
+            <span>{profile?.user.location || t('you.notSet', '—')}</span>
+          </div>
+          <div className="you-fb-about-row">
+            <strong>🔗 {t('you.website', 'Website')}:</strong>
+            {profile?.user.website ? (
+              <a href={profile.user.website} target="_blank" rel="noopener noreferrer">
+                {profile.user.website}
+              </a>
+            ) : (
+              <span>{t('you.notSet', '—')}</span>
             )}
           </div>
-        )}
-
-        {activeTab === 'insights' && (
-          <div className="you-section">
-            <h2>{t('you.insights')}</h2>
-            <div className="insight-cards">
-              <div className="insight-card"><span className="icon">⏰</span><h3>{t('you.peakHours', { start: stats.productiveHours[0], end: stats.productiveHours[1] })}</h3><p>{t('you.peakEngagement')}</p></div>
-              <div className="insight-card"><span className="icon">🎯</span><h3>{t('you.topContent', { category: stats.topCategories[0] })}</h3><p>{t('you.topEngagement')}</p></div>
-              <div className="insight-card"><span className="icon">📈</span><h3>{t('you.totalLikesInsight', { count: stats.totalLikes })}</h3><p>{t('you.activePostsInsight', { count: stats.totalPosts })}</p></div>
-            </div>
+          <div className="you-fb-about-row">
+            <strong>{t('you.joined', 'Joined')}:</strong>
+            <span>
+              {profile?.user.createdAt
+                ? new Date(profile.user.createdAt).toLocaleDateString()
+                : '—'}
+            </span>
           </div>
-        )}
+        </div>
+      )}
 
-        {activeTab === 'vault' && (
-          <div className="you-section">
-            <h2>{t('you.vaultTitle', { count: vaultItems.length })}</h2>
-            <div className="vault-form">
-              <select value={vaultItemType} onChange={e => setVaultItemType(e.target.value as any)}>
-                <option value="note">{t('you.note')}</option>
-                <option value="screenshot">{t('you.screenshot')}</option>
-                <option value="insight">{t('you.insight')}</option>
-              </select>
-              <textarea placeholder={t('you.vaultContent')} value={newVaultItem} onChange={e => setNewVaultItem(e.target.value)} />
-              <button onClick={addVaultItem}>{t('you.addToVault')}</button>
-            </div>
-            <div className="vault-items">
-              {vaultItems.map(item => (
-                <div key={item.id} className="vault-item" style={{ borderLeftColor: moodColors[item.mood || 'neutral'] }}>
-                  <span className="item-type">{item.type === 'note' ? '📝' : item.type === 'screenshot' ? '📸' : '💡'}</span>
-                  <p>{item.content}</p>
-                  <small style={{ color: '#666' }}>{new Date(item.createdAt).toLocaleDateString(i18n.language)}</small>
-                  <button onClick={() => deleteVaultItem(item.id)}>✕</button>
-                </div>
+      {/* --- Friends tab ------------------------------------------------ */}
+      {activeTab === 'friends' && (
+        <div className="you-fb-friends">
+          <div className="you-fb-friends-subtabs">
+            <button
+              className={`you-fb-tab ${friendsSubTab === 'followers' ? 'active' : ''}`}
+              onClick={() => setFriendsSubTab('followers')}
+            >
+              {t('you.followers', 'Followers')} ({followers.length})
+            </button>
+            <button
+              className={`you-fb-tab ${friendsSubTab === 'following' ? 'active' : ''}`}
+              onClick={() => setFriendsSubTab('following')}
+            >
+              {t('you.following', 'Following')} ({following.length})
+            </button>
+          </div>
+          {friendsLoading && <p className="you-fb-muted">{t('you.loading', 'Loading...')}</p>}
+          <div className="you-fb-friends-list">
+            {(friendsSubTab === 'followers' ? followers : following).map(u => (
+              <div key={u.id} className="you-fb-friend-card">
+                {u.profileImageUrl ? (
+                  <img className="you-fb-friend-avatar" src={u.profileImageUrl} alt={u.displayName || u.firstName || ''} />
+                ) : (
+                  <div className="you-fb-friend-avatar you-fb-avatar-fallback">
+                    {(u.displayName || u.firstName || '?').charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <span className="you-fb-friend-name">{u.displayName || u.firstName || t('you.unknownUser', 'User')}</span>
+                {!profile?.isSelf && u.id !== profile?.user.id && (
+                  <button
+                    className={`you-fb-btn ${followingIds.has(u.id) ? 'you-fb-btn-ghost' : 'you-fb-btn-primary'}`}
+                    onClick={() => toggleFollow(u.id)}
+                  >
+                    {followingIds.has(u.id) ? t('you.unfollow', 'Unfollow') : t('you.follow', 'Follow')}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* --- Photos tab ------------------------------------------------- */}
+      {activeTab === 'photos' && (
+        <div className="you-fb-photos">
+          <p className="you-fb-muted" style={{ marginBottom: '12px' }}>
+            {photoUrls.length} {t('you.photosCount', 'photos')}
+          </p>
+          {photoUrls.length === 0 ? (
+            <p className="you-fb-muted">{t('you.noPhotos', 'No photos yet.')}</p>
+          ) : (
+            <div className="you-fb-photos-grid">
+              {photoUrls.map((url, i) => (
+                <img key={i} className="you-fb-photo-thumb" src={url} alt="" loading="lazy" />
               ))}
-              {vaultItems.length === 0 && <p style={{ color: '#888', textAlign: 'center' }}>{t('you.vaultEmpty')}</p>}
             </div>
-          </div>
-        )}
+          )}
+        </div>
+      )}
 
-        {activeTab === 'customize' && (
-          <div className="you-section">
-            <h2>{t('you.customize')}</h2>
-            <div className="customize-preview">
-              <div className="avatar-preview" style={{
-                background: `radial-gradient(circle at 35% 35%, ${avatar.glowColor}40, ${avatar.glowColor}10)`,
-                borderColor: avatar.glowColor,
-                boxShadow: avatar.neonEffect ? `0 0 40px ${avatar.glowColor}80, 0 0 80px ${avatar.glowColor}40` : 'none',
-              }}>
-                <div className="avatar-initials">{userName.charAt(0).toUpperCase()}</div>
-              </div>
-            </div>
-            <div className="customize-controls">
-              <h3>{t('you.glowColor')}</h3>
-              <div className="color-palette">
-                {['#a855f7', '#ec4899', '#ef4444', '#f59e0b', '#22c55e', '#06b6d4', '#3b82f6'].map(color => (
-                  <button key={color} style={{ background: color }} className={`color-btn ${avatar.glowColor === color ? 'active' : ''}`} onClick={() => updateAvatarColor(color)}></button>
-                ))}
-              </div>
-              <h3>{t('you.glowIntensity')}</h3>
-              <input type="range" min="0" max="1" step="0.1" value={avatar.glowIntensity} onChange={e => setAvatar({ ...avatar, glowIntensity: parseFloat(e.target.value) })} />
-              <h3>{t('you.effects')}</h3>
-              <label><input type="checkbox" checked={avatar.neonEffect} onChange={() => toggleEffect('neonEffect')} /> {t('you.neonGlow')}</label>
-              <label><input type="checkbox" checked={avatar.particleEffect} onChange={() => toggleEffect('particleEffect')} /> {t('you.particles')}</label>
-            </div>
-          </div>
-        )}
+      {/* --- Videos tab ------------------------------------------------- */}
+      {activeTab === 'videos' && profile?.user.id && (
+        <VideosTab profileId={profile.user.id} />
+      )}
 
-        {activeTab === 'settings' && (
-          <div className="you-section">
-            <h2>{t('you.settingsTitle')}</h2>
-            <div className="settings-form">
-              <label className="settings-label">
-                {t('you.name')}
-                <input type="text" className="settings-input" value={settingsName} onChange={e => setSettingsName(e.target.value)} placeholder={t('you.namePlaceholder')} />
-              </label>
-              <label className="settings-label">
-                {t('you.emailLabel')}
-                <input type="email" className="settings-input" value={user?.email || ''} disabled style={{ opacity: 0.6 }} />
-              </label>
-              <label className="settings-label">
-                {t('you.bio')}
-                <textarea className="settings-textarea" value={settingsBio} onChange={e => setSettingsBio(e.target.value)} placeholder={t('you.bioPlaceholder')} rows={3} />
-              </label>
-              <label className="settings-label">
-                {t('you.language')}
-                <LanguageSelector />
-              </label>
-              <button className="settings-save-btn" onClick={handleSaveSettings}>
-                {settingsSaved ? t('you.saved') : t('you.saveChanges')}
+      {/* --- Settings tab ---------------------------------------------- */}
+      {activeTab === 'settings' && (
+        <div className="you-fb-settings">
+          <label className="you-fb-field">
+            <span>{t('you.emailLabel', 'Email')}</span>
+            <input type="email" value={profile?.user.email || user?.email || ''} disabled />
+          </label>
+          <label className="you-fb-field">
+            <span>{t('you.language', 'Language')}</span>
+            <LanguageSelector />
+          </label>
+          <button className="you-fb-btn you-fb-btn-primary" onClick={openEdit}>
+            ✏️ {t('you.editProfile', 'Edit profile')}
+          </button>
+          <button className="you-fb-btn you-fb-btn-danger" onClick={logout}>
+            {t('you.logout', 'Logout')}
+          </button>
+        </div>
+      )}
+
+      {/* --- Edit-profile modal --------------------------------------- */}
+      {editing && (
+        <div className="you-fb-modal-backdrop" onClick={() => !savingEdit && setEditing(false)}>
+          <div className="you-fb-modal" onClick={e => e.stopPropagation()}>
+            <h2>{t('you.editProfile', 'Edit profile')}</h2>
+
+            <label className="you-fb-field">
+              <span>{t('you.name', 'Name')}</span>
+              <input
+                type="text"
+                value={editDraft.displayName}
+                onChange={e => setEditDraft(d => ({ ...d, displayName: e.target.value }))}
+                maxLength={60}
+              />
+            </label>
+
+            <label className="you-fb-field">
+              <span>{t('you.bio', 'Bio')}</span>
+              <textarea
+                value={editDraft.bio}
+                onChange={e => setEditDraft(d => ({ ...d, bio: e.target.value }))}
+                rows={3}
+                maxLength={500}
+              />
+            </label>
+
+            <label className="you-fb-field">
+              <span>{t('you.profileImage', 'Profile photo')}</span>
+              <div className="you-fb-upload-row">
+                {editDraft.profileImageUrl && (
+                  <img
+                    className="you-fb-upload-preview"
+                    src={editDraft.profileImageUrl}
+                    alt=""
+                  />
+                )}
+                <input
+                  ref={avatarFileRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  style={{ display: 'none' }}
+                  onChange={async (e) => {
+                    const f = e.target.files?.[0];
+                    if (!f) return;
+                    setAvatarUploading(true);
+                    setEditError(null);
+                    try {
+                      const url = await uploadImageFile(f);
+                      setEditDraft(d => ({ ...d, profileImageUrl: url }));
+                    } catch {
+                      setEditError('upload_failed');
+                    } finally {
+                      setAvatarUploading(false);
+                      if (avatarFileRef.current) avatarFileRef.current.value = '';
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  className="you-fb-btn"
+                  disabled={avatarUploading}
+                  onClick={() => avatarFileRef.current?.click()}
+                >
+                  {avatarUploading
+                    ? t('you.uploading', 'Uploading…')
+                    : t('you.uploadPhoto', 'Upload photo')}
+                </button>
+                {editDraft.profileImageUrl && (
+                  <button
+                    type="button"
+                    className="you-fb-btn"
+                    onClick={() => setEditDraft(d => ({ ...d, profileImageUrl: '' }))}
+                  >
+                    {t('you.removePhoto', 'Remove')}
+                  </button>
+                )}
+              </div>
+            </label>
+
+            <label className="you-fb-field">
+              <span>{t('you.coverImage', 'Cover photo')}</span>
+              <div className="you-fb-upload-row">
+                {editDraft.coverImageUrl && (
+                  <img
+                    className="you-fb-upload-preview you-fb-upload-preview-wide"
+                    src={editDraft.coverImageUrl}
+                    alt=""
+                  />
+                )}
+                <input
+                  ref={coverFileRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  style={{ display: 'none' }}
+                  onChange={async (e) => {
+                    const f = e.target.files?.[0];
+                    if (!f) return;
+                    setCoverUploading(true);
+                    setEditError(null);
+                    try {
+                      const url = await uploadImageFile(f);
+                      setEditDraft(d => ({ ...d, coverImageUrl: url }));
+                    } catch {
+                      setEditError('upload_failed');
+                    } finally {
+                      setCoverUploading(false);
+                      if (coverFileRef.current) coverFileRef.current.value = '';
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  className="you-fb-btn"
+                  disabled={coverUploading}
+                  onClick={() => coverFileRef.current?.click()}
+                >
+                  {coverUploading
+                    ? t('you.uploading', 'Uploading…')
+                    : t('you.uploadCover', 'Upload cover')}
+                </button>
+                {editDraft.coverImageUrl && (
+                  <button
+                    type="button"
+                    className="you-fb-btn"
+                    onClick={() => setEditDraft(d => ({ ...d, coverImageUrl: '' }))}
+                  >
+                    {t('you.removePhoto', 'Remove')}
+                  </button>
+                )}
+              </div>
+            </label>
+
+            <label className="you-fb-field">
+              <span>📍 {t('you.location', 'Location')}</span>
+              <input
+                type="text"
+                value={editDraft.location}
+                onChange={e => setEditDraft(d => ({ ...d, location: e.target.value }))}
+                maxLength={120}
+              />
+            </label>
+
+            <label className="you-fb-field">
+              <span>🔗 {t('you.website', 'Website')}</span>
+              <input
+                type="url"
+                value={editDraft.website}
+                onChange={e => setEditDraft(d => ({ ...d, website: e.target.value }))}
+                placeholder="https://..."
+              />
+            </label>
+
+            {editError && (
+              <p className="you-fb-error">
+                {editError === 'invalid_image_url' && t('you.badImageUrl', 'Profile image URL is invalid.')}
+                {editError === 'invalid_cover_url' && t('you.badCoverUrl', 'Cover image URL is invalid.')}
+                {editError === 'invalid_website' && t('you.badWebsite', 'Website URL is invalid.')}
+                {editError === 'invalid_location' && t('you.badLocation', 'Location is invalid.')}
+                {editError === 'invalid_display_name' && t('you.badName', 'Name is invalid.')}
+                {editError === 'invalid_bio' && t('you.badBio', 'Bio is too long.')}
+                {![
+                  'invalid_image_url',
+                  'invalid_cover_url',
+                  'invalid_website',
+                  'invalid_location',
+                  'invalid_display_name',
+                  'invalid_bio',
+                ].includes(editError) && t('you.updateFailed', 'Could not save changes.')}
+              </p>
+            )}
+
+            <div className="you-fb-modal-actions">
+              <button
+                className="you-fb-btn you-fb-btn-ghost"
+                onClick={() => setEditing(false)}
+                disabled={savingEdit}
+              >
+                {t('you.cancel', 'Cancel')}
               </button>
-              <hr style={{ border: 'none', borderTop: '1px solid #2a2a3a', margin: '16px 0' }} />
-              <button className="settings-logout-btn" onClick={logout}>
-                {t('you.logout')}
+              <button
+                className="you-fb-btn you-fb-btn-primary"
+                onClick={saveEdit}
+                disabled={savingEdit}
+              >
+                {savingEdit ? t('you.saving', 'Saving...') : t('you.saveChanges', 'Save changes')}
               </button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* --- Messenger drawer ----------------------------------------- */}
+      <Messenger
+        isOpen={messengerOpen}
+        onClose={() => setMessengerOpen(false)}
+        initialRecipientId={messengerRecipient?.id}
+        initialRecipientName={messengerRecipient?.name}
+      />
     </div>
   );
 };
+
+// ---------------------------------------------------------------------------
+// Videos sub-component
+// ---------------------------------------------------------------------------
+interface VideoItem {
+  id: number;
+  title: string;
+  thumbnailUrl: string | null;
+  url: string;
+  createdAt: string;
+}
+
+const VideosTab: React.FC<{ profileId: string }> = ({ profileId }) => {
+  const { t } = useTranslation();
+  const [videos, setVideos] = useState<VideoItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    axios
+      .get<VideoItem[]>(`${API_URL}/api/profile/${profileId}/videos`)
+      .then(r => { if (!cancelled) setVideos(r.data || []); })
+      .catch(() => { if (!cancelled) setVideos([]); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [profileId]);
+
+  if (loading) return <p className="you-fb-muted">{t('you.loading', 'Loading...')}</p>;
+  if (videos.length === 0) return <p className="you-fb-muted">{t('you.noVideos', 'No videos yet.')}</p>;
+
+  return (
+    <div className="you-fb-videos-grid">
+      {videos.map(v => (
+        <a key={v.id} href={v.url} target="_blank" rel="noopener noreferrer" className="you-fb-video-card">
+          {v.thumbnailUrl ? (
+            <img className="you-fb-video-thumb" src={v.thumbnailUrl} alt={v.title} loading="lazy" />
+          ) : (
+            <div className="you-fb-video-thumb you-fb-video-placeholder">▶</div>
+          )}
+          <p className="you-fb-video-title">{v.title}</p>
+        </a>
+      ))}
+    </div>
+  );
+};
+
 
 export default YouProfile;

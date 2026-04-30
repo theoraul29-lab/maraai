@@ -23,7 +23,7 @@
   "nav": {
     "home": "Hem",
     "reels": "Reels",
-    "trading": "Trading",
+    "trading": "Trading Akademie",
     "vip": "VIP",
     "creator": "Skapare",
     "writers": "Författare",
@@ -57,10 +57,10 @@
     "emailRequired": "Email is required",
     "emailInvalid": "Please enter a valid email address",
     "passwordRequired": "Password is required",
-    "passwordMinLength": "Password must be at least 8 characters",
+    "passwordMinLength": "Password must be at least 6 characters",
     "nameRequired": "Name is required",
     "nameMinLength": "Name must be at least 2 characters",
-    "passwordHint": "✓ Password must be at least 8 characters",
+    "passwordHint": "✓ Password must be at least 6 characters",
     "login": "Logga in",
     "createAccount": "Skapa konto",
     "signingIn": "Signing Account...",
@@ -80,7 +80,7 @@
     "or": "ELLER"
   },
   "trading": {
-    "title": "TRADING STRATEGY ACADEMY",
+    "title": "TRADING AKADEMIE",
     "exit": "EXIT",
     "closeLabel": "Close Trading",
     "strategyHub": "STRATEGY HUB ({{count}})",
@@ -604,7 +604,11 @@
           "Monthly review of AI vs manual performance."
         ]
       }
-    }
+    },
+    "shareOnYou": "📣 Share on You",
+    "shareOnYouLabel": "Publish this strategy as a post on your profile",
+    "sharedToYou": "Shared on your profile",
+    "shareFailed": "Could not share. Try again."
   },
   "vip": {
     "title": "PREMIUM VIP MODULE",
@@ -973,5 +977,19 @@
   "languageSelector": {
     "label": "Språk",
     "changeLanguage": "Byt språk"
+  },
+  "pwa": {
+    "installTitle": "Installera Mara",
+    "installBody": "Lägg till hellomara.net på startskärmen för en komplett appupplevelse.",
+    "installCta": "Installera",
+    "installDismiss": "Inte nu",
+    "installDismissAria": "Stäng installationsförfrågan",
+    "iosHintTitle": "Installera Mara",
+    "iosHintBody": "Tryck på Dela och sedan \"Lägg till på hemskärmen\" för att installera appen.",
+    "iosHintDismiss": "OK",
+    "updateTitle": "Uppdatering klar",
+    "updateBody": "En nyare version av Mara finns tillgänglig.",
+    "updateCta": "Uppdatera",
+    "updateDismissAria": "Stäng uppdatering"
   }
 }

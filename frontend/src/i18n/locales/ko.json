@@ -23,7 +23,7 @@
   "nav": {
     "home": "홈",
     "reels": "릴스",
-    "trading": "트레이딩",
+    "trading": "Trading Akademie",
     "vip": "VIP",
     "creator": "크리에이터",
     "writers": "작가",
@@ -57,10 +57,10 @@
     "emailRequired": "Email is required",
     "emailInvalid": "Please enter a valid email address",
     "passwordRequired": "Password is required",
-    "passwordMinLength": "Password must be at least 8 characters",
+    "passwordMinLength": "Password must be at least 6 characters",
     "nameRequired": "Name is required",
     "nameMinLength": "Name must be at least 2 characters",
-    "passwordHint": "✓ Password must be at least 8 characters",
+    "passwordHint": "✓ Password must be at least 6 characters",
     "login": "로그인",
     "createAccount": "계정 만들기",
     "signingIn": "Signing Account...",
@@ -80,7 +80,7 @@
     "or": "또는"
   },
   "trading": {
-    "title": "TRADING STRATEGY ACADEMY",
+    "title": "TRADING AKADEMIE",
     "exit": "EXIT",
     "closeLabel": "Close Trading",
     "strategyHub": "STRATEGY HUB ({{count}})",
@@ -604,7 +604,11 @@
           "Monthly review of AI vs manual performance."
         ]
       }
-    }
+    },
+    "shareOnYou": "📣 Share on You",
+    "shareOnYouLabel": "Publish this strategy as a post on your profile",
+    "sharedToYou": "Shared on your profile",
+    "shareFailed": "Could not share. Try again."
   },
   "vip": {
     "title": "PREMIUM VIP MODULE",
@@ -973,5 +977,19 @@
   "languageSelector": {
     "label": "언어",
     "changeLanguage": "언어 변경"
+  },
+  "pwa": {
+    "installTitle": "Mara 설치",
+    "installBody": "전체 앱 경험을 위해 hellomara.net을 홈 화면에 추가하세요.",
+    "installCta": "설치",
+    "installDismiss": "나중에",
+    "installDismissAria": "설치 안내 닫기",
+    "iosHintTitle": "Mara 설치",
+    "iosHintBody": "공유를 누른 다음 \"홈 화면에 추가\"를 선택하여 앱을 설치하세요.",
+    "iosHintDismiss": "확인",
+    "updateTitle": "업데이트 준비 완료",
+    "updateBody": "Mara의 새 버전이 있습니다.",
+    "updateCta": "새로고침",
+    "updateDismissAria": "업데이트 닫기"
   }
 }

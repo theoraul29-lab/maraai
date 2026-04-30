@@ -23,7 +23,7 @@
   "nav": {
     "home": "Αρχική",
     "reels": "Reels",
-    "trading": "Συναλλαγές",
+    "trading": "Trading Akademie",
     "vip": "VIP",
     "creator": "Δημιουργός",
     "writers": "Συγγραφείς",
@@ -57,10 +57,10 @@
     "emailRequired": "Email is required",
     "emailInvalid": "Please enter a valid email address",
     "passwordRequired": "Password is required",
-    "passwordMinLength": "Password must be at least 8 characters",
+    "passwordMinLength": "Password must be at least 6 characters",
     "nameRequired": "Name is required",
     "nameMinLength": "Name must be at least 2 characters",
-    "passwordHint": "✓ Password must be at least 8 characters",
+    "passwordHint": "✓ Password must be at least 6 characters",
     "login": "Σύνδεση",
     "createAccount": "Δημιουργία λογαριασμού",
     "signingIn": "Signing Account...",
@@ -80,7 +80,7 @@
     "or": "Ή"
   },
   "trading": {
-    "title": "TRADING STRATEGY ACADEMY",
+    "title": "TRADING AKADEMIE",
     "exit": "EXIT",
     "closeLabel": "Close Trading",
     "strategyHub": "STRATEGY HUB ({{count}})",
@@ -604,7 +604,11 @@
           "Monthly review of AI vs manual performance."
         ]
       }
-    }
+    },
+    "shareOnYou": "📣 Share on You",
+    "shareOnYouLabel": "Publish this strategy as a post on your profile",
+    "sharedToYou": "Shared on your profile",
+    "shareFailed": "Could not share. Try again."
   },
   "vip": {
     "title": "PREMIUM VIP MODULE",
@@ -973,5 +977,19 @@
   "languageSelector": {
     "label": "Γλώσσα",
     "changeLanguage": "Αλλαγή γλώσσας"
+  },
+  "pwa": {
+    "installTitle": "Εγκατάσταση του Mara",
+    "installBody": "Προσθέστε το hellomara.net στην αρχική οθόνη σας για πλήρη εμπειρία εφαρμογής.",
+    "installCta": "Εγκατάσταση",
+    "installDismiss": "Όχι τώρα",
+    "installDismissAria": "Κλείσιμο πρότασης εγκατάστασης",
+    "iosHintTitle": "Εγκατάσταση του Mara",
+    "iosHintBody": "Πατήστε Κοινή χρήση και στη συνέχεια «Στην αρχική οθόνη» για εγκατάσταση της εφαρμογής.",
+    "iosHintDismiss": "Εντάξει",
+    "updateTitle": "Η ενημέρωση είναι έτοιμη",
+    "updateBody": "Μια νεότερη έκδοση του Mara είναι διαθέσιμη.",
+    "updateCta": "Ανανέωση",
+    "updateDismissAria": "Κλείσιμο ενημέρωσης"
   }
 }

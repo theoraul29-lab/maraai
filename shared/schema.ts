@@ -11,7 +11,9 @@ import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
 export * from './models/auth.ts';
+export * from './models/billing.ts';
 export * from './models/chat.ts';
+export * from './models/maraai-platform.ts';
 
 // === VIDEOS ===
 export const videos = pgTable('videos', {
@@ -23,6 +25,26 @@ export const videos = pgTable('videos', {
   creatorId: text('creator_id'),
   likes: integer('likes').default(0).notNull(),
   views: integer('views').default(0).notNull(),
+  shares: integer('shares').default(0).notNull(),
+  // Set when the video was uploaded through /api/videos/upload and the bytes
+  // live on a Railway volume (or local disk in dev). Null for legacy / external
+  // (YouTube, Vimeo, seeded sample) videos.
+  fileKey: text('file_key'),
+  mimeType: text('mime_type'),
+  durationSec: integer('duration_sec'),
+  thumbnailUrl: text('thumbnail_url'),
+  moderationStatus: text('moderation_status').default('approved').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
+// === VIDEO COMMENTS ===
+export const videoComments = pgTable('video_comments', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  videoId: integer('video_id').notNull(),
+  userId: text('user_id').notNull(),
+  content: text('content').notNull(),
   createdAt: integer('created_at', { mode: 'timestamp' })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
@@ -100,6 +122,64 @@ export const premiumOrders = pgTable('premium_orders', {
   expiresAt: integer('expires_at', { mode: 'timestamp' }),
 });
 
+// === USER POSTS (FB-style statuses on the You profile) ===
+//
+// Plain text + optional image URL. Video posts continue to live in the
+// `videos` table (Reels pipeline); the feed aggregator unifies both streams.
+export const userPosts = pgTable('user_posts', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: text('user_id').notNull(),
+  content: text('content').notNull(),
+  imageUrl: text('image_url'),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
+// === POST LIKES ===
+export const postLikes = pgTable('post_likes', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  postId: integer('post_id').notNull(),
+  userId: text('user_id').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
+// === POST COMMENTS ===
+export const postComments = pgTable('post_comments', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  postId: integer('post_id').notNull(),
+  userId: text('user_id').notNull(),
+  content: text('content').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
+// === CONVERSATIONS (Direct Messaging) ===
+export const conversations = pgTable('conversations', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userAId: text('user_a_id').notNull(),
+  userBId: text('user_b_id').notNull(),
+  lastMessageAt: integer('last_message_at', { mode: 'timestamp' }),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
+// === DIRECT MESSAGES ===
+export const directMessages = pgTable('direct_messages', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  conversationId: integer('conversation_id').notNull(),
+  senderId: text('sender_id').notNull(),
+  content: text('content').notNull(),
+  read: integer('read').default(0).notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
 // === CREATOR POSTS (monthly tracking) ===
 export const creatorPosts = pgTable('creator_posts', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -122,12 +202,74 @@ export const writerPages = pgTable('writer_pages', {
   published: integer('published').default(0).notNull(),
   likes: integer('likes').default(0).notNull(),
   views: integer('views').default(0).notNull(),
+  // --- Writers Hub (PR E) additions ---
+  // visibility: 'public' (anyone) | 'vip' (subscribers with >= vip plan) | 'paid' (one-off unlock per user)
+  visibility: text('visibility').default('public').notNull(),
+  priceCents: integer('price_cents'),
+  currency: text('currency').default('EUR').notNull(),
+  excerpt: text('excerpt'),
+  slug: text('slug'),
+  readTimeMinutes: integer('read_time_minutes'),
+  publishedAt: integer('published_at', { mode: 'timestamp' }),
   createdAt: integer('created_at', { mode: 'timestamp' })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
+});
+
+// === WRITER COMMENTS ===
+export const writerComments = pgTable('writer_comments', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  pageId: integer('page_id').notNull(),
+  userId: text('user_id').notNull(),
+  content: text('content').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
+// === WRITER PURCHASES (70/30 revenue share per paid article) ===
+export const writerPurchases = pgTable('writer_purchases', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  pageId: integer('page_id').notNull(),
+  userId: text('user_id').notNull(),
+  amountCents: integer('amount_cents').notNull(),
+  currency: text('currency').default('EUR').notNull(),
+  provider: text('provider').default('stub').notNull(),
+  providerRef: text('provider_ref'),
+  authorShareCents: integer('author_share_cents').notNull(),
+  platformShareCents: integer('platform_share_cents').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
+// === CREATOR PAYOUTS (PR G) ===
+// Creators request payouts of their accumulated earnings (from writer paid
+// article purchases + future tips/reel payouts). Admin reviews and updates
+// status. The payable balance is computed on-demand (no ledger table needed
+// for now): sum(authorShareCents from writerPurchases joined on pages.userId)
+// minus sum(amountCents from payouts with status in {approved, paid}).
+export const creatorPayouts = pgTable('creator_payouts', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: text('user_id').notNull(),
+  amountCents: integer('amount_cents').notNull(),
+  currency: text('currency').default('EUR').notNull(),
+  // 'bank' | 'paypal' | 'stripe' | 'crypto'
+  method: text('method').notNull(),
+  // Free-form JSON string with provider-specific details (IBAN, PayPal email,
+  // stripe account id, wallet address, etc.). Never returned from list
+  // endpoints — only to the owning creator or admins.
+  methodDetails: text('method_details').default('{}').notNull(),
+  // 'requested' -> 'approved' | 'rejected' -> 'paid'
+  status: text('status').default('requested').notNull(),
+  notes: text('notes'),
+  requestedAt: integer('requested_at', { mode: 'timestamp' })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+  processedAt: integer('processed_at', { mode: 'timestamp' }),
 });
 
 // === USER FEEDBACK ===
@@ -167,6 +309,29 @@ export const notifications = pgTable('notifications', {
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
 });
+
+// === PUSH SUBSCRIPTIONS ===
+// One row per (user, endpoint). Endpoint is unique — browsers reuse the
+// same subscription across refreshes, but rotate it periodically (or when
+// the user reinstalls the app), so we UPSERT by endpoint on subscribe and
+// garbage-collect stale rows when web-push reports 404/410.
+export const pushSubscriptions = pgTable(
+  'push_subscriptions',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    userId: text('user_id').notNull(),
+    endpoint: text('endpoint').notNull(),
+    p256dh: text('p256dh').notNull(),
+    auth: text('auth').notNull(),
+    userAgent: text('user_agent'),
+    createdAt: integer('created_at', { mode: 'timestamp' })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (t) => ({
+    endpointUnique: unique('push_subscriptions_endpoint_unique').on(t.endpoint),
+  }),
+);
 
 // === COMMENTS ===
 export const comments = pgTable('comments', {
@@ -293,6 +458,11 @@ export const insertVideoSchema = createInsertSchema(videos).omit({
   createdAt: true,
   likes: true,
   views: true,
+  shares: true,
+});
+export const insertVideoCommentSchema = createInsertSchema(videoComments).omit({
+  id: true,
+  createdAt: true,
 });
 export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({
   id: true,
@@ -312,9 +482,24 @@ export const insertWriterPageSchema = createInsertSchema(writerPages).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+  publishedAt: true,
   likes: true,
   views: true,
   published: true,
+});
+export const insertWriterCommentSchema = createInsertSchema(writerComments).omit({
+  id: true,
+  createdAt: true,
+});
+export const insertWriterPurchaseSchema = createInsertSchema(writerPurchases).omit({
+  id: true,
+  createdAt: true,
+});
+export const insertCreatorPayoutSchema = createInsertSchema(creatorPayouts).omit({
+  id: true,
+  requestedAt: true,
+  processedAt: true,
+  status: true,
 });
 export const insertFeedbackSchema = createInsertSchema(userFeedback).omit({
   id: true,
@@ -387,6 +572,8 @@ export const creatorPostRequestSchema = z.object({
 // === TYPES ===
 export type Video = typeof videos.$inferSelect;
 export type InsertVideo = z.infer<typeof insertVideoSchema>;
+export type VideoComment = typeof videoComments.$inferSelect;
+export type InsertVideoComment = z.infer<typeof insertVideoCommentSchema>;
 export type ChatMessage = typeof chatMessages.$inferSelect;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 export type Like = typeof likes.$inferSelect;
@@ -396,7 +583,15 @@ export type PremiumOrder = typeof premiumOrders.$inferSelect;
 export type InsertPremiumOrder = z.infer<typeof insertPremiumOrderSchema>;
 export type WriterPage = typeof writerPages.$inferSelect;
 export type InsertWriterPage = z.infer<typeof insertWriterPageSchema>;
+export type WriterComment = typeof writerComments.$inferSelect;
+export type InsertWriterComment = z.infer<typeof insertWriterCommentSchema>;
+export type WriterPurchase = typeof writerPurchases.$inferSelect;
+export type InsertWriterPurchase = z.infer<typeof insertWriterPurchaseSchema>;
+export type CreatorPayout = typeof creatorPayouts.$inferSelect;
+export type InsertCreatorPayout = z.infer<typeof insertCreatorPayoutSchema>;
 export type SavedVideo = typeof savedVideos.$inferSelect;
+export type UserPost = typeof userPosts.$inferSelect;
+export type InsertUserPost = typeof userPosts.$inferInsert;
 export type Feedback = typeof userFeedback.$inferSelect;
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 export type Improvement = typeof aiImprovements.$inferSelect;
@@ -420,3 +615,76 @@ export type SelfReflection = typeof maraSelfReflection.$inferSelect;
 export type InsertSelfReflection = z.infer<typeof insertSelfReflectionSchema>;
 export type PlatformInsight = typeof maraPlatformInsights.$inferSelect;
 export type InsertPlatformInsight = z.infer<typeof insertPlatformInsightSchema>;
+
+// === TRADING ACADEMY (PR F) ===
+// Modules group lessons (e.g. "Fundamentals", "Technical Analysis"). Access
+// is gated by a billing FeatureKey stored as text here (not a FK) so the
+// plans catalogue remains the single source of truth for entitlements and
+// we don't have to coordinate migration order against billing seeds.
+export const tradingModules = pgTable('trading_modules', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  slug: text('slug').notNull(),
+  level: integer('level').notNull(),
+  title: text('title').notNull(),
+  description: text('description').default('').notNull(),
+  orderIdx: integer('order_idx').default(0).notNull(),
+  requiredFeature: text('required_feature').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .default(sql`(CURRENT_TIMESTAMP)`)
+    .notNull(),
+});
+
+export const tradingLessons = pgTable('trading_lessons', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  moduleId: integer('module_id').notNull(),
+  slug: text('slug').notNull(),
+  title: text('title').notNull(),
+  content: text('content').default('').notNull(),
+  videoUrl: text('video_url'),
+  durationSeconds: integer('duration_seconds').default(0).notNull(),
+  orderIdx: integer('order_idx').default(0).notNull(),
+  // Optional quiz as a JSON string. Shape:
+  //   { questions: [{ id, prompt, choices:[..], answer: <idx> }] }
+  // Null means the lesson has no quiz and is completed on explicit
+  // /complete without scoring.
+  quizJson: text('quiz_json'),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .default(sql`(CURRENT_TIMESTAMP)`)
+    .notNull(),
+});
+
+export const tradingLessonProgress = pgTable('trading_lesson_progress', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: text('user_id').notNull(),
+  lessonId: integer('lesson_id').notNull(),
+  quizScore: integer('quiz_score'),
+  completedAt: integer('completed_at', { mode: 'timestamp' })
+    .default(sql`(CURRENT_TIMESTAMP)`)
+    .notNull(),
+});
+
+export const tradingCertificates = pgTable('trading_certificates', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: text('user_id').notNull(),
+  moduleId: integer('module_id').notNull(),
+  avgScore: integer('avg_score').default(0).notNull(),
+  issuedAt: integer('issued_at', { mode: 'timestamp' })
+    .default(sql`(CURRENT_TIMESTAMP)`)
+    .notNull(),
+});
+
+export type TradingModule = typeof tradingModules.$inferSelect;
+export type InsertTradingModule = typeof tradingModules.$inferInsert;
+export type TradingLesson = typeof tradingLessons.$inferSelect;
+export type InsertTradingLesson = typeof tradingLessons.$inferInsert;
+export type TradingLessonProgress = typeof tradingLessonProgress.$inferSelect;
+export type TradingCertificate = typeof tradingCertificates.$inferSelect;
+
+export type PostLike = typeof postLikes.$inferSelect;
+export type InsertPostLike = typeof postLikes.$inferInsert;
+export type PostComment = typeof postComments.$inferSelect;
+export type InsertPostComment = typeof postComments.$inferInsert;
+export type Conversation = typeof conversations.$inferSelect;
+export type InsertConversation = typeof conversations.$inferInsert;
+export type DirectMessage = typeof directMessages.$inferSelect;
+export type InsertDirectMessage = typeof directMessages.$inferInsert;

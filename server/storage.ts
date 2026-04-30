@@ -1,13 +1,18 @@
 import { db } from "./db";
 import {
   videos,
+  videoComments,
   chatMessages,
   likes,
   followers,
   userPreferences,
   premiumOrders,
   creatorPosts,
+  userPosts,
   writerPages,
+  writerComments,
+  writerPurchases,
+  creatorPayouts,
   savedVideos,
   userFeedback,
   aiImprovements,
@@ -22,15 +27,29 @@ import {
   maraSelfReflection,
   maraPlatformInsights,
   users,
+  postLikes,
+  postComments,
+  conversations,
+  directMessages,
   type Video,
   type InsertVideo,
+  type VideoComment,
+  type InsertVideoComment,
   type ChatMessage,
   type InsertChatMessage,
   type PremiumOrder,
   type InsertPremiumOrder,
   type WriterPage,
   type InsertWriterPage,
+  type WriterComment,
+  type InsertWriterComment,
+  type WriterPurchase,
+  type InsertWriterPurchase,
+  type CreatorPayout,
+  type InsertCreatorPayout,
   type SavedVideo,
+  type UserPost,
+  type InsertUserPost,
   type Feedback,
   type InsertFeedback,
   type Improvement,
@@ -54,8 +73,19 @@ import {
   type InsertSelfReflection,
   type PlatformInsight,
   type InsertPlatformInsight,
+  tradingModules,
+  tradingLessons,
+  tradingLessonProgress,
+  tradingCertificates,
+  type TradingModule,
+  type InsertTradingModule,
+  type TradingLesson,
+  type InsertTradingLesson,
+  type TradingLessonProgress,
+  type TradingCertificate,
+  type PostComment,
 } from "../shared/schema";
-import { eq, desc, and, sql, lt, gte, like, or, count, inArray } from "drizzle-orm";
+import { eq, desc, asc, and, sql, lt, gte, like, or, count, inArray } from "drizzle-orm";
 import type { User } from "../shared/models/auth";
 
 export interface IStorage {
@@ -66,7 +96,27 @@ export interface IStorage {
     videoId: number,
   ): Promise<{ liked: boolean; likes: number }>;
   viewVideo(videoId: number): Promise<{ views: number }>;
+  shareVideo(videoId: number): Promise<{ shares: number }>;
   deleteVideo(videoId: number): Promise<void>;
+  getVideoById(videoId: number): Promise<Video | null>;
+  getReelsFeed(options?: {
+    limit?: number;
+    offset?: number;
+  }): Promise<Video[]>;
+
+  createVideoComment(
+    comment: InsertVideoComment,
+  ): Promise<VideoComment>;
+  listVideoComments(
+    videoId: number,
+    limit?: number,
+  ): Promise<VideoComment[]>;
+  deleteVideoComment(
+    commentId: number,
+    userId: string,
+    isAdmin: boolean,
+  ): Promise<boolean>;
+  countVideoComments(videoId: number): Promise<number>;
 
   getChatMessages(userId?: string): Promise<ChatMessage[]>;
   createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
@@ -78,6 +128,16 @@ export interface IStorage {
   getFollowerCount(userId: string): Promise<number>;
   getFollowingCount(userId: string): Promise<number>;
   isFollowing(followerId: string, followingId: string): Promise<boolean>;
+
+  // FB-style user posts (Phase 2 P0 — You)
+  createUserPost(input: InsertUserPost): Promise<UserPost>;
+  listUserPosts(
+    userId: string,
+    opts?: { limit?: number; offset?: number },
+  ): Promise<UserPost[]>;
+  getUserPostById(id: number): Promise<UserPost | null>;
+  deleteUserPost(id: number, userId: string): Promise<boolean>;
+  countUserPosts(userId: string): Promise<number>;
 
   getUserPreferences(
     userId: string,
@@ -116,15 +176,107 @@ export interface IStorage {
   createWriterPage(page: InsertWriterPage): Promise<WriterPage>;
   getWriterPages(userId?: string): Promise<WriterPage[]>;
   getPublishedWriterPages(): Promise<WriterPage[]>;
+  getWriterLibrary(options?: {
+    limit?: number;
+    offset?: number;
+    visibility?: 'public' | 'vip' | 'paid' | 'all';
+    category?: string;
+    authorId?: string;
+    search?: string;
+  }): Promise<WriterPage[]>;
   getWriterPageById(id: number): Promise<WriterPage | null>;
+  getWriterPageBySlug(slug: string): Promise<WriterPage | null>;
   updateWriterPage(
     id: number,
     userId: string,
     data: Partial<InsertWriterPage & { published: boolean }>,
+    options?: { isAdmin?: boolean },
   ): Promise<WriterPage | null>;
-  deleteWriterPage(id: number, userId: string): Promise<boolean>;
+  deleteWriterPage(
+    id: number,
+    userId: string,
+    options?: { isAdmin?: boolean },
+  ): Promise<boolean>;
   likeWriterPage(pageId: number): Promise<{ likes: number }>;
   viewWriterPage(pageId: number): Promise<{ views: number }>;
+
+  // Writer comments (PR E)
+  createWriterComment(comment: InsertWriterComment): Promise<WriterComment>;
+  listWriterComments(pageId: number, limit?: number): Promise<WriterComment[]>;
+  deleteWriterComment(
+    commentId: number,
+    userId: string,
+    isAdmin: boolean,
+  ): Promise<boolean>;
+
+  // Writer paid-article purchases (PR E)
+  createWriterPurchase(purchase: InsertWriterPurchase): Promise<WriterPurchase>;
+  hasPurchasedWriterPage(userId: string, pageId: number): Promise<boolean>;
+  getWriterPurchasesByUser(userId: string): Promise<WriterPurchase[]>;
+  getWriterPurchasesForPage(pageId: number): Promise<WriterPurchase[]>;
+
+  // Creator Tools (PR G)
+  /**
+   * Aggregated earnings for `userId`: sum of authorShareCents from
+   * writer_purchases joined on writer_pages.user_id. Breakdown by source
+   * lets the dashboard show "writers: 45€, reels: 0€" etc. Returns cents.
+   */
+  getCreatorEarnings(userId: string): Promise<{
+    totalCents: number;
+    paidOutCents: number;
+    pendingPayoutCents: number;
+    availableCents: number;
+    byPage: Array<{ pageId: number; title: string; earnedCents: number; salesCount: number }>;
+  }>;
+  /** Raw per-sale history (joined with page title/slug). */
+  listCreatorEarningsHistory(
+    userId: string,
+    opts?: { limit?: number; offset?: number },
+  ): Promise<Array<{
+    purchaseId: number;
+    pageId: number;
+    pageTitle: string;
+    amountCents: number;
+    authorShareCents: number;
+    currency: string;
+    createdAt: Date;
+  }>>;
+  /** Simple counters for the dashboard. */
+  getCreatorAnalytics(userId: string): Promise<{
+    writerPagesPublished: number;
+    writerPageViews: number;
+    writerPageLikes: number;
+    reelsPublished: number;
+    reelViews: number;
+    reelLikes: number;
+    followers: number;
+  }>;
+  // Payout requests
+  createCreatorPayout(input: InsertCreatorPayout): Promise<CreatorPayout>;
+  /**
+   * Atomic balance-check + insert. Prevents TOCTOU double-spending when two
+   * concurrent requests arrive from the same user. Returns `{ ok: false }`
+   * with a balance snapshot when the creator does not have enough available
+   * funds; otherwise returns the inserted row.
+   */
+  createCreatorPayoutAtomic(
+    input: InsertCreatorPayout,
+  ):
+    | { ok: true; payout: CreatorPayout }
+    | {
+        ok: false;
+        code: 'insufficient_balance';
+        availableCents: number;
+        requestedCents: number;
+      };
+  listCreatorPayoutsByUser(userId: string): Promise<CreatorPayout[]>;
+  getCreatorPayoutById(id: number): Promise<CreatorPayout | null>;
+  listAllCreatorPayouts(opts?: { status?: string }): Promise<CreatorPayout[]>;
+  updateCreatorPayoutStatus(
+    id: number,
+    status: 'approved' | 'rejected' | 'paid',
+    notes?: string,
+  ): Promise<CreatorPayout | null>;
 
   saveVideo(
     userId: string,
@@ -178,8 +330,111 @@ export interface IStorage {
   ): Promise<{ videos: Video[]; users: User[]; pages: any[] }>;
   updateUserProfile(
     userId: string,
-    data: { displayName?: string; bio?: string },
+    data: {
+      displayName?: string;
+      bio?: string;
+      profileImageUrl?: string | null;
+      coverImageUrl?: string | null;
+      location?: string | null;
+      website?: string | null;
+    },
   ): Promise<User | null>;
+
+  // === Trading Academy (PR F) ===
+  listTradingModules(): Promise<TradingModule[]>;
+  getTradingModuleBySlug(slug: string): Promise<TradingModule | null>;
+  getTradingModuleById(id: number): Promise<TradingModule | null>;
+  listTradingLessonsByModule(moduleId: number): Promise<TradingLesson[]>;
+  getTradingLessonById(id: number): Promise<TradingLesson | null>;
+  upsertTradingModule(mod: InsertTradingModule): Promise<TradingModule>;
+  upsertTradingLesson(lesson: InsertTradingLesson): Promise<TradingLesson>;
+  recordLessonCompletion(
+    userId: string,
+    lessonId: number,
+    quizScore: number | null,
+  ): Promise<TradingLessonProgress>;
+  listUserLessonProgress(
+    userId: string,
+    lessonIds?: number[],
+  ): Promise<TradingLessonProgress[]>;
+  issueCertificateIfEligible(
+    userId: string,
+    moduleId: number,
+  ): Promise<TradingCertificate | null>;
+  listUserCertificates(userId: string): Promise<TradingCertificate[]>;
+
+  // --- Profile / You (PR H) ------------------------------------------------
+  getUserById(userId: string): Promise<User | null>;
+  /**
+   * Count of published writer pages authored by this user. Used by the
+   * badges endpoint — a dedicated count avoids mis-reads from the merged
+   * activity feed (which interleaves reels and pages and can drop all pages
+   * below a low `limit`).
+   */
+  getPublishedPageCount(userId: string): Promise<number>;
+  listFollowers(
+    userId: string,
+    opts?: { limit?: number; offset?: number },
+  ): Promise<
+    Array<{
+      id: string;
+      displayName: string | null;
+      firstName: string | null;
+      profileImageUrl: string | null;
+      followedAt: Date | null;
+    }>
+  >;
+  listFollowing(
+    userId: string,
+    opts?: { limit?: number; offset?: number },
+  ): Promise<
+    Array<{
+      id: string;
+      displayName: string | null;
+      firstName: string | null;
+      profileImageUrl: string | null;
+      followedAt: Date | null;
+    }>
+  >;
+  getProfileActivity(
+    userId: string,
+    opts?: { limit?: number; offset?: number },
+  ): Promise<
+    Array<{
+      kind: 'writer_page' | 'reel';
+      id: number;
+      title: string;
+      thumbnailUrl: string | null;
+      createdAt: Date;
+      views: number;
+      likes: number;
+    }>
+  >;
+
+  // --- Post Likes & Comments -----------------------------------------------
+  togglePostLike(userId: string, postId: number): Promise<{ liked: boolean; likeCount: number }>;
+  getPostLikeCount(postId: number): Promise<number>;
+  hasUserLikedPost(userId: string, postId: number): Promise<boolean>;
+  getPostLikeCounts(postIds: number[]): Promise<Map<number, number>>;
+  getUserLikedPosts(userId: string, postIds: number[]): Promise<Set<number>>;
+  createPostComment(input: { postId: number; userId: string; content: string }): Promise<PostComment>;
+  listPostComments(postId: number, opts?: { limit?: number }): Promise<(PostComment & { userName: string | null })[]>;
+  deletePostComment(commentId: number, userId: string): Promise<boolean>;
+
+  // --- Direct Messaging ----------------------------------------------------
+  getOrCreateConversation(userAId: string, userBId: string): Promise<{ id: number; userAId: string; userBId: string }>;
+  listUserConversations(userId: string): Promise<Array<{
+    id: number;
+    otherId: string;
+    otherName: string | null;
+    otherAvatar: string | null;
+    lastMessageAt: Date | null;
+    lastMessage: string | null;
+    unreadCount: number;
+  }>>;
+  sendDirectMessage(convId: number, senderId: string, content: string): Promise<{ id: number; conversationId: number; senderId: string; content: string; createdAt: Date }>;
+  listDirectMessages(convId: number, opts?: { limit?: number; before?: number }): Promise<Array<{ id: number; senderId: string; content: string; read: number; createdAt: Date }>>;
+  markConversationRead(convId: number, userId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -188,10 +443,14 @@ export class DatabaseStorage implements IStorage {
       return await db
         .select()
         .from(videos)
-        .where(eq(videos.type, topic))
+        .where(and(eq(videos.type, topic), sql`${videos.url} != '#'`))
         .orderBy(desc(videos.createdAt));
     }
-    return await db.select().from(videos).orderBy(desc(videos.createdAt));
+    return await db
+      .select()
+      .from(videos)
+      .where(sql`${videos.url} != '#'`)
+      .orderBy(desc(videos.createdAt));
   }
 
   async createVideo(video: InsertVideo): Promise<Video> {
@@ -597,15 +856,73 @@ export class DatabaseStorage implements IStorage {
     return page || null;
   }
 
+  async getWriterLibrary(options?: {
+    limit?: number;
+    offset?: number;
+    visibility?: 'public' | 'vip' | 'paid' | 'all';
+    category?: string;
+    authorId?: string;
+    search?: string;
+  }): Promise<WriterPage[]> {
+    const limit = Math.min(Math.max(options?.limit ?? 20, 1), 100);
+    const offset = Math.max(options?.offset ?? 0, 0);
+
+    // Library lists ONLY published articles. Drafts never appear here; the
+    // author-facing "my pages" path uses `getWriterPages(userId)` instead.
+    const conds = [eq(writerPages.published, 1)];
+
+    if (options?.visibility && options.visibility !== 'all') {
+      conds.push(eq(writerPages.visibility, options.visibility));
+    }
+    if (options?.category) {
+      conds.push(eq(writerPages.category, options.category));
+    }
+    if (options?.authorId) {
+      conds.push(eq(writerPages.userId, options.authorId));
+    }
+    if (options?.search) {
+      const needle = `%${options.search.trim().toLowerCase()}%`;
+      conds.push(
+        or(
+          like(sql`lower(${writerPages.title})`, needle),
+          like(sql`lower(${writerPages.penName})`, needle),
+          like(sql`lower(${writerPages.excerpt})`, needle),
+        )!,
+      );
+    }
+
+    return await db
+      .select()
+      .from(writerPages)
+      .where(and(...conds))
+      .orderBy(desc(writerPages.publishedAt), desc(writerPages.createdAt))
+      .limit(limit)
+      .offset(offset);
+  }
+
+  async getWriterPageBySlug(slug: string): Promise<WriterPage | null> {
+    const [page] = await db
+      .select()
+      .from(writerPages)
+      .where(eq(writerPages.slug, slug));
+    return page || null;
+  }
+
   async updateWriterPage(
     id: number,
     userId: string,
     data: Partial<InsertWriterPage & { published: boolean }>,
+    options?: { isAdmin?: boolean },
   ): Promise<WriterPage | null> {
+    // Authors can only touch their own pages. Admins (resolved upstream by
+    // the route handler against `ADMIN_USER_IDS`) can patch anything.
+    const ownershipCond = options?.isAdmin
+      ? eq(writerPages.id, id)
+      : and(eq(writerPages.id, id), eq(writerPages.userId, userId));
     const [existing] = await db
       .select()
       .from(writerPages)
-      .where(and(eq(writerPages.id, id), eq(writerPages.userId, userId)));
+      .where(ownershipCond);
     if (!existing) return null;
     const updateData: Record<string, unknown> = {
       ...data,
@@ -614,6 +931,10 @@ export class DatabaseStorage implements IStorage {
 
     if (typeof data.published === "boolean") {
       updateData.published = data.published ? 1 : 0;
+      // Stamp `publishedAt` exactly once, on the transition to published.
+      if (data.published && !existing.publishedAt) {
+        updateData.publishedAt = new Date();
+      }
     }
 
     const [updated] = await db
@@ -624,12 +945,24 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-  async deleteWriterPage(id: number, userId: string): Promise<boolean> {
+  async deleteWriterPage(
+    id: number,
+    userId: string,
+    options?: { isAdmin?: boolean },
+  ): Promise<boolean> {
+    const ownershipCond = options?.isAdmin
+      ? eq(writerPages.id, id)
+      : and(eq(writerPages.id, id), eq(writerPages.userId, userId));
     const [existing] = await db
       .select()
       .from(writerPages)
-      .where(and(eq(writerPages.id, id), eq(writerPages.userId, userId)));
+      .where(ownershipCond);
     if (!existing) return false;
+    // Cascade: delete children first so a partial failure (DB error between
+    // statements) doesn't strand orphan purchase rows (which carry userId —
+    // PII) after the parent page is already gone. Order matters for GDPR.
+    await db.delete(writerComments).where(eq(writerComments.pageId, id));
+    await db.delete(writerPurchases).where(eq(writerPurchases.pageId, id));
     await db.delete(writerPages).where(eq(writerPages.id, id));
     return true;
   }
@@ -656,6 +989,374 @@ export class DatabaseStorage implements IStorage {
       .from(writerPages)
       .where(eq(writerPages.id, pageId));
     return { views: page?.views ?? 0 };
+  }
+
+  // --- Writer comments (PR E) -----------------------------------------------
+
+  async createWriterComment(
+    comment: InsertWriterComment,
+  ): Promise<WriterComment> {
+    const [created] = await db
+      .insert(writerComments)
+      .values(comment)
+      .returning();
+    return created;
+  }
+
+  async listWriterComments(
+    pageId: number,
+    limit = 100,
+  ): Promise<WriterComment[]> {
+    const capped = Math.min(Math.max(limit, 1), 500);
+    return await db
+      .select()
+      .from(writerComments)
+      .where(eq(writerComments.pageId, pageId))
+      .orderBy(desc(writerComments.createdAt))
+      .limit(capped);
+  }
+
+  async deleteWriterComment(
+    commentId: number,
+    userId: string,
+    isAdmin: boolean,
+  ): Promise<boolean> {
+    const [existing] = await db
+      .select()
+      .from(writerComments)
+      .where(eq(writerComments.id, commentId));
+    if (!existing) return false;
+    if (!isAdmin && existing.userId !== userId) return false;
+    await db.delete(writerComments).where(eq(writerComments.id, commentId));
+    return true;
+  }
+
+  // --- Writer purchases (PR E, 70/30 revenue share) -------------------------
+
+  async createWriterPurchase(
+    purchase: InsertWriterPurchase,
+  ): Promise<WriterPurchase> {
+    const [created] = await db
+      .insert(writerPurchases)
+      .values(purchase)
+      .returning();
+    return created;
+  }
+
+  async hasPurchasedWriterPage(
+    userId: string,
+    pageId: number,
+  ): Promise<boolean> {
+    const [row] = await db
+      .select({ id: writerPurchases.id })
+      .from(writerPurchases)
+      .where(
+        and(
+          eq(writerPurchases.userId, userId),
+          eq(writerPurchases.pageId, pageId),
+        ),
+      )
+      .limit(1);
+    return !!row;
+  }
+
+  async getWriterPurchasesByUser(userId: string): Promise<WriterPurchase[]> {
+    return await db
+      .select()
+      .from(writerPurchases)
+      .where(eq(writerPurchases.userId, userId))
+      .orderBy(desc(writerPurchases.createdAt));
+  }
+
+  async getWriterPurchasesForPage(
+    pageId: number,
+  ): Promise<WriterPurchase[]> {
+    return await db
+      .select()
+      .from(writerPurchases)
+      .where(eq(writerPurchases.pageId, pageId))
+      .orderBy(desc(writerPurchases.createdAt));
+  }
+
+  // --- Creator Tools (PR G) -----------------------------------------------
+
+  async getCreatorEarnings(userId: string) {
+    // All sales where the page author is this user.
+    const rows = await db
+      .select({
+        purchaseId: writerPurchases.id,
+        pageId: writerPurchases.pageId,
+        title: writerPages.title,
+        authorShare: writerPurchases.authorShareCents,
+      })
+      .from(writerPurchases)
+      .innerJoin(writerPages, eq(writerPages.id, writerPurchases.pageId))
+      .where(eq(writerPages.userId, userId));
+
+    const totalCents = rows.reduce((sum, r) => sum + (r.authorShare ?? 0), 0);
+
+    // Aggregate by page for the dashboard breakdown.
+    const byPageMap = new Map<number, { pageId: number; title: string; earnedCents: number; salesCount: number }>();
+    for (const r of rows) {
+      const prev = byPageMap.get(r.pageId);
+      if (prev) {
+        prev.earnedCents += r.authorShare ?? 0;
+        prev.salesCount += 1;
+      } else {
+        byPageMap.set(r.pageId, {
+          pageId: r.pageId,
+          title: r.title ?? `#${r.pageId}`,
+          earnedCents: r.authorShare ?? 0,
+          salesCount: 1,
+        });
+      }
+    }
+    const byPage = Array.from(byPageMap.values()).sort(
+      (a, b) => b.earnedCents - a.earnedCents,
+    );
+
+    // Amount already disbursed or committed. A 'rejected' payout does not
+    // count against the available balance; 'requested' is still pending and
+    // DOES lock the amount (so users can't double-request).
+    const payoutRows = await db
+      .select({
+        status: creatorPayouts.status,
+        amount: creatorPayouts.amountCents,
+      })
+      .from(creatorPayouts)
+      .where(eq(creatorPayouts.userId, userId));
+
+    let paidOutCents = 0;
+    let pendingPayoutCents = 0;
+    for (const p of payoutRows) {
+      if (p.status === 'paid') paidOutCents += p.amount;
+      else if (p.status === 'requested' || p.status === 'approved') {
+        pendingPayoutCents += p.amount;
+      }
+    }
+
+    const availableCents = Math.max(
+      0,
+      totalCents - paidOutCents - pendingPayoutCents,
+    );
+
+    return {
+      totalCents,
+      paidOutCents,
+      pendingPayoutCents,
+      availableCents,
+      byPage,
+    };
+  }
+
+  async listCreatorEarningsHistory(
+    userId: string,
+    opts?: { limit?: number; offset?: number },
+  ) {
+    const limit = Math.min(Math.max(opts?.limit ?? 50, 1), 200);
+    const offset = Math.max(opts?.offset ?? 0, 0);
+
+    const rows = await db
+      .select({
+        purchaseId: writerPurchases.id,
+        pageId: writerPurchases.pageId,
+        pageTitle: writerPages.title,
+        amountCents: writerPurchases.amountCents,
+        authorShareCents: writerPurchases.authorShareCents,
+        currency: writerPurchases.currency,
+        createdAt: writerPurchases.createdAt,
+      })
+      .from(writerPurchases)
+      .innerJoin(writerPages, eq(writerPages.id, writerPurchases.pageId))
+      .where(eq(writerPages.userId, userId))
+      .orderBy(desc(writerPurchases.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    return rows.map((r) => ({
+      purchaseId: r.purchaseId,
+      pageId: r.pageId,
+      pageTitle: r.pageTitle ?? `#${r.pageId}`,
+      amountCents: r.amountCents,
+      authorShareCents: r.authorShareCents,
+      currency: r.currency,
+      createdAt: r.createdAt,
+    }));
+  }
+
+  async getCreatorAnalytics(userId: string) {
+    const [pagesAgg] = await db
+      .select({
+        published: count(writerPages.id),
+        views: sql<number>`COALESCE(SUM(${writerPages.views}), 0)`,
+        likes: sql<number>`COALESCE(SUM(${writerPages.likes}), 0)`,
+      })
+      .from(writerPages)
+      .where(and(eq(writerPages.userId, userId), eq(writerPages.published, 1)));
+
+    const [reelsAgg] = await db
+      .select({
+        published: count(videos.id),
+        views: sql<number>`COALESCE(SUM(${videos.views}), 0)`,
+        likes: sql<number>`COALESCE(SUM(${videos.likes}), 0)`,
+      })
+      .from(videos)
+      .where(eq(videos.creatorId, userId));
+
+    const [followerAgg] = await db
+      .select({ n: count(followers.id) })
+      .from(followers)
+      .where(eq(followers.followingId, userId));
+
+    return {
+      writerPagesPublished: Number(pagesAgg?.published ?? 0),
+      writerPageViews: Number(pagesAgg?.views ?? 0),
+      writerPageLikes: Number(pagesAgg?.likes ?? 0),
+      reelsPublished: Number(reelsAgg?.published ?? 0),
+      reelViews: Number(reelsAgg?.views ?? 0),
+      reelLikes: Number(reelsAgg?.likes ?? 0),
+      followers: Number(followerAgg?.n ?? 0),
+    };
+  }
+
+  /**
+   * Atomically verifies the creator has enough available balance and inserts
+   * the payout row. Runs inside a single better-sqlite3 write transaction so
+   * two concurrent requests from the same user can't both pass the balance
+   * check — the second one re-reads the committed state and observes the
+   * first payout as pending.
+   *
+   * Returns an object with `ok: true` plus the created row, or `ok: false`
+   * with the current balance snapshot so the caller can return a 400 with a
+   * machine-readable `insufficient_balance` code.
+   */
+  createCreatorPayoutAtomic(
+    input: InsertCreatorPayout,
+  ):
+    | { ok: true; payout: CreatorPayout }
+    | {
+        ok: false;
+        code: 'insufficient_balance';
+        availableCents: number;
+        requestedCents: number;
+      } {
+    return db.transaction((tx): ReturnType<IStorage['createCreatorPayoutAtomic']> => {
+      // Compute current author-share total for this creator.
+      const earnedRows = tx
+        .select({ authorShare: writerPurchases.authorShareCents })
+        .from(writerPurchases)
+        .innerJoin(writerPages, eq(writerPages.id, writerPurchases.pageId))
+        .where(eq(writerPages.userId, input.userId))
+        .all();
+      const totalCents = earnedRows.reduce(
+        (sum, r) => sum + (r.authorShare ?? 0),
+        0,
+      );
+
+      // Sum existing payouts — 'requested' / 'approved' lock the balance,
+      // 'paid' reduces it permanently, 'rejected' releases it.
+      const payoutRows = tx
+        .select({
+          status: creatorPayouts.status,
+          amount: creatorPayouts.amountCents,
+        })
+        .from(creatorPayouts)
+        .where(eq(creatorPayouts.userId, input.userId))
+        .all();
+
+      let paidOutCents = 0;
+      let pendingPayoutCents = 0;
+      for (const p of payoutRows) {
+        if (p.status === 'paid') paidOutCents += p.amount;
+        else if (p.status === 'requested' || p.status === 'approved') {
+          pendingPayoutCents += p.amount;
+        }
+      }
+      const availableCents = Math.max(
+        0,
+        totalCents - paidOutCents - pendingPayoutCents,
+      );
+
+      if (input.amountCents > availableCents) {
+        return {
+          ok: false,
+          code: 'insufficient_balance',
+          availableCents,
+          requestedCents: input.amountCents,
+        };
+      }
+
+      // Drizzle's timestamp-int mode round-trips Date<->unix-seconds, but the
+      // SQL default `CURRENT_TIMESTAMP` stores an ISO string that reads back
+      // as NULL. Set it explicitly so the returned row always has a real date.
+      const inserted = tx
+        .insert(creatorPayouts)
+        .values({ ...input, requestedAt: new Date() })
+        .returning()
+        .all();
+      return { ok: true, payout: inserted[0] };
+    });
+  }
+
+  async createCreatorPayout(input: InsertCreatorPayout): Promise<CreatorPayout> {
+    // Backwards-compatible wrapper (no balance check). Kept for callers that
+    // have already validated balance out-of-band; new code should prefer
+    // createCreatorPayoutAtomic.
+    const [created] = await db
+      .insert(creatorPayouts)
+      .values({ ...input, requestedAt: new Date() })
+      .returning();
+    return created;
+  }
+
+  async listCreatorPayoutsByUser(userId: string): Promise<CreatorPayout[]> {
+    return await db
+      .select()
+      .from(creatorPayouts)
+      .where(eq(creatorPayouts.userId, userId))
+      .orderBy(desc(creatorPayouts.requestedAt));
+  }
+
+  async getCreatorPayoutById(id: number): Promise<CreatorPayout | null> {
+    const [row] = await db
+      .select()
+      .from(creatorPayouts)
+      .where(eq(creatorPayouts.id, id))
+      .limit(1);
+    return row ?? null;
+  }
+
+  async listAllCreatorPayouts(opts?: { status?: string }): Promise<CreatorPayout[]> {
+    if (opts?.status) {
+      return await db
+        .select()
+        .from(creatorPayouts)
+        .where(eq(creatorPayouts.status, opts.status))
+        .orderBy(desc(creatorPayouts.requestedAt));
+    }
+    return await db
+      .select()
+      .from(creatorPayouts)
+      .orderBy(desc(creatorPayouts.requestedAt));
+  }
+
+  async updateCreatorPayoutStatus(
+    id: number,
+    status: 'approved' | 'rejected' | 'paid',
+    notes?: string,
+  ): Promise<CreatorPayout | null> {
+    const values: Record<string, unknown> = {
+      status,
+      processedAt: new Date(),
+    };
+    if (typeof notes === 'string') values.notes = notes;
+
+    const [updated] = await db
+      .update(creatorPayouts)
+      .set(values)
+      .where(eq(creatorPayouts.id, id))
+      .returning();
+    return updated ?? null;
   }
 
   async saveVideo(
@@ -767,6 +1468,25 @@ export class DatabaseStorage implements IStorage {
       .insert(notifications)
       .values(notification)
       .returning();
+    // Fire a web push in parallel (best-effort; never throws). Loaded
+    // lazily so the push module isn't imported until a notification is
+    // actually created — keeps startup cost low and sidesteps circular
+    // imports between storage and push.
+    void (async () => {
+      try {
+        const mod = await import('./push/vapid.js');
+        if (!mod.isConfigured()) return;
+        await mod.sendToUser(created.userId, {
+          title: created.title,
+          body: created.message,
+          relatedId: created.relatedId ?? null,
+          kind: created.type,
+          tag: `${created.type}:${created.id}`,
+        });
+      } catch (err) {
+        console.error('[notifications] push dispatch failed:', err);
+      }
+    })();
     return created;
   }
 
@@ -974,7 +1694,14 @@ export class DatabaseStorage implements IStorage {
 
   async updateUserProfile(
     userId: string,
-    data: { displayName?: string; bio?: string },
+    data: {
+      displayName?: string;
+      bio?: string;
+      profileImageUrl?: string | null;
+      coverImageUrl?: string | null;
+      location?: string | null;
+      website?: string | null;
+    },
   ): Promise<User | null> {
     const [updated] = await db
       .update(users)
@@ -982,6 +1709,191 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, userId))
       .returning();
     return updated || null;
+  }
+
+  // --- FB-style user posts (Phase 2 P0 — You) ------------------------------
+
+  async createUserPost(input: InsertUserPost): Promise<UserPost> {
+    const [row] = await db.insert(userPosts).values(input).returning();
+    return row;
+  }
+
+  async listUserPosts(
+    userId: string,
+    opts?: { limit?: number; offset?: number },
+  ): Promise<UserPost[]> {
+    const limit = Math.min(Math.max(opts?.limit ?? 20, 1), 100);
+    const offset = Math.max(opts?.offset ?? 0, 0);
+    return await db
+      .select()
+      .from(userPosts)
+      .where(eq(userPosts.userId, userId))
+      .orderBy(desc(userPosts.createdAt))
+      .limit(limit)
+      .offset(offset);
+  }
+
+  async getUserPostById(id: number): Promise<UserPost | null> {
+    const [row] = await db.select().from(userPosts).where(eq(userPosts.id, id));
+    return row ?? null;
+  }
+
+  async deleteUserPost(id: number, userId: string): Promise<boolean> {
+    const result = await db
+      .delete(userPosts)
+      .where(and(eq(userPosts.id, id), eq(userPosts.userId, userId)))
+      .returning({ id: userPosts.id });
+    return result.length > 0;
+  }
+
+  async countUserPosts(userId: string): Promise<number> {
+    const [row] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(userPosts)
+      .where(eq(userPosts.userId, userId));
+    return Number(row?.count ?? 0);
+  }
+
+  // --- Profile / You (PR H) ------------------------------------------------
+
+  async getUserById(userId: string): Promise<User | null> {
+    const [row] = await db.select().from(users).where(eq(users.id, userId));
+    return row ?? null;
+  }
+
+  async getPublishedPageCount(userId: string): Promise<number> {
+    const [row] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(writerPages)
+      .where(
+        and(eq(writerPages.userId, userId), eq(writerPages.published, 1)),
+      );
+    return Number(row?.count ?? 0);
+  }
+
+  async listFollowers(
+    userId: string,
+    opts?: { limit?: number; offset?: number },
+  ) {
+    const limit = Math.min(Math.max(opts?.limit ?? 50, 1), 200);
+    const offset = Math.max(opts?.offset ?? 0, 0);
+    return await db
+      .select({
+        id: users.id,
+        displayName: users.displayName,
+        firstName: users.firstName,
+        profileImageUrl: users.profileImageUrl,
+        followedAt: followers.createdAt,
+      })
+      .from(followers)
+      .innerJoin(users, eq(users.id, followers.followerId))
+      .where(eq(followers.followingId, userId))
+      .orderBy(desc(followers.createdAt))
+      .limit(limit)
+      .offset(offset);
+  }
+
+  async listFollowing(
+    userId: string,
+    opts?: { limit?: number; offset?: number },
+  ) {
+    const limit = Math.min(Math.max(opts?.limit ?? 50, 1), 200);
+    const offset = Math.max(opts?.offset ?? 0, 0);
+    return await db
+      .select({
+        id: users.id,
+        displayName: users.displayName,
+        firstName: users.firstName,
+        profileImageUrl: users.profileImageUrl,
+        followedAt: followers.createdAt,
+      })
+      .from(followers)
+      .innerJoin(users, eq(users.id, followers.followingId))
+      .where(eq(followers.followerId, userId))
+      .orderBy(desc(followers.createdAt))
+      .limit(limit)
+      .offset(offset);
+  }
+
+  async getProfileActivity(
+    userId: string,
+    opts?: { limit?: number; offset?: number },
+  ) {
+    const limit = Math.min(Math.max(opts?.limit ?? 20, 1), 100);
+    const offset = Math.max(opts?.offset ?? 0, 0);
+
+    // Fetch a window of recent items from each source and merge in memory.
+    // Pull 2*limit per source so we still have enough after the offset cut.
+    const fetchSize = limit * 2 + offset;
+
+    const pageRows = await db
+      .select({
+        id: writerPages.id,
+        title: writerPages.title,
+        thumbnailUrl: writerPages.coverImage,
+        createdAt: writerPages.publishedAt,
+        fallbackCreatedAt: writerPages.createdAt,
+        views: writerPages.views,
+        likes: writerPages.likes,
+      })
+      .from(writerPages)
+      .where(
+        and(eq(writerPages.userId, userId), eq(writerPages.published, 1)),
+      )
+      .orderBy(desc(writerPages.publishedAt))
+      .limit(fetchSize);
+
+    const reelRows = await db
+      .select({
+        id: videos.id,
+        title: videos.title,
+        thumbnailUrl: videos.thumbnailUrl,
+        createdAt: videos.createdAt,
+        views: videos.views,
+        likes: videos.likes,
+      })
+      .from(videos)
+      .where(eq(videos.creatorId, userId))
+      .orderBy(desc(videos.createdAt))
+      .limit(fetchSize);
+
+    const combined: Array<{
+      kind: 'writer_page' | 'reel';
+      id: number;
+      title: string;
+      thumbnailUrl: string | null;
+      createdAt: Date;
+      views: number;
+      likes: number;
+    }> = [];
+
+    for (const p of pageRows) {
+      const when = p.createdAt ?? p.fallbackCreatedAt;
+      if (!when) continue;
+      combined.push({
+        kind: 'writer_page',
+        id: p.id,
+        title: p.title,
+        thumbnailUrl: p.thumbnailUrl ?? null,
+        createdAt: when,
+        views: p.views ?? 0,
+        likes: p.likes ?? 0,
+      });
+    }
+    for (const r of reelRows) {
+      combined.push({
+        kind: 'reel',
+        id: r.id,
+        title: r.title,
+        thumbnailUrl: r.thumbnailUrl ?? null,
+        createdAt: r.createdAt,
+        views: r.views ?? 0,
+        likes: r.likes ?? 0,
+      });
+    }
+
+    combined.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return combined.slice(offset, offset + limit);
   }
 
   // === MARA KNOWLEDGE BASE ===
@@ -1114,6 +2026,552 @@ export class DatabaseStorage implements IStorage {
       .where(eq(maraPlatformInsights.id, id))
       .returning();
     return updated || null;
+  }
+
+  // --- Reels (PR D) ------------------------------------------------------
+
+  async getVideoById(videoId: number): Promise<Video | null> {
+    const [row] = await db.select().from(videos).where(eq(videos.id, videoId));
+    return row ?? null;
+  }
+
+  async shareVideo(videoId: number): Promise<{ shares: number }> {
+    await db
+      .update(videos)
+      .set({ shares: sql`${videos.shares} + 1` })
+      .where(eq(videos.id, videoId));
+    const [row] = await db
+      .select({ shares: videos.shares })
+      .from(videos)
+      .where(eq(videos.id, videoId));
+    return { shares: row?.shares ?? 0 };
+  }
+
+  async getReelsFeed(options?: {
+    limit?: number;
+    offset?: number;
+  }): Promise<Video[]> {
+    const limit = Math.min(Math.max(options?.limit ?? 20, 1), 100);
+    const offset = Math.max(options?.offset ?? 0, 0);
+    // Engagement score: likes*3 + views + shares*5 - hours_since_creation*0.1
+    // so newer videos get a small boost and very old videos decay. We only
+    // include approved videos — pending/rejected never hit the feed.
+    //
+    // `videos.created_at` in SQLite is defaulted via `CURRENT_TIMESTAMP`,
+    // which produces an ISO-8601 text string (not a unix epoch integer).
+    // We coerce it through `strftime('%s', …)` so the subtraction is in
+    // seconds. `COALESCE` + fallback to `strftime('%s','now')` keeps rows
+    // with a NULL `createdAt` from torpedoing the sort.
+    return await db
+      .select()
+      .from(videos)
+      .where(eq(videos.moderationStatus, 'approved'))
+      .orderBy(
+        desc(
+          sql`(${videos.likes} * 3 + ${videos.views} + ${videos.shares} * 5) - ((CAST(strftime('%s','now') AS INTEGER) - CAST(COALESCE(strftime('%s', ${videos.createdAt}), strftime('%s','now')) AS INTEGER)) / 3600.0) * 0.1`,
+        ),
+        desc(videos.createdAt),
+      )
+      .limit(limit)
+      .offset(offset);
+  }
+
+  async createVideoComment(
+    comment: InsertVideoComment,
+  ): Promise<VideoComment> {
+    const [created] = await db
+      .insert(videoComments)
+      .values(comment)
+      .returning();
+    return created;
+  }
+
+  async listVideoComments(
+    videoId: number,
+    limit = 100,
+  ): Promise<VideoComment[]> {
+    return await db
+      .select()
+      .from(videoComments)
+      .where(eq(videoComments.videoId, videoId))
+      .orderBy(desc(videoComments.createdAt))
+      .limit(Math.min(Math.max(limit, 1), 500));
+  }
+
+  async deleteVideoComment(
+    commentId: number,
+    userId: string,
+    isAdmin: boolean,
+  ): Promise<boolean> {
+    const [row] = await db
+      .select()
+      .from(videoComments)
+      .where(eq(videoComments.id, commentId));
+    if (!row) return false;
+    if (!isAdmin && row.userId !== userId) return false;
+    await db
+      .delete(videoComments)
+      .where(eq(videoComments.id, commentId));
+    return true;
+  }
+
+  async countVideoComments(videoId: number): Promise<number> {
+    const [row] = await db
+      .select({ n: count() })
+      .from(videoComments)
+      .where(eq(videoComments.videoId, videoId));
+    return Number(row?.n ?? 0);
+  }
+
+  // ==========================================================
+  // Trading Academy (PR F)
+  // ==========================================================
+
+  async listTradingModules(): Promise<TradingModule[]> {
+    return await db
+      .select()
+      .from(tradingModules)
+      .orderBy(tradingModules.level, tradingModules.orderIdx);
+  }
+
+  async getTradingModuleBySlug(slug: string): Promise<TradingModule | null> {
+    const [row] = await db
+      .select()
+      .from(tradingModules)
+      .where(eq(tradingModules.slug, slug))
+      .limit(1);
+    return row ?? null;
+  }
+
+  async getTradingModuleById(id: number): Promise<TradingModule | null> {
+    const [row] = await db
+      .select()
+      .from(tradingModules)
+      .where(eq(tradingModules.id, id))
+      .limit(1);
+    return row ?? null;
+  }
+
+  async listTradingLessonsByModule(moduleId: number): Promise<TradingLesson[]> {
+    return await db
+      .select()
+      .from(tradingLessons)
+      .where(eq(tradingLessons.moduleId, moduleId))
+      .orderBy(tradingLessons.orderIdx);
+  }
+
+  async getTradingLessonById(id: number): Promise<TradingLesson | null> {
+    const [row] = await db
+      .select()
+      .from(tradingLessons)
+      .where(eq(tradingLessons.id, id))
+      .limit(1);
+    return row ?? null;
+  }
+
+  async upsertTradingModule(mod: InsertTradingModule): Promise<TradingModule> {
+    // Slug is the natural key. Content-only fields (title/description/etc.)
+    // get rewritten so seeding the catalogue a second time picks up edits
+    // without a new migration.
+    const existing = await this.getTradingModuleBySlug(mod.slug);
+    if (existing) {
+      await db
+        .update(tradingModules)
+        .set({
+          level: mod.level,
+          title: mod.title,
+          description: mod.description ?? '',
+          orderIdx: mod.orderIdx ?? 0,
+          requiredFeature: mod.requiredFeature,
+        })
+        .where(eq(tradingModules.id, existing.id));
+      const [row] = await db
+        .select()
+        .from(tradingModules)
+        .where(eq(tradingModules.id, existing.id));
+      return row;
+    }
+    const [inserted] = await db
+      .insert(tradingModules)
+      .values(mod)
+      .returning();
+    return inserted;
+  }
+
+  async upsertTradingLesson(lesson: InsertTradingLesson): Promise<TradingLesson> {
+    // Natural key is (moduleId, slug). Same motivation as upsertTradingModule.
+    const [existing] = await db
+      .select()
+      .from(tradingLessons)
+      .where(
+        and(
+          eq(tradingLessons.moduleId, lesson.moduleId),
+          eq(tradingLessons.slug, lesson.slug),
+        ),
+      )
+      .limit(1);
+    if (existing) {
+      await db
+        .update(tradingLessons)
+        .set({
+          title: lesson.title,
+          content: lesson.content ?? '',
+          videoUrl: lesson.videoUrl ?? null,
+          durationSeconds: lesson.durationSeconds ?? 0,
+          orderIdx: lesson.orderIdx ?? 0,
+          quizJson: lesson.quizJson ?? null,
+        })
+        .where(eq(tradingLessons.id, existing.id));
+      const [row] = await db
+        .select()
+        .from(tradingLessons)
+        .where(eq(tradingLessons.id, existing.id));
+      return row;
+    }
+    const [inserted] = await db
+      .insert(tradingLessons)
+      .values(lesson)
+      .returning();
+    return inserted;
+  }
+
+  async recordLessonCompletion(
+    userId: string,
+    lessonId: number,
+    quizScore: number | null,
+  ): Promise<TradingLessonProgress> {
+    // (user_id, lesson_id) is unique (enforced by migration index). On
+    // a repeat call we refresh `completed_at` and keep the best quiz
+    // score seen so far — users aren't penalised for re-taking a quiz.
+    const [existing] = await db
+      .select()
+      .from(tradingLessonProgress)
+      .where(
+        and(
+          eq(tradingLessonProgress.userId, userId),
+          eq(tradingLessonProgress.lessonId, lessonId),
+        ),
+      )
+      .limit(1);
+
+    if (existing) {
+      const newScore =
+        quizScore === null
+          ? existing.quizScore
+          : existing.quizScore === null
+            ? quizScore
+            : Math.max(existing.quizScore, quizScore);
+      await db
+        .update(tradingLessonProgress)
+        .set({ quizScore: newScore, completedAt: new Date() })
+        .where(eq(tradingLessonProgress.id, existing.id));
+      const [row] = await db
+        .select()
+        .from(tradingLessonProgress)
+        .where(eq(tradingLessonProgress.id, existing.id));
+      return row;
+    }
+
+    const [inserted] = await db
+      .insert(tradingLessonProgress)
+      .values({ userId, lessonId, quizScore })
+      .returning();
+    return inserted;
+  }
+
+  async listUserLessonProgress(
+    userId: string,
+    lessonIds?: number[],
+  ): Promise<TradingLessonProgress[]> {
+    if (lessonIds && lessonIds.length > 0) {
+      return await db
+        .select()
+        .from(tradingLessonProgress)
+        .where(
+          and(
+            eq(tradingLessonProgress.userId, userId),
+            inArray(tradingLessonProgress.lessonId, lessonIds),
+          ),
+        );
+    }
+    return await db
+      .select()
+      .from(tradingLessonProgress)
+      .where(eq(tradingLessonProgress.userId, userId));
+  }
+
+  async issueCertificateIfEligible(
+    userId: string,
+    moduleId: number,
+  ): Promise<TradingCertificate | null> {
+    // A certificate is issued once every lesson in the module is completed.
+    // The `avgScore` averages graded quizzes only (lessons without a quiz
+    // are ignored for scoring). If the user already has a certificate we
+    // return the existing row instead of inserting a duplicate.
+    const lessons = await this.listTradingLessonsByModule(moduleId);
+    if (lessons.length === 0) return null;
+
+    const lessonIds = lessons.map((l) => l.id);
+    const progress = await this.listUserLessonProgress(userId, lessonIds);
+    if (progress.length < lessons.length) return null;
+
+    const scored = progress
+      .map((p) => p.quizScore)
+      .filter((s): s is number => typeof s === 'number');
+    const avg = scored.length
+      ? Math.round(scored.reduce((a, b) => a + b, 0) / scored.length)
+      : 0;
+
+    const [existing] = await db
+      .select()
+      .from(tradingCertificates)
+      .where(
+        and(
+          eq(tradingCertificates.userId, userId),
+          eq(tradingCertificates.moduleId, moduleId),
+        ),
+      )
+      .limit(1);
+    if (existing) return existing;
+
+    const [inserted] = await db
+      .insert(tradingCertificates)
+      .values({ userId, moduleId, avgScore: avg })
+      .returning();
+    return inserted ?? null;
+  }
+
+  async listUserCertificates(userId: string): Promise<TradingCertificate[]> {
+    return await db
+      .select()
+      .from(tradingCertificates)
+      .where(eq(tradingCertificates.userId, userId))
+      .orderBy(desc(tradingCertificates.issuedAt));
+  }
+
+  // --- Post Likes & Comments -----------------------------------------------
+
+  async togglePostLike(userId: string, postId: number): Promise<{ liked: boolean; likeCount: number }> {
+    const existing = await db
+      .select()
+      .from(postLikes)
+      .where(and(eq(postLikes.userId, userId), eq(postLikes.postId, postId)))
+      .limit(1);
+
+    if (existing.length > 0) {
+      await db
+        .delete(postLikes)
+        .where(and(eq(postLikes.userId, userId), eq(postLikes.postId, postId)));
+      const likeCount = await this.getPostLikeCount(postId);
+      return { liked: false, likeCount };
+    } else {
+      await db.insert(postLikes).values({ userId, postId });
+      const likeCount = await this.getPostLikeCount(postId);
+      return { liked: true, likeCount };
+    }
+  }
+
+  async getPostLikeCount(postId: number): Promise<number> {
+    const [row] = await db
+      .select({ c: count() })
+      .from(postLikes)
+      .where(eq(postLikes.postId, postId));
+    return row?.c ?? 0;
+  }
+
+  async hasUserLikedPost(userId: string, postId: number): Promise<boolean> {
+    const rows = await db
+      .select()
+      .from(postLikes)
+      .where(and(eq(postLikes.userId, userId), eq(postLikes.postId, postId)))
+      .limit(1);
+    return rows.length > 0;
+  }
+
+  async getPostLikeCounts(postIds: number[]): Promise<Map<number, number>> {
+    if (postIds.length === 0) return new Map();
+    const rows = await db
+      .select({ postId: postLikes.postId, c: count() })
+      .from(postLikes)
+      .where(inArray(postLikes.postId, postIds))
+      .groupBy(postLikes.postId);
+    const m = new Map<number, number>();
+    for (const r of rows) m.set(r.postId, r.c);
+    return m;
+  }
+
+  async getUserLikedPosts(userId: string, postIds: number[]): Promise<Set<number>> {
+    if (postIds.length === 0) return new Set();
+    const rows = await db
+      .select({ postId: postLikes.postId })
+      .from(postLikes)
+      .where(and(eq(postLikes.userId, userId), inArray(postLikes.postId, postIds)));
+    return new Set(rows.map((r) => r.postId));
+  }
+
+  async createPostComment(input: { postId: number; userId: string; content: string }): Promise<PostComment> {
+    const [inserted] = await db
+      .insert(postComments)
+      .values(input)
+      .returning();
+    return inserted;
+  }
+
+  async listPostComments(postId: number, opts?: { limit?: number }): Promise<(PostComment & { userName: string | null })[]> {
+    const limit = opts?.limit ?? 50;
+    const rows = await db
+      .select({
+        id: postComments.id,
+        postId: postComments.postId,
+        userId: postComments.userId,
+        content: postComments.content,
+        createdAt: postComments.createdAt,
+        userName: sql<string | null>`coalesce(${users.displayName}, ${users.firstName}, ${users.email})`,
+      })
+      .from(postComments)
+      .leftJoin(users, eq(users.id, postComments.userId))
+      .where(eq(postComments.postId, postId))
+      .orderBy(asc(postComments.createdAt))
+      .limit(limit);
+    return rows;
+  }
+
+  async deletePostComment(commentId: number, userId: string): Promise<boolean> {
+    const result = await db
+      .delete(postComments)
+      .where(and(eq(postComments.id, commentId), eq(postComments.userId, userId)))
+      .returning();
+    return result.length > 0;
+  }
+
+  // --- Direct Messaging ----------------------------------------------------
+
+  async getOrCreateConversation(userAId: string, userBId: string): Promise<{ id: number; userAId: string; userBId: string }> {
+    // Normalize order so (A,B) and (B,A) resolve to same row
+    const [a, b] = [userAId, userBId].sort();
+    const existing = await db
+      .select()
+      .from(conversations)
+      .where(and(eq(conversations.userAId, a), eq(conversations.userBId, b)))
+      .limit(1);
+    if (existing.length > 0) {
+      return { id: existing[0].id, userAId: existing[0].userAId, userBId: existing[0].userBId };
+    }
+    const [inserted] = await db
+      .insert(conversations)
+      .values({ userAId: a, userBId: b })
+      .returning();
+    return { id: inserted.id, userAId: inserted.userAId, userBId: inserted.userBId };
+  }
+
+  async listUserConversations(userId: string): Promise<Array<{
+    id: number;
+    otherId: string;
+    otherName: string | null;
+    otherAvatar: string | null;
+    lastMessageAt: Date | null;
+    lastMessage: string | null;
+    unreadCount: number;
+  }>> {
+    const convRows = await db
+      .select()
+      .from(conversations)
+      .where(or(eq(conversations.userAId, userId), eq(conversations.userBId, userId)))
+      .orderBy(desc(conversations.lastMessageAt));
+
+    const results = await Promise.all(
+      convRows.map(async (conv) => {
+        const otherId = conv.userAId === userId ? conv.userBId : conv.userAId;
+        const otherUser = await db
+          .select({ displayName: users.displayName, firstName: users.firstName, profileImageUrl: users.profileImageUrl })
+          .from(users)
+          .where(eq(users.id, otherId))
+          .limit(1);
+        const other = otherUser[0];
+
+        const lastMsgRow = await db
+          .select()
+          .from(directMessages)
+          .where(eq(directMessages.conversationId, conv.id))
+          .orderBy(desc(directMessages.createdAt))
+          .limit(1);
+
+        const [unreadRow] = await db
+          .select({ c: count() })
+          .from(directMessages)
+          .where(
+            and(
+              eq(directMessages.conversationId, conv.id),
+              eq(directMessages.read, 0),
+              sql`${directMessages.senderId} != ${userId}`,
+            ),
+          );
+
+        return {
+          id: conv.id,
+          otherId,
+          otherName: other?.displayName ?? other?.firstName ?? null,
+          otherAvatar: other?.profileImageUrl ?? null,
+          lastMessageAt: conv.lastMessageAt,
+          lastMessage: lastMsgRow[0]?.content ?? null,
+          unreadCount: unreadRow?.c ?? 0,
+        };
+      }),
+    );
+    return results;
+  }
+
+  async sendDirectMessage(convId: number, senderId: string, content: string): Promise<{ id: number; conversationId: number; senderId: string; content: string; createdAt: Date }> {
+    const [inserted] = await db
+      .insert(directMessages)
+      .values({ conversationId: convId, senderId, content })
+      .returning();
+    await db
+      .update(conversations)
+      .set({ lastMessageAt: new Date() })
+      .where(eq(conversations.id, convId));
+    return {
+      id: inserted.id,
+      conversationId: inserted.conversationId,
+      senderId: inserted.senderId,
+      content: inserted.content,
+      createdAt: inserted.createdAt ?? new Date(),
+    };
+  }
+
+  async listDirectMessages(convId: number, opts?: { limit?: number; before?: number }): Promise<Array<{ id: number; senderId: string; content: string; read: number; createdAt: Date }>> {
+    const limit = opts?.limit ?? 50;
+    let q = db
+      .select()
+      .from(directMessages)
+      .where(
+        opts?.before
+          ? and(eq(directMessages.conversationId, convId), lt(directMessages.id, opts.before))
+          : eq(directMessages.conversationId, convId),
+      )
+      .orderBy(asc(directMessages.createdAt))
+      .limit(limit);
+    const rows = await q;
+    return rows.map((r) => ({
+      id: r.id,
+      senderId: r.senderId,
+      content: r.content,
+      read: r.read,
+      createdAt: r.createdAt ?? new Date(),
+    }));
+  }
+
+  async markConversationRead(convId: number, userId: string): Promise<void> {
+    await db
+      .update(directMessages)
+      .set({ read: 1 })
+      .where(
+        and(
+          eq(directMessages.conversationId, convId),
+          eq(directMessages.read, 0),
+          sql`${directMessages.senderId} != ${userId}`,
+        ),
+      );
   }
 }
 

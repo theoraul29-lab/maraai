@@ -17,7 +17,7 @@ interface FormValidation {
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
-  const { login, signup, loginWithOAuth } = useAuth();
+  const { login, signup, loginWithOAuth, oauthError, clearOAuthError } = useAuth();
   const { handleError } = useErrorHandler();
   const { t } = useTranslation();
 
@@ -45,6 +45,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       closeButtonRef.current.focus();
     }
   }, [isOpen]);
+
+  // Surface a pending OAuth-redirect error exactly once. The provider shape is
+  // either `oauth_<specific>` (our codes) or `google_<google_error>` (passed
+  // through untouched) — both fall back to a generic translation string.
+  useEffect(() => {
+    if (!oauthError) return;
+    setError(t(`auth.errors.${oauthError}`, t('auth.errors.oauth_generic', 'Sign-in failed. Please try again.')));
+    // Drop it from the provider so a later language change (which re-fires
+    // this effect via the `t` dep) or mode toggle (which clears local
+    // `error`) doesn't resurrect a stale message the user has already seen.
+    clearOAuthError();
+  }, [oauthError, t, clearOAuthError]);
 
   // Keyboard handling - close on Escape
   useEffect(() => {
@@ -84,7 +96,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     if (!password) {
       newValidation.password.push(t('auth.passwordRequired'));
       isValid = false;
-    } else if (password.length < 8) {
+    } else if (password.length < 6) {
       newValidation.password.push(t('auth.passwordMinLength'));
       isValid = false;
     }
@@ -129,7 +141,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         context: mode === 'login' ? 'login' : 'signup',
         email,
       });
-      setError(errorResult.message);
+      const code = (err as { code?: string })?.code;
+      setError(code ? t(`auth.errors.${code}`, errorResult.message) : errorResult.message);
     } finally {
       setLoading(false);
     }
@@ -138,8 +151,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   /**
    * Handle OAuth with error handling
    */
-  const handleOAuth = async (provider: 'google' | 'facebook') => {
+  const handleOAuth = async (provider: 'google') => {
     setError('');
+    clearOAuthError();
     setLoading(true);
 
     try {
@@ -150,7 +164,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         context: 'oauth',
         provider,
       });
-      setError(errorResult.message);
+      const code = (err as { code?: string })?.code;
+      setError(code ? t(`auth.errors.${code}`, errorResult.message) : errorResult.message);
     } finally {
       setLoading(false);
     }
@@ -328,15 +343,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
             aria-label={t('auth.signInWith', { provider: 'Google' })}
           >
             Google
-          </button>
-          <button
-            type="button"
-            className="auth-oauth-btn facebook"
-            onClick={() => handleOAuth('facebook')}
-            disabled={loading}
-            aria-label={t('auth.signInWith', { provider: 'Facebook' })}
-          >
-            Facebook
           </button>
         </div>
 
