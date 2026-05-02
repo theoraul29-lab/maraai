@@ -84,23 +84,31 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
     setLoading(true);
     try {
       const [profileRes, analyticsRes] = await Promise.all([
-        axios.get(`${API_URL}/api/profile/${user?.id || 'me'}`).catch(() => ({ data: null })),
+        // /api/profile/me requires auth and returns { user, followerCount, followingCount }
+        axios.get(`${API_URL}/api/profile/me`).catch(() => ({ data: null })),
         axios.get(`${API_URL}/api/creator/analytics`).catch(() => ({ data: null })),
       ]);
 
+      // Backend getMe → { user: {...}, followerCount, followingCount }
       const p = profileRes.data;
+      // Backend creatorAnalytics → { totalVideos, totalViews, totalLikes, followerCount, videos }
       const a = analyticsRes.data;
+
+      const totalLikesVal = a?.totalLikes ?? 0;
+      const totalViewsVal = a?.totalViews ?? 0;
+      const syntheticXp = totalLikesVal * 2 + totalViewsVal;
+
       setStats({
-        totalPosts: a?.totalReels || p?.videos || 0,
-        totalLikes: a?.totalLikes || 0,
-        followers: p?.followers || 0,
-        following: p?.following || 0,
-        streakDays: p?.streakDays || 0,
-        xp: p?.xp || (a?.totalLikes || 0) * 2 + (a?.totalViews || 0),
-        level: p?.level || Math.max(1, Math.floor(((a?.totalLikes || 0) * 2 + (a?.totalViews || 0)) / xpForNextLevel) + 1),
-        mood: p?.mood || 'neutral',
+        totalPosts: a?.totalVideos ?? 0,
+        totalLikes: totalLikesVal,
+        followers: p?.followerCount ?? a?.followerCount ?? 0,
+        following: p?.followingCount ?? 0,
+        streakDays: 0,          // not stored in DB yet
+        xp: syntheticXp,
+        level: Math.max(1, Math.floor(syntheticXp / xpForNextLevel) + 1),
+        mood: 'neutral',        // not stored in DB yet
         productiveHours: ['14:00', '21:00'],
-        topCategories: a?.topCategories || ['General'],
+        topCategories: ['General'],
       });
     } catch { /* use defaults */ }
     finally { setLoading(false); }
@@ -126,7 +134,8 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
 
   const handleSaveSettings = async () => {
     try {
-      await axios.post(`${API_URL}/api/profile/${user?.id || 'me'}`, { name: settingsName, bio: settingsBio });
+      // PATCH /api/profile/me expects { displayName, bio }
+      await axios.patch(`${API_URL}/api/profile/me`, { displayName: settingsName, bio: settingsBio });
       setSettingsSaved(true);
       setTimeout(() => setSettingsSaved(false), 3000);
     } catch {
