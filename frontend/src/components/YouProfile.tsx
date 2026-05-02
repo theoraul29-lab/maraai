@@ -696,6 +696,7 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
               const likeInfo = postLikeState.get(p.id) ?? { liked: false, count: 0 };
               const comments = postComments.get(p.id) ?? [];
               const isExpanded = expandedComments.has(p.id);
+              const commentDisplayCount = isExpanded ? comments.length : (p.commentCount ?? 0);
               return (
                 <article key={p.id} className="you-fb-post">
                   <header className="you-fb-post-head">
@@ -734,7 +735,7 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
                       className="you-fb-post-action-btn"
                       onClick={() => toggleComments(p.id)}
                     >
-                      💬 {(isExpanded ? comments.length : (p.commentCount ?? 0)) > 0 ? (isExpanded ? comments.length : p.commentCount) : ''} {t('you.comment', 'Comment')}
+                      💬 {commentDisplayCount > 0 ? commentDisplayCount : ''} {t('you.comment', 'Comment')}
                     </button>
                   </div>
                   {/* Comments section */}
