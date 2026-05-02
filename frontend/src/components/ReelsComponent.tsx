@@ -197,7 +197,9 @@ const ReelsComponent: React.FC = () => {
         fd.append('type', 'creator');
         await axios.post(`${API_URL}/api/reels/upload`, fd, {
           withCredentials: true,
-          headers: { 'Content-Type': 'multipart/form-data' },
+          // Do NOT set Content-Type — axios auto-adds multipart/form-data
+          // with the boundary string when given FormData. An explicit header
+          // without a boundary breaks multer's body parser.
         });
       } else {
         await axios.post(`${API_URL}/api/creator/post-reel`, {

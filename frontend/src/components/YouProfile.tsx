@@ -12,12 +12,18 @@ const API_URL = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'ht
 // existing PATCH /api/profile/me / POST /api/profile/posts handlers
 // already accept as a string. Throwing here lets the caller surface a
 // localized error in whatever UI it owns.
-async function uploadImageFile(file: File): Promise<string> {
+async function uploadImageFile(file: File, csrfToken?: string | null): Promise<string> {
   const fd = new FormData();
   fd.append('image', file);
+  // Do NOT set Content-Type manually — axios auto-sets multipart/form-data
+  // *with* the boundary string when given a FormData object. An explicit
+  // 'Content-Type: multipart/form-data' (without boundary) prevents multer
+  // from locating the file parts and causes a 400 "No image file provided".
+  const headers: Record<string, string> = {};
+  if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
   const res = await axios.post<{ url: string }>(`${API_URL}/api/uploads/image`, fd, {
     withCredentials: true,
-    headers: { 'Content-Type': 'multipart/form-data' },
+    headers,
   });
   return res.data.url;
 }
@@ -81,8 +87,22 @@ interface YouProfileProps {
 }
 
 const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
-  const { user, logout, refreshUser } = useAuth();
+  const { user, logout, refreshUser, csrfToken } = useAuth();
   const { t } = useTranslation();
+
+  // Build axios config for state-changing requests. Includes credentials
+  // (session cookie) and, when available, the CSRF token required by the
+  // server in production (CORS_ORIGINS is set).
+  const mutateConfig = useCallback(
+    (extra?: Record<string, string>) => ({
+      withCredentials: true as const,
+      headers: {
+        ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
+        ...extra,
+      },
+    }),
+    [csrfToken],
+  );
 
   const [profile, setProfile] = useState<ProfilePayload | null>(null);
   const [posts, setPosts] = useState<UserPost[]>([]);
@@ -249,7 +269,7 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
       const res = await axios.post<UserPost>(
         `${API_URL}/api/profile/posts`,
         body,
-        { withCredentials: true },
+        mutateConfig(),
       );
       setPosts(prev => [res.data, ...prev]);
       setProfile(p => (p ? { ...p, postCount: (p.postCount || 0) + 1 } : p));
@@ -267,7 +287,7 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
 
   const deletePost = async (postId: number) => {
     try {
-      await axios.delete(`${API_URL}/api/profile/posts/${postId}`, { withCredentials: true });
+      await axios.delete(`${API_URL}/api/profile/posts/${postId}`, mutateConfig());
       setPosts(prev => prev.filter(p => p.id !== postId));
       setProfile(p => (p ? { ...p, postCount: Math.max(0, (p.postCount || 0) - 1) } : p));
     } catch { /* silent */ }
@@ -280,7 +300,7 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
       const res = await axios.post<{ liked: boolean; likeCount: number }>(
         `${API_URL}/api/profile/posts/${postId}/like`,
         {},
-        { withCredentials: true },
+        mutateConfig(),
       );
       setPostLikeState(prev => {
         const next = new Map(prev);
@@ -320,7 +340,7 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
       const res = await axios.post<CommentItem>(
         `${API_URL}/api/profile/posts/${postId}/comments`,
         { content },
-        { withCredentials: true },
+        mutateConfig(),
       );
       setPostComments(prev => {
         const next = new Map(prev);
@@ -334,7 +354,7 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
 
   const deleteComment = async (postId: number, commentId: number) => {
     try {
-      await axios.delete(`${API_URL}/api/profile/posts/comments/${commentId}`, { withCredentials: true });
+      await axios.delete(`${API_URL}/api/profile/posts/comments/${commentId}`, mutateConfig());
       setPostComments(prev => {
         const next = new Map(prev);
         next.set(postId, (next.get(postId) || []).filter(c => c.id !== commentId));
@@ -350,7 +370,7 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
       const res = await axios.post<{ following: boolean }>(
         `${API_URL}/api/profile/${targetId}/follow`,
         {},
-        { withCredentials: true },
+        mutateConfig(),
       );
       setFollowingIds(prev => {
         const next = new Set(prev);
@@ -368,8 +388,8 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
     if (!f) return;
     setDirectAvatarUploading(true);
     try {
-      const url = await uploadImageFile(f);
-      await axios.patch(`${API_URL}/api/profile/me`, { profileImageUrl: url }, { withCredentials: true });
+      const url = await uploadImageFile(f, csrfToken);
+      await axios.patch(`${API_URL}/api/profile/me`, { profileImageUrl: url }, mutateConfig());
       setProfile(p => p ? { ...p, user: { ...p.user, profileImageUrl: url } } : p);
     } catch { /* silent */ }
     setDirectAvatarUploading(false);
@@ -381,8 +401,8 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
     if (!f) return;
     setDirectCoverUploading(true);
     try {
-      const url = await uploadImageFile(f);
-      await axios.patch(`${API_URL}/api/profile/me`, { coverImageUrl: url }, { withCredentials: true });
+      const url = await uploadImageFile(f, csrfToken);
+      await axios.patch(`${API_URL}/api/profile/me`, { coverImageUrl: url }, mutateConfig());
       setProfile(p => p ? { ...p, user: { ...p.user, coverImageUrl: url } } : p);
     } catch { /* silent */ }
     setDirectCoverUploading(false);
@@ -432,7 +452,7 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
       return;
     }
     try {
-      await axios.patch(`${API_URL}/api/profile/me`, patch, { withCredentials: true });
+      await axios.patch(`${API_URL}/api/profile/me`, patch, mutateConfig());
       await fetchProfile();
       await refreshUser();
       setEditing(false);
@@ -634,7 +654,7 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
                     setPostImageUploading(true);
                     setPostError(null);
                     try {
-                      const url = await uploadImageFile(f);
+                      const url = await uploadImageFile(f, csrfToken);
                       setPostImageUrl(url);
                     } catch {
                       setPostError('upload_failed');
@@ -949,7 +969,7 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
                     setAvatarUploading(true);
                     setEditError(null);
                     try {
-                      const url = await uploadImageFile(f);
+                      const url = await uploadImageFile(f, csrfToken);
                       setEditDraft(d => ({ ...d, profileImageUrl: url }));
                     } catch {
                       setEditError('upload_failed');
@@ -1002,7 +1022,7 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
                     setCoverUploading(true);
                     setEditError(null);
                     try {
-                      const url = await uploadImageFile(f);
+                      const url = await uploadImageFile(f, csrfToken);
                       setEditDraft(d => ({ ...d, coverImageUrl: url }));
                     } catch {
                       setEditError('upload_failed');

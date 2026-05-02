@@ -51,6 +51,13 @@ interface AuthContextType {
   /** Last OAuth error code pulled from the `?oauth_error=` query param. */
   oauthError: string | null;
   clearOAuthError: () => void;
+  /**
+   * Per-session CSRF token returned by GET /api/auth/me. Must be included
+   * as the `X-CSRF-Token` header on all state-changing requests when
+   * CORS_ORIGINS is configured (production). Null until the first successful
+   * /api/auth/me response.
+   */
+  csrfToken: string | null;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string) => Promise<void>;
   loginWithOAuth: (provider: 'google') => Promise<void>;
@@ -71,6 +78,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [oauthError, setOAuthError] = useState<string | null>(null);
+  const [csrfToken, setCsrfToken] = useState<string | null>(null);
   const clearOAuthError = () => setOAuthError(null);
 
   // Mount: restore from localStorage, consume any ?oauth/?oauth_error query
@@ -117,6 +125,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const res = await fetch('/api/auth/me', { credentials: 'include' });
         if (!res.ok) return;
         const payload = await res.json();
+        // Always capture the CSRF token — it is present for both anonymous
+        // and authenticated sessions and needed for mutating requests in
+        // production (when CORS_ORIGINS is configured).
+        if (payload?.csrfToken) setCsrfToken(payload.csrfToken);
         if (cancelled || !payload?.user) return;
         const trialFields = freshOAuth
           ? {
@@ -305,6 +317,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const res = await fetch('/api/auth/me', { credentials: 'include' });
       if (!res.ok) return;
       const payload = await res.json();
+      if (payload?.csrfToken) setCsrfToken(payload.csrfToken);
       if (!payload?.user) return;
       const sessionUser: User = {
         ...payload.user,
@@ -340,6 +353,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         trialTimeRemaining,
         oauthError,
         clearOAuthError,
+        csrfToken,
         login,
         signup,
         loginWithOAuth,
