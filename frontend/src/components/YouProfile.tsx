@@ -176,7 +176,21 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
       );
       const items = res.data.items || [];
       setPosts(items);
-          } catch {
+      // Seed like state from server-returned counts so buttons show
+      // correct numbers immediately (before the user interacts).
+      setPostLikeState(prev => {
+        const next = new Map(prev);
+        for (const item of items) {
+          if (!next.has(item.id)) {
+            next.set(item.id, {
+              liked: item.liked ?? false,
+              count: item.likeCount ?? 0,
+            });
+          }
+        }
+        return next;
+      });
+    } catch {
       setPosts([]);
     }
   }, []);
@@ -720,7 +734,7 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
                       className="you-fb-post-action-btn"
                       onClick={() => toggleComments(p.id)}
                     >
-                      💬 {comments.length > 0 ? comments.length : ''} {t('you.comment', 'Comment')}
+                      💬 {(isExpanded ? comments.length : (p.commentCount ?? 0)) > 0 ? (isExpanded ? comments.length : p.commentCount) : ''} {t('you.comment', 'Comment')}
                     </button>
                   </div>
                   {/* Comments section */}
@@ -730,7 +744,7 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
                         <div key={c.id} className="you-fb-comment">
                           <span className="you-fb-comment-user">{c.userName || c.userId.slice(0, 8)}</span>
                           <span className="you-fb-comment-content">{c.content}</span>
-                          {(profile?.isSelf || c.userId === profile?.user.id) && (
+                          {(profile?.isSelf || c.userId === user?.id) && (
                             <button
                               className="you-fb-comment-delete"
                               onClick={() => deleteComment(p.id, c.id)}
