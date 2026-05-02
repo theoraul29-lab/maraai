@@ -111,7 +111,21 @@ const ReelsComponent: React.FC = () => {
         axios.get(`${API_URL}/api/creator/analytics`).catch(() => ({ data: null })),
         axios.get(`${API_URL}/api/creator/my-videos`).catch(() => ({ data: [] })),
       ]);
-      if (statsRes.data) setCreatorStats(statsRes.data);
+      if (statsRes.data) {
+        const d = statsRes.data;
+        // Map backend field names to the CreatorStats interface
+        const totalReels = d.totalReels ?? d.totalVideos ?? 0;
+        const totalViews = d.totalViews ?? 0;
+        const totalLikes = d.totalLikes ?? 0;
+        const followers = d.followers ?? d.followerCount ?? 0;
+        const engagementRate =
+          d.engagementRate != null
+            ? d.engagementRate
+            : totalViews > 0
+            ? parseFloat(((totalLikes / totalViews) * 100).toFixed(1))
+            : 0;
+        setCreatorStats({ totalReels, totalViews, totalLikes, followers, engagementRate });
+      }
       if (Array.isArray(videosRes.data)) {
         setMyReels(videosRes.data.map((v: any) => ({
           id: v.id,

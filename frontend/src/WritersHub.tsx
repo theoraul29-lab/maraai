@@ -12,11 +12,25 @@ interface Manuscript {
   id: number;
   title: string;
   content: string;
-  author: string;
+  author: string;    // mapped from penName
   likes: number;
-  genre: string;
+  genre: string;     // mapped from category
   comments: Comment[];
-  coverUrl?: string;
+  coverUrl?: string; // mapped from coverImage
+}
+
+/** Map a raw backend article row to the Manuscript shape used by the UI. */
+function toManuscript(raw: any): Manuscript {
+  return {
+    id: raw.id,
+    title: raw.title || '',
+    content: raw.content || raw.excerpt || '',
+    author: raw.author || raw.penName || 'Anonymous',
+    likes: raw.likes ?? 0,
+    genre: raw.genre || raw.category || 'story',
+    comments: Array.isArray(raw.comments) ? raw.comments : [],
+    coverUrl: raw.coverUrl || raw.coverImage || undefined,
+  };
 }
 
 interface Draft { id: string; title: string; content: string; genre: string; coverUrl: string; savedAt: number; }
@@ -33,7 +47,9 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
   const [coverUrl, setCoverUrl] = useState('');
   const [library, setLibrary] = useState<Manuscript[]>([]);
   const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState('');
   const [publishing, setPublishing] = useState(false);
+  const [publishError, setPublishError] = useState('');
 
   // Drafts
   const [drafts, setDrafts] = useState<Draft[]>(() => {
@@ -54,14 +70,21 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
   const [maraSuggestion, setMaraSuggestion] = useState('');
   const [askingMara, setAskingMara] = useState(false);
 
-  // Fetch library
+  // Fetch library — API returns { items: [...], limit, offset }
   const fetchLibrary = useCallback(async () => {
     setLoading(true);
+    setFetchError('');
     try {
       const res = await axios.get(`${API_URL}/api/writers/library`);
-      setLibrary(Array.isArray(res.data) ? res.data : []);
-    } catch { /* silent */ }
-    finally { setLoading(false); }
+      const raw: any[] = Array.isArray(res.data)
+        ? res.data
+        : Array.isArray(res.data?.items)
+        ? res.data.items
+        : [];
+      setLibrary(raw.map(r => toManuscript(r)));
+    } catch {
+      setFetchError(t('writers.loadError', { defaultValue: 'Failed to load library. Please try again.' }));
+    } finally { setLoading(false); }
   }, []);
 
   useEffect(() => { fetchLibrary(); }, [fetchLibrary]);
@@ -85,18 +108,26 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
   const handlePublish = async () => {
     if (!title.trim() || !content.trim()) return;
     setPublishing(true);
-    const newWork: Manuscript = {
-      id: Date.now(), title, content,
-      author: user?.name || t('writers.anonymous'), genre,
-      likes: 0, comments: [], coverUrl,
-    };
+    setPublishError('');
     try {
-      const res = await axios.post(`${API_URL}/api/writers/publish`, newWork);
-      setLibrary([res.data || newWork, ...library]);
+      const res = await axios.post(`${API_URL}/api/writers/publish`, {
+        title,
+        content,
+        penName: user?.name || t('writers.anonymous'),
+        category: genre,
+        coverImage: coverUrl || undefined,
+        visibility: 'public',
+      });
+      // Backend returns { article: {...} }
+      const saved = res.data?.article ?? res.data;
+      setLibrary([toManuscript(saved), ...library]);
       setTitle(''); setContent(''); setCoverUrl('');
       setView('library');
-    } catch { setLibrary([newWork, ...library]); setView('library'); }
-    finally { setPublishing(false); }
+    } catch (err: any) {
+      const msg = err.response?.data?.error || err.response?.data?.message
+        || t('writers.publishError', { defaultValue: 'Publish failed. Please try again.' });
+      setPublishError(msg);
+    } finally { setPublishing(false); }
   };
 
   const saveDraft = (silent = false) => {
@@ -219,6 +250,13 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
               )}
             </div>
 
+            {publishError && (
+              <div style={{ background: 'rgba(255,34,34,0.12)', border: '1px solid rgba(255,34,34,0.35)', borderRadius: '8px', padding: '8px 14px', marginBottom: '8px', color: '#ff6b6b', fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>⚠️ {publishError}</span>
+                <button onClick={() => setPublishError('')} style={{ background: 'none', border: 'none', color: '#ff6b6b', cursor: 'pointer', fontSize: '16px' }}>✕</button>
+              </div>
+            )}
+
             <div className="writers-actions">
               <button onClick={handlePublish} disabled={publishing || !title.trim() || !content.trim()} className="writers-button">
                 {publishing ? t('writers.publishing') : t('writers.publish')}
@@ -233,7 +271,13 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
           <div className="writers-library">
             <h2 style={{ textAlign: 'center', marginBottom: '24px', color: '#8b5cf6' }}>{t('writers.libraryTitle')}</h2>
             {loading && <p style={{ textAlign: 'center', color: '#888' }}>{t('writers.loadingLibrary')}</p>}
-            {!loading && library.length === 0 && <p style={{ textAlign: 'center', color: '#888' }}>{t('writers.emptyLibrary')}</p>}
+            {fetchError && (
+              <div style={{ background: 'rgba(255,34,34,0.12)', border: '1px solid rgba(255,34,34,0.35)', borderRadius: '8px', padding: '8px 14px', margin: '0 0 16px', color: '#ff6b6b', fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>⚠️ {fetchError}</span>
+                <button onClick={() => { setFetchError(''); fetchLibrary(); }} style={{ background: 'none', border: 'none', color: '#ff6b6b', cursor: 'pointer', fontSize: '13px' }}>↺ Retry</button>
+              </div>
+            )}
+            {!loading && !fetchError && library.length === 0 && <p style={{ textAlign: 'center', color: '#888' }}>{t('writers.emptyLibrary')}</p>}
             {library.map(work => (
               <div key={work.id} className="writers-manuscript-card">
                 {work.coverUrl && <div className="writers-cover" style={{ backgroundImage: `url(${work.coverUrl})` }} />}
