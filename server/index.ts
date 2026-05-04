@@ -116,6 +116,87 @@ function runMigrations() {
     console.error('[migrations] Failed to inspect users table for safety guard:', err);
     throw err;
   }
+
+  // Safety guard: ensure FB-style profile tables exist. Migrations 0007 and
+  // 0014 create user_posts / post_likes / post_comments, but production
+  // databases that were initialised from a snapshot taken before those
+  // migrations ran (or where the row was inserted into __drizzle_migrations
+  // without the DDL actually executing) are missing the tables, causing
+  // every /api/profile/:id, /api/profile/me, /api/profile/:id/posts,
+  // POST /api/profile/posts, /like, /comment call to throw with no useful
+  // error to the client. Same shape as the cover_image_url guard above —
+  // CREATE TABLE IF NOT EXISTS is idempotent so this is safe to run on
+  // every boot.
+  type TableInfo = { name: string };
+  const tableExists = (name: string): boolean => {
+    try {
+      const rows = rawSqlite
+        .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name = ?")
+        .all(name) as TableInfo[];
+      return rows.length > 0;
+    } catch {
+      return false;
+    }
+  };
+
+  const ensureTable = (name: string, ddl: string, indexDdl: readonly string[] = []) => {
+    if (tableExists(name)) return;
+    try {
+      rawSqlite.exec(ddl);
+      for (const idx of indexDdl) {
+        try {
+          rawSqlite.exec(idx);
+        } catch (e) {
+          console.error(`[migrations] Failed to create index on ${name} (non-fatal):`, e);
+        }
+      }
+      console.log(`[migrations] Created missing ${name} table`);
+    } catch (e) {
+      console.error(`[migrations] Failed to create ${name} table (non-fatal):`, e);
+    }
+  };
+
+  ensureTable(
+    'user_posts',
+    `CREATE TABLE IF NOT EXISTS \`user_posts\` (
+      \`id\` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+      \`user_id\` text NOT NULL,
+      \`content\` text NOT NULL,
+      \`image_url\` text,
+      \`created_at\` integer NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+    );`,
+    [
+      'CREATE INDEX IF NOT EXISTS `IDX_user_posts_user` ON `user_posts` (`user_id`);',
+      'CREATE INDEX IF NOT EXISTS `IDX_user_posts_created` ON `user_posts` (`created_at`);',
+    ],
+  );
+
+  ensureTable(
+    'post_likes',
+    `CREATE TABLE IF NOT EXISTS \`post_likes\` (
+      \`id\` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+      \`post_id\` integer NOT NULL,
+      \`user_id\` text NOT NULL,
+      \`created_at\` integer NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+    );`,
+    [
+      'CREATE UNIQUE INDEX IF NOT EXISTS `IDX_post_likes_unique` ON `post_likes` (`post_id`, `user_id`);',
+    ],
+  );
+
+  ensureTable(
+    'post_comments',
+    `CREATE TABLE IF NOT EXISTS \`post_comments\` (
+      \`id\` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+      \`post_id\` integer NOT NULL,
+      \`user_id\` text NOT NULL,
+      \`content\` text NOT NULL,
+      \`created_at\` integer NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+    );`,
+    [
+      'CREATE INDEX IF NOT EXISTS `IDX_post_comments_post` ON `post_comments` (`post_id`);',
+    ],
+  );
 }
 
 
