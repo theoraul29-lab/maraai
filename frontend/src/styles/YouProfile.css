@@ -1769,10 +1769,30 @@
 .you-fb-photos {
   padding: 16px;
 }
+.you-fb-photos-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 12px;
+}
 .you-fb-photos-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   gap: 8px;
+}
+.you-fb-photo-thumb-btn {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: zoom-in;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.you-fb-photo-thumb-btn:focus-visible {
+  outline: 2px solid #a855f7;
+  outline-offset: 2px;
 }
 .you-fb-photo-thumb {
   width: 100%;
@@ -1780,6 +1800,70 @@
   object-fit: cover;
   border-radius: 8px;
   border: 1px solid rgba(168,85,247,0.2);
+  display: block;
+  transition: transform 0.15s ease;
+}
+.you-fb-photo-thumb-btn:hover .you-fb-photo-thumb {
+  transform: scale(1.02);
+}
+
+/* ---- Lightbox ---------------------------------------------------------- */
+.you-fb-lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  cursor: zoom-out;
+}
+.you-fb-lightbox-img {
+  max-width: 95vw;
+  max-height: 90vh;
+  border-radius: 8px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
+  cursor: default;
+}
+.you-fb-lightbox-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 0;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.you-fb-lightbox-close:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* ---- Toast (upload errors) -------------------------------------------- */
+.you-fb-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1100;
+  padding: 10px 16px;
+  border-radius: 24px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  max-width: calc(100vw - 48px);
+}
+.you-fb-toast-error {
+  background: #b91c1c;
+  color: #fff;
 }
 
 /* ---- Videos tab -------------------------------------------------------- */

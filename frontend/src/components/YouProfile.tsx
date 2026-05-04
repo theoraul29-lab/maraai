@@ -54,6 +54,9 @@ interface UserPost {
   content: string;
   imageUrl: string | null;
   createdAt: string;
+  // Server-side counts injected by GET /api/profile/:id/posts (via
+  // listProfilePosts). Used to seed like/comment UI immediately so the
+  // numbers don't render as 0 until the user opens each post.
   likeCount?: number;
   liked?: boolean;
   commentCount?: number;
@@ -106,8 +109,15 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
   // Direct tap-to-change refs (outside modal)
   const [directAvatarUploading, setDirectAvatarUploading] = useState(false);
   const [directCoverUploading, setDirectCoverUploading] = useState(false);
+  const [directUploadError, setDirectUploadError] = useState<string | null>(null);
   const directAvatarRef = useRef<HTMLInputElement>(null);
   const directCoverRef = useRef<HTMLInputElement>(null);
+
+  // Photos tab — direct multi-photo upload + lightbox
+  const photosFileRef = useRef<HTMLInputElement>(null);
+  const [photosUploading, setPhotosUploading] = useState(false);
+  const [photosError, setPhotosError] = useState<string | null>(null);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
   // Edit-profile modal state
   const [editing, setEditing] = useState(false);
@@ -172,11 +182,21 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
   const fetchPosts = useCallback(async (profileId: string) => {
     try {
       const res = await axios.get<{ items: UserPost[] }>(
-        `${API_URL}/api/profile/${profileId}/posts?limit=20`,
+        `${API_URL}/api/profile/${profileId}/posts?limit=50`,
+        { withCredentials: true },
       );
       const items = res.data.items || [];
       setPosts(items);
-          } catch {
+      // Seed like state map from server-side counts so the UI shows the
+      // real numbers immediately instead of waiting for a toggle round-trip.
+      setPostLikeState((prev) => {
+        const next = new Map(prev);
+        for (const p of items) {
+          next.set(p.id, { liked: !!p.liked, count: p.likeCount ?? 0 });
+        }
+        return next;
+      });
+    } catch {
       setPosts([]);
     }
   }, []);
@@ -225,12 +245,13 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
 
   const submitPost = async () => {
     const trimmed = postContent.trim();
-    if (!trimmed) return;
+    const img = postImageUrl.trim();
+    // FB-style: text or image is enough — don’t require both.
+    if (!trimmed && !img) return;
     setPosting(true);
     setPostError(null);
     try {
       const body: { content: string; imageUrl?: string } = { content: trimmed };
-      const img = postImageUrl.trim();
       if (img) body.imageUrl = img;
       const res = await axios.post<UserPost>(
         `${API_URL}/api/profile/posts`,
@@ -353,11 +374,19 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
     const f = e.target.files?.[0];
     if (!f) return;
     setDirectAvatarUploading(true);
+    setDirectUploadError(null);
     try {
       const url = await uploadImageFile(f);
       await axios.patch(`${API_URL}/api/profile/me`, { profileImageUrl: url }, { withCredentials: true });
       setProfile(p => p ? { ...p, user: { ...p.user, profileImageUrl: url } } : p);
-    } catch { /* silent */ }
+      await refreshUser();
+    } catch (err: unknown) {
+      const code =
+        (err as { response?: { data?: { code?: string; error?: string } } })?.response?.data?.code ||
+        (err as { response?: { data?: { code?: string; error?: string } } })?.response?.data?.error ||
+        'upload_failed';
+      setDirectUploadError(code);
+    }
     setDirectAvatarUploading(false);
     if (directAvatarRef.current) directAvatarRef.current.value = '';
   };
@@ -366,13 +395,55 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
     const f = e.target.files?.[0];
     if (!f) return;
     setDirectCoverUploading(true);
+    setDirectUploadError(null);
     try {
       const url = await uploadImageFile(f);
       await axios.patch(`${API_URL}/api/profile/me`, { coverImageUrl: url }, { withCredentials: true });
       setProfile(p => p ? { ...p, user: { ...p.user, coverImageUrl: url } } : p);
-    } catch { /* silent */ }
+    } catch (err: unknown) {
+      const code =
+        (err as { response?: { data?: { code?: string; error?: string } } })?.response?.data?.code ||
+        (err as { response?: { data?: { code?: string; error?: string } } })?.response?.data?.error ||
+        'upload_failed';
+      setDirectUploadError(code);
+    }
     setDirectCoverUploading(false);
     if (directCoverRef.current) directCoverRef.current.value = '';
+  };
+
+  // Photos tab: upload one or more photos to the gallery as photo-only
+  // posts. Each file becomes a single user_post with imageUrl set and
+  // empty content — backend now accepts that as a valid "photo post".
+  const handlePhotosUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
+    setPhotosUploading(true);
+    setPhotosError(null);
+    let added = 0;
+    for (const f of files) {
+      try {
+        const url = await uploadImageFile(f);
+        const res = await axios.post<UserPost>(
+          `${API_URL}/api/profile/posts`,
+          { content: '', imageUrl: url },
+          { withCredentials: true },
+        );
+        setPosts((prev) => [res.data, ...prev]);
+        added += 1;
+      } catch (err: unknown) {
+        const code =
+          (err as { response?: { data?: { code?: string; error?: string } } })?.response?.data?.code ||
+          (err as { response?: { data?: { code?: string; error?: string } } })?.response?.data?.error ||
+          'upload_failed';
+        setPhotosError(code);
+        break;
+      }
+    }
+    if (added > 0) {
+      setProfile((p) => (p ? { ...p, postCount: (p.postCount || 0) + added } : p));
+    }
+    setPhotosUploading(false);
+    if (photosFileRef.current) photosFileRef.current.value = '';
   };
 
   // ------- Edit-profile modal --------------------------------------------
@@ -661,7 +732,10 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
                 <button
                   className="you-fb-btn you-fb-btn-primary"
                   onClick={submitPost}
-                  disabled={posting || postContent.trim().length === 0}
+                  disabled={
+                    posting ||
+                    (postContent.trim().length === 0 && postImageUrl.trim().length === 0)
+                  }
                 >
                   {posting ? t('you.posting', 'Posting...') : t('you.post', 'Post')}
                 </button>
@@ -704,9 +778,18 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
                       </button>
                     )}
                   </header>
-                  <p className="you-fb-post-body">{p.content}</p>
+                  {p.content && p.content.length > 0 && (
+                    <p className="you-fb-post-body">{p.content}</p>
+                  )}
                   {p.imageUrl && (
-                    <img className="you-fb-post-image" src={p.imageUrl} alt="" loading="lazy" />
+                    <img
+                      className="you-fb-post-image"
+                      src={p.imageUrl}
+                      alt=""
+                      loading="lazy"
+                      onClick={() => setLightboxUrl(p.imageUrl as string)}
+                      style={{ cursor: 'zoom-in' }}
+                    />
                   )}
                   {/* Like + Comment actions */}
                   <div className="you-fb-post-actions">
@@ -714,13 +797,15 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
                       className={`you-fb-post-action-btn${likeInfo.liked ? ' you-fb-post-action-active' : ''}`}
                       onClick={() => toggleLike(p.id)}
                     >
-                      ❤️ {likeInfo.count > 0 ? likeInfo.count : ''} {t('you.like', 'Like')}
+                      {likeInfo.liked ? '❤️' : '🤍'} {likeInfo.count > 0 ? likeInfo.count : ''} {t('you.like', 'Like')}
                     </button>
                     <button
                       className="you-fb-post-action-btn"
                       onClick={() => toggleComments(p.id)}
                     >
-                      💬 {comments.length > 0 ? comments.length : ''} {t('you.comment', 'Comment')}
+                      💬 {(comments.length || p.commentCount || 0) > 0
+                        ? (comments.length || p.commentCount)
+                        : ''} {t('you.comment', 'Comment')}
                     </button>
                   </div>
                   {/* Comments section */}
@@ -847,18 +932,96 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
       {/* --- Photos tab ------------------------------------------------- */}
       {activeTab === 'photos' && (
         <div className="you-fb-photos">
-          <p className="you-fb-muted" style={{ marginBottom: '12px' }}>
-            {photoUrls.length} {t('you.photosCount', 'photos')}
-          </p>
+          <div className="you-fb-photos-header">
+            <p className="you-fb-muted">
+              {photoUrls.length} {t('you.photosCount', 'photos')}
+            </p>
+            {profile?.isSelf && (
+              <>
+                <input
+                  ref={photosFileRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  multiple
+                  style={{ display: 'none' }}
+                  onChange={handlePhotosUpload}
+                />
+                <button
+                  type="button"
+                  className="you-fb-btn you-fb-btn-primary"
+                  disabled={photosUploading}
+                  onClick={() => photosFileRef.current?.click()}
+                >
+                  {photosUploading
+                    ? t('you.uploading', 'Uploading…')
+                    : t('you.addPhotos', '📷 Add photos')}
+                </button>
+              </>
+            )}
+          </div>
+          {photosError && (
+            <p className="you-fb-error">
+              {photosError === 'invalid_image_url'
+                ? t('you.badImageUrl', 'Image URL is invalid.')
+                : t('you.uploadFailed', 'Could not upload one or more photos.')}
+            </p>
+          )}
           {photoUrls.length === 0 ? (
             <p className="you-fb-muted">{t('you.noPhotos', 'No photos yet.')}</p>
           ) : (
             <div className="you-fb-photos-grid">
               {photoUrls.map((url, i) => (
-                <img key={i} className="you-fb-photo-thumb" src={url} alt="" loading="lazy" />
+                <button
+                  key={`${url}-${i}`}
+                  type="button"
+                  className="you-fb-photo-thumb-btn"
+                  onClick={() => setLightboxUrl(url)}
+                  aria-label={t('you.viewPhoto', 'View photo')}
+                >
+                  <img className="you-fb-photo-thumb" src={url} alt="" loading="lazy" />
+                </button>
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* --- Photo lightbox -------------------------------------------- */}
+      {lightboxUrl && (
+        <div
+          className="you-fb-lightbox"
+          onClick={() => setLightboxUrl(null)}
+          role="dialog"
+          aria-label={t('you.viewPhoto', 'View photo')}
+        >
+          <button
+            className="you-fb-lightbox-close"
+            onClick={(e) => { e.stopPropagation(); setLightboxUrl(null); }}
+            aria-label={t('you.close', 'Close')}
+          >
+            ✕
+          </button>
+          <img
+            className="you-fb-lightbox-img"
+            src={lightboxUrl}
+            alt=""
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+
+      {/* --- Direct upload error toast -------------------------------- */}
+      {directUploadError && (
+        <div
+          className="you-fb-toast you-fb-toast-error"
+          role="alert"
+          onClick={() => setDirectUploadError(null)}
+        >
+          {directUploadError === 'invalid_image_url'
+            ? t('you.badImageUrl', 'Image URL is invalid.')
+            : directUploadError === 'invalid_cover_url'
+            ? t('you.badCoverUrl', 'Cover image URL is invalid.')
+            : t('you.uploadFailed', 'Could not upload photo.')}
         </div>
       )}
 

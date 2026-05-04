@@ -376,7 +376,20 @@ export async function listProfilePosts(req: Request, res: Response) {
   try {
     const profileId = req.params.id;
     const { limit, offset } = parsePagination(req, { limit: 20, maxLimit: 100 });
-    const items = await deps.storage.listUserPosts(profileId, { limit, offset });
+    const rows = await deps.storage.listUserPosts(profileId, { limit, offset });
+    const ids = rows.map((p) => p.id);
+    const viewerId = currentUserId(req);
+    const [likeCounts, commentCounts, likedSet] = await Promise.all([
+      deps.storage.getPostLikeCounts(ids),
+      deps.storage.getPostCommentCounts(ids),
+      viewerId ? deps.storage.getUserLikedPosts(viewerId, ids) : Promise.resolve(new Set<number>()),
+    ]);
+    const items = rows.map((p) => ({
+      ...p,
+      likeCount: likeCounts.get(p.id) ?? 0,
+      commentCount: commentCounts.get(p.id) ?? 0,
+      liked: likedSet.has(p.id),
+    }));
     res.json({ items, pagination: { limit, offset } });
   } catch (error) {
     console.error('[profile] listProfilePosts failed:', error);
@@ -399,14 +412,19 @@ export async function createProfilePost(req: Request, res: Response) {
 
     const body = (req.body ?? {}) as Record<string, unknown>;
     const rawContent = body.content;
-    if (typeof rawContent !== 'string') {
-      res.status(400).json({ error: 'invalid_content', code: 'invalid_content' });
-      return;
-    }
-    const content = rawContent.trim();
-    if (content.length < 1 || content.length > 5000) {
-      res.status(400).json({ error: 'invalid_content', code: 'invalid_content' });
-      return;
+    // Allow content to be omitted/null/empty when an image is attached —
+    // matches Facebook's "post a photo without a caption" flow.
+    let content = '';
+    if (rawContent !== undefined && rawContent !== null) {
+      if (typeof rawContent !== 'string') {
+        res.status(400).json({ error: 'invalid_content', code: 'invalid_content' });
+        return;
+      }
+      content = rawContent.trim();
+      if (content.length > 5000) {
+        res.status(400).json({ error: 'invalid_content', code: 'invalid_content' });
+        return;
+      }
     }
 
     let imageUrl: string | null = null;
@@ -417,6 +435,12 @@ export async function createProfilePost(req: Request, res: Response) {
         return;
       }
       imageUrl = parsed.value;
+    }
+
+    // Either text or an image is required — empty posts are still rejected.
+    if (content.length === 0 && !imageUrl) {
+      res.status(400).json({ error: 'invalid_content', code: 'invalid_content' });
+      return;
     }
 
     const created = await deps.storage.createUserPost({ userId, content, imageUrl });

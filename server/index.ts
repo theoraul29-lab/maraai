@@ -20,6 +20,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { UPLOADS_DIR } from '../backend/src/modules/reels.js';
 import { IMAGE_UPLOADS_DIR } from '../backend/src/modules/uploads.js';
+import { seedPlans } from './billing/seed.js';
+import { seedTradingAcademy } from './trading/seed.js';
 dotenv.config();
 
 // Process-level safety net for *runtime* bugs in request handlers.
@@ -197,7 +199,12 @@ app.get('/api/health', (_req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
-app.get('/api/auth/me', (req: any, res) => {
+// /api/auth/me returns the full user payload (registered in routes.ts via
+// auth-api.meHandler). We keep a lightweight `/api/auth/csrf` endpoint here
+// so the SPA can grab a CSRF token for unauthenticated mutating calls
+// (signup, password reset) without going through the heavier user-lookup
+// path.
+app.get('/api/auth/csrf', (req: any, res) => {
   res.json({ uid: req.user?.uid ?? null, csrfToken: req.session?.csrfToken ?? null });
 });
 
