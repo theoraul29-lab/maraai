@@ -47,6 +47,7 @@ import { learningRateLimiter } from './mara-brain/rate-limiter';
 import { chatRateLimit } from './rate-limit.js';
 import { users as usersTable } from '../shared/models/auth.js';
 import { registerMaraAIRoutes } from './maraai/routes.js';
+import { signup as authSignup, login as authLogin, logout as authLogout, me as authMe } from './modules/auth-api.js';
 
 export async function registerRoutes(
   httpServer: Server,
@@ -65,13 +66,9 @@ export async function registerRoutes(
   // so req.session is populated by the time this middleware runs.
   app.use(csrfProtection);
 
-  // Admin guard: match against ADMIN_USER_IDS (deny-by-default)
-  const requireAdmin = (req: any, res: any, next: any) => {
-    const adminIds = (process.env.ADMIN_USER_IDS || '')
-      .split(',')
-      .map((v) => v.trim())
-      .filter(Boolean);
-
+  // Admin guard: match against ADMIN_USER_IDS / ADMIN_EMAILS (deny-by-default).
+  const parseCsv = (v: string | undefined): string[] =>
+    (v || '').split(',').map((s) => s.trim()).filter(Boolean);
   const requireAdmin = async (req: any, res: any, next: any) => {
     const adminIds = parseCsv(process.env.ADMIN_USER_IDS);
     const adminEmails = parseCsv(process.env.ADMIN_EMAILS).map((e) => e.toLowerCase());
@@ -138,6 +135,24 @@ export async function registerRoutes(
   app.get('/api/premium/status', requireAuth, ordersModule.getPremiumStatus);
   app.get('/api/trading/access', requireAuth, ordersModule.getTradingAccess);
   app.post('/api/premium/order', requireAuth, ordersModule.createPremiumOrder);
+
+  // --- Auth endpoints (local email/password + session) ---------------------
+  // The handlers themselves live in server/modules/auth-api.ts and are
+  // wrapped with wrapAsync to guarantee the response is always ended even
+  // if the handler throws. We register them here so /api/auth/signup and
+  // /api/auth/login are reachable; without this wiring the SPA fell back
+  // to the static index.html and the AuthContext silently treated every
+  // signup/login as failed.
+  app.post('/api/auth/signup', authSignup);
+  app.post('/api/auth/login', authLogin);
+  app.post('/api/auth/logout', authLogout);
+  // Full user payload (matches the AuthContext's expected shape).
+  app.get('/api/auth/me', authMe);
+
+  // Mara AI chat / OTP / brain endpoints. Imported but never wired in
+  // the previous PR which is why /api/auth/otp/* and /api/chat were
+  // returning the SPA HTML instead of JSON.
+  registerMaraAIRoutes(app, requireAuth);
 
   // Profile endpoints (PR H)
   // Order matters: `/me` must be registered before `/:id` so Express matches

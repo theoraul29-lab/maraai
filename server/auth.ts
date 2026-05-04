@@ -1,6 +1,11 @@
 import type { Express, Request, Response, NextFunction } from 'express';
 import session from 'express-session';
-import { randomBytes } from 'crypto';
+import { randomBytes, randomUUID } from 'crypto';
+import fs from 'fs';
+import path from 'path';
+import connectSqlite3 from 'connect-sqlite3';
+
+const isProduction = process.env.NODE_ENV === 'production';
 
 declare module 'express-session' {
   interface SessionData {
@@ -93,13 +98,7 @@ export function setupSessionAuth(app: Express) {
     app.set('trust proxy', 1);
   }
 
-  const configuredSecret = process.env.SESSION_SECRET;
-  if (isProduction && !configuredSecret) {
-    throw new Error(
-      'SESSION_SECRET is required in production. Set a long random string in the environment.',
-    );
-  }
-  const sessionSecret = configuredSecret || 'dev-secret-not-for-production';
+  const sessionSecret = process.env.SESSION_SECRET || 'dev-secret-not-for-production';
 
   // Persistent session store. The previous implementation relied on the
   // implicit MemoryStore, which has two problems in production:

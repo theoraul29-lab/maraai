@@ -132,10 +132,21 @@ i18n
     // English ONLY for the missing key — the rest of the UI keeps the
     // user-selected language.
     saveMissing: false,
-    parseMissingKeyHandler: (key) => {
+    // When the call site provides a default value (e.g.
+    // `t('you.timeline', 'Timeline')`) we MUST honour it instead of
+    // returning the raw key — otherwise users see e.g. "you.timeline"
+    // in the UI as soon as a key is missing from the locale files.
+    // The previous handler returned the key unconditionally, which
+    // caused production (`hellomara.net`) to render raw i18n keys for
+    // every You-profile tab and label.
+    returnEmptyString: false,
+    parseMissingKeyHandler: (key, defaultValue) => {
       if (typeof window !== 'undefined') {
         // eslint-disable-next-line no-console
         console.warn(`[i18n] Missing translation key: "${key}" — falling back to English.`);
+      }
+      if (typeof defaultValue === 'string' && defaultValue.length > 0 && defaultValue !== key) {
+        return defaultValue;
       }
       return key;
     },

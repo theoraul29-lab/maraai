@@ -416,6 +416,7 @@ export interface IStorage {
   getPostLikeCount(postId: number): Promise<number>;
   hasUserLikedPost(userId: string, postId: number): Promise<boolean>;
   getPostLikeCounts(postIds: number[]): Promise<Map<number, number>>;
+  getPostCommentCounts(postIds: number[]): Promise<Map<number, number>>;
   getUserLikedPosts(userId: string, postIds: number[]): Promise<Set<number>>;
   createPostComment(input: { postId: number; userId: string; content: string }): Promise<PostComment>;
   listPostComments(postId: number, opts?: { limit?: number }): Promise<(PostComment & { userName: string | null })[]>;
@@ -2395,6 +2396,18 @@ export class DatabaseStorage implements IStorage {
       .from(postLikes)
       .where(inArray(postLikes.postId, postIds))
       .groupBy(postLikes.postId);
+    const m = new Map<number, number>();
+    for (const r of rows) m.set(r.postId, r.c);
+    return m;
+  }
+
+  async getPostCommentCounts(postIds: number[]): Promise<Map<number, number>> {
+    if (postIds.length === 0) return new Map();
+    const rows = await db
+      .select({ postId: postComments.postId, c: count() })
+      .from(postComments)
+      .where(inArray(postComments.postId, postIds))
+      .groupBy(postComments.postId);
     const m = new Map<number, number>();
     for (const r of rows) m.set(r.postId, r.c);
     return m;

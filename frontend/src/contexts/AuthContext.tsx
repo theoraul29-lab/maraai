@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { changeLanguage as changeI18nLanguage } from '../i18n';
+import { clearCsrfToken, getCsrfToken } from '../csrf';
 
 export type UserTier = 'free' | 'trial' | 'premium' | 'vip';
 
@@ -184,6 +185,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       localStorage.setItem('user', JSON.stringify(newUser));
       setUser(newUser);
       setIsAuthenticated(true);
+      // Server rotates the session id on login (`setSessionUser`), so
+      // the cached anonymous-session CSRF token is now stale.
+      clearCsrfToken();
+      void getCsrfToken();
       // Sync i18n to the user's stored preference (server wins on login).
       void applyServerLanguage(userData.preferredLanguage);
     } catch (error) {
@@ -220,6 +225,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       localStorage.setItem('user', JSON.stringify(newUser));
       setUser(newUser);
       setIsAuthenticated(true);
+      // Session id rotates on signup — drop the anonymous CSRF token
+      // and pre-warm a fresh one tied to the authenticated session.
+      clearCsrfToken();
+      void getCsrfToken();
       // Brand-new signup: server returns null preferredLanguage, so
       // applyServerLanguage is a no-op and current i18n state (chosen on
       // the public landing page) is retained. Fire-and-forget POST
@@ -276,6 +285,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUser(null);
     setIsAuthenticated(false);
     setOAuthError(null);
+    // Logout regenerates the session id server-side; refresh the cached
+    // CSRF token so the next mutating call uses the new session's value.
+    clearCsrfToken();
+    void getCsrfToken();
   };
 
   const upgradeTier = async (newTier: UserTier): Promise<void> => {
