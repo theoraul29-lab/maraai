@@ -22,6 +22,7 @@ export type BrainStatus = {
   nextRunAt: string | null;
   cycleIntervalMs: number;
   selfPostIntervalMs: number;
+  selfPostEnabled: boolean;
   manualTriggerCooldownMs: number;
   manualTriggerAvailableAt: string | null;
 };
@@ -76,6 +77,17 @@ class BrainManagerImpl {
     return flag !== 'false';
   }
 
+  /**
+   * Whether Mara should auto-publish "Mara AI Insight" posts in the creator
+   * feed every `selfPostIntervalMs`. Independent of the brain cycle itself
+   * — set BRAIN_SELF_POST_ENABLED=false to keep autonomous learning on but
+   * stop the auto-marketing posts.
+   * Default: on (preserves historical behaviour).
+   */
+  get isSelfPostEnabled(): boolean {
+    return process.env.BRAIN_SELF_POST_ENABLED !== 'false';
+  }
+
   /** Start the background scheduler. Idempotent — safe to call multiple times. */
   start(logger: (msg: string, tag?: string) => void): void {
     if (this._started) return;
@@ -106,13 +118,23 @@ class BrainManagerImpl {
       () => void this._scheduledCycle(logger),
       this.cycleIntervalMs,
     );
-    this._selfPostTimer = setInterval(
-      () => void this._scheduledSelfPost(logger),
-      this.selfPostIntervalMs,
-    );
+
+    // Self-post scheduler is opt-out via BRAIN_SELF_POST_ENABLED=false. When
+    // the brain is on but the user only wants autonomous learning (no auto
+    // marketing posts in the creator feed), this flag keeps the cycle but
+    // skips the post timer.
+    const selfPostMsg = this.isSelfPostEnabled
+      ? `, self-post every ${Math.round(this.selfPostIntervalMs / 60000)}min`
+      : ', self-post DISABLED (BRAIN_SELF_POST_ENABLED=false)';
+    if (this.isSelfPostEnabled) {
+      this._selfPostTimer = setInterval(
+        () => void this._scheduledSelfPost(logger),
+        this.selfPostIntervalMs,
+      );
+    }
 
     logger(
-      `Mara auto-scheduler started: brain cycle every ${Math.round(this.cycleIntervalMs / 60000)}min, self-post every ${Math.round(this.selfPostIntervalMs / 60000)}min`,
+      `Mara auto-scheduler started: brain cycle every ${Math.round(this.cycleIntervalMs / 60000)}min${selfPostMsg}`,
       'mara-scheduler',
     );
   }
@@ -151,6 +173,7 @@ class BrainManagerImpl {
       nextRunAt: this._nextRunAt ? new Date(this._nextRunAt).toISOString() : null,
       cycleIntervalMs: this.cycleIntervalMs,
       selfPostIntervalMs: this.selfPostIntervalMs,
+      selfPostEnabled: this.isSelfPostEnabled,
       manualTriggerCooldownMs: this.manualCooldownMs,
       manualTriggerAvailableAt: manualAvail,
     };

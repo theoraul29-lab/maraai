@@ -42,3 +42,4 @@ logs/
 # Misc
 .DS_Store
 *.local
+data/
