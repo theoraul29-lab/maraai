@@ -25,7 +25,7 @@ npm run dev
 - **Backend** → http://localhost:5000 (or next available port)
 - **Health check** → http://localhost:5000/api/health
 
-> **Required:** `ANTHROPIC_API_KEY` — MaraAI uses the [Anthropic Claude API](https://console.anthropic.com/settings/keys) (model `claude-sonnet-4-6`) for all AI features.
+> **AI provider:** MaraAI tries Ollama first (self-hosted, free) and falls back to Anthropic Claude if Ollama isn't reachable. At least one of `OLLAMA_BASE_URL` (with a running Ollama) or `ANTHROPIC_API_KEY` must be set — otherwise chat returns a localised "I'm catching my breath" message. See [AI Providers](#ai-providers) below.
 
 ## Environment Variables
 
@@ -38,22 +38,61 @@ Copy `.env.example` to `.env` and set the following:
 | `SESSION_SECRET` | Production only | Random secret for sessions (auto-generated in dev) |
 | `DATABASE_URL` | No | SQLite path (default: `./maraai.sqlite`) |
 | `AUTH_MODE` | No | Set to `local` to bypass OAuth (dev-friendly default) |
-| `ANTHROPIC_API_KEY` | **Yes** | Anthropic API key ([console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys)) |
+| `OLLAMA_BASE_URL` | No¹ | Ollama server URL (e.g. `http://localhost:11434`). Leave empty to disable Ollama. |
+| `OLLAMA_MODEL` | No | Ollama model tag (default: `llama3.1:8b`) |
+| `OLLAMA_TIMEOUT_MS` | No | Request timeout in ms (default: `120000`) |
+| `ANTHROPIC_API_KEY` | No¹ | Anthropic API key ([console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys)) — used as fallback when Ollama is down |
 | `ANTHROPIC_MODEL` | No | Claude model (default: `claude-sonnet-4-6`) |
 | `ANTHROPIC_MAX_TOKENS` | No | Max output tokens per reply (default: `1024`) |
 | `ANTHROPIC_TIMEOUT_MS` | No | Request timeout in ms (default: `120000`) |
 | `PROCESS_AI_TASKS` | No | Set to `true` to enable autonomous Mara brain cycle |
 
-## AI Provider & Performance
+¹ At least one of `OLLAMA_BASE_URL` (with a reachable Ollama) or `ANTHROPIC_API_KEY` must be set, otherwise the chat will return a localised "catching my breath" fallback message.
 
-MaraAI uses the [Anthropic Claude API](https://www.anthropic.com/) — model `claude-sonnet-4-6` by default.
+## AI Providers
 
-**Tips:**
-- Probe current provider health at any time: `GET /api/ai/health` returns `{ provider, configured, model, ok, error? }`.
-- For shorter/snappier answers lower `ANTHROPIC_MAX_TOKENS` (e.g. `512`); for long-form replies raise it to `2048`+.
-- Temperature is set per call in code (0.95 for chat, 0.7 for structured generation).
+Two providers are supported, picked at runtime by `server/lib/provider-router.ts`:
 
-**Graceful degrade:** when the Anthropic API fails (network, quota, model issue), `/api/chat` returns a localized "I'm catching my breath" message as a normal chat bubble (not an HTTP 500), so the UI never shows a red error.
+1. **Ollama** — primary. Self-hosted, no per-token cost, can run any open-weights model (`llama3.1:8b`, `mistral:7b`, `qwen2.5:14b`, …). Required env: `OLLAMA_BASE_URL`. The router probes `GET {OLLAMA_BASE_URL}/api/tags` (3s timeout, cached for 30s) before sending each request.
+2. **Anthropic Claude** — paid fallback when Ollama isn't reachable. Required env: `ANTHROPIC_API_KEY`. Default model: `claude-sonnet-4-6`.
+3. **Graceful degrade** — when neither is configured (or both fail), `/api/chat` returns a localised "I'm catching my breath" message as a normal chat bubble (not an HTTP 500), so the UI never shows a red error.
+
+### Run Ollama locally
+
+```bash
+# 1. Install — see https://ollama.com/download
+# 2. Pull a model and start the daemon:
+ollama pull llama3.1:8b
+ollama serve   # listens on http://localhost:11434
+# 3. Point MaraAI at it:
+echo 'OLLAMA_BASE_URL=http://localhost:11434' >> .env
+echo 'OLLAMA_MODEL=llama3.1:8b' >> .env
+npm run dev
+```
+
+### Recommended models
+
+| Use case | Suggested model | Notes |
+|---|---|---|
+| General chat (Mara persona) | `llama3.1:8b` | Default. Good balance of quality/latency. |
+| Faster on modest hardware | `llama3.2:3b` | Lower quality but ~2× faster. |
+| Best open-weights quality | `qwen2.5:14b` | Needs ≥16 GB RAM / decent GPU. |
+| Code-heavy generation | `qwen2.5-coder:7b` | Specialised for code. |
+
+### Live health probe
+
+```bash
+curl https://hellomara.net/api/ai/health
+# { "provider": "ollama", "configured": true, "ok": true, "model": "llama3.1:8b",
+#   "fallback": { "provider": "anthropic", "configured": true, "ok": true, "model": "claude-sonnet-4-6" } }
+```
+
+`provider` reports the one currently being used (Ollama if reachable, otherwise Anthropic). When neither is configured, the endpoint returns 503.
+
+### Tuning
+
+- For shorter/snappier Anthropic answers lower `ANTHROPIC_MAX_TOKENS` (e.g. `512`); for long-form replies raise it to `2048`+.
+- Temperature is set per call in code (0.95 for chat, 0.7 for structured generation) and is propagated to whichever provider serves the call.
 
 ## Configuration Map
 
