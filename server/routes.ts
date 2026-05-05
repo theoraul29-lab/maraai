@@ -41,7 +41,7 @@ import {
   generateImprovementIdeas,
   generateMarketingPost,
 } from './ai';
-import { getActiveProvider, checkAnthropicHealth, isLLMConfigured } from './llm';
+import { getAIHealth } from './llm';
 import { getLibraryProgress, addAndReadCustomBook, getKnowledgeStats, brainManager } from './mara-brain/index';
 import { learningRateLimiter } from './mara-brain/rate-limiter';
 import { chatRateLimit } from './rate-limit.js';
@@ -595,16 +595,13 @@ export async function registerRoutes(
 
   seedDatabase().catch(console.error);
 
-  // AI provider health check endpoint
+  // AI provider health check endpoint. Returns the currently-primary
+  // provider plus a `fallback` block describing the secondary when one is
+  // configured. Shape matches what the AI integration prompt requested:
+  //   { provider, configured, ok, model, fallback?: { provider, configured, ok, model } }
   app.get('/api/ai/health', async (_req: any, res: any) => {
-    const provider = getActiveProvider();
-    const configured = isLLMConfigured();
-    const health = await checkAnthropicHealth();
-    return res.status(health.ok ? 200 : 503).json({
-      provider,
-      configured,
-      ...health,
-    });
+    const snap = await getAIHealth();
+    return res.status(snap.ok ? 200 : 503).json(snap);
   });
 
   return httpServer;
