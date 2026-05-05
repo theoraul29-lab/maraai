@@ -397,6 +397,11 @@ export async function listProfilePosts(req: Request, res: Response) {
   }
 }
 
+// Kinds we allow for cross-module attribution (Phase 2 P2.2). Kept as a
+// frozen set here (not in the DB) so adding a new share source — e.g.
+// 'course' — is a code change, not a migration.
+const ALLOWED_SOURCE_KINDS = new Set(['writers', 'trading', 'reel']);
+
 export async function createProfilePost(req: Request, res: Response) {
   try {
     const userId = currentUserId(req);
@@ -437,13 +442,29 @@ export async function createProfilePost(req: Request, res: Response) {
       imageUrl = parsed.value;
     }
 
-    // Either text or an image is required — empty posts are still rejected.
-    if (content.length === 0 && !imageUrl) {
-      res.status(400).json({ error: 'invalid_content', code: 'invalid_content' });
-      return;
+    // Cross-module share attribution. Callers (Writers Hub, Trading Akademie)
+    // send `source` + `sourceId`; we accept both as a pair, or neither.
+    // Invalid kinds silently drop to a plain post rather than 400-ing — this
+    // keeps existing clients working while they adopt the new fields.
+    let sourceKind: string | null = null;
+    let sourceId: number | null = null;
+    const rawSource = body.source;
+    const rawSourceId = body.sourceId;
+    if (typeof rawSource === 'string' && ALLOWED_SOURCE_KINDS.has(rawSource)) {
+      const parsedId = Number(rawSourceId);
+      if (Number.isInteger(parsedId) && parsedId > 0) {
+        sourceKind = rawSource;
+        sourceId = parsedId;
+      }
     }
 
-    const created = await deps.storage.createUserPost({ userId, content, imageUrl });
+    const created = await deps.storage.createUserPost({
+      userId,
+      content,
+      imageUrl,
+      sourceKind,
+      sourceId,
+    });
     res.status(201).json(created);
   } catch (error) {
     console.error('[profile] createProfilePost failed:', error);

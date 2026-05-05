@@ -68,50 +68,8 @@
     {
       "idx": 9,
       "version": "6",
-      "when": 1776698400000,
-      "tag": "0009_push_subscriptions",
-      "breakpoints": true
-    },
-    {
-      "idx": 10,
-      "version": "6",
-      "when": 1777196400000,
-      "tag": "0010_maraai_platform",
-      "breakpoints": true
-    },
-    {
-      "idx": 11,
-      "version": "6",
-      "when": 1777370400000,
-      "tag": "0011_add_cover_image_url",
-      "breakpoints": true
-    },
-    {
-      "idx": 12,
-      "version": "6",
-      "when": 1777370401000,
-      "tag": "0012_users_tier_trial",
-      "breakpoints": true
-    },
-    {
-      "idx": 13,
-      "version": "6",
-      "when": 1777370402000,
-      "tag": "0013_password_reset_tokens",
-      "breakpoints": true
-    },
-    {
-      "idx": 14,
-      "version": "6",
-      "when": 1777370403000,
-      "tag": "0014_post_likes_comments",
-      "breakpoints": true
-    },
-    {
-      "idx": 15,
-      "version": "6",
-      "when": 1777370404000,
-      "tag": "0015_direct_messages",
+      "when": 1776697000000,
+      "tag": "0009_user_posts_source_kind",
       "breakpoints": true
     }
   ]
