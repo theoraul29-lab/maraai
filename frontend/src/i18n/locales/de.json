@@ -57,10 +57,10 @@
     "emailRequired": "E-Mail ist erforderlich",
     "emailInvalid": "Bitte gib eine gültige E-Mail-Adresse ein",
     "passwordRequired": "Passwort ist erforderlich",
-    "passwordMinLength": "Das Passwort muss mindestens 8 Zeichen haben",
+    "passwordMinLength": "Das Passwort muss mindestens 6 Zeichen haben",
     "nameRequired": "Name ist erforderlich",
     "nameMinLength": "Der Name muss mindestens 2 Zeichen haben",
-    "passwordHint": "✓ Das Passwort muss mindestens 8 Zeichen haben",
+    "passwordHint": "✓ Das Passwort muss mindestens 6 Zeichen haben",
     "login": "Anmelden",
     "createAccount": "Konto erstellen",
     "signingIn": "Anmeldung läuft...",
@@ -79,7 +79,7 @@
     "switchToLogin": "Zur Anmeldung wechseln",
     "or": "ODER",
     "errors": {
-      "signup_body_invalid": "E-Mail, Passwort (mind. 8 Zeichen) und Name sind erforderlich.",
+      "signup_body_invalid": "E-Mail, Passwort (mind. 6 Zeichen) und Name sind erforderlich.",
       "login_body_invalid": "E-Mail und Passwort sind erforderlich.",
       "email_exists": "Ein Konto mit dieser E-Mail existiert bereits.",
       "invalid_credentials": "Ungültige E-Mail oder Passwort.",
@@ -991,5 +991,19 @@
   "languageSelector": {
     "label": "Sprache",
     "changeLanguage": "Sprache ändern"
+  },
+  "pwa": {
+    "installTitle": "Mara installieren",
+    "installBody": "Füge hellomara.net zu deinem Startbildschirm hinzu, um die volle App-Erfahrung zu erhalten.",
+    "installCta": "Installieren",
+    "installDismiss": "Nicht jetzt",
+    "installDismissAria": "Installations-Hinweis schließen",
+    "iosHintTitle": "Mara installieren",
+    "iosHintBody": "Tippe auf Teilen und dann auf \"Zum Home-Bildschirm\", um die App zu installieren.",
+    "iosHintDismiss": "Verstanden",
+    "updateTitle": "Update verfügbar",
+    "updateBody": "Eine neuere Version von Mara ist verfügbar.",
+    "updateCta": "Aktualisieren",
+    "updateDismissAria": "Update schließen"
   }
 }

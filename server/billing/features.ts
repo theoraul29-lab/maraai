@@ -16,6 +16,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { eq, and, or, gt, desc } from 'drizzle-orm';
 import { db } from '../db.js';
 import { plans, subscriptions } from '../../shared/models/billing.js';
+import { users } from '../../shared/models/auth.js';
 import { PLAN_CATALOGUE } from './plans.js';
 
 // ---------------------------------------------------------------------------
@@ -77,6 +78,26 @@ export function validatePlanCatalogue(): void {
 // ---------------------------------------------------------------------------
 
 /**
+ * Fallback: when a user has no active subscription, check the `users.tier`
+ * column. If tier='trial' and trialEndsAt is still in the future, return
+ * 'trial'. Otherwise return 'free'. This ensures that the one-hour trial
+ * window set on signup is enforced server-side, not only in the UI.
+ */
+async function getUserTierPlanId(userId: string): Promise<string> {
+  const rows = await db
+    .select({ tier: users.tier, trialEndsAt: users.trialEndsAt })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  const u = rows[0];
+  if (!u) return 'free';
+  if (u.tier === 'trial' && u.trialEndsAt && u.trialEndsAt > Date.now()) {
+    return 'trial';
+  }
+  return 'free';
+}
+
+/**
  * Derive the active plan id for a user. Anonymous users (null userId) and
  * users without an active subscription get `free`. A subscription grants
  * access while its status is `active`, OR while it is `cancelled` with a
@@ -111,7 +132,7 @@ export async function getActivePlanId(userId: string | null): Promise<string> {
     .orderBy(desc(subscriptions.createdAt))
     .limit(1);
 
-  return rows[0]?.planId ?? 'free';
+  return rows[0]?.planId ?? (await getUserTierPlanId(userId));
 }
 
 /** Whether the user (or anonymous session) has access to the given feature. */

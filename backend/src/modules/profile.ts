@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import type { IStorage } from '../../../server/storage';
+import { notifyFollow } from '../../../server/notifications/producer.js';
 
 let deps: { storage: IStorage };
 
@@ -45,9 +46,12 @@ function toPublicProfile(
   };
 }
 
+// Strict variant — only absolute http/https URLs. Used for fields like
+// `website` where a same-origin relative path is semantically wrong.
 function validateOptionalUrl(v: unknown, maxLen = 2048): { ok: true; value: string | null } | { ok: false } {
   if (v === null || v === '') return { ok: true, value: null };
   if (typeof v !== 'string' || v.length > maxLen) return { ok: false };
+
   let normalized: string;
   try {
     const url = new URL(v);
@@ -61,6 +65,21 @@ function validateOptionalUrl(v: unknown, maxLen = 2048): { ok: true; value: stri
     return { ok: false };
   }
   return { ok: true, value: normalized };
+}
+
+// Image-URL variant — also accepts same-origin relative paths produced by
+// /api/uploads/image and /api/reels/upload. They live under our own
+// /uploads/* and /videos/* static mounts so there is no cross-origin
+// attack surface, and we explicitly restrict the prefix list rather than
+// allowing arbitrary `/foo` strings.
+function validateOptionalImageUrl(v: unknown, maxLen = 2048): { ok: true; value: string | null } | { ok: false } {
+  if (v === null || v === '') return { ok: true, value: null };
+  if (typeof v !== 'string' || v.length > maxLen) return { ok: false };
+  if (v.startsWith('/uploads/') || v.startsWith('/videos/')) {
+    if (v.includes('..') || v.includes('"') || /\s/.test(v)) return { ok: false };
+    return { ok: true, value: v };
+  }
+  return validateOptionalUrl(v, maxLen);
 }
 
 function parsePagination(
@@ -146,6 +165,8 @@ export async function followUser(req: Request, res: Response) {
       return;
     }
     const result = await deps.storage.followUser(followerId, followingId);
+    // Fire-and-forget notification. Must never break the follow op.
+    void notifyFollow(followerId, followingId);
     res.json(result);
   } catch (error) {
     console.error('[profile] followUser failed:', error);
@@ -248,7 +269,7 @@ export async function updateMe(req: Request, res: Response) {
     }
 
     if ('profileImageUrl' in body) {
-      const parsed = validateOptionalUrl(body.profileImageUrl);
+      const parsed = validateOptionalImageUrl(body.profileImageUrl);
       if (!parsed.ok) {
         res.status(400).json({ error: 'invalid_image_url', code: 'invalid_image_url' });
         return;
@@ -257,7 +278,7 @@ export async function updateMe(req: Request, res: Response) {
     }
 
     if ('coverImageUrl' in body) {
-      const parsed = validateOptionalUrl(body.coverImageUrl);
+      const parsed = validateOptionalImageUrl(body.coverImageUrl);
       if (!parsed.ok) {
         res.status(400).json({ error: 'invalid_cover_url', code: 'invalid_cover_url' });
         return;
@@ -355,7 +376,20 @@ export async function listProfilePosts(req: Request, res: Response) {
   try {
     const profileId = req.params.id;
     const { limit, offset } = parsePagination(req, { limit: 20, maxLimit: 100 });
-    const items = await deps.storage.listUserPosts(profileId, { limit, offset });
+    const rows = await deps.storage.listUserPosts(profileId, { limit, offset });
+    const ids = rows.map((p) => p.id);
+    const viewerId = currentUserId(req);
+    const [likeCounts, commentCounts, likedSet] = await Promise.all([
+      deps.storage.getPostLikeCounts(ids),
+      deps.storage.getPostCommentCounts(ids),
+      viewerId ? deps.storage.getUserLikedPosts(viewerId, ids) : Promise.resolve(new Set<number>()),
+    ]);
+    const items = rows.map((p) => ({
+      ...p,
+      likeCount: likeCounts.get(p.id) ?? 0,
+      commentCount: commentCounts.get(p.id) ?? 0,
+      liked: likedSet.has(p.id),
+    }));
     res.json({ items, pagination: { limit, offset } });
   } catch (error) {
     console.error('[profile] listProfilePosts failed:', error);
@@ -383,19 +417,24 @@ export async function createProfilePost(req: Request, res: Response) {
 
     const body = (req.body ?? {}) as Record<string, unknown>;
     const rawContent = body.content;
-    if (typeof rawContent !== 'string') {
-      res.status(400).json({ error: 'invalid_content', code: 'invalid_content' });
-      return;
-    }
-    const content = rawContent.trim();
-    if (content.length < 1 || content.length > 5000) {
-      res.status(400).json({ error: 'invalid_content', code: 'invalid_content' });
-      return;
+    // Allow content to be omitted/null/empty when an image is attached —
+    // matches Facebook's "post a photo without a caption" flow.
+    let content = '';
+    if (rawContent !== undefined && rawContent !== null) {
+      if (typeof rawContent !== 'string') {
+        res.status(400).json({ error: 'invalid_content', code: 'invalid_content' });
+        return;
+      }
+      content = rawContent.trim();
+      if (content.length > 5000) {
+        res.status(400).json({ error: 'invalid_content', code: 'invalid_content' });
+        return;
+      }
     }
 
     let imageUrl: string | null = null;
     if ('imageUrl' in body && body.imageUrl !== undefined) {
-      const parsed = validateOptionalUrl(body.imageUrl);
+      const parsed = validateOptionalImageUrl(body.imageUrl);
       if (!parsed.ok) {
         res.status(400).json({ error: 'invalid_image_url', code: 'invalid_image_url' });
         return;
@@ -504,5 +543,99 @@ export async function getBadges(req: Request, res: Response) {
   } catch (error) {
     console.error('[profile] getBadges failed:', error);
     res.status(500).json({ error: 'badges_failed', code: 'badges_failed' });
+  }
+}
+
+// --- Post Likes & Comments (Feature 2) -------------------------------------
+
+export async function likePost(req: Request, res: Response) {
+  try {
+    const userId = currentUserId(req);
+    if (!userId) {
+      res.status(401).json({ error: 'unauthenticated', code: 'unauthenticated' });
+      return;
+    }
+    const postId = Number.parseInt(req.params.postId ?? '', 10);
+    if (!Number.isFinite(postId) || postId <= 0) {
+      res.status(400).json({ error: 'invalid_post_id', code: 'invalid_post_id' });
+      return;
+    }
+    const result = await deps.storage.togglePostLike(userId, postId);
+    res.json(result);
+  } catch (error) {
+    console.error('[profile] likePost failed:', error);
+    res.status(500).json({ error: 'like_failed', code: 'like_failed' });
+  }
+}
+
+export async function listPostComments(req: Request, res: Response) {
+  try {
+    const postId = Number.parseInt(req.params.postId ?? '', 10);
+    if (!Number.isFinite(postId) || postId <= 0) {
+      res.status(400).json({ error: 'invalid_post_id', code: 'invalid_post_id' });
+      return;
+    }
+    const rawLimit = Number.parseInt(String(req.query.limit ?? ''), 10);
+    const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(rawLimit, 1), 200) : 50;
+    const items = await deps.storage.listPostComments(postId, { limit });
+    res.json({ items });
+  } catch (error) {
+    console.error('[profile] listPostComments failed:', error);
+    res.status(500).json({ error: 'comments_failed', code: 'comments_failed' });
+  }
+}
+
+export async function createPostComment(req: Request, res: Response) {
+  try {
+    const userId = currentUserId(req);
+    if (!userId) {
+      res.status(401).json({ error: 'unauthenticated', code: 'unauthenticated' });
+      return;
+    }
+    const postId = Number.parseInt(req.params.postId ?? '', 10);
+    if (!Number.isFinite(postId) || postId <= 0) {
+      res.status(400).json({ error: 'invalid_post_id', code: 'invalid_post_id' });
+      return;
+    }
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    const rawContent = body.content;
+    if (typeof rawContent !== 'string') {
+      res.status(400).json({ error: 'invalid_content', code: 'invalid_content' });
+      return;
+    }
+    const content = rawContent.trim();
+    if (content.length < 1 || content.length > 1000) {
+      res.status(400).json({ error: 'invalid_content', code: 'invalid_content' });
+      return;
+    }
+    const comment = await deps.storage.createPostComment({ postId, userId, content });
+    res.status(201).json(comment);
+  } catch (error) {
+    console.error('[profile] createPostComment failed:', error);
+    res.status(500).json({ error: 'comment_create_failed', code: 'comment_create_failed' });
+  }
+}
+
+export async function deletePostComment(req: Request, res: Response) {
+  try {
+    const userId = currentUserId(req);
+    if (!userId) {
+      res.status(401).json({ error: 'unauthenticated', code: 'unauthenticated' });
+      return;
+    }
+    const commentId = Number.parseInt(req.params.commentId ?? '', 10);
+    if (!Number.isFinite(commentId) || commentId <= 0) {
+      res.status(400).json({ error: 'invalid_comment_id', code: 'invalid_comment_id' });
+      return;
+    }
+    const ok = await deps.storage.deletePostComment(commentId, userId);
+    if (!ok) {
+      res.status(404).json({ error: 'not_found', code: 'not_found' });
+      return;
+    }
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('[profile] deletePostComment failed:', error);
+    res.status(500).json({ error: 'comment_delete_failed', code: 'comment_delete_failed' });
   }
 }

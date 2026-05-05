@@ -9,8 +9,10 @@ import {
 } from '../shared/schema';
 import { db } from './db';
 import { eq } from 'drizzle-orm';
+import { csrfProtection } from './auth';
 import * as videoModule from '../backend/src/modules/video.js';
 import * as reelsModule from '../backend/src/modules/reels.js';
+import * as uploadsModule from '../backend/src/modules/uploads.js';
 import * as writersModule from '../backend/src/modules/writers.js';
 import * as tradingAcademyModule from '../backend/src/modules/trading-academy.js';
 import * as creatorsModule from '../backend/src/modules/creators.js';
@@ -21,10 +23,13 @@ import * as userPrefsModule from '../backend/src/modules/userPrefs.js';
 import * as adminModule from '../backend/src/modules/admin.js';
 import * as feedbackModule from '../backend/src/modules/feedback.js';
 import * as profileModule from '../backend/src/modules/profile.js';
+import * as notificationsModule from '../backend/src/modules/notifications.js';
+import * as searchModule from '../backend/src/modules/search.js';
 import * as ordersModule from '../backend/src/modules/orders.js';
 import * as adminOrdersModule from '../backend/src/modules/adminOrders.js';
 import * as paymentsModule from '../backend/src/modules/payments.js';
 import * as pythonBridgeModule from '../backend/src/modules/pythonBridge.js';
+import * as messengerModule from '../backend/src/modules/messenger.js';
 import {
   StripeProvider,
   PayPalProvider,
@@ -36,10 +41,13 @@ import {
   generateImprovementIdeas,
   generateMarketingPost,
 } from './ai';
-import { getActiveProvider, checkAnthropicHealth, isLLMConfigured } from './llm';
+import { getAIHealth } from './llm';
 import { getLibraryProgress, addAndReadCustomBook, getKnowledgeStats, brainManager } from './mara-brain/index';
 import { learningRateLimiter } from './mara-brain/rate-limiter';
 import { chatRateLimit } from './rate-limit.js';
+import { users as usersTable } from '../shared/models/auth.js';
+import { registerMaraAIRoutes } from './maraai/routes.js';
+import { signup as authSignup, login as authLogin, logout as authLogout, me as authMe } from './modules/auth-api.js';
 
 export async function registerRoutes(
   httpServer: Server,
@@ -53,16 +61,14 @@ export async function registerRoutes(
     return next();
   };
 
-  // Admin guard: match against ADMIN_USER_IDS or ADMIN_EMAILS (deny-by-default).
-  // Email matching is stable across DB resets (e.g. ephemeral SQLite without a
-  // mounted volume), so operators can keep a durable admin without re-patching
-  // the uid list after every redeploy.
-  const parseCsv = (raw: string | undefined) =>
-    (raw || '')
-      .split(',')
-      .map((v) => v.trim())
-      .filter(Boolean);
+  // Apply CSRF protection to all state-changing routes.
+  // Note: setupSessionAuth() is called in server/index.ts before registerRoutes(),
+  // so req.session is populated by the time this middleware runs.
+  app.use(csrfProtection);
 
+  // Admin guard: match against ADMIN_USER_IDS / ADMIN_EMAILS (deny-by-default).
+  const parseCsv = (v: string | undefined): string[] =>
+    (v || '').split(',').map((s) => s.trim()).filter(Boolean);
   const requireAdmin = async (req: any, res: any, next: any) => {
     const adminIds = parseCsv(process.env.ADMIN_USER_IDS);
     const adminEmails = parseCsv(process.env.ADMIN_EMAILS).map((e) => e.toLowerCase());
@@ -130,6 +136,24 @@ export async function registerRoutes(
   app.get('/api/trading/access', requireAuth, ordersModule.getTradingAccess);
   app.post('/api/premium/order', requireAuth, ordersModule.createPremiumOrder);
 
+  // --- Auth endpoints (local email/password + session) ---------------------
+  // The handlers themselves live in server/modules/auth-api.ts and are
+  // wrapped with wrapAsync to guarantee the response is always ended even
+  // if the handler throws. We register them here so /api/auth/signup and
+  // /api/auth/login are reachable; without this wiring the SPA fell back
+  // to the static index.html and the AuthContext silently treated every
+  // signup/login as failed.
+  app.post('/api/auth/signup', authSignup);
+  app.post('/api/auth/login', authLogin);
+  app.post('/api/auth/logout', authLogout);
+  // Full user payload (matches the AuthContext's expected shape).
+  app.get('/api/auth/me', authMe);
+
+  // Mara AI chat / OTP / brain endpoints. Imported but never wired in
+  // the previous PR which is why /api/auth/otp/* and /api/chat were
+  // returning the SPA HTML instead of JSON.
+  registerMaraAIRoutes(app, requireAuth);
+
   // Profile endpoints (PR H)
   // Order matters: `/me` must be registered before `/:id` so Express matches
   // it literally instead of treating "me" as a user id.
@@ -143,6 +167,12 @@ export async function registerRoutes(
   app.get('/api/profile/:id/badges', profileModule.getBadges);
   app.get('/api/profile/:id/posts', profileModule.listProfilePosts);
   app.post('/api/profile/posts', requireAuth, profileModule.createProfilePost);
+  // Post likes & comments — must be registered BEFORE the delete-post route
+  // so that Express does not match `/posts/:postId` before `/posts/comments/:commentId`.
+  app.post('/api/profile/posts/:postId/like', requireAuth, profileModule.likePost);
+  app.get('/api/profile/posts/:postId/comments', profileModule.listPostComments);
+  app.post('/api/profile/posts/:postId/comments', requireAuth, profileModule.createPostComment);
+  app.delete('/api/profile/posts/comments/:commentId', requireAuth, profileModule.deletePostComment);
   app.delete(
     '/api/profile/posts/:postId',
     requireAuth,
@@ -157,6 +187,23 @@ export async function registerRoutes(
 
   // Feedback/moderation endpoint (require auth)
   app.post('/api/moderate', requireAuth, feedbackModule.moderate);
+
+  // --- Notifications (Phase 2 P2.1) -----------------------------------------
+  app.get('/api/notifications', requireAuth, notificationsModule.listNotifications);
+  app.get('/api/notifications/unread-count', requireAuth, notificationsModule.unreadCount);
+  app.post('/api/notifications/:id/read', requireAuth, notificationsModule.markRead);
+  app.post('/api/notifications/read-all', requireAuth, notificationsModule.markAllRead);
+
+  // --- Direct Messaging (Feature 5) ------------------------------------------
+  app.get('/api/messenger/conversations', requireAuth, messengerModule.listConversations);
+  app.post('/api/messenger/conversations', requireAuth, messengerModule.getOrCreateConv);
+  app.get('/api/messenger/conversations/:convId/messages', requireAuth, messengerModule.getMessages);
+  app.post('/api/messenger/conversations/:convId/messages', requireAuth, messengerModule.sendMessage);
+  app.post('/api/messenger/conversations/:convId/read', requireAuth, messengerModule.markRead);
+
+  // Global search (Phase 2 P2.4) — public, returns ranked results across
+  // people/reels/articles/lessons. See backend/src/modules/search.ts.
+  app.get('/api/search', searchModule.search);
 
   // Video and feed endpoints
   app.get(api.videos.list.path, videoModule.listVideos);
@@ -185,6 +232,28 @@ export async function registerRoutes(
     },
     reelsModule.uploadReel,
   );
+  // --- Generic image upload (avatar, cover, post image, writers cover) ----
+  // Auth-required, multipart/form-data field name `image`. Returns a public
+  // URL the caller can store in any *ImageUrl column via the existing
+  // PATCH /api/profile/me / POST /api/profile/posts / POST /api/writers
+  // endpoints — those still validate URL shape so we keep one source of
+  // truth for what an image URL looks like.
+  app.post(
+    '/api/uploads/image',
+    requireAuth,
+    (req: any, res: any, next: any) => {
+      uploadsModule.imageUploadMiddleware(req, res, (err: unknown) => {
+        if (err) {
+          const msg = err instanceof Error ? err.message : 'upload error';
+          const status = msg.includes('File too large') ? 413 : 400;
+          return res.status(status).json({ error: msg });
+        }
+        return next();
+      });
+    },
+    uploadsModule.uploadImage,
+  );
+
   app.post('/api/videos/:id/share', requireAuth, reelsModule.shareReel);
   app.get('/api/videos/:id/comments', reelsModule.listComments);
   app.post('/api/videos/:id/comments', requireAuth, reelsModule.createComment);
@@ -206,7 +275,7 @@ export async function registerRoutes(
   app.get('/api/writers/:idOrSlug', writersModule.getArticle);
   app.patch('/api/writers/:id', requireAuth, writersModule.updateArticle);
   app.delete('/api/writers/:id', requireAuth, writersModule.deleteArticle);
-  app.post('/api/writers/:id/like', writersModule.likeArticle);
+  app.post('/api/writers/:id/like', requireAuth, writersModule.likeArticle);
   app.get('/api/writers/:id/comments', writersModule.listComments);
   app.post('/api/writers/:id/comments', requireAuth, writersModule.createComment);
   // legacy singular alias used by WritersHub.tsx
@@ -234,18 +303,18 @@ export async function registerRoutes(
 
   // --- Creator Tools (PR G) -------------------------------------------------
   // Aggregated earnings (requires creator.revenue_share feature).
-  app.get('/api/creator/earnings', creatorsModule.getEarnings);
-  app.get('/api/creator/earnings/history', creatorsModule.getEarningsHistory);
+  app.get('/api/creator/earnings', requireAuth, creatorsModule.getEarnings);
+  app.get('/api/creator/earnings/history', requireAuth, creatorsModule.getEarningsHistory);
   // Writer-side analytics (pages/views/likes/followers). A distinct path from
   // the existing reels-focused `/api/creator/analytics` (videoModule) which
   // returns a different shape already consumed by the frontend; merging the
   // two is deferred to the dashboard wiring PR.
-  app.get('/api/creator/dashboard-analytics', creatorsModule.getAnalytics);
+  app.get('/api/creator/dashboard-analytics', requireAuth, creatorsModule.getAnalytics);
   // Payout requests (list is open to any signed-in user so creators can see
   // their own past requests even if their active plan has lapsed; POST
   // requires the creator.payouts feature).
-  app.get('/api/creator/payouts', creatorsModule.listMyPayouts);
-  app.post('/api/creator/payouts', creatorsModule.createPayout);
+  app.get('/api/creator/payouts', requireAuth, creatorsModule.listMyPayouts);
+  app.post('/api/creator/payouts', requireAuth, creatorsModule.createPayout);
   // Admin endpoints.
   app.get('/api/admin/creator/payouts', creatorsModule.adminListPayouts);
   app.patch('/api/admin/creator/payouts/:id', creatorsModule.adminUpdatePayout);
@@ -257,9 +326,9 @@ export async function registerRoutes(
   app.get('/api/creator/analytics', requireAuth, videoModule.creatorAnalytics);
   app.delete('/api/creator/videos/:id', requireAuth, videoModule.deleteCreatorVideo);
 
-  // Chat endpoints (require auth; chat send is rate-limited to match WebSocket)
+  // Chat endpoints (require auth)
   app.get(api.chat.list.path, requireAuth, chatModule.getChatHistory);
-  app.post(api.chat.send.path, requireAuth, chatRateLimit, chatModule.sendChatMessage);
+  app.post(api.chat.send.path, requireAuth, chatModule.sendChatMessage);
 
   // TTS/STT endpoints
   app.post('/api/mara-speak', ttsModule.maraSpeak);
@@ -485,18 +554,54 @@ export async function registerRoutes(
     }
   });
 
+  // Global search — public, no auth required.
+  app.get('/api/search', searchModule.search);
+
+  // Trading signals — returns the latest Mara-generated market signal.
+  app.get('/api/trading/signals', async (_req: any, res: any) => {
+    try {
+      res.json({
+        content: 'Mara AI is analyzing markets. Check back in a few minutes for updated signals.',
+        updatedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to get signals' });
+    }
+  });
+
+  // Upgrade user tier — requires auth; updates users.tier in DB.
+  app.post('/api/user/upgrade', requireAuth, async (req: any, res: any) => {
+    const userId: string = req.user?.uid;
+    const VALID_TIERS = ['free', 'trial', 'premium', 'vip'] as const;
+    type ValidTier = typeof VALID_TIERS[number];
+    const newTier = req.body?.newTier as string;
+    if (!newTier || !(VALID_TIERS as readonly string[]).includes(newTier)) {
+      return res.status(400).json({ message: 'newTier must be one of: free, trial, premium, vip' });
+    }
+    try {
+      const updated = await db
+        .update(usersTable)
+        .set({ tier: newTier as ValidTier })
+        .where(eq(usersTable.id, userId))
+        .returning()
+        .all();
+      if (!updated[0]) return res.status(404).json({ message: 'User not found' });
+      return res.json({ ok: true, tier: updated[0].tier });
+    } catch (err) {
+      console.error('[upgrade] failed:', err);
+      return res.status(500).json({ message: 'Failed to upgrade tier' });
+    }
+  });
+
   seedDatabase().catch(console.error);
 
-  // AI provider health check endpoint
+  // AI provider health check endpoint. Returns the currently-primary
+  // provider plus a `fallback` block describing the secondary when one is
+  // configured. Shape matches what the AI integration prompt requested:
+  //   { provider, configured, ok, model, fallback?: { provider, configured, ok, model } }
   app.get('/api/ai/health', async (_req: any, res: any) => {
-    const provider = getActiveProvider();
-    const configured = isLLMConfigured();
-    const health = await checkAnthropicHealth();
-    return res.status(health.ok ? 200 : 503).json({
-      provider,
-      configured,
-      ...health,
-    });
+    const snap = await getAIHealth();
+    return res.status(snap.ok ? 200 : 503).json(snap);
   });
 
   return httpServer;

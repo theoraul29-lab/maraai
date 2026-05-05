@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { changeLanguage as changeI18nLanguage } from '../i18n';
+import { clearCsrfToken, getCsrfToken } from '../csrf';
 
 export type UserTier = 'free' | 'trial' | 'premium' | 'vip';
 
@@ -16,6 +18,29 @@ export interface User {
   avatar?: string;
   banner?: string;
   bio?: string;
+  /**
+   * BCP-47 language code (e.g. 'en', 'ro') stored in `user_preferences`.
+   * On login/refresh this wins over localStorage so a user's language
+   * choice follows them across devices (spec §2.5).
+   */
+  preferredLanguage?: string | null;
+}
+
+/**
+ * Apply the server-stored language preference to i18n WITHOUT echoing
+ * the change back to the server (we just got it from there).
+ *
+ * Called immediately after every successful auth response. If the
+ * server has no preference yet (brand-new account), do nothing — the
+ * existing localStorage / browser-detected language stays in effect.
+ */
+async function applyServerLanguage(code: string | null | undefined): Promise<void> {
+  if (!code) return;
+  try {
+    await changeI18nLanguage(code);
+  } catch (err) {
+    console.warn('[auth] failed to apply server language:', err);
+  }
 }
 
 interface AuthContextType {
@@ -29,9 +54,16 @@ interface AuthContextType {
   clearOAuthError: () => void;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string) => Promise<void>;
-  loginWithOAuth: (provider: 'google' | 'facebook') => Promise<void>;
+  loginWithOAuth: (provider: 'google') => Promise<void>;
   logout: () => Promise<void>;
   upgradeTier: (newTier: UserTier) => Promise<void>;
+  refreshUser: () => Promise<void>;
+  /**
+   * Re-fetch /api/auth/me and update local user state. Used by flows that
+   * authenticate the user out-of-band (e.g. email-OTP verification, which
+   * establishes a session server-side without ever calling login/signup).
+   */
+  refresh: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -45,7 +77,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Mount: restore from localStorage, consume any ?oauth/?oauth_error query
   // params, then refresh against the server session.
   //
-  // The server session is the source of truth: Google/Facebook OAuth redirects
+  // The server session is the source of truth: Google OAuth redirects
   // land back on `/` with a freshly-authenticated cookie, at which point the
   // server-side `req.session.userId` is the ONLY place that knows who the
   // logged-in user is. Without this fetch, a successful OAuth login would
@@ -107,6 +139,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         localStorage.setItem('user', JSON.stringify(sessionUser));
         setUser(sessionUser);
         setIsAuthenticated(true);
+        // Server-stored language wins on app load (spec §2.5).
+        void applyServerLanguage(payload.user.preferredLanguage);
       } catch {
         /* keep localStorage state */
       }
@@ -127,6 +161,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
@@ -150,6 +185,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       localStorage.setItem('user', JSON.stringify(newUser));
       setUser(newUser);
       setIsAuthenticated(true);
+      // Server rotates the session id on login (`setSessionUser`), so
+      // the cached anonymous-session CSRF token is now stale.
+      clearCsrfToken();
+      void getCsrfToken();
+      // Sync i18n to the user's stored preference (server wins on login).
+      void applyServerLanguage(userData.preferredLanguage);
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -160,6 +201,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, name }),
       });
@@ -183,13 +225,35 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       localStorage.setItem('user', JSON.stringify(newUser));
       setUser(newUser);
       setIsAuthenticated(true);
+      // Session id rotates on signup — drop the anonymous CSRF token
+      // and pre-warm a fresh one tied to the authenticated session.
+      clearCsrfToken();
+      void getCsrfToken();
+      // Brand-new signup: server returns null preferredLanguage, so
+      // applyServerLanguage is a no-op and current i18n state (chosen on
+      // the public landing page) is retained. Fire-and-forget POST
+      // below pins the current language to the new account so the next
+      // login from another device picks it up.
+      void applyServerLanguage(userData.preferredLanguage);
+      try {
+        const currentLang = localStorage.getItem('mara_lang') || 'en';
+        // Don't await — the signup CTA shouldn't block on this side-effect.
+        void fetch('/api/user/language', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ language: currentLang }),
+        });
+      } catch {
+        /* non-fatal: user can change language manually later */
+      }
     } catch (error) {
       console.error('Signup error:', error);
       throw error;
     }
   };
 
-  const loginWithOAuth = async (provider: 'google' | 'facebook'): Promise<void> => {
+  const loginWithOAuth = async (provider: 'google'): Promise<void> => {
     // Both providers use the full authorization-code redirect flow. The user
     // leaves the SPA entirely — the callback comes back with an authenticated
     // cookie and the mount-time /api/auth/me fetch picks it up. We
@@ -197,7 +261,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // it. If a provider isn't configured on the server (missing client
     // credentials), the start handler redirects back to `/?oauth_error=
     // oauth_not_configured` and the mount-time effect surfaces it.
-    if (provider === 'google' || provider === 'facebook') {
+    if (provider === 'google') {
       window.location.href = `/api/auth/${provider}`;
       return new Promise<void>(() => { /* never resolves — page unloads */ });
     }
@@ -221,6 +285,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUser(null);
     setIsAuthenticated(false);
     setOAuthError(null);
+    // Logout regenerates the session id server-side; refresh the cached
+    // CSRF token so the next mutating call uses the new session's value.
+    clearCsrfToken();
+    void getCsrfToken();
   };
 
   const upgradeTier = async (newTier: UserTier): Promise<void> => {
@@ -229,6 +297,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       const response = await fetch('/api/user/upgrade', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id, newTier }),
       });
@@ -243,6 +312,31 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       throw error;
     }
   };
+
+  const refreshUser = async (): Promise<void> => {
+    try {
+      const res = await fetch('/api/auth/me', { credentials: 'include' });
+      if (!res.ok) return;
+      const payload = await res.json();
+      if (!payload?.user) return;
+      const sessionUser: User = {
+        ...payload.user,
+        trialStartTime: payload.user.trialStartTime ?? null,
+        trialEndsAt: payload.user.trialEndsAt ?? null,
+        tier: payload.user.tier || 'free',
+        earnings: payload.user.earnings ?? 0,
+        badges: payload.user.badges ?? [],
+      };
+      localStorage.setItem('user', JSON.stringify(sessionUser));
+      setUser(sessionUser);
+      setIsAuthenticated(true);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  // Alias for refreshUser — used by OnboardingFlow OTP verification flow.
+  const refresh = refreshUser;
 
   const userTier = user?.tier || 'free';
   const { isActive: isTrialActive, remaining: trialTimeRemaining } = user
@@ -264,6 +358,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         loginWithOAuth,
         logout,
         upgradeTier,
+        refreshUser,
+        refresh,
       }}
     >
       {children}

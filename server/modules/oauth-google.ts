@@ -29,6 +29,7 @@ import crypto from 'node:crypto';
 import { db } from '../db.js';
 import { users, oauthAccounts } from '../../shared/schema.js';
 import { and, eq } from 'drizzle-orm';
+import { setSessionUser } from './auth-api.js';
 
 declare module 'express-session' {
   interface SessionData {
@@ -50,24 +51,6 @@ function redirectUri(req: Request): string {
 
 function errorRedirect(res: Response, code: string): void {
   res.redirect(302, `/?oauth_error=${encodeURIComponent(code)}`);
-}
-
-/**
- * Mirror of `setSessionUser` in `auth-api.ts` — duplicated here (instead of
- * exported) so the two modules stay independent, but kept behaviour-identical
- * (session.regenerate prevents session fixation).
- */
-function setSessionUser(req: Request, userId: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    req.session.regenerate((err) => {
-      if (err) return reject(err);
-      req.session.userId = userId;
-      req.session.save((saveErr) => {
-        if (saveErr) return reject(saveErr);
-        resolve();
-      });
-    });
-  });
 }
 
 export async function startGoogle(req: Request, res: Response): Promise<void> {

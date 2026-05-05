@@ -13,6 +13,7 @@ export default defineConfig({
       includeAssets: [
         'favicon.ico',
         'offline.html',
+        'push-sw.js',
         'icons/apple-touch-icon.png',
         'icons/icon-192.png',
         'icons/icon-512.png',
@@ -26,6 +27,12 @@ export default defineConfig({
       manifest: false,
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webmanifest,woff2}'],
+        // `/push-sw.js` ships a Web Push + `notificationclick` handler that
+        // Workbox's generateSW strategy does not produce on its own. Pulling
+        // it in via importScripts keeps us on generateSW (so we don't have
+        // to hand-own the whole service worker) while still owning the
+        // push-specific event wiring.
+        importScripts: ['/push-sw.js'],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api\//, /^\/uploads\//],
         cleanupOutdatedCaches: true,

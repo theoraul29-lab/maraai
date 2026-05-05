@@ -4,6 +4,10 @@ import ReactDOM from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 import './i18n';
+// Side-effect: install fetch + axios CSRF wrappers before any component
+// fires its first POST/PATCH. Production (`hellomara.net`) rejects every
+// state-changing request without an `X-CSRF-Token` header.
+import './csrf';
 import './pwa/InstallPromptBanner.css';
 import { BrowserRouter } from 'react-router-dom';
 import { InstallPromptBanner } from './pwa/InstallPromptBanner';

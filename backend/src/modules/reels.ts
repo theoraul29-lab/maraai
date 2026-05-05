@@ -24,6 +24,7 @@ import { randomBytes } from 'crypto';
 import type { Request, Response } from 'express';
 import multer from 'multer';
 import type { IStorage } from '../../../server/storage';
+import { notifyReelComment, notifyReelLike } from '../../../server/notifications/producer.js';
 
 let deps: {
   storage: IStorage;
@@ -189,6 +190,14 @@ export async function createComment(req: Request, res: Response) {
       userId,
       content,
     });
+    if (existing.creatorId && existing.creatorId !== userId) {
+      void notifyReelComment({
+        videoOwnerId: existing.creatorId,
+        commenterId: userId,
+        videoId,
+        commentPreview: content,
+      });
+    }
     res.status(201).json({ comment: created });
   } catch {
     res.status(500).json({ error: 'Failed to create comment' });

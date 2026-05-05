@@ -1,0 +1,22 @@
+-- Repair migration: ensure cover_image_url exists on the users table.
+--
+-- Migration 0007_you_fb_profile added this column via ALTER TABLE, but
+-- databases that were initialised from a snapshot (or where 0007 was
+-- recorded as applied without the DDL actually executing) are missing it,
+-- causing SqliteError: no such column: "cover_image_url" at runtime.
+--
+-- SQLite does not support ALTER TABLE … ADD COLUMN IF NOT EXISTS, so the
+-- actual idempotent DDL is executed by the runMigrations() guard in
+-- server/index.ts (using PRAGMA table_info to check before altering).
+-- This file exists so that Drizzle records the migration as applied in
+-- __drizzle_migrations, preventing duplicate runs on future restarts.
+--
+-- The guard in server/index.ts runs on every startup and is therefore
+-- self-healing: it will add the column on any database that is missing it,
+-- regardless of which Drizzle migration entries are present.
+
+-- Drizzle's migrator throws `The supplied SQL string contains no statements`
+-- if a migration file is comments-only, so include a no-op statement here.
+-- (No `statement-breakpoint` after it: a trailing breakpoint produces an
+-- empty second statement which crashes the migrator with the same error.)
+SELECT 1;

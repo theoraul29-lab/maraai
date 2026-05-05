@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import { logError } from './logger.js';
 import type { Request, Response, NextFunction } from 'express';
 import { registerRoutes } from './routes.js';
@@ -9,23 +10,53 @@ import { createServer } from 'http';
 import { brainManager } from './mara-brain/index.js';
 import { getMaraResponse } from './ai.js';
 import { WebSocketServer } from 'ws';
-import url from 'url';
 import { storage } from './storage.js';
-import { setupSessionAuth } from './auth.js';
-import { checkRateLimit } from './rate-limit.js';
-import * as authApi from './modules/auth-api.js';
-import * as oauthGoogle from './modules/oauth-google.js';
-import * as oauthFacebook from './modules/oauth-facebook.js';
-import { registerBillingApi } from './billing/api.js';
-import { seedPlans } from './billing/seed.js';
-import { seedTradingAcademy } from './trading/seed.js';
+import { setupSessionAuth, csrfProtection } from './auth.js';
+import { checkRateLimit } from './rateLimit.js';
 import { z } from 'zod';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
-import { db } from './db.js';
+import { db, rawSqlite } from './db.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { UPLOADS_DIR } from '../backend/src/modules/reels.js';
+import { IMAGE_UPLOADS_DIR } from '../backend/src/modules/uploads.js';
+import { seedPlans } from './billing/seed.js';
+import { seedTradingAcademy } from './trading/seed.js';
 dotenv.config();
+
+// Process-level safety net for *runtime* bugs in request handlers.
+//
+// Rationale (runtime): since Node v15 an unhandled promise rejection kills
+// the process. In a multi-tenant server that takes down every connected
+// user for a bug that affected only one request. For `unhandledRejection`
+// we log and keep running — individual request handlers are already wrapped
+// in try/catch + the express error middleware returns a proper 500.
+//
+// Rationale (uncaughtException): Node docs explicitly warn that it is
+// unsafe to resume after an uncaught synchronous exception — the call
+// stack unwound through code that assumed it wouldn't throw, so in-memory
+// state (DB transactions, sockets, auth) may be corrupted. We log and
+// exit(1) so the orchestrator (Railway, Docker, etc.) restarts us clean.
+//
+// NOTE: these handlers are installed AFTER the startup IIFE below attaches
+// its own .catch() — so rejections from bootstrap code (migrations, seed)
+// still terminate the process with a clear log line, rather than becoming
+// a zombie (alive but never listening).
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[process] unhandledRejection:', reason);
+  // `promise` is the rejected Promise itself; logging it usually adds no
+  // new information beyond the reason, but we keep a reference so Node
+  // doesn't garbage-collect it mid-inspection in a debugger.
+  void promise;
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('[process] uncaughtException:', err);
+  // Node docs: "It is not safe to resume normal operation after
+  // 'uncaughtException'." Exit so the orchestrator restarts us in a
+  // clean state rather than serving requests on a corrupted runtime.
+  process.exit(1);
+});
 
 const __migrationFilename = fileURLToPath(import.meta.url);
 const __migrationDirname = path.dirname(__migrationFilename);
@@ -39,10 +70,147 @@ function runMigrations() {
     console.error('[migrations] Failed to run migrations:', err);
     throw err;
   }
+
+  // Safety guard: ensure the users table has every column declared by the
+  // current schema. Migration 0007_you_fb_profile added cover_image_url,
+  // location and website, but production databases that were created from
+  // a snapshot taken before that migration ran (or where 0007 was recorded
+  // as applied without the DDL actually executing) are missing them,
+  // causing:
+  //   SqliteError: no such column: "cover_image_url"
+  //
+  // Drizzle's `db.select().from(users)` expands to an explicit column list
+  // from the in-memory schema, so any missing column makes /api/auth/me +
+  // /api/auth/signup throw — and Express 4 silently swallows the rejection
+  // in async handlers, hanging the request past the upstream proxy
+  // deadline. See server/modules/auth-api.ts wrapAsync() for the
+  // last-resort net.
+  //
+  // SQLite has no ALTER TABLE … ADD COLUMN IF NOT EXISTS, so we PRAGMA
+  // table_info first and only issue the ALTER TABLE when the column is
+  // absent. Each column is wrapped in its own try/catch so a transient
+  // failure on one (e.g. duplicate-column race with another boot) does
+  // not skip the rest.
+  try {
+    type ColumnInfo = { name: string };
+    const columns = rawSqlite.pragma('table_info(users)') as ColumnInfo[];
+    const have = new Set(columns.map((c) => c.name));
+    const required: Array<[string, string]> = [
+      ['cover_image_url', 'text'],
+      ['location', 'text'],
+      ['website', 'text'],
+    ];
+    for (const [name, type] of required) {
+      if (have.has(name)) continue;
+      try {
+        rawSqlite.exec(`ALTER TABLE \`users\` ADD COLUMN \`${name}\` ${type};`);
+        console.log(`[migrations] Added missing users.${name} column`);
+      } catch (colErr) {
+        console.error(
+          `[migrations] Failed to add users.${name} column (non-fatal):`,
+          colErr,
+        );
+      }
+    }
+  } catch (err) {
+    console.error('[migrations] Failed to inspect users table for safety guard:', err);
+    throw err;
+  }
+
+  // Safety guard: ensure FB-style profile tables exist. Migrations 0007 and
+  // 0014 create user_posts / post_likes / post_comments, but production
+  // databases that were initialised from a snapshot taken before those
+  // migrations ran (or where the row was inserted into __drizzle_migrations
+  // without the DDL actually executing) are missing the tables, causing
+  // every /api/profile/:id, /api/profile/me, /api/profile/:id/posts,
+  // POST /api/profile/posts, /like, /comment call to throw with no useful
+  // error to the client. Same shape as the cover_image_url guard above —
+  // CREATE TABLE IF NOT EXISTS is idempotent so this is safe to run on
+  // every boot.
+  type TableInfo = { name: string };
+  const tableExists = (name: string): boolean => {
+    try {
+      const rows = rawSqlite
+        .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name = ?")
+        .all(name) as TableInfo[];
+      return rows.length > 0;
+    } catch {
+      return false;
+    }
+  };
+
+  const ensureTable = (name: string, ddl: string, indexDdl: readonly string[] = []) => {
+    if (tableExists(name)) return;
+    try {
+      rawSqlite.exec(ddl);
+      for (const idx of indexDdl) {
+        try {
+          rawSqlite.exec(idx);
+        } catch (e) {
+          console.error(`[migrations] Failed to create index on ${name} (non-fatal):`, e);
+        }
+      }
+      console.log(`[migrations] Created missing ${name} table`);
+    } catch (e) {
+      console.error(`[migrations] Failed to create ${name} table (non-fatal):`, e);
+    }
+  };
+
+  ensureTable(
+    'user_posts',
+    `CREATE TABLE IF NOT EXISTS \`user_posts\` (
+      \`id\` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+      \`user_id\` text NOT NULL,
+      \`content\` text NOT NULL,
+      \`image_url\` text,
+      \`created_at\` integer NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+    );`,
+    [
+      'CREATE INDEX IF NOT EXISTS `IDX_user_posts_user` ON `user_posts` (`user_id`);',
+      'CREATE INDEX IF NOT EXISTS `IDX_user_posts_created` ON `user_posts` (`created_at`);',
+    ],
+  );
+
+  ensureTable(
+    'post_likes',
+    `CREATE TABLE IF NOT EXISTS \`post_likes\` (
+      \`id\` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+      \`post_id\` integer NOT NULL,
+      \`user_id\` text NOT NULL,
+      \`created_at\` integer NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+    );`,
+    [
+      'CREATE UNIQUE INDEX IF NOT EXISTS `IDX_post_likes_unique` ON `post_likes` (`post_id`, `user_id`);',
+    ],
+  );
+
+  ensureTable(
+    'post_comments',
+    `CREATE TABLE IF NOT EXISTS \`post_comments\` (
+      \`id\` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+      \`post_id\` integer NOT NULL,
+      \`user_id\` text NOT NULL,
+      \`content\` text NOT NULL,
+      \`created_at\` integer NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+    );`,
+    [
+      'CREATE INDEX IF NOT EXISTS `IDX_post_comments_post` ON `post_comments` (`post_id`);',
+    ],
+  );
 }
 
 
 const app = express();
+
+// Helmet sets secure HTTP response headers. contentSecurityPolicy is disabled
+// in development because Vite's HMR injects inline scripts that would be blocked
+// by a strict CSP. In production the default helmet CSP is applied.
+app.use(
+  helmet({
+    contentSecurityPolicy: process.env.NODE_ENV === 'production' ? undefined : false,
+    crossOriginEmbedderPolicy: false,
+  }),
+);
 
 type RuntimeState = {
   requestedPort: number | null;
@@ -57,6 +225,10 @@ const runtimeState: RuntimeState = {
   host: process.env.HOST || '0.0.0.0',
   startedAt: null,
 };
+
+// --- START RATE LIMITER LOGIC (moved to server/rateLimit.ts) ---
+// Re-imported for use in the WebSocket chat handler below.
+// --- END RATE LIMITER LOGIC ---
 
 // --- CORS configuration ---
 const allowedOrigins = process.env.CORS_ORIGINS
@@ -108,24 +280,14 @@ app.get('/api/health', (_req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
-// Real auth endpoints (email + password). Backs the frontend AuthContext.
-app.post('/api/auth/signup', authApi.signup);
-app.post('/api/auth/login', authApi.login);
-app.post('/api/auth/logout', authApi.logout);
-app.get('/api/auth/me', authApi.me);
-app.post('/api/auth/oauth/:provider', authApi.oauth);
-
-// Google OAuth 2.0 — redirect flow. See server/modules/oauth-google.ts.
-app.get('/api/auth/google', oauthGoogle.startGoogle);
-app.get('/api/auth/google/callback', oauthGoogle.googleCallback);
-
-// Facebook OAuth 2.0 — redirect flow. See server/modules/oauth-facebook.ts.
-app.get('/api/auth/facebook', oauthFacebook.startFacebook);
-app.get('/api/auth/facebook/callback', oauthFacebook.facebookCallback);
-
-// Subscription / billing endpoints. Public plan catalogue + authed
-// `/me`, `/subscribe` (503 until PAYMENTS_ENABLED + provider keys), `/cancel`.
-registerBillingApi(app);
+// /api/auth/me returns the full user payload (registered in routes.ts via
+// auth-api.meHandler). We keep a lightweight `/api/auth/csrf` endpoint here
+// so the SPA can grab a CSRF token for unauthenticated mutating calls
+// (signup, password reset) without going through the heavier user-lookup
+// path.
+app.get('/api/auth/csrf', (req: any, res) => {
+  res.json({ uid: req.user?.uid ?? null, csrfToken: req.session?.csrfToken ?? null });
+});
 
 app.get('/api/runtime', (_req, res) => {
   const displayHost =
@@ -152,6 +314,26 @@ export function log(message: string, source = 'express') {
   console.log(`${formattedTime} [${source}] ${message}`);
 }
 
+const SENSITIVE_LOG_FIELDS = new Set([
+  'password', 'passwordHash', 'password_hash',
+  'resetToken', 'reset_token', 'token',
+  'passwordConfirm', 'newPassword',
+]);
+
+function sanitizeForLog(obj: Record<string, any>): Record<string, any> {
+  const out: Record<string, any> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (SENSITIVE_LOG_FIELDS.has(k)) {
+      out[k] = '[REDACTED]';
+    } else if (v && typeof v === 'object' && !Array.isArray(v)) {
+      out[k] = sanitizeForLog(v as Record<string, any>);
+    } else {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
 app.use((req, res, next) => {
   const start = Date.now();
   const { path } = req;
@@ -169,8 +351,8 @@ app.use((req, res, next) => {
     const duration = Date.now() - start;
     if (path.startsWith('/api')) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) { // Va fi populat doar dacă nu suntem în producție
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+      if (capturedJsonResponse) {
+        logLine += ` :: ${JSON.stringify(sanitizeForLog(capturedJsonResponse))}`;
       }
 
       log(logLine);
@@ -221,6 +403,23 @@ app.use((req, res, next) => {
       next();
     },
     express.static(UPLOADS_DIR, {
+      maxAge: '7d',
+      immutable: true,
+      fallthrough: false,
+    }),
+  );
+
+  // Same shape, different volume: user-uploaded images (avatar, cover,
+  // post image, writers cover). Filenames are content-hashed so we can
+  // cache aggressively, and `nosniff` keeps the static tree honest in
+  // case a future MIME slips through the upload whitelist.
+  app.use(
+    '/uploads/images',
+    (_req, res, next) => {
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      next();
+    },
+    express.static(IMAGE_UPLOADS_DIR, {
       maxAge: '7d',
       immutable: true,
       fallthrough: false,
@@ -306,12 +505,11 @@ app.use((req, res, next) => {
   };
 
   wss.on('connection', (ws: any, req: any) => {
-    const userId = url.parse(req.url || '', true).query.userId as string;
-    // ID-ul utilizatorului va veni de la JWT Auth
-    const authUserId = req.user?.uid;
-    const finalUserId = userId || authUserId;
+    // Use the session-authenticated user id exclusively. Ignoring any
+    // client-supplied ?userId= query param prevents trivial identity spoofing.
+    const finalUserId = req.user?.uid;
     if (finalUserId) {
-      log(`P2P user connected: ${userId}`, 'p2p-ws');
+      log(`P2P user connected: ${finalUserId}`, 'p2p-ws');
       userConnections.set(finalUserId, ws);
       ws.userId = finalUserId;
     } else {
@@ -523,4 +721,12 @@ app.use((req, res, next) => {
   httpServer.listen(requestedPort, runtimeState.host, () => {
     onServerReady(requestedPort);
   });
-})();
+})().catch((err) => {
+  // Bootstrap (migrations, seed, passport setup, etc.) failed before the
+  // server ever started listening. Without this .catch() the rejection
+  // would be swallowed by the `unhandledRejection` handler above and the
+  // process would live on as a zombie — alive enough for liveness probes
+  // to pass, but never bound to a port so no traffic is ever served.
+  console.error('[startup] fatal:', err);
+  process.exit(1);
+});

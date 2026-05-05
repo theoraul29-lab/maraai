@@ -37,3 +37,32 @@ export function chatRateLimit(req: Request, res: Response, next: NextFunction) {
   }
   next();
 }
+
+// --- Auth rate limiter ---
+// 10 attempts per IP per 15 minutes for login/signup endpoints.
+const AUTH_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const AUTH_MAX_ATTEMPTS = 10;
+const authAttemptTimestamps = new Map<string, number[]>();
+
+export function authRateLimit(req: Request, res: Response, next: NextFunction) {
+  const ip = req.ip || 'unknown';
+  const now = Date.now();
+
+  let timestamps = authAttemptTimestamps.get(ip) || [];
+  timestamps = timestamps.filter((ts) => now - ts < AUTH_WINDOW_MS);
+
+  if (timestamps.length >= AUTH_MAX_ATTEMPTS) {
+    const oldestTimestamp = Math.min(...timestamps);
+    const retryAfterMs = AUTH_WINDOW_MS - (now - oldestTimestamp);
+    res.setHeader('Retry-After', Math.ceil(retryAfterMs / 1000));
+    return res.status(429).json({
+      code: 'rate_limited',
+      message: 'Too many attempts. Please try again later.',
+      retryAfterMs,
+    });
+  }
+
+  timestamps.push(now);
+  authAttemptTimestamps.set(ip, timestamps);
+  next();
+}

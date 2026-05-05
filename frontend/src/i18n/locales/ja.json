@@ -57,10 +57,10 @@
     "emailRequired": "メールは必須です",
     "emailInvalid": "有効なメールアドレスを入力してください",
     "passwordRequired": "パスワードは必須です",
-    "passwordMinLength": "パスワードは8文字以上である必要があります",
+    "passwordMinLength": "パスワードは6文字以上である必要があります",
     "nameRequired": "名前は必須です",
     "nameMinLength": "名前は2文字以上である必要があります",
-    "passwordHint": "✓ パスワードは8文字以上である必要があります",
+    "passwordHint": "✓ パスワードは6文字以上である必要があります",
     "login": "ログイン",
     "createAccount": "アカウント作成",
     "signingIn": "ログイン中...",
@@ -79,7 +79,7 @@
     "switchToLogin": "ログインに切り替え",
     "or": "または",
     "errors": {
-      "signup_body_invalid": "メール、パスワード(8文字以上)、名前は必須です。",
+      "signup_body_invalid": "メール、パスワード(6文字以上)、名前は必須です。",
       "login_body_invalid": "メールとパスワードは必須です。",
       "email_exists": "このメールのアカウントは既に存在します。",
       "invalid_credentials": "メールまたはパスワードが無効です。",
@@ -991,5 +991,19 @@
   "languageSelector": {
     "label": "言語",
     "changeLanguage": "言語を変更"
+  },
+  "pwa": {
+    "installTitle": "Maraをインストール",
+    "installBody": "hellomara.netをホーム画面に追加してフルスクリーンのアプリ体験をお楽しみください。",
+    "installCta": "インストール",
+    "installDismiss": "今はしない",
+    "installDismissAria": "インストール案内を閉じる",
+    "iosHintTitle": "Maraをインストール",
+    "iosHintBody": "共有アイコンをタップしてから「ホーム画面に追加」を選ぶとアプリがインストールされます。",
+    "iosHintDismiss": "わかりました",
+    "updateTitle": "更新の準備完了",
+    "updateBody": "Maraの新しいバージョンがあります。",
+    "updateCta": "更新",
+    "updateDismissAria": "更新通知を閉じる"
   }
 }

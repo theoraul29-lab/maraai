@@ -31,6 +31,7 @@
 
 import type { Request, Response } from 'express';
 import type { IStorage } from '../../../server/storage';
+import { notifyWriterComment, notifyWriterLike } from '../../../server/notifications/producer.js';
 import {
   getActivePlanId,
   hasFeature,
@@ -418,6 +419,21 @@ export async function likeArticle(req: Request, res: Response) {
     const id = Number.parseInt(req.params.id, 10);
     if (!Number.isFinite(id)) return res.status(400).json({ error: 'Invalid article id' });
     const out = await deps.storage.likeWriterPage(id);
+    const userId = getUserId(req);
+    if (userId) {
+      try {
+        const page = await deps.storage.getWriterPageById(id);
+        if (page?.userId && page.userId !== userId) {
+          void notifyWriterLike({
+            articleOwnerId: page.userId,
+            likerId: userId,
+            articleId: id,
+          });
+        }
+      } catch {
+        /* best-effort */
+      }
+    }
     res.json(out);
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'failed to like';
@@ -482,6 +498,14 @@ export async function createComment(req: Request, res: Response) {
       userId,
       content: raw,
     });
+    if (page.userId && page.userId !== userId) {
+      void notifyWriterComment({
+        articleOwnerId: page.userId,
+        commenterId: userId,
+        articleId: id,
+        commentPreview: raw,
+      });
+    }
     res.status(201).json({ comment: created });
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'failed to create comment';

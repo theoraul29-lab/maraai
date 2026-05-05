@@ -29,6 +29,7 @@ import crypto from 'node:crypto';
 import { db } from '../db.js';
 import { users, oauthAccounts } from '../../shared/schema.js';
 import { and, eq } from 'drizzle-orm';
+import { setSessionUser } from './auth-api.js';
 
 const FB_GRAPH_VERSION = 'v19.0';
 const FB_AUTH_URL = `https://www.facebook.com/${FB_GRAPH_VERSION}/dialog/oauth`;
@@ -45,24 +46,6 @@ function redirectUri(req: Request): string {
 
 function errorRedirect(res: Response, code: string): void {
   res.redirect(302, `/?oauth_error=${encodeURIComponent(code)}`);
-}
-
-/**
- * Mirrors `setSessionUser` in auth-api.ts / oauth-google.ts. Duplicated so
- * the three modules stay independent but behaviour-identical
- * (session.regenerate prevents session fixation).
- */
-function setSessionUser(req: Request, userId: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    req.session.regenerate((err) => {
-      if (err) return reject(err);
-      req.session.userId = userId;
-      req.session.save((saveErr) => {
-        if (saveErr) return reject(saveErr);
-        resolve();
-      });
-    });
-  });
 }
 
 export async function startFacebook(req: Request, res: Response): Promise<void> {

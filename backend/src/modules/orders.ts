@@ -10,7 +10,7 @@ export function injectDeps(d: typeof deps) {
 
 export async function getPremiumStatus(req: Request, res: Response) {
   try {
-    const userId = req.user?.claims?.sub || (req.user as any)?.uid;
+    const userId = (req.user as any)?.uid;
     const isPremium = await deps.storage.getUserPremiumStatus(userId);
     const orders = await deps.storage.getPremiumOrders(userId);
     res.json({ isPremium, orders });
@@ -21,7 +21,7 @@ export async function getPremiumStatus(req: Request, res: Response) {
 
 export async function getTradingAccess(req: Request, res: Response) {
   try {
-    const userId = req.user?.claims?.sub || (req.user as any)?.uid;
+    const userId = (req.user as any)?.uid;
     const access = await deps.storage.getUserTradingAccess(userId);
     res.json(access);
   } catch (error) {
@@ -31,7 +31,7 @@ export async function getTradingAccess(req: Request, res: Response) {
 
 export async function createPremiumOrder(req: Request, res: Response) {
   try {
-    const userId = req.user?.claims?.sub || (req.user as any)?.uid;
+    const userId = (req.user as any)?.uid;
     const { amount, currency, orderType, subscriptionPeriod, transferReference, notes } = req.body;
 
     if (!amount || !orderType) {

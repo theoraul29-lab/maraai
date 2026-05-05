@@ -57,10 +57,10 @@
     "emailRequired": "Email is required",
     "emailInvalid": "Please enter a valid email address",
     "passwordRequired": "Password is required",
-    "passwordMinLength": "Password must be at least 8 characters",
+    "passwordMinLength": "Password must be at least 6 characters",
     "nameRequired": "Name is required",
     "nameMinLength": "Name must be at least 2 characters",
-    "passwordHint": "✓ Password must be at least 8 characters",
+    "passwordHint": "✓ Password must be at least 6 characters",
     "login": "Prijava",
     "createAccount": "Stvori račun",
     "signingIn": "Signing Account...",
@@ -977,5 +977,19 @@
   "languageSelector": {
     "label": "Jezik",
     "changeLanguage": "Promijeni jezik"
+  },
+  "pwa": {
+    "installTitle": "Instaliraj Mara",
+    "installBody": "Dodajte hellomara.net na početni zaslon za potpuno aplikacijsko iskustvo.",
+    "installCta": "Instaliraj",
+    "installDismiss": "Ne sada",
+    "installDismissAria": "Odbaci poziv za instalaciju",
+    "iosHintTitle": "Instaliraj Mara",
+    "iosHintBody": "Dodirnite Dijeli, zatim „Na početni zaslon“ kako biste instalirali aplikaciju.",
+    "iosHintDismiss": "Razumijem",
+    "updateTitle": "Ažuriranje spremno",
+    "updateBody": "Dostupna je novija verzija Mare.",
+    "updateCta": "Osvježi",
+    "updateDismissAria": "Odbaci ažuriranje"
   }
 }
