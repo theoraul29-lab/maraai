@@ -80,50 +80,87 @@ function runMigrations() {
     throw err;
   }
 
-  // Safety guard: ensure the users table has every column declared by the
-  // current schema. Migration 0007_you_fb_profile added cover_image_url,
-  // location and website, but production databases that were created from
-  // a snapshot taken before that migration ran (or where 0007 was recorded
-  // as applied without the DDL actually executing) are missing them,
-  // causing:
-  //   SqliteError: no such column: "cover_image_url"
+  // Self-heal guard for missing schema. The Drizzle migration journal
+  // (migrations/meta/_journal.json) was overwritten by PR #85 and lost the
+  // entries for migrations 0010–0015 (cover_image_url, users.tier/trial,
+  // password_reset_tokens, post_likes/comments, direct_messages) plus
+  // 0009_push_subscriptions. Databases initialised from that broken journal
+  // never receive those DDLs, and Drizzle's `db.select().from(users)`
+  // expands to an explicit column list from the in-memory schema, so any
+  // missing column makes /api/auth/me + /api/profile/me + /api/notifications/*
+  // throw 500. Express 4 silently swallows async-handler rejections, so the
+  // request hangs past the upstream proxy deadline without a useful error.
   //
-  // Drizzle's `db.select().from(users)` expands to an explicit column list
-  // from the in-memory schema, so any missing column makes /api/auth/me +
-  // /api/auth/signup throw — and Express 4 silently swallows the rejection
-  // in async handlers, hanging the request past the upstream proxy
-  // deadline. See server/modules/auth-api.ts wrapAsync() for the
-  // last-resort net.
+  // The runtime guards below are purely additive — every column add is
+  // gated on PRAGMA table_info(), every CREATE TABLE uses IF NOT EXISTS —
+  // so a database that already has the schema is left alone.
   //
-  // SQLite has no ALTER TABLE … ADD COLUMN IF NOT EXISTS, so we PRAGMA
-  // table_info first and only issue the ALTER TABLE when the column is
-  // absent. Each column is wrapped in its own try/catch so a transient
-  // failure on one (e.g. duplicate-column race with another boot) does
-  // not skip the rest.
-  try {
-    type ColumnInfo = { name: string };
-    const columns = rawSqlite.pragma('table_info(users)') as ColumnInfo[];
-    const have = new Set(columns.map((c) => c.name));
-    const required: Array<[string, string]> = [
-      ['cover_image_url', 'text'],
-      ['location', 'text'],
-      ['website', 'text'],
-    ];
-    for (const [name, type] of required) {
-      if (have.has(name)) continue;
-      try {
-        rawSqlite.exec(`ALTER TABLE \`users\` ADD COLUMN \`${name}\` ${type};`);
-        console.log(`[migrations] Added missing users.${name} column`);
-      } catch (colErr) {
-        console.error(
-          `[migrations] Failed to add users.${name} column (non-fatal):`,
-          colErr,
-        );
+  // SQLite has no ALTER TABLE … ADD COLUMN IF NOT EXISTS, so each column
+  // is wrapped in its own try/catch so a transient failure on one (e.g.
+  // duplicate-column race with another boot) does not skip the rest.
+  type ColumnInfo = { name: string };
+  const ensureColumns = (
+    table: string,
+    required: ReadonlyArray<readonly [string, string]>,
+  ) => {
+    try {
+      const columns = rawSqlite.pragma(`table_info(${table})`) as ColumnInfo[];
+      const have = new Set(columns.map((c) => c.name));
+      for (const [name, type] of required) {
+        if (have.has(name)) continue;
+        try {
+          rawSqlite.exec(`ALTER TABLE \`${table}\` ADD COLUMN \`${name}\` ${type};`);
+          console.log(`[migrations] Added missing ${table}.${name} column`);
+        } catch (colErr) {
+          console.error(
+            `[migrations] Failed to add ${table}.${name} column (non-fatal):`,
+            colErr,
+          );
+        }
       }
+    } catch (err) {
+      console.error(`[migrations] Failed to inspect ${table} table for safety guard:`, err);
+      throw err;
+    }
+  };
+
+  // users: cover_image_url/location/website were added by migration 0007.
+  // tier/trial_start_time/trial_ends_at were added by migration 0012. Both
+  // sets are missing on production DBs initialised from a journal that
+  // didn't include those migrations (see notes on _journal.json corruption
+  // introduced by PR #85). Drizzle's `db.select().from(users)` expands to
+  // an explicit column list from the in-memory schema, so any missing
+  // column causes `/api/auth/me`, `/api/profile/me`, `/api/notifications/*`
+  // to throw 500. This guard is purely additive — a column that already
+  // exists is left alone.
+  ensureColumns('users', [
+    ['cover_image_url', 'text'],
+    ['location', 'text'],
+    ['website', 'text'],
+    ["tier", "text NOT NULL DEFAULT 'free'"],
+    ['trial_start_time', 'integer'],
+    ['trial_ends_at', 'integer'],
+  ]);
+
+  // user_posts: source_kind / source_id were added by migration
+  // 0009_user_posts_source_kind. Same self-heal pattern — applied
+  // separately from createTable below because the table itself is created
+  // by 0007, and the columns may be missing even when the table exists.
+  // (Run only if the table exists; the next ensureTable() block will
+  // create the table on truly fresh databases, so the column-add will
+  // re-run on the next boot if needed.)
+  try {
+    const rows = rawSqlite
+      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='user_posts'")
+      .all() as Array<{ name: string }>;
+    if (rows.length > 0) {
+      ensureColumns('user_posts', [
+        ['source_kind', 'text'],
+        ['source_id', 'integer'],
+      ]);
     }
   } catch (err) {
-    console.error('[migrations] Failed to inspect users table for safety guard:', err);
-    throw err;
+    console.error('[migrations] Failed to inspect user_posts for source_kind guard:', err);
   }
 
   // Safety guard: ensure FB-style profile tables exist. Migrations 0007 and
@@ -205,6 +242,149 @@ function runMigrations() {
     [
       'CREATE INDEX IF NOT EXISTS `IDX_post_comments_post` ON `post_comments` (`post_id`);',
     ],
+  );
+
+  // --- Phase 2 P2.1.4: push_subscriptions (migration 0009_push_subscriptions) ---
+  ensureTable(
+    'push_subscriptions',
+    `CREATE TABLE IF NOT EXISTS \`push_subscriptions\` (
+      \`id\` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+      \`user_id\` text NOT NULL,
+      \`endpoint\` text NOT NULL,
+      \`p256dh\` text NOT NULL,
+      \`auth\` text NOT NULL,
+      \`user_agent\` text,
+      \`created_at\` integer DEFAULT CURRENT_TIMESTAMP NOT NULL
+    );`,
+    [
+      'CREATE UNIQUE INDEX IF NOT EXISTS `push_subscriptions_endpoint_unique` ON `push_subscriptions` (`endpoint`);',
+      'CREATE INDEX IF NOT EXISTS `idx_push_subs_user` ON `push_subscriptions` (`user_id`);',
+    ],
+  );
+
+  // --- Phase 3 MaraAI hybrid-platform (migration 0010_maraai_platform) ---
+  ensureTable(
+    'consent_records',
+    `CREATE TABLE IF NOT EXISTS \`consent_records\` (
+      \`user_id\` text PRIMARY KEY NOT NULL,
+      \`mode\` text DEFAULT 'centralized' NOT NULL,
+      \`p2p_enabled\` integer DEFAULT 0 NOT NULL,
+      \`bandwidth_share_gb_month\` integer DEFAULT 0 NOT NULL,
+      \`background_node\` integer DEFAULT 0 NOT NULL,
+      \`advanced_ai_routing\` integer DEFAULT 0 NOT NULL,
+      \`notifications_enabled\` integer DEFAULT 0 NOT NULL,
+      \`kill_switch\` integer DEFAULT 0 NOT NULL,
+      \`consent_version\` integer DEFAULT 1 NOT NULL,
+      \`accepted_terms_at\` integer,
+      \`created_at\` integer DEFAULT CURRENT_TIMESTAMP NOT NULL,
+      \`updated_at\` integer DEFAULT CURRENT_TIMESTAMP NOT NULL
+    );`,
+  );
+
+  ensureTable(
+    'p2p_nodes',
+    `CREATE TABLE IF NOT EXISTS \`p2p_nodes\` (
+      \`node_id\` text PRIMARY KEY NOT NULL,
+      \`user_id\` text NOT NULL,
+      \`device_label\` text,
+      \`status\` text DEFAULT 'offline' NOT NULL,
+      \`score\` integer DEFAULT 0 NOT NULL,
+      \`uptime_sec\` integer DEFAULT 0 NOT NULL,
+      \`bytes_in\` integer DEFAULT 0 NOT NULL,
+      \`bytes_out\` integer DEFAULT 0 NOT NULL,
+      \`last_seen_at\` integer,
+      \`created_at\` integer DEFAULT CURRENT_TIMESTAMP NOT NULL
+    );`,
+    ['CREATE INDEX IF NOT EXISTS `idx_p2p_nodes_user` ON `p2p_nodes` (`user_id`);'],
+  );
+
+  ensureTable(
+    'activity_log',
+    `CREATE TABLE IF NOT EXISTS \`activity_log\` (
+      \`id\` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+      \`user_id\` text,
+      \`kind\` text NOT NULL,
+      \`meta\` text DEFAULT '{}' NOT NULL,
+      \`created_at\` integer DEFAULT CURRENT_TIMESTAMP NOT NULL
+    );`,
+    ['CREATE INDEX IF NOT EXISTS `idx_activity_log_user_time` ON `activity_log` (`user_id`, `created_at`);'],
+  );
+
+  ensureTable(
+    'ai_route_log',
+    `CREATE TABLE IF NOT EXISTS \`ai_route_log\` (
+      \`id\` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+      \`user_id\` text,
+      \`route\` text NOT NULL,
+      \`module\` text,
+      \`latency_ms\` integer DEFAULT 0 NOT NULL,
+      \`tokens_in\` integer DEFAULT 0 NOT NULL,
+      \`tokens_out\` integer DEFAULT 0 NOT NULL,
+      \`success\` integer DEFAULT 1 NOT NULL,
+      \`error\` text,
+      \`created_at\` integer DEFAULT CURRENT_TIMESTAMP NOT NULL
+    );`,
+    ['CREATE INDEX IF NOT EXISTS `idx_ai_route_log_user_time` ON `ai_route_log` (`user_id`, `created_at`);'],
+  );
+
+  ensureTable(
+    'email_otp_codes',
+    `CREATE TABLE IF NOT EXISTS \`email_otp_codes\` (
+      \`id\` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+      \`email\` text NOT NULL,
+      \`code_hash\` text NOT NULL,
+      \`purpose\` text DEFAULT 'register' NOT NULL,
+      \`attempts\` integer DEFAULT 0 NOT NULL,
+      \`expires_at\` integer NOT NULL,
+      \`consumed_at\` integer,
+      \`created_at\` integer DEFAULT CURRENT_TIMESTAMP NOT NULL
+    );`,
+    ['CREATE INDEX IF NOT EXISTS `idx_email_otp_email_time` ON `email_otp_codes` (`email`, `created_at`);'],
+  );
+
+  // --- Migration 0013_password_reset_tokens ---
+  ensureTable(
+    'password_reset_tokens',
+    `CREATE TABLE IF NOT EXISTS \`password_reset_tokens\` (
+      \`id\` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+      \`user_id\` text NOT NULL,
+      \`token\` text NOT NULL,
+      \`expires_at\` integer NOT NULL,
+      \`used_at\` integer,
+      \`created_at\` integer DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (\`user_id\`) REFERENCES \`users\`(\`id\`) ON UPDATE no action ON DELETE cascade
+    );`,
+    [
+      'CREATE UNIQUE INDEX IF NOT EXISTS `password_reset_tokens_token_unique` ON `password_reset_tokens` (`token`);',
+      'CREATE INDEX IF NOT EXISTS `IDX_prt_user_id` ON `password_reset_tokens` (`user_id`);',
+      'CREATE INDEX IF NOT EXISTS `IDX_prt_expires_at` ON `password_reset_tokens` (`expires_at`);',
+    ],
+  );
+
+  // --- Migration 0015_direct_messages ---
+  ensureTable(
+    'conversations',
+    `CREATE TABLE IF NOT EXISTS \`conversations\` (
+      \`id\` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+      \`user_a_id\` text NOT NULL,
+      \`user_b_id\` text NOT NULL,
+      \`last_message_at\` integer,
+      \`created_at\` integer NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+    );`,
+    ['CREATE UNIQUE INDEX IF NOT EXISTS `IDX_conversations_users` ON `conversations` (`user_a_id`, `user_b_id`);'],
+  );
+
+  ensureTable(
+    'direct_messages',
+    `CREATE TABLE IF NOT EXISTS \`direct_messages\` (
+      \`id\` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+      \`conversation_id\` integer NOT NULL,
+      \`sender_id\` text NOT NULL,
+      \`content\` text NOT NULL,
+      \`read\` integer NOT NULL DEFAULT 0,
+      \`created_at\` integer NOT NULL DEFAULT (CURRENT_TIMESTAMP)
+    );`,
+    ['CREATE INDEX IF NOT EXISTS `IDX_direct_messages_conv` ON `direct_messages` (`conversation_id`);'],
   );
 }
 
