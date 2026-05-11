@@ -139,6 +139,12 @@ export function setupSessionAuth(app: Express) {
       store: sessionStore,
       resave: false,
       saveUninitialized: false,
+      // `rolling: true` resets the cookie's Max-Age on every authenticated
+      // request, so the 30-day window is "30 days of inactivity" rather
+      // than "30 days since first login". Combined with the persistent
+      // SQLite session store this means a user who returns every few
+      // weeks stays signed in indefinitely without re-entering credentials.
+      rolling: true,
       name: 'connect.sid',
       cookie: {
         httpOnly: true,
@@ -148,7 +154,11 @@ export function setupSessionAuth(app: Express) {
         // redirects landing on the SPA.
         sameSite: 'lax',
         secure: isProduction,
-        maxAge: 7 * 24 * 60 * 60 * 1000,
+        // 30-day "remember me" by default. Users who explicitly log out
+        // still get their session destroyed server-side via `destroy()`
+        // in `/api/auth/logout`, so this is purely a passive-inactivity
+        // window, not a security bypass.
+        maxAge: 30 * 24 * 60 * 60 * 1000,
       },
     }),
   );
