@@ -30,9 +30,31 @@ export interface BrainCycleResult {
   reflectionId: number | null;
 }
 
-const BRAIN_CYCLE_TIMEOUT = 10 * 60 * 1000; // 10 minutes
-const INITIAL_LEARNING_TIMEOUT = 5 * 60 * 1000; // 5 minutes
-const PHASE_TIMEOUT = 60 * 1000; // 1 minute per phase
+// Defaults are tuned for the cloud LLM path (Anthropic) where each call
+// returns in ~1–2s. When the brain is routed through a self-hosted Ollama
+// (e.g. a laptop → cloudflared tunnel), a single call can take 15–30s, so
+// the cycle can easily run past 10 minutes. Make both the cycle and the
+// per-phase timeout overridable via env so deployments can tune without
+// a code change.
+function parseTimeoutMs(envVal: string | undefined, fallbackMs: number): number {
+  if (!envVal) return fallbackMs;
+  const n = Number(envVal);
+  if (!Number.isFinite(n) || n <= 0) return fallbackMs;
+  return n;
+}
+
+const BRAIN_CYCLE_TIMEOUT = parseTimeoutMs(
+  process.env.BRAIN_CYCLE_TIMEOUT_MS,
+  20 * 60 * 1000,
+); // default 20 min
+const INITIAL_LEARNING_TIMEOUT = parseTimeoutMs(
+  process.env.BRAIN_INITIAL_LEARNING_TIMEOUT_MS,
+  10 * 60 * 1000,
+); // default 10 min
+const PHASE_TIMEOUT = parseTimeoutMs(
+  process.env.BRAIN_PHASE_TIMEOUT_MS,
+  2 * 60 * 1000,
+); // default 2 min per phase
 
 /**
  * Run the full autonomous brain cycle
@@ -51,6 +73,7 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
   const devTasks: string[] = [];
   const growthIdeas: string[] = [];
   let knowledgeLearned = 0;
+  let reflectionId: number | null = null;
 
   try {
     // === PHASE 0: Library Reading ===
@@ -72,50 +95,84 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
 
     // === PHASE 1: Process Learning Queue ===
     console.log('[MaraBrain] Phase 1: Processing learning queue...');
-    const pendingTasks = await storage.getPendingLearningTasks(5);
-    for (const task of pendingTasks) {
-      try {
-        await storage.updateLearningTask(task.id, 'in_progress');
-        const result = await learnFromGemini(task.topic, task.reason);
-        await storage.updateLearningTask(task.id, 'completed', result.learned.substring(0, 2000));
-        knowledgeLearned += result.savedKnowledgeIds.length;
-        research.push(`Learned about: ${task.topic}`);
-      } catch (err) {
-        await storage.updateLearningTask(task.id, 'failed', String(err));
-      }
+    try {
+      await withTimeout((async () => {
+        const pendingTasks = await storage.getPendingLearningTasks(5);
+        for (const task of pendingTasks) {
+          try {
+            await storage.updateLearningTask(task.id, 'in_progress');
+            const result = await learnFromGemini(task.topic, task.reason);
+            await storage.updateLearningTask(
+              task.id,
+              'completed',
+              result.learned.substring(0, 2000),
+            );
+            knowledgeLearned += result.savedKnowledgeIds.length;
+            research.push(`Learned about: ${task.topic}`);
+          } catch (err) {
+            await storage.updateLearningTask(task.id, 'failed', String(err));
+          }
+        }
+      })(), PHASE_TIMEOUT, 'Phase 1: Learning queue');
+    } catch (err) {
+      console.error('[MaraBrain] Phase 1 failed:', err);
     }
 
     // === PHASE 2: Autonomous Research ===
     console.log('[MaraBrain] Phase 2: Autonomous research...');
-    const agenda = await generateResearchAgenda();
-    if (agenda.length > 0) {
-      const results = await batchResearch(agenda.slice(0, 3));
-      for (const r of results) {
-        research.push(`Researched: ${r.query}`);
-        knowledgeLearned += r.knowledgeIds.length;
-      }
+    try {
+      await withTimeout((async () => {
+        const agenda = await generateResearchAgenda();
+        if (agenda.length > 0) {
+          const results = await batchResearch(agenda.slice(0, 3));
+          for (const r of results) {
+            research.push(`Researched: ${r.query}`);
+            knowledgeLearned += r.knowledgeIds.length;
+          }
+        }
+      })(), PHASE_TIMEOUT, 'Phase 2: Autonomous research');
+    } catch (err) {
+      console.error('[MaraBrain] Phase 2 failed:', err);
     }
 
     // === PHASE 3: Module Trend Research ===
     console.log('[MaraBrain] Phase 3: Module trend research...');
-    const modulesToResearch = ['trading', 'creator', 'platform'];
-    for (const mod of modulesToResearch) {
-      try {
-        const result = await researchModuleTrends(mod);
-        research.push(`Trends for ${mod}: found ${result.knowledgeIds.length} insights`);
-        knowledgeLearned += result.knowledgeIds.length;
-      } catch (err) {
-        console.error(`[MaraBrain] Trend research failed for ${mod}:`, err);
-      }
-      // Rate limit between module researches
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+    try {
+      await withTimeout((async () => {
+        const modulesToResearch = ['trading', 'creator', 'platform'];
+        for (const mod of modulesToResearch) {
+          try {
+            const result = await researchModuleTrends(mod);
+            research.push(
+              `Trends for ${mod}: found ${result.knowledgeIds.length} insights`,
+            );
+            knowledgeLearned += result.knowledgeIds.length;
+          } catch (err) {
+            console.error(`[MaraBrain] Trend research failed for ${mod}:`, err);
+          }
+          // Rate limit between module researches
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+        }
+      })(), PHASE_TIMEOUT, 'Phase 3: Module trend research');
+    } catch (err) {
+      console.error('[MaraBrain] Phase 3 failed:', err);
     }
 
     // === PHASE 4: Platform Analysis ===
     console.log('[MaraBrain] Phase 4: Platform analysis...');
-    const analysis = await analyzePlatform();
-    productIdeas.push(...(analysis.proposals?.map((p) => `[${p.priority}] ${p.title}: ${p.description}`) || []));
-    research.push(...(analysis.insights || []));
+    try {
+      await withTimeout((async () => {
+        const analysis = await analyzePlatform();
+        productIdeas.push(
+          ...(analysis.proposals?.map(
+            (p) => `[${p.priority}] ${p.title}: ${p.description}`,
+          ) || []),
+        );
+        research.push(...(analysis.insights || []));
+      })(), PHASE_TIMEOUT, 'Phase 4: Platform analysis');
+    } catch (err) {
+      console.error('[MaraBrain] Phase 4 failed:', err);
+    }
 
     // === PHASE 4.5: Per-Module Growth Analysis ===
     // Each of the 6 modules (You / Reels / Trading / Writers / Creators / VIP)
@@ -126,15 +183,21 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
     if (process.env.MARA_LEARNING_ENABLED !== 'false') {
       console.log('[MaraBrain] Phase 4.5: Per-module growth analysis...');
       try {
-        const moduleResults = await runAllModuleAnalyzers();
-        for (const r of moduleResults) {
-          if (r.skipped) {
-            research.push(`[${r.module}] module analysis skipped (${r.reason ?? 'unknown'})`);
-          } else {
-            research.push(`[${r.module}] ${r.proposalsCreated} proposals + ${r.insightsStored} insight`);
-            knowledgeLearned += r.insightsStored;
+        await withTimeout((async () => {
+          const moduleResults = await runAllModuleAnalyzers();
+          for (const r of moduleResults) {
+            if (r.skipped) {
+              research.push(
+                `[${r.module}] module analysis skipped (${r.reason ?? 'unknown'})`,
+              );
+            } else {
+              research.push(
+                `[${r.module}] ${r.proposalsCreated} proposals + ${r.insightsStored} insight`,
+              );
+              knowledgeLearned += r.insightsStored;
+            }
           }
-        }
+        })(), PHASE_TIMEOUT, 'Phase 4.5: Module analyzers');
       } catch (err) {
         console.error('[MaraBrain] Module analyzers failed:', err);
       }
@@ -142,52 +205,96 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
 
     // === PHASE 5: Identify Weak Points ===
     console.log('[MaraBrain] Phase 5: Identifying weak modules...');
-    const weakModules = await identifyWeakModules();
-    for (const weak of weakModules) {
-      devTasks.push(`[${weak.module}] ${weak.issue} → ${weak.suggestion}`);
+    try {
+      await withTimeout((async () => {
+        const weakModules = await identifyWeakModules();
+        for (const weak of weakModules) {
+          devTasks.push(`[${weak.module}] ${weak.issue} → ${weak.suggestion}`);
+        }
+      })(), PHASE_TIMEOUT, 'Phase 5: Weak modules');
+    } catch (err) {
+      console.error('[MaraBrain] Phase 5 failed:', err);
     }
 
     // === PHASE 6: Growth Suggestions ===
     console.log('[MaraBrain] Phase 6: Growth suggestions...');
-    const growth = await generateGrowthSuggestions();
-    growthIdeas.push(...growth);
+    try {
+      await withTimeout((async () => {
+        const growth = await generateGrowthSuggestions();
+        growthIdeas.push(...growth);
+      })(), PHASE_TIMEOUT, 'Phase 6: Growth suggestions');
+    } catch (err) {
+      console.error('[MaraBrain] Phase 6 failed:', err);
+    }
 
     // === PHASE 7: Validate Ideas with LLM ===
     console.log('[MaraBrain] Phase 7: Validating ideas...');
-    if (productIdeas.length > 0) {
-      const validated = await validateIdeas(productIdeas.slice(0, 5));
-      for (const v of validated) {
-        if (v.score >= 7) {
-          research.push(`✅ Validated idea (${v.score}/10): ${v.original}`);
+    try {
+      await withTimeout((async () => {
+        if (productIdeas.length > 0) {
+          const validated = await validateIdeas(productIdeas.slice(0, 5));
+          for (const v of validated) {
+            if (v.score >= 7) {
+              research.push(`✅ Validated idea (${v.score}/10): ${v.original}`);
+            }
+          }
         }
-      }
+      })(), PHASE_TIMEOUT, 'Phase 7: Validate ideas');
+    } catch (err) {
+      console.error('[MaraBrain] Phase 7 failed:', err);
     }
 
     // === PHASE 8: Business Strategy Learning ===
     console.log('[MaraBrain] Phase 8: Business strategy learning...');
-    const knowledgeStats = await getKnowledgeStats();
-    const platformContext = `Current knowledge: ${JSON.stringify(knowledgeStats)}. Users: ${(await storage.getAllUsers()).length}. Total content: ${(await storage.getVideos()).length} videos.`;
-    const businessLearning = await learnBusinessStrategy(platformContext);
-    knowledgeLearned += businessLearning.savedKnowledgeIds.length;
+    try {
+      await withTimeout((async () => {
+        const knowledgeStats = await getKnowledgeStats();
+        const platformContext = `Current knowledge: ${JSON.stringify(knowledgeStats)}. Users: ${(await storage.getAllUsers()).length}. Total content: ${(await storage.getVideos()).length} videos.`;
+        const businessLearning = await learnBusinessStrategy(platformContext);
+        knowledgeLearned += businessLearning.savedKnowledgeIds.length;
+      })(), PHASE_TIMEOUT, 'Phase 8: Business strategy');
+    } catch (err) {
+      console.error('[MaraBrain] Phase 8 failed:', err);
+    }
 
     // === PHASE 9: Self-Improvement ===
     console.log('[MaraBrain] Phase 9: Self-improvement...');
-    const recentMessages = await storage.getChatMessages();
-    if (recentMessages.length > 0) {
-      const sample = recentMessages
-        .slice(0, 20)
-        .map((m) => `[${m.sender}]: ${m.content.substring(0, 100)}`)
-        .join('\n');
-      const selfImprovement = await selfImproveQuery(sample);
-      devTasks.push(`Self-improvement: ${selfImprovement.substring(0, 500)}`);
+    try {
+      await withTimeout((async () => {
+        const recentMessages = await storage.getChatMessages();
+        if (recentMessages.length > 0) {
+          const sample = recentMessages
+            .slice(0, 20)
+            .map((m) => `[${m.sender}]: ${m.content.substring(0, 100)}`)
+            .join('\n');
+          const selfImprovement = await selfImproveQuery(sample);
+          devTasks.push(`Self-improvement: ${selfImprovement.substring(0, 500)}`);
+        }
+      })(), PHASE_TIMEOUT, 'Phase 9: Self-improvement');
+    } catch (err) {
+      console.error('[MaraBrain] Phase 9 failed:', err);
     }
 
     // === PHASE 10: Self Reflection ===
     console.log('[MaraBrain] Phase 10: Writing self-reflection...');
-    const reflection = await writeSelfReflection(research, knowledgeLearned, productIdeas, growthIdeas);
+    try {
+      await withTimeout((async () => {
+        const reflection = await writeSelfReflection(
+          research,
+          knowledgeLearned,
+          productIdeas,
+          growthIdeas,
+        );
+        reflectionId = reflection?.id ?? null;
+      })(), PHASE_TIMEOUT, 'Phase 10: Self reflection');
+    } catch (err) {
+      console.error('[MaraBrain] Phase 10 failed:', err);
+    }
 
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-    console.log(`[MaraBrain] 🧠 Brain cycle complete in ${elapsed}s. Learned ${knowledgeLearned} pieces of knowledge.`);
+    console.log(
+      `[MaraBrain] 🧠 Brain cycle complete in ${elapsed}s. Learned ${knowledgeLearned} pieces of knowledge.`,
+    );
 
     return {
       research: research.join('\n'),
@@ -195,17 +302,23 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
       devTasks: devTasks.join('\n'),
       growthIdeas: growthIdeas.join('\n'),
       knowledgeLearned,
-      reflectionId: reflection?.id || null,
+      reflectionId,
     };
   } catch (error) {
+    // If the outer BRAIN_CYCLE_TIMEOUT fires (or an unwrapped phase throws),
+    // surface partial results so storage.createBrainLog still records what we
+    // managed to learn before the failure. Without this, a timeout in the
+    // last phase would discard everything previously gathered.
+    const msg = error instanceof Error ? error.message : String(error);
     console.error('[MaraBrain] Brain cycle failed:', error);
+    research.push(`⚠️ Brain cycle terminated early: ${msg}`);
     return {
-      research: `Brain cycle error: ${error}`,
-      productIdeas: '',
-      devTasks: '',
-      growthIdeas: '',
+      research: research.join('\n'),
+      productIdeas: productIdeas.join('\n'),
+      devTasks: devTasks.join('\n'),
+      growthIdeas: growthIdeas.join('\n'),
       knowledgeLearned,
-      reflectionId: null,
+      reflectionId,
     };
   }
 }

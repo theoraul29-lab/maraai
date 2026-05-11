@@ -45,7 +45,12 @@ Copy `.env.example` to `.env` and set the following:
 | `ANTHROPIC_MODEL` | No | Claude model (default: `claude-sonnet-4-6`) |
 | `ANTHROPIC_MAX_TOKENS` | No | Max output tokens per reply (default: `1024`) |
 | `ANTHROPIC_TIMEOUT_MS` | No | Request timeout in ms (default: `120000`) |
-| `PROCESS_AI_TASKS` | No | Set to `true` to enable autonomous Mara brain cycle |
+| `PROCESS_AI_TASKS` | No | Set to `true` to enable autonomous Mara brain cycle. Set `BRAIN_ENABLED=false` as a kill-switch override. |
+| `BRAIN_CYCLE_INTERVAL_MS` | No | How often the brain cycle runs (default: `7200000` = 2h) |
+| `BRAIN_CYCLE_TIMEOUT_MS` | No | Max time for one full brain cycle (default: `1200000` = 20min). Bump higher when routing through Ollama on commodity hardware. |
+| `BRAIN_PHASE_TIMEOUT_MS` | No | Max time per phase inside one cycle (default: `120000` = 2min). One slow phase no longer kills later phases. |
+| `BRAIN_SELF_POST_ENABLED` | No | Set to `false` to keep autonomous learning on but skip auto-publishing "Mara AI Insight" posts |
+| `BRAIN_SELF_POST_INTERVAL_MS` | No | How often Mara self-publishes when `BRAIN_SELF_POST_ENABLED!=false` (default: `14400000` = 4h) |
 
 ¹ At least one of `OLLAMA_BASE_URL` (with a reachable Ollama) or `ANTHROPIC_API_KEY` must be set, otherwise the chat will return a localised "catching my breath" fallback message.
 
