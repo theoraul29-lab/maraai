@@ -48,6 +48,7 @@ import {
   getKnowledgeStats,
   brainManager,
   readNextLibraryBook,
+  readLibraryBookById,
   getNextUnreadBook,
   getBuiltInLibrary,
 } from './mara-brain/index';
@@ -421,6 +422,39 @@ export async function registerRoutes(
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       res.status(500).json({ error: `Failed to read next library book: ${message}` });
+    }
+  });
+
+  // Force re-read of a specific library book by id, bypassing the
+  // "already read" check. Used to re-process books whose previous
+  // extraction failed (e.g. because of the camelCase/snake_case bug in
+  // learnFromText that silently dropped every parsed idea). Body:
+  // { "bookId": "growth-hooked-nir-eyal" }.
+  app.post('/api/admin/mara/library/read-book', requireAdmin, async (req: any, res: any) => {
+    try {
+      const { bookId } = req.body || {};
+      if (!bookId || typeof bookId !== 'string') {
+        return res.status(400).json({ error: 'bookId is required' });
+      }
+      const result = await readLibraryBookById(bookId);
+      if (!result) {
+        return res.status(404).json({ error: `No book with id "${bookId}" in built-in library` });
+      }
+      const progress = await getLibraryProgress();
+      res.json({
+        message: `Mara a re-citit "${result.title}" și a extras ${result.totalIdeas} idei`,
+        result: {
+          title: result.title,
+          chunks: result.processedChunks,
+          totalChunks: result.totalChunks,
+          ideas: result.totalIdeas,
+          savedKnowledgeIds: result.savedKnowledgeIds.length,
+        },
+        progress,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      res.status(500).json({ error: `Failed to read library book: ${message}` });
     }
   });
 

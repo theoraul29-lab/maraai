@@ -189,29 +189,68 @@ Răspunde DOAR cu JSON array-ul, fără alt text. Exemplu:
   try {
     const raw = (await llmGenerate(prompt)).trim();
     const jsonMatch = raw.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) return { ideas: [], savedIds: [] };
+    if (!jsonMatch) {
+      console.warn(
+        `[KnowledgeBase] learnFromText: no JSON array in LLM output for "${sourceLabel ?? 'unknown'}". Raw head: ${raw.slice(0, 200)}`,
+      );
+      return { ideas: [], savedIds: [] };
+    }
 
-    const parsed: ExtractedIdea[] = JSON.parse(jsonMatch[0]);
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(jsonMatch[0]);
+    } catch (parseErr) {
+      console.warn(
+        `[KnowledgeBase] learnFromText: JSON.parse failed for "${sourceLabel ?? 'unknown'}":`,
+        parseErr instanceof Error ? parseErr.message : parseErr,
+      );
+      return { ideas: [], savedIds: [] };
+    }
+    if (!Array.isArray(parsed)) return { ideas: [], savedIds: [] };
+
     const savedIds: number[] = [];
     const validIdeas: ExtractedIdea[] = [];
 
-    for (const item of parsed) {
-      if (!item.idea || !item.category || !item.howToApply) continue;
+    // The prompt asks the LLM for snake_case `how_to_apply` but the TS
+    // interface uses camelCase `howToApply` — normalize defensively so any
+    // shape from the model (snake_case, camelCase, or even the bare alias
+    // `application`) is accepted. Without this, every item was silently
+    // filtered out and books were marked as read with 0 ideas extracted.
+    for (const rawItem of parsed) {
+      if (!rawItem || typeof rawItem !== 'object') continue;
+      const obj = rawItem as Record<string, unknown>;
 
-      const validCategory = (['business_insight', 'platform_insight', 'user_pattern', 'llm_learning', 'web_research', 'book_knowledge'] as KnowledgeCategory[]).includes(item.category as KnowledgeCategory)
-        ? (item.category as KnowledgeCategory)
+      const idea = typeof obj.idea === 'string' ? obj.idea.trim() : '';
+      const category = typeof obj.category === 'string' ? obj.category.trim() : '';
+      const howToApplyRaw =
+        (typeof obj.howToApply === 'string' && obj.howToApply) ||
+        (typeof obj.how_to_apply === 'string' && obj.how_to_apply) ||
+        (typeof obj.application === 'string' && obj.application) ||
+        '';
+      const howToApply = typeof howToApplyRaw === 'string' ? howToApplyRaw.trim() : '';
+
+      if (!idea || !category || !howToApply) continue;
+
+      const validCategory = (['business_insight', 'platform_insight', 'user_pattern', 'llm_learning', 'web_research', 'book_knowledge'] as KnowledgeCategory[]).includes(category as KnowledgeCategory)
+        ? (category as KnowledgeCategory)
         : 'book_knowledge';
 
       const id = await storeKnowledge(
         validCategory,
-        item.idea.substring(0, 100),
-        `${item.idea}\n\nCum se aplică: ${item.howToApply}`,
+        idea.substring(0, 100),
+        `${idea}\n\nCum se aplică: ${howToApply}`,
         source,
         75,
         { sourceLabel: sourceLabel || 'text_extraction', extractedAt: new Date().toISOString() },
       );
       savedIds.push(id);
-      validIdeas.push(item);
+      validIdeas.push({ idea, category: validCategory, howToApply });
+    }
+
+    if (validIdeas.length === 0) {
+      console.warn(
+        `[KnowledgeBase] learnFromText: parsed ${Array.isArray(parsed) ? parsed.length : 0} item(s) but 0 valid for "${sourceLabel ?? 'unknown'}"`,
+      );
     }
 
     return { ideas: validIdeas, savedIds };
