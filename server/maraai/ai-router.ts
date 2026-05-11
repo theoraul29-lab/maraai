@@ -26,6 +26,7 @@ import { getConsent } from './consent.js';
 import { logActivity } from './activity.js';
 import { publishEvent, KAFKA_TOPICS } from './kafka.js';
 import { listOnlineNodes } from './p2p.js';
+import { dispatchJob, listComputePeers } from './p2p-compute.js';
 
 export type RouteDecision = {
   route: AiRoute;
@@ -109,31 +110,47 @@ export async function route(message: string, opts: RouteOptions = {}): Promise<R
     !consent?.killSwitch;
 
   if (wantsP2P) {
-    const peers = listOnlineNodes(opts.userId);
-    if (peers.length >= 1 && isLLMConfigured()) {
-      // Bridge: dispatch through the central engine but tag the route as p2p
-      // so the transparency dashboard surfaces the user's intent. Real peer
-      // compute is wired up in a follow-up — see server/maraai/p2p.ts.
+    const computePeers = listComputePeers(opts.userId);
+    if (computePeers.length >= 1) {
+      // Real P2P dispatch: send the prompt to the peer with the freshest
+      // ready-ack and await their result. On any failure (timeout, peer
+      // disconnect, peer-reported error) we fall through to the central
+      // path below — the user's intent to use P2P is already logged.
+      const peer = pickBestPeer(computePeers);
       try {
-        const r = await getMaraResponse(
-          message,
-          opts.history ?? [],
-          opts.prefs ?? null,
-          opts.module,
-          opts.userId,
-        );
+        const result = await dispatchJob({
+          peerUserId: peer.userId,
+          messages: buildPeerMessages(opts, message),
+          temperature: 0.95,
+          timeoutMs: 30_000,
+        });
         return finish(
           'p2p',
           false,
-          `p2p-bridge (${peers.length} peers)`,
+          `p2p-dispatch (peer=${peer.userId} model=${peer.model})`,
           start,
-          r.response,
-          r.detectedMood,
+          result.text,
+          'calm',
           opts,
         );
       } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error('[maraai/ai-router] p2p dispatch failed:', msg);
+        await logActivity(opts.userId ?? null, 'ai.p2p.dispatch_failed', {
+          peerUserId: peer.userId,
+          error: msg,
+        });
         // fall through to central path below
-        console.error('[maraai/ai-router] p2p bridge failed:', err);
+      }
+    } else {
+      // No compute-ready peers but the user has the legacy p2p_nodes signal —
+      // log the intent so transparency dashboards can show "wanted P2P, none
+      // were available" without us throwing.
+      const legacyPeers = listOnlineNodes(opts.userId);
+      if (legacyPeers.length > 0) {
+        await logActivity(opts.userId ?? null, 'ai.p2p.no_compute_peers', {
+          legacyPeers: legacyPeers.length,
+        });
       }
     }
   }
@@ -217,6 +234,32 @@ async function finish(
   );
 
   return { response, detectedMood, route: routeName, reason, latencyMs, fallback };
+}
+
+/**
+ * Pick the peer to dispatch to. We prefer the most recently active peer —
+ * a freshly heart-beating peer is more likely to actually still be there.
+ * In a future iteration this will weight by p2p_nodes.score and current
+ * load (in-flight jobs per peer).
+ */
+function pickBestPeer<T extends { lastSeenAtMs: number }>(peers: T[]): T {
+  return peers.reduce((best, p) => (p.lastSeenAtMs > best.lastSeenAtMs ? p : best));
+}
+
+/**
+ * Convert the router's input shape into the message array expected by
+ * peer-side Ollama clients. Mirrors the shape used by `getMaraResponse`
+ * (history first, then the new user turn).
+ */
+function buildPeerMessages(
+  opts: RouteOptions,
+  message: string,
+): { role: string; content: string }[] {
+  const history = (opts.history ?? []).slice(-20).map((m) => ({
+    role: m.role,
+    content: m.content,
+  }));
+  return [...history, { role: 'user', content: message }];
 }
 
 function estimateTokens(s: string): number {

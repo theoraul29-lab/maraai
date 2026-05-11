@@ -22,6 +22,15 @@ import { UPLOADS_DIR } from '../backend/src/modules/reels.js';
 import { IMAGE_UPLOADS_DIR } from '../backend/src/modules/uploads.js';
 import { seedPlans } from './billing/seed.js';
 import { seedTradingAcademy } from './trading/seed.js';
+import {
+  bindPeerSender,
+  failJob,
+  registerComputePeer,
+  resolveJob,
+  unbindPeerSender,
+  unregisterComputePeer,
+} from './maraai/p2p-compute.js';
+import { awardActivationBonus } from './maraai/credits.js';
 dotenv.config();
 
 // Process-level safety net for *runtime* bugs in request handlers.
@@ -512,6 +521,9 @@ app.use((req, res, next) => {
       log(`P2P user connected: ${finalUserId}`, 'p2p-ws');
       userConnections.set(finalUserId, ws);
       ws.userId = finalUserId;
+      // Bind a send fn so the AI router can dispatch P2P AI jobs to this
+      // peer without needing a direct handle on the WebSocket instance.
+      bindPeerSender(finalUserId, (payload: string) => ws.send(payload));
     } else {
       log('Anonymous P2P user connected.', 'p2p-ws');
     }
@@ -582,6 +594,71 @@ app.use((req, res, next) => {
               peers,
             }),
           );
+          break;
+        }
+
+        // --- P2P AI compute handlers (PR Ollama-bridge) ---
+        //
+        // The peer-side desktop client (Tauri/Electron, future) announces
+        // its locally-running Ollama via `p2p-ollama-ready`. The server
+        // uses the registry to dispatch `p2p-ai-job` messages and credits
+        // the peer's owner on `p2p-ai-result`.
+        //
+        // Server NEVER trusts a peer-supplied jobId for awarding credits —
+        // see server/maraai/p2p-compute.ts for the in-flight check.
+        case 'p2p-ollama-ready': {
+          if (!ws.userId) break;
+          const peer = registerComputePeer({
+            userId: ws.userId,
+            nodeId: typeof data.nodeId === 'string' ? data.nodeId : null,
+            model: typeof data.model === 'string' ? data.model : 'llama3.1:8b',
+            version: typeof data.version === 'string' ? data.version : null,
+          });
+          log(
+            `Compute peer ready: user=${peer.userId} model=${peer.model}`,
+            'p2p-compute',
+          );
+          ws.send(JSON.stringify({ type: 'p2p-ollama-ack', model: peer.model }));
+          // Award the desktop activation bonus on the first ready signal.
+          // Idempotent on (userId, 'desktop') so reconnects don't re-pay.
+          void awardActivationBonus(ws.userId, 'desktop').catch((err) =>
+            logError(err, { message: 'awardActivationBonus failed', userId: ws.userId }),
+          );
+          break;
+        }
+
+        case 'p2p-ollama-gone': {
+          if (!ws.userId) break;
+          unregisterComputePeer(ws.userId);
+          log(`Compute peer gone: user=${ws.userId}`, 'p2p-compute');
+          break;
+        }
+
+        case 'p2p-ai-result': {
+          if (!ws.userId) break;
+          const jobId = typeof data.jobId === 'string' ? data.jobId : '';
+          const text = typeof data.text === 'string' ? data.text : '';
+          if (!jobId || !text) break;
+          void resolveJob({
+            jobId,
+            fromUserId: ws.userId,
+            text,
+            model: typeof data.model === 'string' ? data.model : undefined,
+          }).catch((err) =>
+            logError(err, { message: 'resolveJob failed', jobId, userId: ws.userId }),
+          );
+          break;
+        }
+
+        case 'p2p-ai-error': {
+          if (!ws.userId) break;
+          const jobId = typeof data.jobId === 'string' ? data.jobId : '';
+          if (!jobId) break;
+          failJob({
+            jobId,
+            fromUserId: ws.userId,
+            error: typeof data.error === 'string' ? data.error : undefined,
+          });
           break;
         }
 
@@ -657,6 +734,10 @@ app.use((req, res, next) => {
         log(`P2P user disconnected: ${ws.userId}`, 'p2p-ws');
         userConnections.delete(ws.userId);
         clearSeedsForUser(ws.userId);
+        // Drop the peer from the compute pool so the AI router doesn't try
+        // to dispatch jobs to a socket that just went away.
+        unregisterComputePeer(ws.userId);
+        unbindPeerSender(ws.userId);
       } else {
         log('Anonymous P2P user disconnected.', 'p2p-ws');
       }

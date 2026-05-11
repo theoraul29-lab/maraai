@@ -43,3 +43,4 @@ logs/
 .DS_Store
 *.local
 data/
+scripts/.smoke-credits-*.ts

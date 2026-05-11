@@ -27,6 +27,12 @@ import { route as routeAi } from './ai-router.js';
 import { eventBusStatus, KAFKA_TOPICS } from './kafka.js';
 import { requestOtp, verifyOtp } from './otp.js';
 import { logActivity } from './activity.js';
+import {
+  awardCredits,
+  CREDIT_REASONS,
+  getBalance,
+  getHistory,
+} from './credits.js';
 
 type AuthedReq = Request & { user?: { uid: string } };
 
@@ -40,6 +46,11 @@ const consentPatchSchema = z
     notificationsEnabled: z.boolean().optional(),
     killSwitch: z.boolean().optional(),
     acceptTerms: z.boolean().optional(),
+    /**
+     * Optional hint to the credits system. The desktop onboarding modal
+     * sends 'desktop' (default), the future mobile client sends 'mobile'.
+     */
+    deviceKind: z.enum(['desktop', 'mobile']).optional(),
   })
   .strict();
 
@@ -172,6 +183,71 @@ export function registerMaraAIRoutes(
     await activateKillSwitch(req.user!.uid);
     const consent = await getConsent(req.user!.uid);
     res.json({ consent });
+  });
+
+  // --- Mara Credits ---
+  app.get('/api/credits/balance', requireAuth, async (req: AuthedReq, res: Response) => {
+    const balance = await getBalance(req.user!.uid);
+    res.json(balance);
+  });
+
+  app.get('/api/credits/history', requireAuth, async (req: AuthedReq, res: Response) => {
+    const limit = Number.parseInt(String(req.query.limit ?? '50'), 10) || 50;
+    const transactions = await getHistory(req.user!.uid, limit);
+    res.json({ transactions });
+  });
+
+  // Manual award by an admin. The router-level admin guard is owned by the
+  // main `server/routes.ts` `requireAdmin` middleware; we don't reach in
+  // here — instead we accept an `adminUserId` from session and verify the
+  // ADMIN_EMAILS / ADMIN_USER_IDS env contract inline so this module stays
+  // self-contained.
+  const adminAwardSchema = z
+    .object({
+      userId: z.string().min(1),
+      delta: z.number().int().refine((v) => v !== 0, 'delta must be non-zero'),
+      reason: z.string().min(1).max(64),
+      idempotencyKey: z.string().max(200).optional(),
+      meta: z.record(z.any()).optional(),
+    })
+    .strict();
+  app.post('/api/credits/award', requireAuth, async (req: AuthedReq, res: Response) => {
+    const adminEmails = (process.env.ADMIN_EMAILS ?? '')
+      .split(',')
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean);
+    const adminIds = (process.env.ADMIN_USER_IDS ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const callerId = req.user!.uid;
+    let isAdmin = adminIds.includes(callerId);
+    if (!isAdmin && adminEmails.length > 0) {
+      const caller = (
+        await db.select().from(users).where(eq(users.id, callerId)).limit(1)
+      )[0];
+      if (caller?.email && adminEmails.includes(caller.email.toLowerCase())) {
+        isAdmin = true;
+      }
+    }
+    if (!isAdmin) return res.status(403).json({ message: 'Forbidden — admin access required.' });
+
+    const parsed = adminAwardSchema.safeParse(req.body ?? {});
+    if (!parsed.success)
+      return res.status(400).json({ message: 'Invalid request.', errors: parsed.error.flatten() });
+
+    try {
+      const balance = await awardCredits({
+        userId: parsed.data.userId,
+        delta: parsed.data.delta,
+        reason: CREDIT_REASONS.ADMIN_GRANT,
+        idempotencyKey: parsed.data.idempotencyKey,
+        meta: { ...parsed.data.meta, awardedBy: callerId, originalReason: parsed.data.reason },
+      });
+      res.json({ balance });
+    } catch (err: any) {
+      res.status(400).json({ message: err?.message ?? 'Award failed.' });
+    }
   });
 
   // --- Hybrid AI router ---

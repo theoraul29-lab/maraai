@@ -97,6 +97,7 @@ jobs:
 
           echo "Using MARAAI_BASE_URL=$MARAAI_BASE_URL"
           npm run smoke:runtime
+          npm run smoke:credits
 
       - name: Print backend logs on failure
         if: failure()

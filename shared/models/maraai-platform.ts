@@ -85,6 +85,43 @@ export const aiRouteLog = sqliteTable(
   (table) => [index('idx_ai_route_log_user_time').on(table.userId, table.createdAt)],
 );
 
+/** Mara Credits balance per user (materialised cache of credit_transactions). */
+export const userCredits = sqliteTable('user_credits', {
+  userId: text('user_id').primaryKey(),
+  balance: integer('balance').default(0).notNull(),
+  lifetimeEarned: integer('lifetime_earned').default(0).notNull(),
+  lifetimeSpent: integer('lifetime_spent').default(0).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
+/** Append-only ledger of every Mara Credits change. */
+export const creditTransactions = sqliteTable(
+  'credit_transactions',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    userId: text('user_id').notNull(),
+    /** Positive = award, negative = spend. */
+    delta: integer('delta').notNull(),
+    /** Free-form short tag — see CREDIT_REASONS in server/maraai/credits.ts. */
+    reason: text('reason').notNull(),
+    /**
+     * When set, awards/spends with the same (user_id, idempotency_key) are
+     * deduplicated. Use the WebSocket job id, signup event id, etc.
+     */
+    idempotencyKey: text('idempotency_key'),
+    meta: text('meta').default('{}').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+  },
+  (table) => [index('idx_credit_tx_user_time').on(table.userId, table.createdAt)],
+);
+
 /** Short-lived OTP codes for email-OTP registration / login. */
 export const emailOtpCodes = sqliteTable(
   'email_otp_codes',
@@ -111,6 +148,10 @@ export type NewP2PNode = typeof p2pNodes.$inferInsert;
 export type ActivityLogRow = typeof activityLog.$inferSelect;
 export type AiRouteLogRow = typeof aiRouteLog.$inferSelect;
 export type EmailOtpCode = typeof emailOtpCodes.$inferSelect;
+export type UserCredits = typeof userCredits.$inferSelect;
+export type NewUserCredits = typeof userCredits.$inferInsert;
+export type CreditTransaction = typeof creditTransactions.$inferSelect;
+export type NewCreditTransaction = typeof creditTransactions.$inferInsert;
 
 export type MaraMode = 'centralized' | 'hybrid' | 'advanced';
 export type AiRoute = 'local' | 'central' | 'p2p';

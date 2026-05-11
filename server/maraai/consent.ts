@@ -17,6 +17,7 @@ import {
   type MaraMode,
 } from '../../shared/schema.js';
 import { logActivity } from './activity.js';
+import { awardActivationBonus } from './credits.js';
 
 export type ConsentView = {
   userId: string;
@@ -94,6 +95,12 @@ export type ConsentUpdate = Partial<{
   notificationsEnabled: boolean;
   killSwitch: boolean;
   acceptTerms: boolean;
+  /**
+   * Hint for the credits system: which device the user just opted in from.
+   * Defaults to 'desktop' since mobile clients don't yet exist. Mobile
+   * clients (Capacitor/Expo, future) will pass `deviceKind: 'mobile'`.
+   */
+  deviceKind: 'desktop' | 'mobile';
 }>;
 
 export async function updateConsent(
@@ -192,6 +199,20 @@ export async function updateConsent(
     advancedAiRouting: !!next.advancedAiRouting,
     killSwitch: !!next.killSwitch,
   });
+
+  // Activation-bonus hook. Award credits the first time a user transitions
+  // backgroundNode 0 → 1. The award is idempotent on (userId, deviceKind),
+  // so re-toggling the flag never double-pays. Awards run best-effort —
+  // a failure here MUST NOT roll back the consent write.
+  const wasBackgroundNode = !!existing?.backgroundNode;
+  if (!wasBackgroundNode && next.backgroundNode === 1) {
+    const deviceKind = patch.deviceKind ?? 'desktop';
+    try {
+      await awardActivationBonus(userId, deviceKind);
+    } catch (err) {
+      console.error('[maraai/consent] awardActivationBonus failed:', err);
+    }
+  }
 
   return getConsent(userId);
 }
