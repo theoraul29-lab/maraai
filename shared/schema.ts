@@ -3,6 +3,7 @@ import {
   sqliteTable as pgTable,
   text,
   integer,
+  real,
   primaryKey,
   unique,
   blob,
@@ -454,6 +455,51 @@ export const maraPlatformInsights = pgTable('mara_platform_insights', {
   estimatedImpact: text('estimated_impact').default('medium').notNull(), // low | medium | high | critical
   source: text('source').notNull(), // user_feedback | gemini_analysis | web_research | self_analysis
   status: text('status').default('proposed').notNull(), // proposed | approved | in_progress | completed | rejected
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
+// === MARA GROWTH EXPERIMENTS ===
+// Single source of truth for the Growth Engineer cycle. Each row represents
+// ONE proposed experiment focused on a specific funnel drop-off. Mara proposes
+// (`status='proposed'`); the admin approves or rejects from `/admin/experiments`;
+// once implemented, baseline metrics are frozen, and after 7 days Mara measures
+// and writes back `actualImpactPct` + a learning that feeds the next cycle.
+export const maraGrowthExperiments = pgTable('mara_growth_experiments', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  // === Diagnosis ===
+  // Where in the funnel this experiment targets, and the current baseline rate
+  // observed when the proposal was made (0-1, e.g. 0.82 = 82% drop-off).
+  dropOffStage: text('drop_off_stage').notNull(), // signup | activation | engagement | conversion | retention
+  baselineDropOffRate: real('baseline_drop_off_rate').notNull(),
+  baselineMetrics: text('baseline_metrics').default('{}').notNull(), // JSON snapshot of the full funnel at proposal time
+  // === Proposal ===
+  hypothesis: text('hypothesis').notNull(),
+  framework: text('framework').notNull(), // hook | north_star | aarrr | lean_analytics | stripe_atlas | first_round
+  codeSketch: text('code_sketch').notNull(), // pseudocode/file list describing the change
+  // ICE prioritisation — each 1-10, score = (impact * confidence * ease) / 10
+  iceImpact: integer('ice_impact').notNull(),
+  iceConfidence: integer('ice_confidence').notNull(),
+  iceEase: integer('ice_ease').notNull(),
+  iceScore: real('ice_score').notNull(),
+  expectedImpactPct: real('expected_impact_pct').notNull(), // e.g. 0.18 = expected 18% improvement
+  // Which knowledge entries (Growth Engineer books) informed this proposal
+  citedKnowledgeIds: text('cited_knowledge_ids').default('[]').notNull(), // JSON array of mara_knowledge_base.id
+  // === Lifecycle ===
+  status: text('status').default('proposed').notNull(), // proposed | approved | implemented | measured | rejected
+  decidedBy: text('decided_by'), // admin email
+  decidedAt: integer('decided_at', { mode: 'timestamp' }),
+  decisionNote: text('decision_note'),
+  implementedAt: integer('implemented_at', { mode: 'timestamp' }),
+  measureAfterAt: integer('measure_after_at', { mode: 'timestamp' }), // typically implementedAt + 7 days
+  // === Outcome (filled by measureExperimentOutcome) ===
+  resultMetrics: text('result_metrics'), // JSON snapshot 7d after implementation
+  actualImpactPct: real('actual_impact_pct'),
+  succeeded: integer('succeeded'), // 0/1, null until measured
+  learnings: text('learnings'),
+  measuredAt: integer('measured_at', { mode: 'timestamp' }),
+  // === Provenance ===
   createdAt: integer('created_at', { mode: 'timestamp' })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),

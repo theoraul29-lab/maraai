@@ -119,6 +119,35 @@ sqlite.exec(`
     status TEXT NOT NULL DEFAULT 'proposed',
     created_at INTEGER DEFAULT (unixepoch())
   );
+  CREATE TABLE IF NOT EXISTS mara_growth_experiments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    drop_off_stage TEXT NOT NULL,
+    baseline_drop_off_rate REAL NOT NULL,
+    baseline_metrics TEXT NOT NULL DEFAULT '{}',
+    hypothesis TEXT NOT NULL,
+    framework TEXT NOT NULL,
+    code_sketch TEXT NOT NULL,
+    ice_impact INTEGER NOT NULL,
+    ice_confidence INTEGER NOT NULL,
+    ice_ease INTEGER NOT NULL,
+    ice_score REAL NOT NULL,
+    expected_impact_pct REAL NOT NULL,
+    cited_knowledge_ids TEXT NOT NULL DEFAULT '[]',
+    status TEXT NOT NULL DEFAULT 'proposed',
+    decided_by TEXT,
+    decided_at INTEGER,
+    decision_note TEXT,
+    implemented_at INTEGER,
+    measure_after_at INTEGER,
+    result_metrics TEXT,
+    actual_impact_pct REAL,
+    succeeded INTEGER,
+    learnings TEXT,
+    measured_at INTEGER,
+    created_at INTEGER DEFAULT (unixepoch())
+  );
+  CREATE INDEX IF NOT EXISTS idx_mara_growth_exp_status ON mara_growth_experiments (status, created_at);
+  CREATE INDEX IF NOT EXISTS idx_mara_growth_exp_measure ON mara_growth_experiments (status, measure_after_at);
 `);
 
 export const db = drizzle(sqlite, { schema });

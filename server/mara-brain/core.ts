@@ -5,8 +5,9 @@
 import { storage } from '../storage.js';
 import { learnFromGemini, learnBusinessStrategy, validateIdeas, selfImproveQuery } from './agents/llm-learner.js';
 import { researchModuleTrends, researchCompetitors, generateResearchAgenda, batchResearch } from './agents/web-research.js';
-import { analyzePlatform, generateGrowthSuggestions, identifyWeakModules } from './agents/platform-analyzer.js';
+import { generateGrowthSuggestions, identifyWeakModules } from './agents/platform-analyzer.js';
 import { runAllModuleAnalyzers } from './agents/module-analyzers.js';
+import { runGrowthEngineerCycle } from './agents/growth-engineer.js';
 import { getKnowledgeStats, storeKnowledge } from './knowledge-base.js';
 import { readNextLibraryBook, getLibraryProgress } from './library.js';
 
@@ -158,20 +159,47 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
       console.error('[MaraBrain] Phase 3 failed:', err);
     }
 
-    // === PHASE 4: Platform Analysis ===
-    console.log('[MaraBrain] Phase 4: Platform analysis...');
+    // === PHASE 4: Growth Engineer Cycle ===
+    // Replaces the legacy generic platform analysis. Runs the disciplined
+    // 5-step Growth Engineer loop:
+    //   1. read funnel  → 2. identify worst drop-off
+    //   3. propose ONE experiment (ICE-scored, framework-grounded, stored in
+    //      mara_growth_experiments with status='proposed')
+    //   4. wait for admin decision (out-of-band, via /api/admin/mara/experiments/:id/...)
+    //   5. measure due experiments and write learnings back to knowledge base
+    console.log('[MaraBrain] Phase 4: Growth Engineer cycle...');
     try {
       await withTimeout((async () => {
-        const analysis = await analyzePlatform();
-        productIdeas.push(
-          ...(analysis.proposals?.map(
-            (p) => `[${p.priority}] ${p.title}: ${p.description}`,
-          ) || []),
+        const cycle = await runGrowthEngineerCycle();
+        research.push(
+          `📊 Funnel (${cycle.funnel.windowDays}d): ${cycle.funnel.stages
+            .map((s) => `${s.stage}=${s.count}`)
+            .join(', ')}`,
         );
-        research.push(...(analysis.insights || []));
-      })(), PHASE_TIMEOUT, 'Phase 4: Platform analysis');
+        if (cycle.skipReason) {
+          research.push(`⏭️  Growth proposal skipped — ${cycle.skipReason}`);
+        }
+        if (cycle.dropOff) {
+          research.push(
+            `🔻 Worst drop-off: ${cycle.dropOff.stage} (${(cycle.dropOff.dropOffRate * 100).toFixed(0)}%, ${cycle.dropOff.usersAffectedInWindow} users)`,
+          );
+        }
+        if (cycle.proposal) {
+          productIdeas.push(
+            `[GROWTH#${cycle.proposal.experimentId}] (${cycle.proposal.framework}, ICE=${cycle.proposal.ice.score.toFixed(1)}, expected ${(cycle.proposal.expectedImpactPct * 100).toFixed(0)}%) ${cycle.proposal.hypothesis}`,
+          );
+        }
+        for (const m of cycle.measured) {
+          if (m.status === 'measured') {
+            research.push(
+              `📏 Experiment #${m.experimentId}: ${m.succeeded ? '✅' : '❌'} ${m.learnings ?? ''}`,
+            );
+            if (m.succeeded) knowledgeLearned += 1;
+          }
+        }
+      })(), PHASE_TIMEOUT, 'Phase 4: Growth Engineer cycle');
     } catch (err) {
-      console.error('[MaraBrain] Phase 4 failed:', err);
+      console.error('[MaraBrain] Phase 4 (Growth Engineer) failed:', err);
     }
 
     // === PHASE 4.5: Per-Module Growth Analysis ===
