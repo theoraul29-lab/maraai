@@ -411,12 +411,16 @@ async function _runInitialLearningInner(): Promise<void> {
     console.error('[MaraBrain] Initial library reading failed:', err);
   }
 
-  // Initial platform analysis
+  // Initial Growth Engineer cycle. Mirrors the Phase 4 replacement done in
+  // _runBrainCycleInner — runs the funnel → drop-off → proposal loop so the
+  // first bootstrap leaves at least one proposed experiment for the admin
+  // (when the funnel has enough signal). Uses runGrowthEngineerCycle so this
+  // path can't drift from the periodic cycle.
   try {
-    console.log('[MaraBrain] 📊 Initial platform analysis...');
-    await withTimeout(analyzePlatform(), PHASE_TIMEOUT, 'Platform analysis');
+    console.log('[MaraBrain] 📊 Initial Growth Engineer cycle...');
+    await withTimeout(runGrowthEngineerCycle(), PHASE_TIMEOUT, 'Growth Engineer cycle');
   } catch (err) {
-    console.error('[MaraBrain] Initial analysis failed:', err);
+    console.error('[MaraBrain] Initial Growth Engineer cycle failed:', err);
   }
 
   // Write first reflection

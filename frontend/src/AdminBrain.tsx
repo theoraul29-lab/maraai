@@ -279,12 +279,20 @@ export default function AdminBrain() {
     <div style={{ padding: 24, fontFamily: 'sans-serif', maxWidth: 1100, margin: '0 auto' }}>
       <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <h1 style={{ margin: 0 }}>Mara Brain · Admin</h1>
-        <button
-          onClick={() => void (tab === 'learning' ? loadLearning() : load())}
-          style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid #ccc', cursor: 'pointer' }}
-        >
-          Refresh
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <a
+            href="/admin/experiments"
+            style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid #ccc', textDecoration: 'none', color: '#333' }}
+          >
+            Growth experiments →
+          </a>
+          <button
+            onClick={() => void (tab === 'learning' ? loadLearning() : load())}
+            style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid #ccc', cursor: 'pointer' }}
+          >
+            Refresh
+          </button>
+        </div>
       </header>
 
       <nav style={{ display: 'flex', gap: 8, marginBottom: 16, borderBottom: '1px solid #ddd' }}>
