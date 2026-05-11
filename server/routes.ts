@@ -42,7 +42,15 @@ import {
   generateMarketingPost,
 } from './ai';
 import { getAIHealth } from './llm';
-import { getLibraryProgress, addAndReadCustomBook, getKnowledgeStats, brainManager } from './mara-brain/index';
+import {
+  getLibraryProgress,
+  addAndReadCustomBook,
+  getKnowledgeStats,
+  brainManager,
+  readNextLibraryBook,
+  getNextUnreadBook,
+  getBuiltInLibrary,
+} from './mara-brain/index';
 import { learningRateLimiter } from './mara-brain/rate-limiter';
 import { chatRateLimit } from './rate-limit.js';
 import { users as usersTable } from '../shared/models/auth.js';
@@ -376,6 +384,62 @@ export async function registerRoutes(
       });
     } catch (error) {
       res.status(500).json({ error: 'Failed to process uploaded book' });
+    }
+  });
+
+  // Trigger immediate read of the next unread library book.
+  // Used by admin to fast-track ingestion of new high-priority books (e.g.
+  // the Growth Engineer core library) without waiting for the next brain
+  // cycle. Idempotent — repeat calls just read subsequent books until the
+  // library is exhausted.
+  app.post('/api/admin/mara/library/read-next', requireAdmin, async (_req: any, res: any) => {
+    try {
+      const next = await getNextUnreadBook();
+      if (!next) {
+        const progress = await getLibraryProgress();
+        return res.json({
+          message: 'All library books have been read',
+          progress,
+        });
+      }
+      const result = await readNextLibraryBook();
+      if (!result) {
+        return res.json({ message: 'No unread book found (race condition)' });
+      }
+      const progress = await getLibraryProgress();
+      res.json({
+        message: `Mara a citit "${result.title}" și a extras ${result.totalIdeas} idei`,
+        result: {
+          title: result.title,
+          chunks: result.processedChunks,
+          totalChunks: result.totalChunks,
+          ideas: result.totalIdeas,
+          savedKnowledgeIds: result.savedKnowledgeIds.length,
+        },
+        progress,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      res.status(500).json({ error: `Failed to read next library book: ${message}` });
+    }
+  });
+
+  // Inspect the static library catalog — useful for the admin UI to see
+  // what books are available, in what order they will be read, and which
+  // categories are represented.
+  app.get('/api/admin/mara/library/catalog', requireAdmin, (_req: any, res: any) => {
+    try {
+      const catalog = getBuiltInLibrary().map((b) => ({
+        id: b.id,
+        title: b.title,
+        category: b.category,
+        priority: b.priority,
+        contentLength: b.content.length,
+      }));
+      catalog.sort((a, b) => a.priority - b.priority);
+      res.json({ catalog });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to get library catalog' });
     }
   });
 
