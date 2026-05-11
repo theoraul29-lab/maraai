@@ -497,6 +497,26 @@
   .orb-label {
     font-size: 9px;
   }
+
+  /* === MOBILE-ONLY: remove the perceived "blink".
+     The desktop look layers three high-contrast animations on every
+     orb (spin + pulse + halo) which on a phone OLED reads as a 1–2 Hz
+     flicker. On mobile we keep ONLY the slow ambient hue/colour cycle
+     (`maraAmbientGlow` on the centre orb, `ambientLightScan` on the
+     page background) and drop the rotating conic gradient + halo/ray
+     pulses. The result: a steady glow whose colour drifts gently in
+     the background — ambient light, not strobe. */
+  .mara-orb::before {
+    animation: none;
+    opacity: 0;
+  }
+  .orb {
+    animation: none;
+  }
+  .orb::before,
+  .orb::after {
+    animation: none;
+  }
 }
 
 @media (max-width: 480px) {
