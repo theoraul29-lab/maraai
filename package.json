@@ -14,7 +14,8 @@
     "deploy:functions": "firebase deploy --only functions --project maraai-488fb",
     "logs": "firebase functions:log --follow --project maraai-488fb",
     "smoke:runtime": "node scripts/smoke-runtime.mjs",
-    "smoke:credits": "node scripts/smoke-credits.mjs"
+    "smoke:credits": "node scripts/smoke-credits.mjs",
+    "smoke:growth": "node scripts/test-growth-engineer.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.33.1",

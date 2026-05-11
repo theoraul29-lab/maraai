@@ -51,6 +51,11 @@ import {
   readLibraryBookById,
   getNextUnreadBook,
   getBuiltInLibrary,
+  listExperiments,
+  getExperiment,
+  decideExperiment,
+  markImplemented,
+  readFunnelData,
 } from './mara-brain/index';
 import { learningRateLimiter } from './mara-brain/rate-limiter';
 import { chatRateLimit } from './rate-limit.js';
@@ -483,6 +488,118 @@ export async function registerRoutes(
       res.json(stats);
     } catch (error) {
       res.status(500).json({ error: 'Failed to get knowledge stats' });
+    }
+  });
+
+  // === Mara Growth Engineer experiments (admin only) ===
+  //
+  // Each brain cycle proposes ONE experiment via the Growth Engineer loop and
+  // stores it in `mara_growth_experiments` with status='proposed'. These
+  // endpoints let the admin inspect, approve, reject, or mark-implemented an
+  // experiment. A full UI lives at /admin/experiments (Step 3) but the
+  // endpoints work standalone via curl for ops use.
+  app.get('/api/admin/mara/experiments', requireAdmin, async (req: any, res: any) => {
+    try {
+      const statusParam = typeof req.query?.status === 'string' ? req.query.status : undefined;
+      const allowed = new Set(['proposed', 'approved', 'implemented', 'measured', 'rejected']);
+      const status = statusParam && allowed.has(statusParam) ? (statusParam as 'proposed' | 'approved' | 'implemented' | 'measured' | 'rejected') : undefined;
+      const limitRaw = Number.parseInt(String(req.query?.limit ?? '50'), 10);
+      const limit = Number.isFinite(limitRaw) ? Math.min(Math.max(limitRaw, 1), 200) : 50;
+      const rows = await listExperiments({ status, limit });
+      res.json({ experiments: rows, count: rows.length });
+    } catch (error) {
+      console.error('[experiments] list failed:', error);
+      res.status(500).json({ error: 'Failed to list growth experiments' });
+    }
+  });
+
+  app.get('/api/admin/mara/experiments/funnel', requireAdmin, async (req: any, res: any) => {
+    try {
+      const daysRaw = Number.parseInt(String(req.query?.days ?? '14'), 10);
+      const days = Number.isFinite(daysRaw) ? Math.min(Math.max(daysRaw, 1), 90) : 14;
+      const snapshot = await readFunnelData(days);
+      res.json(snapshot);
+    } catch (error) {
+      console.error('[experiments] funnel snapshot failed:', error);
+      res.status(500).json({ error: 'Failed to read funnel snapshot' });
+    }
+  });
+
+  app.get('/api/admin/mara/experiments/:id', requireAdmin, async (req: any, res: any) => {
+    try {
+      const id = Number.parseInt(String(req.params.id), 10);
+      if (!Number.isFinite(id) || id <= 0) {
+        return res.status(400).json({ error: 'Invalid experiment id' });
+      }
+      const exp = await getExperiment(id);
+      if (!exp) return res.status(404).json({ error: 'Experiment not found' });
+      res.json(exp);
+    } catch (error) {
+      console.error('[experiments] get failed:', error);
+      res.status(500).json({ error: 'Failed to get experiment' });
+    }
+  });
+
+  app.post('/api/admin/mara/experiments/:id/approve', requireAdmin, async (req: any, res: any) => {
+    try {
+      const id = Number.parseInt(String(req.params.id), 10);
+      if (!Number.isFinite(id) || id <= 0) {
+        return res.status(400).json({ error: 'Invalid experiment id' });
+      }
+      const note = typeof req.body?.note === 'string' ? req.body.note : undefined;
+      const decidedBy = (req.user?.email as string | undefined) ?? 'unknown-admin';
+      const updated = await decideExperiment(id, 'approved', decidedBy, note);
+      if (!updated) return res.status(404).json({ error: 'Experiment not found' });
+      res.json({ experiment: updated });
+    } catch (error) {
+      console.error('[experiments] approve failed:', error);
+      res.status(500).json({ error: 'Failed to approve experiment' });
+    }
+  });
+
+  app.post('/api/admin/mara/experiments/:id/reject', requireAdmin, async (req: any, res: any) => {
+    try {
+      const id = Number.parseInt(String(req.params.id), 10);
+      if (!Number.isFinite(id) || id <= 0) {
+        return res.status(400).json({ error: 'Invalid experiment id' });
+      }
+      const note = typeof req.body?.note === 'string' ? req.body.note : undefined;
+      const decidedBy = (req.user?.email as string | undefined) ?? 'unknown-admin';
+      const updated = await decideExperiment(id, 'rejected', decidedBy, note);
+      if (!updated) return res.status(404).json({ error: 'Experiment not found' });
+      res.json({ experiment: updated });
+    } catch (error) {
+      console.error('[experiments] reject failed:', error);
+      res.status(500).json({ error: 'Failed to reject experiment' });
+    }
+  });
+
+  // Mark an approved experiment as deployed/implemented. The body may contain
+  // `measureAfterMs` (number of milliseconds from now until measurement) to
+  // override the default 7-day window — useful in tests, or for fast-iteration
+  // experiments that need a shorter measurement horizon.
+  app.post('/api/admin/mara/experiments/:id/implement', requireAdmin, async (req: any, res: any) => {
+    try {
+      const id = Number.parseInt(String(req.params.id), 10);
+      if (!Number.isFinite(id) || id <= 0) {
+        return res.status(400).json({ error: 'Invalid experiment id' });
+      }
+      const measureAfterMsRaw = Number(req.body?.measureAfterMs);
+      const measureAfterMs = Number.isFinite(measureAfterMsRaw) && measureAfterMsRaw > 0
+        ? measureAfterMsRaw
+        : undefined;
+      const updated = await markImplemented(id, measureAfterMs);
+      if (!updated) return res.status(404).json({ error: 'Experiment not found' });
+      if (updated.status !== 'implemented') {
+        return res.status(409).json({
+          error: `Cannot mark implemented: experiment is in status "${updated.status}". Approve it first.`,
+          experiment: updated,
+        });
+      }
+      res.json({ experiment: updated });
+    } catch (error) {
+      console.error('[experiments] implement failed:', error);
+      res.status(500).json({ error: 'Failed to mark experiment implemented' });
     }
   });
 

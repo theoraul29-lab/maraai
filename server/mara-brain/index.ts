@@ -30,3 +30,20 @@ export {
 } from './library.js';
 export { brainManager, type BrainStatus } from './manager.js';
 export { getPlatformContext } from './platform-context.js';
+export {
+  runGrowthEngineerCycle,
+  readFunnelData,
+  identifyDropOffPoint,
+  proposeGrowthExperiment,
+  measureExperimentOutcome,
+  listExperiments,
+  getExperiment,
+  decideExperiment,
+  markImplemented,
+  type FunnelSnapshot,
+  type DropOffPoint,
+  type GrowthExperimentProposal,
+  type GrowthCycleResult,
+  type DropOffStage,
+  type GrowthFramework,
+} from './agents/growth-engineer.js';
