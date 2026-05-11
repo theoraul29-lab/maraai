@@ -201,7 +201,9 @@ export default function AdminExperiments() {
         if (!res.ok) {
           setActionMsg(`Action failed (${res.status}): ${payload?.error ?? 'unknown error'}`);
         } else {
-          setActionMsg(`Experiment #${id} → ${action}d`);
+          const pastTense =
+            action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'implemented';
+          setActionMsg(`Experiment #${id} → ${pastTense}`);
         }
         await load();
       } catch (err) {
