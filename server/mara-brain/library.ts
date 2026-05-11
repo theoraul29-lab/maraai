@@ -807,6 +807,25 @@ export async function readNextLibraryBook(): Promise<DocumentReadResult | null> 
 }
 
 /**
+ * Read a specific library book by id, bypassing the "already read" check.
+ * Useful when knowledge extraction was previously broken (e.g. the
+ * camelCase/snake_case bug in learnFromText) and we need to re-process
+ * the content to actually populate the knowledge base. The "Document:"
+ * marker is idempotent at the read-progress level, so re-running just
+ * adds another marker plus any newly extracted ideas.
+ */
+export async function readLibraryBookById(
+  bookId: string,
+): Promise<DocumentReadResult | null> {
+  const book = getBuiltInLibrary().find((b) => b.id === bookId);
+  if (!book) return null;
+  console.log(`[Library] 📚 Re-reading by id: "${book.title}" [${book.category}]`);
+  const result = await processDocument(book.content, book.title, `library:${book.category}`);
+  readBookIds.add(book.id);
+  return result;
+}
+
+/**
  * Get library reading progress
  */
 export async function getLibraryProgress(): Promise<{
