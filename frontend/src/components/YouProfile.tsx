@@ -852,8 +852,28 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
                       )}
                     </div>
                   )}
+                  {p.sourceKind && (
+                    <div className="you-fb-post-source">
+                      {p.sourceKind === 'writers' && (
+                        <span className="you-fb-post-source-badge">
+                          ✍️ {t('you.sourceWriters', 'From Writers Hub')}
+                        </span>
+                      )}
+                      {p.sourceKind === 'trading' && (
+                        <span className="you-fb-post-source-badge">
+                          📊 {t('you.sourceTrading', 'From Trading Akademie')}
+                        </span>
+                      )}
+                      {p.sourceKind === 'reel' && (
+                        <span className="you-fb-post-source-badge">
+                          🎬 {t('you.sourceReel', 'From Reels')}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </article>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
