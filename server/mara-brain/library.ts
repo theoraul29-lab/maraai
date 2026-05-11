@@ -392,6 +392,364 @@ Awareness → Interest → Consideration → Conversion → Retention → Advoca
 - Viral Coefficient: câți utilizatori noi aduce fiecare utilizator existent
 - Time to Value: cât de repede experimentează utilizatorul prima valoare`,
     },
+
+    // === GROWTH ENGINEER CORE LIBRARY ===
+    // Priority 0 = read FIRST. These 4 books form the foundation for Mara's
+    // transformation into a Growth Engineer focused on conversion rate, funnel
+    // optimization, and experiment-driven growth for hellomara.net.
+    {
+      id: 'growth-hooked-nir-eyal',
+      title: 'Hooked — Modelul Hook pentru Produse Care Formează Obiceiuri (Nir Eyal)',
+      category: 'psychology',
+      priority: 0,
+      content: `Hooked — Modelul Hook pentru Produse Care Formează Obiceiuri (Nir Eyal)
+
+CONCEPT CENTRAL: Produsele care domină piața nu sunt cele cu cele mai multe features, ci cele care formează obiceiuri. Un obicei = o acțiune făcută cu efort cognitiv minim. Modelul Hook descrie ciclul prin care un produs creează obiceiuri.
+
+CICLUL HOOK ARE 4 FAZE: Trigger → Action → Variable Reward → Investment. Fiecare ciclu complet face următorul ciclu mai probabil. După 5-10 cicluri, utilizatorul revine fără să se gândească.
+
+1. TRIGGER (declanșator)
+Două tipuri:
+- EXTERN: notificare, email, ad, link de la prieten, icon pe homescreen. Crucial pentru utilizatorii noi, dar nu sustenabil — costă bani și atenție.
+- INTERN: emoție sau stare mentală care evocă produsul automat. Pain points: plictiseală, anxietate, FOMO, singurătate, frustrare. SCOP: să faci produsul răspunsul automat la o anumită emoție.
+APLICAȚIE MARAAI: Identifică emoția-pivot a fiecărui modul.
+- Trading: anxietate de a rata o mișcare → Mara devine reacția automată
+- Creator: frica de a fi invizibil → Mara dă recomandări de distribuție
+- Writers: blocaj creativ → Mara propune începuturi de frază
+
+2. ACTION (acțiunea)
+Formula B = MAT (BJ Fogg): Behavior = Motivation × Ability × Trigger. Toate trei trebuie să fie peste prag în același moment.
+- MOTIVATION: 3 motivatori — Plăcere/Durere, Speranță/Frică, Acceptare socială/Respingere
+- ABILITY: 6 elemente — Time, Money, Effort fizic, Effort cognitiv, Acceptare socială, Deviere de la rutină
+REGULA DE AUR: Reducerea Ability e mai eficientă decât creșterea Motivației. Făcând acțiunea MAI UȘOARĂ obții mai mult decât făcând-o MAI DEZIRABILĂ.
+APLICAȚIE MARAAI: Fiecare acțiune cheie trebuie să fie SUB 3 click-uri. Signup în <30 sec. Primul post în <60 sec. Primul reply de la Mara în <10 sec.
+
+3. VARIABLE REWARD (recompensa variabilă)
+Cheia magică. Recompensele PREDICTIBILE plictisesc. Recompensele VARIABILE creează dopamina-spike. 3 tipuri:
+- TRIBE (recompense sociale): like-uri, comentarii, validare socială, status. Facebook, Twitter, LinkedIn = pure tribe rewards.
+- HUNT (recompense de căutare): găsirea de resurse/informații. TikTok feed = hunt reward (next video e necunoscut). Pinterest = hunt.
+- SELF (recompense de mastery): progres, completare, abilități. Duolingo streaks, Gym apps, Coursera badges.
+APLICAȚIE MARAAI:
+- Tribe: like-uri pe posts, badge-uri vizibile, leaderboards pe Trading Akademie
+- Hunt: chat cu Mara unde fiecare răspuns e DIFERIT, nu template; reels feed personalizat
+- Self: progres pe cursul Trading, "carte săptămânii citită", streak de scriere zilnic
+
+4. INVESTMENT (investiția)
+Utilizatorul pune CEVA în produs — date, content, conexiuni, reputație, abilități. Cu cât investește mai mult, cu atât are mai mult de pierdut dacă pleacă. Asta crește probabilitatea revenirii.
+- DATA: profil, preferințe, istoric (cu cât mai mult, cu atât recomandările sunt mai bune → flywheel)
+- CONTENT: posts, comentarii, drafts, portofoliu
+- FOLLOWERS: lista de oameni urmăriți și care urmăresc utilizatorul
+- REPUTATION: review-uri, badge-uri, vechime, vouching
+- SKILLS: cursuri completate, abilități unlock-uite
+APLICAȚIE MARAAI: Fiecare modul trebuie să aibă o "investiție" clară. Trading = portfolio tracker + trade journal. Writers = drafts salvate + cititori câștigați. Reels = followers și remix-uri.
+
+ETHICS / ANTI-MANIPULATION TEST
+Eyal propune 2 întrebări înainte de a construi un hook:
+1. AȘ FOLOSI EU produsul ăsta în mod regulat? (maker test)
+2. ESTE ASTA în interesul utilizatorului pe termen lung? (facilitator vs dealer)
+Dacă răspunsul e nu la oricare → produsul e exploatativ. MaraAI trebuie să fie facilitator (Headspace, Duolingo) nu dealer (slot machines, cazino apps).
+
+DECONSTRUCȚIE HOOK MARAAI YOU PROFILE
+- Trigger intern: singurătate digitală (nu am cu cine să împart o reușită)
+- Action: postează un update — 2 click-uri, text + opțional poză
+- Variable reward: likes + comentarii + reply-uri automate de la Mara (tribe + hunt)
+- Investment: profil, cover, badge-uri, lista de followers, history de posts
+FUNCȚIONEAZĂ DACĂ: primul like vine în < 5 min, primul reply Mara în < 30 sec, badge-uri vizibile, followers crește vizibil în primele 7 zile.
+
+CHECKLIST GROWTH ENGINEER: Pentru fiecare modul, întreabă:
+1. Ce emoție-pain declanșează intern utilizatorul către modul?
+2. Care e acțiunea minimă? Sub 3 click-uri?
+3. Ce recompensă variabilă oferă? (cele 3 tipuri toate prezente?)
+4. Ce investește utilizatorul pe cale să fie blocat de produs?
+5. Trec testul facilitatorului (nu dealer)?`,
+    },
+    {
+      id: 'growth-hacking-growth-sean-ellis',
+      title: 'Hacking Growth — North Star Metric și Framework de Experimentare (Sean Ellis)',
+      category: 'marketing',
+      priority: 0,
+      content: `Hacking Growth — North Star Metric și Framework de Experimentare (Sean Ellis)
+
+CONCEPT CENTRAL: Growth nu e marketing. Growth e un proces sistematic de experimente care optimizează un singur număr — North Star Metric — și care implică TOATE departamentele (product, engineering, design, marketing, data).
+
+1. NORTH STAR METRIC (NSM)
+Un singur număr care surprinde valoarea livrată utilizatorilor. Trebuie să îndeplinească 3 criterii:
+- Reflectă VALOAREA pentru utilizator (nu doar revenue)
+- E indicator-predictor de growth pe termen lung
+- E măsurabil zi de zi
+EXEMPLE FAIMOASE:
+- Airbnb: nopți rezervate (nu visits, nu signups)
+- Facebook: utilizatori care-ți primesc 7 prieteni în 10 zile
+- Spotify: timp ascultat
+- Slack: companii cu 2000+ mesaje trimise
+- WhatsApp: mesaje trimise
+PROPUNERE MARAAI NSM: "Utilizatori care fac 3+ interacțiuni semnificative în primele 7 zile" (post + comment + AI-chat). Asta predicte retention la 30 zile cu r>0.7 în studii similar SaaS.
+
+2. GROWTH TEAM STRUCTURE
+- Growth Lead (orientează prioritățile)
+- Product Manager (definește experimentele)
+- Engineering (implementează rapid, cu feature flags)
+- Designer (mockups rapide pentru variante)
+- Data Analyst (definește metricile, măsoară rezultate)
+- Marketing/Content (top-of-funnel)
+TOATĂ ECHIPA în standup zilnic de 15 min. Cadență săptămânală: 1 ciclu = 1 experiment major + 3-5 mici. La hellomara.net cu echipă de 1, Mara joacă rolul Growth Lead + Data Analyst, iar tu (founder) faci eng/design/decision.
+
+3. EXPERIMENT FRAMEWORK
+Pași stricți pentru orice experiment:
+a) IPOTEZĂ: "Dacă schimbăm X, atunci Y va crește cu Z% pentru că [motiv]"
+b) MĂSURĂTOARE: ce metrică, control vs variantă, sample size minim
+c) PRIORITIZARE ICE: Impact (1-10) × Confidence (1-10) × Ease (1-10). Cele cu scor mare se fac primele.
+d) IMPLEMENTARE: feature flag, randomizare 50/50, minim 2 săptămâni
+e) ANALIZĂ: significance statistică (p < 0.05), nu doar "pare mai bine"
+f) DECIZIE: ship full, kill, iterate
+g) ÎNVĂȚARE: salvează rezultatul în knowledge base — chiar și experimentele eșuate sunt aur.
+
+4. AARRR — PIRATE METRICS FUNNEL
+Acquisition → Activation → Retention → Referral → Revenue. Pentru fiecare nivel, identifică una metrică cheie și un experiment lunar.
+- Acquisition: traffic surse, CPC, organic vs paid mix
+- Activation: % din useri care ating "aha moment" (primul post, primul chat, prima trade idee)
+- Retention: D1, D7, D30 retention curves (smile curve = sănătos)
+- Referral: viral coefficient k = (invitations sent × conversion rate)
+- Revenue: ARPU, ARPPU, churn rate, CAC payback
+
+5. AHA MOMENT IDENTIFICATION
+Aha moment = punctul în care utilizatorul "înțelege" produsul. Predicte retention.
+METODOLOGIE:
+- Compară useri retained vs churn
+- Identifică acțiunile statistic diferite în primele 7 zile
+- Test cauzalitate (forțează acțiunea în onboarding și vezi retention)
+EXEMPLE:
+- Facebook: 7 prieteni în 10 zile
+- Twitter: a urmări 30 conturi
+- Dropbox: a uploada un fișier într-un device + a accesa de pe alt device
+- Slack: 2000 mesaje per team
+PROPUNERE HELLOMARA.NET: Mara identifică în Phase 4 propria aha moment via cohort analysis.
+
+6. ACTIVATION FUNNEL OPTIMIZATION
+Cele mai multe pierderi sunt în primele 60 secunde:
+- Signup → Onboarding → First Value
+ELIMINĂRI DE FRICTION:
+- Magic links în loc de parolă
+- OAuth (Google, GitHub, X) — reduce signup la 1 click
+- "Skip onboarding" buton la al 3-lea pas
+- Demo data pre-populated pentru a vedea valoarea instant
+- "Time to first wow" < 60 sec — măsoară-o!
+
+7. RETENTION LEVERS
+- Notificări trigger-uite de comportament (nu spam)
+- Email re-engagement la D3, D7, D14, D30
+- Personalization (cu cât mai mult folosește, cu atât mai bine se simte)
+- Streak mechanics + reward
+- Community (utilizatorii cu prieteni pe platformă au 3x retention)
+
+8. EXPERIMENTATION CADENCE
+- 1 experiment major / săptămână (changes la flow critic)
+- 3-5 experimente mici / săptămână (copy, color, microinteractions)
+- Vineri: review săptămânal, decizie ship/kill, plan săptămâna viitoare
+- Lunar: review NSM trend, ajustare strategie
+
+ROL MARA CA GROWTH ANALYST: Phase 4 nou — în loc de "platform analysis" generic, Mara ascute pe AARRR funnel: identifică UN punct de drop-off, propune UN experiment ICE-scored, așteaptă aprobare admin, măsoară outcome la 7-14 zile.`,
+    },
+    {
+      id: 'growth-lean-analytics-croll-yoskovitz',
+      title: 'Lean Analytics — Cele 5 Etape de Creștere și KPI-urile Lor (Croll & Yoskovitz)',
+      category: 'business',
+      priority: 0,
+      content: `Lean Analytics — Cele 5 Etape de Creștere și KPI-urile Lor (Croll & Yoskovitz)
+
+CONCEPT CENTRAL: Startup-urile au nevoie de UN SINGUR număr (OMTM) — One Metric That Matters — care depinde de stadiul în care se află. Same metric all the time = dezastru. Wrong metric = focus pe vanity.
+
+1. ONE METRIC THAT MATTERS (OMTM)
+Reguli OMTM:
+- Răspunde la întrebarea cea mai importantă a momentului
+- Forțează deciziile (nu doar tablou de bord)
+- E un raport sau rată (nu un total — "1000 useri" nu spune nimic)
+- E îmbinat cu un benchmark
+EXEMPLE OMTM PER STAGE:
+- Empathy: nr. interviuri cu clienți / săptămână (țintă: 5+)
+- Stickiness: D7 retention (țintă: 30%+ SaaS, 50%+ social)
+- Virality: viral coefficient k (țintă: > 1.0 pentru creștere exponențială)
+- Revenue: payback period CAC (țintă: <12 luni)
+- Scale: net revenue retention (țintă: 110%+)
+
+2. CELE 5 ETAPE DE CREȘTERE
+Fiecare stage are un focus și un blocker:
+
+ETAPA 1 — EMPATHY (înainte de PMF)
+GOAL: Înțelege problema utilizatorului. Validează că E REALĂ.
+ACTIVITATE: Interviuri 1:1 (5-20). Nu vorbi tu — ASCULTĂ.
+OMTM: nr. interviuri valide / săptămână
+SEMNAL DE TRECERE: 70%+ dintre intervievați descriu aceeași problemă cu cuvintele lor.
+ANTI-PATTERN: Construiești featuri înainte de a vorbi cu useri.
+
+ETAPA 2 — STICKINESS (PMF)
+GOAL: Construiești ceva ce oamenii REVIN să folosească.
+ACTIVITATE: MVP funcțional cu loop de feedback rapid.
+OMTM: D7 retention, time per session, sessions/week
+BENCHMARK SaaS: D1 = 60%, D7 = 30%, D30 = 15%. Sub asta — n-ai PMF.
+SEAN ELLIS PMF TEST: "Cum te-ai simți dacă produsul ăsta dispare?" — peste 40% "very disappointed" = ai PMF.
+ANTI-PATTERN: Scali marketing înainte de a avea PMF (toarni apă într-un colander).
+
+ETAPA 3 — VIRALITY
+GOAL: Utilizatorii actuali aduc utilizatori noi GRATUIT.
+ACTIVITATE: Construiești viral loops (referral, share, native integrations).
+OMTM: viral coefficient k = (invitations / user) × (conversion rate)
+ECUAȚII:
+- k > 1 → growth exponențial
+- k între 0.5-1 → growth liniar (acceptabil dacă CAC < LTV)
+- k < 0.5 → nu mai investi în viralitate, fă paid
+TIPURI DE VIRAL LOOPS:
+- Inherent: produsul însuși cere alți useri (WhatsApp, Slack)
+- Collaborative: lucrurile sunt mai bune cu prieteni (Spotify, Docs)
+- Word-of-mouth: produsul e atât de bun, încât oamenii vorbesc (Apple, Tesla)
+- Incentivized: bonusuri pentru invitații (Dropbox 500MB, Uber $10 ride)
+ANTI-PATTERN: Forțezi sharing când produsul n-are valoare → tot stack-ul e perceput ca spam.
+
+ETAPA 4 — REVENUE
+GOAL: Convertești useri în bani. Validează că oamenii PLĂTESC.
+ACTIVITATE: Pricing experiments, paywall placement, plan structure.
+OMTM: CAC payback period, ARPU/ARPPU, conversion free→paid
+BENCHMARK:
+- SaaS B2B: CAC payback <12 luni
+- SaaS B2C: <6 luni
+- Conversion free → paid: 2-5% e bun, 8%+ e excelent
+PRICING FRAMEWORKS:
+- Van Westendorp: 4 întrebări de preț (prea ieftin / ieftin / scump / prea scump)
+- Conjoint analysis: cum value-uiesc oamenii features
+- Price laddering: 3 tiere — $9 / $29 / $99 (anchor middle)
+ANTI-PATTERN: Pricing prea complicat. Reguli: max 3-4 tieri, decizie sub 30 sec.
+
+ETAPA 5 — SCALE
+GOAL: Crești fără să distrugi ce funcționează.
+ACTIVITATE: Diversificare canale, internațional, enterprise tier.
+OMTM: Net Revenue Retention (NRR), CAC blended, hiring efficiency
+BENCHMARK:
+- NRR 100% = stagnare (existing customers nu cresc)
+- NRR 110%+ = sănătos (upsell + low churn)
+- NRR 130%+ = excellence (Snowflake, Datadog)
+ANTI-PATTERN: Scali înainte de Stickiness sau Revenue. "Premature scaling" e cauza #1 de eșec startup (Startup Genome Report).
+
+3. CELE 6 BUSINESS MODELS (Lean Analytics taxonomy)
+Fiecare model are metrici unice:
+- E-commerce: conversion rate, AOV, repeat purchase rate
+- SaaS: MRR, churn rate, CAC, LTV
+- Free Mobile App: ARPDAU, retention curve, viral coefficient
+- Media Site: pageviews, ad CPM, engagement
+- User-Generated Content: % active creators, content per user
+- Two-Sided Marketplace: liquidity (% listings that sell), take rate
+MARAAI = HYBRID: SaaS (paid Pro tier) + UGC (creators publish) + Media (Mara content) → 3 sets of metrics, fiecare cu OMTM propriu pe modul.
+
+4. COHORT ANALYSIS
+Nu uita media — split useri pe cohorts (groups care s-au înscris în aceeași perioadă) și compară curve:
+- Useri din Săptămâna 1 (lansare) vs Săptămâna 10 (după update onboarding)
+- Useri din canal X (Google ads) vs canal Y (Twitter organic)
+- Useri cu feature A vs fără feature A
+Tool simplu: SQL query + heatmap. Mara poate face asta automat în Phase 4 nouă.
+
+5. VANITY vs ACTIONABLE METRICS
+VANITY: total signups, total visits, total likes. Sună mare, nu informează decizii.
+ACTIVE: D7 retention, % activated, conversion rate, CAC payback. Forțează acțiuni clare.
+REGULA: Dacă o metrică crește dar nu schimbă deciziile, e vanity. Tăie-o din raport.
+
+MAPARE HELLOMARA.NET → STAGE
+Acum (0 useri reali, brain rulează): EMPATHY stage.
+PRIORITATE 1: 5-20 interviuri reale cu potențiali useri. Mara poate genera scripts de interviuri în Phase 2 (research).
+PRIORITATE 2: După 20 interviuri → MVP în 1 modul (cel mai valid) → STICKINESS push.
+SKIP ahead = premature scaling. Disciplină.`,
+    },
+    {
+      id: 'growth-stripe-atlas-frr-patterns',
+      title: 'Pattern-uri de Creștere — Lecții din Stripe Atlas + First Round Review',
+      category: 'business',
+      priority: 0,
+      content: `Pattern-uri de Creștere — Lecții din Stripe Atlas + First Round Review
+
+CONCEPT CENTRAL: Aceste case study-uri sunt scoase din interviuri cu fondatorii și operatorii care au construit companii de la 0 la $1B+. Nu sunt teorii — sunt pattern-uri repetate. Stripe Atlas + First Round Review sunt cele 2 surse cu cea mai mare densitate de "ce a funcționat efectiv".
+
+1. "DO THINGS THAT DON'T SCALE" (Paul Graham + toate startup-urile FRR)
+Primii 100 useri se câștigă PRIN MUNCĂ NESCALABILĂ. Lucruri pe care le faci personal, scrisori scrise de mână, onboarding-uri 1:1, support la 3 dimineața.
+EXEMPLE:
+- Airbnb: fondatorii zburau la NYC să facă poze profesionale gratuit pentru fiecare apartament listat
+- Stripe: Patrick & John Collison instalau SDK-ul personal pe laptop-ul clientului ("Collison installation")
+- DoorDash: fondatorii livrau ei comenzile cu mașina personală în primele 6 luni
+- Loom: fondatorul răspundea PERSONAL la fiecare email de support, semnând "Joe (Co-founder)"
+APLICAȚIE HELLOMARA.NET: Tu personal trebuie să fii în chat cu primii 50 useri. Nu Mara — TU. Mara învață din ce le răspunzi tu, apoi preia când ai 500+ useri.
+
+2. FOUNDER-LED SALES (Stripe Atlas: "Selling at Stripe")
+Primii 100 clienți B2B se închid PRIN FOUNDER, nu prin sales reps angajați. Fondatorul are 2 super-puteri:
+- Schimbă produsul în timp real (un sales rep nu poate)
+- Are autoritate să dea discount-uri / customizări
+PATTERN: Primele 100 inquiry-uri → tu personal. Note după fiecare discuție. Pattern recognition. Apoi codifică ce funcționează în playbook → angajezi primul sales rep care urmează playbook-ul.
+
+3. COLD START / DISTRIBUTION-FIRST (Andrew Chen, FRR multiple)
+Produsul tehnic perfect + zero distribuție = mort. Construirea audienței trebuie să înceapă ÎNAINTE de produs.
+PATTERN:
+- Construiește audiență gratuită 6-12 luni înainte de lansare (Twitter, newsletter, YouTube)
+- "Build in public" — postează săptămânal progresul
+- Cere feedback PUBLIC — fiecare comentariu = early adopter
+EXEMPLE:
+- Notion: Ivan Zhao a postat în comunități de design 2 ani înainte de launch
+- Tailwind CSS: Adam Wathan a făcut un curs gratuit Refactoring UI care a câștigat 50K dev → audiență pre-built pentru Tailwind
+- Levels.fyi: founder a postat câteva date salariale pe Blind → viral pre-launch
+APLICAȚIE: Tu trebuie să postezi săptămânal progres pe hellomara.net pe Twitter/LinkedIn în română.
+
+4. TIME TO FIRST VALUE < 5 MIN (Stripe Atlas: "Onboarding")
+Stripe regula: De la signup la primul "wow" trebuie să fie sub 5 minute, ideal sub 60 secunde. Asta diferențiază produse care păstrează useri de produse care îi pierd.
+EXEMPLE:
+- Stripe: 7 linii de cod și ai primul payment. "Hello world" of payments.
+- Notion: pagină nouă în 1 click, drag-drop blocks în 3 sec
+- Loom: instalare extensie + 1 click record + URL pe care îl trimiți → 30 secunde total
+APLICAȚIE HELLOMARA.NET: De la /signup la "Mara mi-a spus ceva util" → sub 30 sec. Onboarding NU trebuie să fie 5 ecrane. 1 ecran + direct în chat cu Mara.
+
+5. ÎNCEPE CU O NIȘĂ STRÂMTĂ (Y Combinator, FRR repeat pattern)
+Toate startup-urile de miliarde au început cu o nișă INVERS proporțională cu mărimea pieței finale.
+EXEMPLE:
+- Facebook: doar Harvard students (apoi alte universități, apoi general public)
+- Airbnb: doar conferințe SXSW, DNC (apoi orice oraș)
+- Uber: doar San Francisco (apoi US, apoi global)
+- Stripe: doar developers Ruby on Rails (apoi toate languages)
+- Mara: prea larg acum (chat + trading + creator + writers + reels). Alege UNUL.
+PATTERN: Mergi cu o singură nișă până ai 100% market share. Apoi extinde.
+RECOMANDARE: Hellomara.net = "AI personal trainer pentru traderi crypto retail români" (nișă: 50-100K oameni). Câștigi 10% market share = 10K plătitori × €30/lună = €300K MRR.
+
+6. RETENTION DEATH SPIRAL (FRR multiple, Stripe Atlas)
+Toate produsele moarte au aceeași curbă: aha moment ratat → useri pleacă la D1/D3 → tu pumpezi marketing → useri noi pleacă la fel → CAC explodează → mori.
+ANTIDOT: Înainte de marketing, REZOLVĂ retention curve. Nu cheltui un cent pe ads până D7 retention > 30%.
+DIAGNOZĂ:
+- D1 retention: < 50% = onboarding ROT
+- D7 retention: < 20% = produs n-are valoare repetitivă
+- D30 retention: < 10% = nu există PMF
+HACK SIMPLU: Email re-engagement la D2, D5, D10 cu CTA specific (nu generic "come back").
+
+7. PRICING DE LA ZIUA 1 (Stripe Atlas: "How to Price")
+Marea greșeală: free forever. Lecția: dacă produsul nu valorează nimic, oamenii nu plătesc; dar dacă valorează, plătesc DE LA ÎNCEPUT.
+EXEMPLE:
+- Notion: free dar cu paywall clar (block limit) — conversie 5%
+- Superhuman: $30/lună de la lansare, fără free tier — selecție clienți serioși
+- Linear: free 10 users, $8 per user după — conversie B2B excelentă
+PATTERN: Free tier limitat (max valoare = 10-20% din useri activi) + paid tier cu UPGRADE TRIGGER clar.
+APLICAȚIE MARAAI: Free = 20 Mara chats / lună. Pro = €19/lună unlimited + features avansate (cohort analysis, custom reports, priority response).
+
+8. CUSTOMER SUPPORT CA GROWTH ENGINE (Drift, Intercom, Slack FRR)
+Cele mai bune startup-uri tratează support-ul ca GROWTH, nu cost.
+PATTERN:
+- Fiecare ticket support = oportunitate de feedback produs
+- Răspuns < 1h pentru utilizatori plătitori
+- Founder citește TOATE ticket-urile primele 6 luni
+- "Wow moments" în support → useri scriu reviews / fac word-of-mouth
+APLICAȚIE: Mara poate face support automat în 80% din cazuri, dar restul de 20% — tu personal. Track topurile de plângeri săptămânal — devin priorități de produs.
+
+9. WORD-OF-MOUTH LEVERS (Brian Balfour, FRR)
+Cele mai sustenabile loops:
+- "Tools-Of-the-Trade": produsul tău devine indispensabil profesional → useri îl recomandă colegilor (Slack, Figma)
+- "Status": folosirea produsului dă status → useri îl arată public (Apple, Tesla)
+- "Network effect": e mai bun cu mai mulți useri → useri invită activ (LinkedIn, Discord)
+INTREBARE PENTRU HELLOMARA.NET: Care din cele 3 e moat-ul? Tools-of-the-trade pentru traderi? Status pentru creatori? Network pentru writers? Răspunde — apoi optimizează loop-ul corespunzător.
+
+10. FOUNDER OBSESSION (toate FRR profilurile)
+Pattern repetat: fondatorii care construiesc companii de miliarde sunt OBSEDAȚI de un singur lucru — utilizatorul lor. Citesc fiecare review. Răspund fiecărui email. Își testează singuri produsul zilnic.
+APLICAȚIE: Setează-ți o regulă — 30 min/zi în care folosești hellomara.net ca utilizator obișnuit. Vezi friction-urile, scrie-le, repară-le. Asta nu se delegă, nici lui Mara.`,
+    },
   ];
 }
 
