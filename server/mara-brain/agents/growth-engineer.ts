@@ -18,7 +18,7 @@
 // Admin approval/rejection is intentionally *out-of-band*; this agent never
 // mutates code on its own. The brain proposes, the human disposes.
 
-import { and, desc, eq, gte, isNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, isNull, sql } from 'drizzle-orm';
 import { db } from '../../db.js';
 import {
   users,
@@ -562,6 +562,12 @@ export async function measureExperimentOutcome(
   maxToMeasure = 3,
 ): Promise<MeasuredExperiment[]> {
   const now = Date.now();
+  // Sort ascending so the oldest-due experiments (smallest measureAfterAt,
+  // i.e. furthest in the past) come first. Previously this used desc(), which
+  // surfaced the furthest-future not-yet-due experiments first and let them
+  // consume the maxToMeasure slots as `still_waiting`, indefinitely starving
+  // actually-due experiments. With asc(), the first not-yet-due row we hit
+  // means every subsequent row is also not-yet-due, so we can break safely.
   const due = await db
     .select()
     .from(maraGrowthExperiments)
@@ -571,8 +577,8 @@ export async function measureExperimentOutcome(
         isNull(maraGrowthExperiments.measuredAt),
       ),
     )
-    .orderBy(desc(maraGrowthExperiments.measureAfterAt))
-    .limit(maxToMeasure * 4); // overscan, filter dueness in JS to avoid SQLite timestamp coercion quirks
+    .orderBy(asc(maraGrowthExperiments.measureAfterAt))
+    .limit(maxToMeasure * 4); // overscan; we still bound work via maxToMeasure below
 
   const results: MeasuredExperiment[] = [];
   for (const exp of due) {
@@ -583,8 +589,9 @@ export async function measureExperimentOutcome(
           : Number(exp.measureAfterAt) || 0)
       : 0;
     if (!measureAfterMs || measureAfterMs > now) {
-      results.push({ experimentId: exp.id, status: 'still_waiting' });
-      continue;
+      // Ascending order: every subsequent row is also not-yet-due. Stop here
+      // so we don't waste budget on visibility rows for non-actionable items.
+      break;
     }
 
     // Baseline drop-off was frozen at proposal time. Compare against the

@@ -19,6 +19,7 @@ import ResetPassword from './ResetPassword';
 import ResetPasswordConfirmation from './ResetPasswordConfirmation';
 import HomePage from './HomePage';
 import AdminBrain from './AdminBrain';
+import AdminExperiments from './AdminExperiments';
 import { OnboardingFlow } from './maraai/OnboardingFlow';
 import { TransparencyDashboard } from './maraai/TransparencyDashboard';
 
@@ -45,6 +46,7 @@ function App() {
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/reset-password/confirmation" element={<ResetPasswordConfirmation />} />
                 <Route path="/admin/brain" element={<AdminBrain />} />
+                <Route path="/admin/experiments" element={<AdminExperiments />} />
                 <Route
                   path="/onboarding"
                   element={<OnboardingFlow onClose={() => navigate('/')} />}
