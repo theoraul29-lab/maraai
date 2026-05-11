@@ -1501,18 +1501,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   async markNotificationRead(id: number, userId: string): Promise<void> {
+    // `read` is stored as 0/1 in SQLite (integer column). Drizzle 0.29 with
+    // better-sqlite3 does not coerce JS booleans, so binding `true`/`false`
+    // throws `SQLite3 can only bind numbers, strings, bigints, buffers, and
+    // null`. Pass the integer literal directly.
     await db
       .update(notifications)
-      .set({ read: true })
+      .set({ read: 1 })
       .where(and(eq(notifications.id, id), eq(notifications.userId, userId)));
   }
 
   async markAllNotificationsRead(userId: string): Promise<void> {
     await db
       .update(notifications)
-      .set({ read: true })
+      .set({ read: 1 })
       .where(
-        and(eq(notifications.userId, userId), eq(notifications.read, false)),
+        and(eq(notifications.userId, userId), eq(notifications.read, 0)),
       );
   }
 
@@ -1521,7 +1525,7 @@ export class DatabaseStorage implements IStorage {
       .select({ count: sql<number>`count(*)` })
       .from(notifications)
       .where(
-        and(eq(notifications.userId, userId), eq(notifications.read, false)),
+        and(eq(notifications.userId, userId), eq(notifications.read, 0)),
       );
     return Number(result[0].count);
   }
@@ -1687,7 +1691,7 @@ export class DatabaseStorage implements IStorage {
     const foundPages = await db
       .select()
       .from(writerPages)
-      .where(and(eq(writerPages.published, true), or(...pageConditions)))
+      .where(and(eq(writerPages.published, 1), or(...pageConditions)))
       .orderBy(desc(writerPages.views))
       .limit(10);
     return { videos: foundVideos, users: foundUsers, pages: foundPages };
