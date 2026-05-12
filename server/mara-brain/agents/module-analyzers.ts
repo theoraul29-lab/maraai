@@ -282,8 +282,11 @@ async function analyzeVIP(): Promise<ModuleAnalysisResult> {
     try {
       const access = await storage.getUserTradingAccess(u.id);
       if (access?.hasAccess) vipCount += 1;
-    } catch {
-      // ignore
+    } catch (err) {
+      console.warn(
+        '[module-analyzers:285] Non-critical error swallowed:',
+        err instanceof Error ? err.message : err,
+      );
     }
   }
   const ratio = users.length ? ((vipCount / users.length) * 100).toFixed(1) : '0.0';

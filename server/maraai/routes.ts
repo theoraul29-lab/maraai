@@ -27,6 +27,7 @@ import { route as routeAi } from './ai-router.js';
 import { eventBusStatus, KAFKA_TOPICS } from './kafka.js';
 import { requestOtp, verifyOtp } from './otp.js';
 import { logActivity } from './activity.js';
+import { otpRateLimit } from '../rate-limit.js';
 import {
   awardCredits,
   CREDIT_REASONS,
@@ -264,7 +265,7 @@ export function registerMaraAIRoutes(
   });
 
   // --- Email OTP ---
-  app.post('/api/auth/otp/request', async (req: Request, res: Response) => {
+  app.post('/api/auth/otp/request', otpRateLimit, async (req: Request, res: Response) => {
     const parsed = otpRequestSchema.safeParse(req.body ?? {});
     if (!parsed.success) return res.status(400).json({ message: 'Invalid request.', errors: parsed.error.flatten() });
     try {
@@ -285,7 +286,7 @@ export function registerMaraAIRoutes(
     }
   });
 
-  app.post('/api/auth/otp/verify', async (req: Request, res: Response) => {
+  app.post('/api/auth/otp/verify', otpRateLimit, async (req: Request, res: Response) => {
     const parsed = otpVerifySchema.safeParse(req.body ?? {});
     if (!parsed.success) return res.status(400).json({ message: 'Invalid request.', errors: parsed.error.flatten() });
     const out = await verifyOtp(parsed.data.email, parsed.data.code);
