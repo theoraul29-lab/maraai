@@ -146,6 +146,18 @@ export function registerLaunchCountdown(
   app: Express,
   requireAdmin: (req: any, res: any, next: any) => any,
 ) {
+  // GET /landing-script.js — serves the external countdown/waitlist JS for
+  // landing.html. Kept as a dedicated route (rather than relying on
+  // express.static) so it works in both dev and production, and so the file
+  // never leaks from inside the public/ source directory via a generic static
+  // handler.
+  app.get('/landing-script.js', (_req: Request, res: Response) => {
+    const scriptPath = path.resolve(process.cwd(), 'public', 'landing-script.js');
+    res.setHeader('Cache-Control', 'public, max-age=300');
+    res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    res.sendFile(scriptPath);
+  });
+
   // GET / — landing for the countdown window, SPA after launch.
   //
   // Cookie holders (= the team and our beta testers) always see the SPA
