@@ -119,14 +119,43 @@ if (c('engagement') !== engaged) fail('engagement=' + c('engagement'));
 if (c('conversion') !== converted) fail('conversion=' + c('conversion'));
 ok('readFunnelData counts the funnel correctly');
 
+// Funnel drop-offs (signups=10, activated=6, engaged=3, converted=1):
+//   signup→activation     = 4/10 = 0.40
+//   activation→engagement = 3/6  = 0.50
+//   engagement→conversion = 2/3  = 0.667
+//   conversion→retention  = 0/1  = 0.00 (user-0's last event was 3d ago, inside the 7d window)
+//
+// Under the default ObjectiveFunction (primary='growth') we now bias by
+// objective weight: top-of-funnel stages get a 1.0 bonus when primary='growth',
+// so 'activation' (rate 0.4 * (0.5+1.0)=0.6) beats 'conversion' (0.667 * (0.5+0.1)=0.4).
 const dropOff = ge.identifyDropOffPoint(funnel);
 if (!dropOff) fail('no drop-off identified');
-// retention: 1 converted → 0 retained (no activity in last 7d window from any 'converted' user since their last event was 3d ago — wait, that's INSIDE the 7d window).
-// Recompute: lookback 7d, last event for user-0 is at ago(3) = within 7d, so retention = 1.
-// Then drop-offs: activation->engagement = 3/6 = 50%; engagement->conversion = 2/3 = 67%; conversion->retention = 0/1 = 0%.
-// Worst is engagement->conversion at 67%, stage='conversion'.
-if (dropOff.stage !== 'conversion') fail('expected conversion, got ' + dropOff.stage + ' (dropOffRate=' + dropOff.dropOffRate + ')');
-ok('identifyDropOffPoint picks the worst stage (conversion)');
+if (dropOff.stage !== 'activation') {
+  fail('under primary=growth expected activation, got ' + dropOff.stage + ' (dropOffRate=' + dropOff.dropOffRate + ')');
+}
+ok('identifyDropOffPoint picks activation under primary=growth');
+
+// Flip the objective to primary='revenue' with a heavy revenue weight; the
+// picker should now favour the 'conversion' stage even though its raw drop-off
+// rate is unchanged. This proves the ObjectiveFunction → stage-selection wire
+// is hot end-to-end.
+const objective = await import(${JSON.stringify(path.resolve('server/mara-core/objective.ts'))});
+const objTypes = await import(${JSON.stringify(path.resolve('server/mara-core/types.ts'))});
+objective.setObjective({
+  primary: 'revenue',
+  weights: { ...objTypes.DEFAULT_OBJECTIVE.weights, revenue: 0.9, retention: 0.05, engagement: 0.05 },
+}, 'test-script');
+const dropOff2 = ge.identifyDropOffPoint(funnel);
+if (!dropOff2 || dropOff2.stage !== 'conversion') {
+  fail('after objective flip to revenue expected conversion, got ' + (dropOff2 && dropOff2.stage));
+}
+ok('identifyDropOffPoint flips to conversion when objective.primary=revenue');
+
+// Reset back to growth so the remaining tests run with predictable defaults.
+objective.setObjective({
+  primary: 'growth',
+  weights: objTypes.DEFAULT_OBJECTIVE.weights,
+}, 'test-script');
 
 const noLLM = await ge.proposeGrowthExperiment(funnel, dropOff);
 if (noLLM !== null) fail('expected null without LLM');

@@ -29,6 +29,8 @@ import {
 } from '../../../shared/schema.js';
 import { searchKnowledge, storeKnowledge } from '../knowledge-base.js';
 import { llmGenerate, isLLMConfigured } from '../../llm.js';
+import { getObjective } from '../../mara-core/objective.js';
+import type { ObjectiveFunction, ObjectiveWeights } from '../../mara-core/types.js';
 
 // === Types ===
 export type DropOffStage =
@@ -282,18 +284,78 @@ export async function readFunnelData(windowDays = 14): Promise<FunnelSnapshot> {
 
 // === Step 2: Identify the worst drop-off ===
 
+// === ObjectiveFunction → funnel-stage relevance =================================
+//
+// Map each DropOffStage onto the ObjectiveWeights axis that captures it.
+// `signup` and `activation` are top-of-funnel — they don't sit on any single
+// weighted axis, so they get a primary='growth' bonus instead.
+
+function stageToObjectiveAxis(stage: DropOffStage): keyof ObjectiveWeights | null {
+  switch (stage) {
+    case 'engagement':
+      return 'engagement';
+    case 'conversion':
+      return 'revenue';
+    case 'retention':
+      return 'retention';
+    case 'signup':
+    case 'activation':
+      return null; // top-of-funnel — handled via primary='growth' below
+  }
+}
+
 /**
- * Pick the funnel stage with the highest drop-off rate, ignoring the top of
- * the funnel (signups themselves) and stages where the previous bucket is
- * empty (drop-off rate is meaningless when there's nobody to drop). Ties
- * resolve in favour of the *earlier* stage so the recommended fix shows up
- * upstream in the funnel where it tends to have a larger downstream effect.
+ * Returns a 0..1 relevance score for a funnel stage given the active
+ * ObjectiveFunction. Higher = more aligned with the brain's current
+ * north star. Used to bias stage selection (`identifyDropOffPoint`) and
+ * the persisted ICE score (`proposeGrowthExperiment`).
+ *
+ * Behaviour:
+ * - signup/activation: 1.0 if primary='growth', else 0.5 (neutral)
+ * - other stages: read `objective.weights[axis]`, clamped to [0, 1]
+ * - any unexpected input falls back to 0.5 so the function is total
+ */
+export function objectiveStageWeight(
+  stage: DropOffStage,
+  objective: ObjectiveFunction,
+): number {
+  const axis = stageToObjectiveAxis(stage);
+  if (axis === null) {
+    return objective.primary === 'growth' ? 1.0 : 0.5;
+  }
+  const w = objective.weights[axis];
+  if (!Number.isFinite(w)) return 0.5;
+  return Math.max(0, Math.min(1, w));
+}
+
+/**
+ * Pick the funnel stage with the highest *objective-weighted* drop-off rate.
+ * Without the objective weight this used to always pick the absolute worst
+ * stage — which on an early-stage product is almost always `signup → activation`,
+ * starving retention experiments forever. Weighting the drop-off by the
+ * brain's current ObjectiveFunction lets an admin shift focus by editing
+ * `weights` instead of touching code.
+ *
+ * Ignores the top of the funnel (signups themselves) and stages where the
+ * previous bucket is empty (drop-off rate is meaningless when there's nobody
+ * to drop). Ties resolve in favour of the *earlier* stage so the recommended
+ * fix shows up upstream where it tends to have a larger downstream effect.
  */
 export function identifyDropOffPoint(snapshot: FunnelSnapshot): DropOffPoint | null {
   if (!snapshot.hasMeaningfulData) return null;
 
+  // Read the objective once per call — if it fails for any reason fall back
+  // to neutral weighting so we never block on a misconfigured brain.
+  let objective: ObjectiveFunction | null = null;
+  try {
+    objective = getObjective();
+  } catch {
+    objective = null;
+  }
+
   // Walk stages in order so ties go to the earlier stage.
   let worst: FunnelStageCount | null = null;
+  let worstScore = -Infinity;
   let prevCount = snapshot.totalSignups;
   for (const stage of snapshot.stages) {
     if (stage.stage === 'signup') {
@@ -304,8 +366,15 @@ export function identifyDropOffPoint(snapshot: FunnelSnapshot): DropOffPoint | n
       prevCount = stage.count;
       continue;
     }
-    if (!worst || stage.dropOffRateFromPrev > worst.dropOffRateFromPrev) {
+    const weight = objective ? objectiveStageWeight(stage.stage, objective) : 0.5;
+    // Score = drop-off rate * (0.5 + weight). A stage with weight=0 still
+    // counts at half its raw severity; a stage with weight=1 gets 1.5x.
+    // This keeps the previous picker's behaviour roughly intact when weights
+    // are flat at 0.5 but lets a fully-tuned objective override it.
+    const score = stage.dropOffRateFromPrev * (0.5 + weight);
+    if (score > worstScore) {
       worst = stage;
+      worstScore = score;
     }
     prevCount = stage.count;
   }
@@ -487,7 +556,21 @@ Rules:
   const impact = clamp1to10(parsed.ice?.impact);
   const confidence = clamp1to10(parsed.ice?.confidence);
   const ease = clamp1to10(parsed.ice?.ease);
-  const iceScore = (impact * confidence * ease) / 10; // 0.1 .. 100
+  const rawIceScore = (impact * confidence * ease) / 10; // 0.1 .. 100
+
+  // Multiply raw ICE by `(0.5 + objectiveStageWeight)` so the persisted
+  // score reflects how well the experiment's target stage aligns with the
+  // active ObjectiveFunction. A retention experiment under primary='growth'
+  // still gets persisted, but its ICE is dampened so the admin queue sorts
+  // growth-aligned proposals to the top.
+  let objectiveWeight = 0.5;
+  try {
+    const objective = getObjective();
+    objectiveWeight = objectiveStageWeight(dropOff.stage, objective);
+  } catch {
+    // Use neutral 0.5 if the objective fails to load.
+  }
+  const iceScore = rawIceScore * (0.5 + objectiveWeight);
 
   const expectedImpactPct = Math.max(0, Math.min(1, expectedImpactPctRaw));
 
@@ -533,7 +616,7 @@ Rules:
   }
 
   console.log(
-    `[GrowthEngineer] 💡 Proposed experiment #${experimentId} on ${dropOff.stage} (ICE=${iceScore.toFixed(1)}, framework=${framework})`,
+    `[GrowthEngineer] 💡 Proposed experiment #${experimentId} on ${dropOff.stage} (ICE=${iceScore.toFixed(1)} raw=${rawIceScore.toFixed(1)} objWeight=${objectiveWeight.toFixed(2)}, framework=${framework})`,
   );
 
   return {

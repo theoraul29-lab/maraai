@@ -4,6 +4,14 @@
 //
 // Scope: this limiter is ONLY consulted by autonomous Mara agents — user-triggered
 // chat is NEVER throttled here. User-facing chat goes through /api/chat directly.
+//
+// Etapa 2: the daily cap now reads from the persisted ObjectiveFunction
+// (mara_core_objective.constraints.maxDailyLLMCalls) so an admin can tune
+// it via PUT /api/admin/mara/objective without a redeploy. The env var
+// MARA_LEARNING_MAX_CALLS_PER_DAY remains as an *emergency override*
+// (e.g. to force-cap to 0 during an incident without touching the DB).
+
+import { getObjective } from '../mara-core/objective.js';
 
 const DEFAULT_MAX_CALLS_PER_DAY = 100;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -19,10 +27,26 @@ class LearningRateLimiter {
   private circuitOpenUntil: number | null = null;
 
   get maxPerDay(): number {
+    // 1. Emergency env-var override — wins so an operator can hard-cap to 0
+    //    during an incident without touching the DB. Accepts non-negative
+    //    integers (0 = pause autonomous learning entirely).
     const raw = process.env.MARA_LEARNING_MAX_CALLS_PER_DAY;
-    if (!raw) return DEFAULT_MAX_CALLS_PER_DAY;
-    const n = Number(raw);
-    return Number.isFinite(n) && n > 0 ? Math.floor(n) : DEFAULT_MAX_CALLS_PER_DAY;
+    if (raw !== undefined && raw !== '') {
+      const n = Number(raw);
+      if (Number.isFinite(n) && n >= 0) return Math.floor(n);
+    }
+    // 2. Persisted ObjectiveFunction.constraints.maxDailyLLMCalls — the
+    //    normal admin-tunable value. Wrapped in try/catch because the rate
+    //    limiter is in the critical autonomous call path and must never
+    //    throw at boot when the DB or objective module is half-loaded.
+    try {
+      const cap = getObjective().constraints.maxDailyLLMCalls;
+      if (Number.isFinite(cap) && cap >= 0) return Math.floor(cap);
+    } catch {
+      // Fall through to default.
+    }
+    // 3. Compile-time default.
+    return DEFAULT_MAX_CALLS_PER_DAY;
   }
 
   /** Drop records older than 24h. */
