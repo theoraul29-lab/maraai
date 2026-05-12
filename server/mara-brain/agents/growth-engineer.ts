@@ -782,6 +782,8 @@ export interface GrowthCycleResult {
   proposal: GrowthExperimentProposal | null;
   measured: MeasuredExperiment[];
   skipReason?: string;
+  /** Extra proposals emitted when objective.tradeoffs.explorationVsExploitation > 0.7. */
+  secondaryProposals?: GrowthExperimentProposal[];
 }
 
 /**
@@ -794,12 +796,57 @@ export interface GrowthCycleResult {
  */
 export async function runGrowthEngineerCycle(): Promise<GrowthCycleResult> {
   // Always do measurements first; they don't depend on a new proposal and the
-  // learnings they generate will be visible to the next propose() call.
+  // learnings they generate will be visible to the next propose() call. We
+  // run measurement BEFORE the maxDailyExperiments cap is checked because
+  // measuring an already-due experiment doesn't create a new one — it only
+  // closes the loop on something the admin already approved.
   let measured: MeasuredExperiment[] = [];
   try {
     measured = await measureExperimentOutcome();
   } catch (err) {
     console.error('[GrowthEngineer] measureExperimentOutcome failed:', err);
+  }
+
+  // Load the ObjectiveFunction once for this cycle. Re-used below for the
+  // maxDailyExperiments cap AND for exploration-mode (Task 4) so we never
+  // call getObjective() twice per cycle.
+  let objective: ObjectiveFunction;
+  try {
+    objective = getObjective();
+  } catch (err) {
+    // If the objective can't be read, bail to a sane neutral set so the
+    // cycle never throws on a misconfigured DB.
+    console.warn('[GrowthEngineer] getObjective() failed, using defaults:', err);
+    const { DEFAULT_OBJECTIVE } = await import('../../mara-core/types.js');
+    objective = DEFAULT_OBJECTIVE;
+  }
+
+  // Daily-experiment cap. `maxDailyExperiments === 0` means "paused" — the
+  // cycle still measures due experiments, but never proposes anything.
+  // Negative or non-finite values fall back to no cap (Infinity) so an
+  // operator can't accidentally lock the brain by writing a bad number.
+  const cap = Number.isFinite(objective.constraints.maxDailyExperiments)
+    && objective.constraints.maxDailyExperiments >= 0
+    ? objective.constraints.maxDailyExperiments
+    : Infinity;
+
+  const startOfTodayUtc = new Date();
+  startOfTodayUtc.setUTCHours(0, 0, 0, 0);
+
+  const todayRows = await db
+    .select({ id: maraGrowthExperiments.id })
+    .from(maraGrowthExperiments)
+    .where(gte(maraGrowthExperiments.createdAt, startOfTodayUtc));
+  const todayCount = todayRows.length;
+
+  if (todayCount >= cap) {
+    return {
+      funnel: await readFunnelData(),
+      dropOff: null,
+      proposal: null,
+      measured,
+      skipReason: `Daily experiment cap reached (${todayCount}/${cap} today)`,
+    };
   }
 
   const funnel = await readFunnelData();
@@ -851,7 +898,69 @@ export async function runGrowthEngineerCycle(): Promise<GrowthCycleResult> {
     console.error('[GrowthEngineer] proposeGrowthExperiment failed:', err);
   }
 
-  return { funnel, dropOff, proposal, measured };
+  // ─── Exploration mode (objective.tradeoffs.explorationVsExploitation) ────
+  // When the brain is biased toward exploration (> 0.7), propose a SECOND
+  // experiment on a different drop-off stage in the same cycle. The second
+  // proposal is still subject to the maxDailyExperiments cap (cap-1 budget
+  // remaining is enough for one more). Re-uses the `objective` we already
+  // loaded — never calls getObjective() again.
+  const secondaryProposals: GrowthExperimentProposal[] = [];
+  if (
+    proposal &&
+    objective.tradeoffs.explorationVsExploitation > 0.7 &&
+    todayCount + 1 < cap
+  ) {
+    // Find the next-worst stage that (a) isn't the one we just proposed for
+    // and (b) doesn't already have a pending proposed experiment.
+    const candidates = [...funnel.stages]
+      .filter((s) => s.stage !== 'signup' && s.stage !== dropOff.stage)
+      .sort((a, b) => b.dropOffRateFromPrev - a.dropOffRateFromPrev);
+
+    for (const cand of candidates) {
+      const stage2 = cand.stage;
+      const existing = await db
+        .select({ id: maraGrowthExperiments.id })
+        .from(maraGrowthExperiments)
+        .where(
+          and(
+            eq(maraGrowthExperiments.status, 'proposed'),
+            eq(maraGrowthExperiments.dropOffStage, stage2),
+          ),
+        )
+        .limit(1);
+      if (existing.length > 0) continue;
+
+      // Build a synthetic DropOffPoint for the secondary stage. Mirrors the
+      // shape identifyDropOffPoint() emits for the primary stage.
+      const stageIdx = funnel.stages.findIndex((s) => s.stage === stage2);
+      const prevStage = stageIdx > 0 ? funnel.stages[stageIdx - 1] : null;
+      const lost = prevStage ? Math.max(0, prevStage.count - cand.count) : 0;
+      const secondaryDropOff: DropOffPoint = {
+        stage: stage2,
+        dropOffRate: cand.dropOffRateFromPrev,
+        usersAffectedInWindow: lost,
+        contextNote: prevStage
+          ? `Exploration: ${prevStage.count} reached "${prevStage.stage}" but only ${cand.count} continued to "${stage2}".`
+          : `Exploration: ${cand.count} users reached "${stage2}".`,
+      };
+
+      console.log(
+        `[GrowthEngineer] 🔬 Exploration mode: proposing second experiment on ${stage2}`,
+      );
+      try {
+        const second = await proposeGrowthExperiment(funnel, secondaryDropOff);
+        if (second) secondaryProposals.push(second);
+      } catch (err) {
+        console.error(
+          '[GrowthEngineer] secondary proposeGrowthExperiment failed:',
+          err,
+        );
+      }
+      break; // one secondary per cycle
+    }
+  }
+
+  return { funnel, dropOff, proposal, measured, secondaryProposals };
 }
 
 // === Helpers used by admin endpoints ===

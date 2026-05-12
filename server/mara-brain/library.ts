@@ -2,8 +2,12 @@
 // Mara reads from this library during brain cycles, BEFORE and DURING user activity
 
 import { processDocument, processDocumentBatch, type DocumentReadResult } from './agents/document-reader.js';
-import { getKnowledgeStats, searchKnowledge } from './knowledge-base.js';
+import { getKnowledgeStats, searchKnowledge, storeKnowledge } from './knowledge-base.js';
 import { storage } from '../storage.js';
+import { llmGenerate, isLLMConfigured, LLMRateLimitedError } from '../llm.js';
+import { db } from '../db.js';
+import { maraKnowledgeBase } from '../../shared/schema.js';
+import { like } from 'drizzle-orm';
 
 export interface LibraryBook {
   id: string;
@@ -754,25 +758,154 @@ APLICAȚIE: Setează-ți o regulă — 30 min/zi în care folosești hellomara.n
 }
 
 /**
- * Check which books from the library Mara has already read
+ * Check which books from the library Mara has already read.
+ *
+ * Source of truth (Etapa 3 Task 5): rows in `mara_knowledge_base` with
+ * `topic` starting with `library_book:` and `category='library_read_marker'`.
+ * The book id is encoded in the topic (`library_book:<book.id>`), which is
+ * stable — title edits no longer break tracking.
+ *
+ * Back-compat: also accepts the legacy `Document: <title>` markers written
+ * by older brain cycles. Existing data keeps working without a migration.
  */
 async function getReadBookIds(): Promise<Set<string>> {
-  const existing = await searchKnowledge('Document:', 100);
   const ids = new Set<string>();
-  for (const entry of existing) {
+
+  // Stable id markers (Etapa 3 Task 5).
+  const markerRows = await db
+    .select()
+    .from(maraKnowledgeBase)
+    .where(like(maraKnowledgeBase.topic, 'library_book:%'));
+  for (const row of markerRows) {
+    const id = row.topic.slice('library_book:'.length).trim();
+    if (id) ids.add(id);
+  }
+
+  // Legacy "Document: <title>" markers — best-effort name match for rows
+  // that pre-date stable ids.
+  const legacy = await searchKnowledge('Document:', 100);
+  for (const entry of legacy) {
     if (entry.topic.startsWith('Document: ')) {
-      // Match book title to library ID
       const title = entry.topic.replace('Document: ', '');
       const book = getBuiltInLibrary().find((b) => b.title === title);
       if (book) ids.add(book.id);
     }
   }
-  // Also merge runtime tracking
-  const runtimeIds = Array.from(readBookIds);
-  for (const id of runtimeIds) {
-    ids.add(id);
-  }
+
+  // Merge the runtime cache — covers the in-process window between
+  // processDocument() finishing and the marker insert (in case the marker
+  // insert is still pending).
+  for (const id of readBookIds) ids.add(id);
+
   return ids;
+}
+
+/**
+ * Warm the in-memory `readBookIds` cache from the DB. Called once during
+ * boot so a brain cycle that fires before the first DB hit still sees the
+ * right set. Idempotent — adds, never clears.
+ */
+export async function bootstrapReadBookIds(): Promise<void> {
+  const fromDb = await getReadBookIds();
+  for (const id of fromDb) readBookIds.add(id);
+  console.log(`[Library] Bootstrapped readBookIds from DB: ${fromDb.size} books marked as read.`);
+}
+
+/**
+ * Persist a stable read marker so future cycles know this book was read,
+ * even if the title is later renamed. Idempotent (the underlying
+ * `storeKnowledge` deduplicates near-identical entries within the same
+ * category/source/topic).
+ */
+async function markBookAsRead(book: LibraryBook): Promise<void> {
+  await storeKnowledge(
+    'library_read_marker',
+    `library_book:${book.id}`,
+    `Read on ${new Date().toISOString()}: ${book.title}`,
+    'document',
+    100,
+    { bookId: book.id, category: book.category, title: book.title },
+  );
+}
+
+const MARAAI_MODULES = ['Trading Academy', 'Creator Studio', 'WritersHub', 'Reels', 'VIP', 'AI Chat (Mara)'] as const;
+
+/**
+ * Etapa 3 Task 6 — after reading a book, run a SECOND extraction pass that
+ * asks the LLM for concrete actions hellomara.net should take per module.
+ * Stored as separate `platform_application` knowledge entries so the
+ * Growth Engineer and analyzers can surface them per-module.
+ *
+ * Best-effort: any failure is logged and swallowed. The book's main idea
+ * extraction (handled by `processDocument`) is unaffected.
+ */
+async function extractPlatformApplications(book: LibraryBook): Promise<number> {
+  if (!isLLMConfigured()) return 0;
+
+  const prompt = `You just read: "${book.title}".
+
+MaraAI has these modules: ${MARAAI_MODULES.join(', ')}.
+
+For each module that this book is relevant to, write ONE concrete action hellomara.net should take based on this book's principles.
+
+Format strictly as plain lines, one per relevant module:
+MODULE_NAME: action (max 2 sentences each)
+
+Only include modules where the book is genuinely relevant — skip any that don't fit naturally. Reply in Romanian.
+
+Book content (truncated):
+${book.content.slice(0, 4_000)}`;
+
+  let raw: string;
+  try {
+    raw = await llmGenerate(prompt, {
+      temperature: 0.4,
+      // Route through the learning rate limiter so this autonomous call
+      // counts against the daily cap (NOT the user-chat budget).
+      source: `learning.library-applications:${book.id}` as const,
+    });
+  } catch (err) {
+    if (err instanceof LLMRateLimitedError) {
+      console.warn(`[Library] platform-application extraction rate-limited for "${book.title}"`);
+      return 0;
+    }
+    console.warn(`[Library] platform-application extraction failed for "${book.title}":`, err);
+    return 0;
+  }
+
+  // Parse `MODULE_NAME: action` lines. Accept any casing / leading bullet.
+  let stored = 0;
+  for (const rawLine of raw.split('\n')) {
+    const line = rawLine.replace(/^[\s\-*•]+/, '').trim();
+    if (!line) continue;
+    const colon = line.indexOf(':');
+    if (colon < 0) continue;
+    const modCandidate = line.slice(0, colon).trim();
+    const action = line.slice(colon + 1).trim();
+    if (!action) continue;
+    const match = MARAAI_MODULES.find(
+      (m) => m.toLowerCase() === modCandidate.toLowerCase(),
+    );
+    if (!match) continue;
+    try {
+      await storeKnowledge(
+        'platform_application',
+        `${match} — aplicație din: ${book.title}`,
+        action,
+        'document',
+        85,
+        { bookId: book.id, module: match },
+      );
+      stored += 1;
+    } catch (err) {
+      console.warn(`[Library] storeKnowledge failed for ${match}/${book.id}:`, err);
+    }
+  }
+
+  if (stored > 0) {
+    console.log(`[Library] 🔗 Extracted ${stored} platform application(s) from "${book.title}"`);
+  }
+  return stored;
 }
 
 /**
@@ -803,6 +936,18 @@ export async function readNextLibraryBook(): Promise<DocumentReadResult | null> 
   console.log(`[Library] 📚 Reading: "${book.title}" [${book.category}]`);
   const result = await processDocument(book.content, book.title, `library:${book.category}`);
   readBookIds.add(book.id);
+  // Stable progress marker (Etapa 3 Task 5) + per-module applications (Task 6).
+  // Both are best-effort — never fail the read.
+  try {
+    await markBookAsRead(book);
+  } catch (err) {
+    console.warn(`[Library] markBookAsRead failed for "${book.title}":`, err);
+  }
+  try {
+    await extractPlatformApplications(book);
+  } catch (err) {
+    console.warn(`[Library] extractPlatformApplications failed for "${book.title}":`, err);
+  }
   return result;
 }
 
@@ -822,6 +967,16 @@ export async function readLibraryBookById(
   console.log(`[Library] 📚 Re-reading by id: "${book.title}" [${book.category}]`);
   const result = await processDocument(book.content, book.title, `library:${book.category}`);
   readBookIds.add(book.id);
+  try {
+    await markBookAsRead(book);
+  } catch (err) {
+    console.warn(`[Library] markBookAsRead failed for "${book.title}":`, err);
+  }
+  try {
+    await extractPlatformApplications(book);
+  } catch (err) {
+    console.warn(`[Library] extractPlatformApplications failed for "${book.title}":`, err);
+  }
   return result;
 }
 

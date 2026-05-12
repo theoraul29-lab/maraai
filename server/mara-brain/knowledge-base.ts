@@ -15,7 +15,9 @@ export type KnowledgeCategory =
   | 'llm_learning'
   | 'gemini_learning'  // kept for backward compatibility with existing data
   | 'web_research'
-  | 'book_knowledge';
+  | 'book_knowledge'
+  | 'library_read_marker' // stable per-book progress marker (Etapa 3 Task 5)
+  | 'platform_application'; // per-module application extracted from a book (Etapa 3 Task 6)
 
 export type KnowledgeSource =
   | 'llm'

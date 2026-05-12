@@ -26,6 +26,7 @@ export {
   getLibraryProgress,
   addAndReadCustomBook,
   getBuiltInLibrary,
+  bootstrapReadBookIds,
   type LibraryBook,
 } from './library.js';
 export { brainManager, type BrainStatus } from './manager.js';
