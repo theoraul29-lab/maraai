@@ -223,6 +223,21 @@ sqlite.exec(`
     ON mara_code_reads(accessed_at DESC);
   CREATE INDEX IF NOT EXISTS idx_mara_code_reads_path
     ON mara_code_reads(path);
+
+  -- Launch waitlist: emails collected from the pre-launch landing page
+  -- so we can notify subscribers when hellomara.net goes live on June 1st
+  -- 2026. ip_hash is a sha256 of the source IP, never the raw IP.
+  CREATE TABLE IF NOT EXISTS mara_waitlist (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT NOT NULL UNIQUE,
+    source TEXT NOT NULL DEFAULT 'landing',
+    referrer TEXT,
+    ip_hash TEXT,
+    user_agent TEXT,
+    created_at INTEGER DEFAULT (unixepoch()) NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_mara_waitlist_created_at
+    ON mara_waitlist(created_at DESC);
 `);
 
 export const db = drizzle(sqlite, { schema });

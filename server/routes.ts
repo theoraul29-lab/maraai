@@ -89,6 +89,7 @@ import {
   requestReset as authRequestReset,
   confirmReset as authConfirmReset,
 } from './modules/auth-api.js';
+import { registerLaunchCountdown } from './modules/launch-countdown.js';
 
 export async function registerRoutes(
   httpServer: Server,
@@ -1145,6 +1146,15 @@ export async function registerRoutes(
     const snap = await getAIHealth();
     return res.status(snap.ok ? 200 : 503).json(snap);
   });
+
+  // Pre-launch landing page + /preview gate + waitlist API.
+  //
+  // Must be registered AFTER all real /api/* routes but BEFORE the SPA
+  // catch-all (which is added by serveStatic in server/index.ts). The
+  // route handler for "/" only fires before the launch date — once we
+  // pass 2026-06-01T00:00:00Z it calls next() and the SPA index.html
+  // is served as it is today.
+  registerLaunchCountdown(app, requireAdmin);
 
   return httpServer;
 }

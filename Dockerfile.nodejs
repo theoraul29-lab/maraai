@@ -33,6 +33,10 @@ COPY --from=builder /app/shared ./shared
 COPY --from=builder /app/backend ./backend
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/migrations ./migrations
+# Pre-launch landing page is served by server/modules/launch-countdown.ts
+# from this directory. Must be present in the runtime image or GET / will
+# fall through to the SPA before launch date.
+COPY --from=builder /app/public ./public
 
 # Create nodejs user and give it /app ownership. /data is handled at entrypoint
 # time because Railway mounts volumes as root at container start, which would
