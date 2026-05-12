@@ -140,8 +140,11 @@ class BrainManagerImpl {
     const releaseOnExit = () => {
       try {
         this._cycleLock?.release();
-      } catch {
-        // best-effort
+      } catch (err) {
+        console.warn(
+          '[manager:143] Non-critical error swallowed:',
+          err instanceof Error ? err.message : err,
+        );
       }
     };
     process.once('SIGTERM', releaseOnExit);
@@ -222,8 +225,11 @@ class BrainManagerImpl {
     if (this._cycleLock) {
       try {
         this._cycleLock.release();
-      } catch {
-        // best-effort
+      } catch (err) {
+        console.warn(
+          '[manager:225] Non-critical error swallowed:',
+          err instanceof Error ? err.message : err,
+        );
       }
       this._cycleLock = null;
     }

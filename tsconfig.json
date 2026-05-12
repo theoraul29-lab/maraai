@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": false,
+    "allowJs": false
+  },
+  "include": ["server/**/*", "backend/**/*", "shared/**/*"],
+  "exclude": ["node_modules", "dist", "frontend"]
+}

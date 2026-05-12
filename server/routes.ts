@@ -72,10 +72,23 @@ import {
   resolveConflict,
 } from './mara-brain/conflict-detector.js';
 import { listSingletonLocks } from './lib/singleton-lock.js';
-import { chatRateLimit } from './rate-limit.js';
+import {
+  chatRateLimit,
+  signupRateLimit,
+  loginRateLimit,
+  requestResetRateLimit,
+  confirmResetRateLimit,
+} from './rate-limit.js';
 import { users as usersTable } from '../shared/models/auth.js';
 import { registerMaraAIRoutes } from './maraai/routes.js';
-import { signup as authSignup, login as authLogin, logout as authLogout, me as authMe } from './modules/auth-api.js';
+import {
+  signup as authSignup,
+  login as authLogin,
+  logout as authLogout,
+  me as authMe,
+  requestReset as authRequestReset,
+  confirmReset as authConfirmReset,
+} from './modules/auth-api.js';
 
 export async function registerRoutes(
   httpServer: Server,
@@ -171,11 +184,19 @@ export async function registerRoutes(
   // /api/auth/login are reachable; without this wiring the SPA fell back
   // to the static index.html and the AuthContext silently treated every
   // signup/login as failed.
-  app.post('/api/auth/signup', authSignup);
-  app.post('/api/auth/login', authLogin);
+  // Per-route IP rate limits: signup 5/15min, login 10/15min. Tunable via env
+  // (AUTH_RL_SIGNUP_MAX, AUTH_RL_LOGIN_MAX). See server/rate-limit.ts.
+  app.post('/api/auth/signup', signupRateLimit, authSignup);
+  app.post('/api/auth/login', loginRateLimit, authLogin);
   app.post('/api/auth/logout', authLogout);
   // Full user payload (matches the AuthContext's expected shape).
   app.get('/api/auth/me', authMe);
+  // Password reset: backend handlers existed in auth-api.ts but were never
+  // routed. The forgot-password UI link is a separate follow-up (PR II);
+  // wiring the backend here means the endpoints are reachable + rate-limited
+  // when that UI lands. 3/IP/15min on each leg.
+  app.post('/api/auth/request-reset', requestResetRateLimit, authRequestReset);
+  app.post('/api/auth/confirm-reset', confirmResetRateLimit, authConfirmReset);
 
   // Mara AI chat / OTP / brain endpoints. Imported but never wired in
   // the previous PR which is why /api/auth/otp/* and /api/chat were
