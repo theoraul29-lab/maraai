@@ -208,9 +208,11 @@ function validateObjective(o: ObjectiveFunction): void {
   }
   if (
     !Number.isInteger(o.constraints.maxDailyLLMCalls) ||
-    o.constraints.maxDailyLLMCalls <= 0
+    o.constraints.maxDailyLLMCalls < 0
   ) {
-    throw new Error('constraints.maxDailyLLMCalls must be a positive integer');
+    // 0 is allowed and means "pause autonomous LLM learning entirely" — the
+    // rate limiter honours it and short-circuits canCall().
+    throw new Error('constraints.maxDailyLLMCalls must be a non-negative integer');
   }
   if (
     !Number.isInteger(o.constraints.maxDailyExperiments) ||
