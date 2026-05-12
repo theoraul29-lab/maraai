@@ -84,6 +84,24 @@ const MAX_INDEX_BYTES = 1_000_000; // skip indexing files larger than ~1MB
 const MAX_READ_BYTES = 200_000; // truncate single-file reads at ~200KB
 const DEFAULT_READ_REASON = 'unspecified';
 
+/**
+ * Coerce a caller-supplied byte count to a safe integer in
+ * [1, MAX_READ_BYTES]. Non-finite values (NaN from `Number('abc')`,
+ * Infinity, null after the ?? fallback would have applied) collapse to
+ * MAX_READ_BYTES so the safety cap is never accidentally bypassed.
+ *
+ * Exported for smoke tests (the original PR #105 shipped a version
+ * where `Math.max(1, Math.min(NaN, MAX_READ_BYTES))` returned NaN and
+ * silently disabled `buf.length > maxBytes`; this function is the
+ * one-line fix.)
+ */
+export function clampMaxBytes(raw: number | undefined): number {
+  if (raw === undefined || raw === null || !Number.isFinite(raw)) return MAX_READ_BYTES;
+  const n = Math.floor(raw);
+  if (n <= 0) return MAX_READ_BYTES;
+  return Math.min(n, MAX_READ_BYTES);
+}
+
 // ---------------------------------------------------------------------------
 // Path safety.
 // ---------------------------------------------------------------------------
@@ -305,7 +323,11 @@ export async function readSourceFile(
   const safe = resolveSafePath(inputPath);
   if (!safe) return null;
 
-  const maxBytes = Math.max(1, Math.min(opts.maxBytes ?? MAX_READ_BYTES, MAX_READ_BYTES));
+  // Defense in depth: callers may pass NaN/Infinity if they forwarded a
+  // raw query string into Number(...) without validating. Collapse any
+  // non-finite value to the configured MAX_READ_BYTES cap instead of
+  // letting `buf.length > NaN === false` silently disable truncation.
+  const maxBytes = clampMaxBytes(opts.maxBytes);
 
   let buf;
   try {

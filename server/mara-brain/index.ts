@@ -39,6 +39,7 @@ export {
   getCodeOverview,
   getRecentReads,
   resolveSafePath,
+  clampMaxBytes,
   REPO_ROOT,
   type CodeIndexEntry,
   type ReadFileResult,
