@@ -16,7 +16,8 @@
     "smoke:runtime": "node scripts/smoke-runtime.mjs",
     "smoke:credits": "node scripts/smoke-credits.mjs",
     "smoke:growth": "node scripts/test-growth-engineer.mjs",
-    "smoke:audit-p2": "tsx scripts/test-audit-p2.mts"
+    "smoke:audit-p2": "tsx scripts/test-audit-p2.mts",
+    "smoke:auth": "node scripts/smoke-auth.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.33.1",
