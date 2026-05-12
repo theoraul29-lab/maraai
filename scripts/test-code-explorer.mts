@@ -39,8 +39,31 @@ async function testAgent() {
   const mod = await import('../server/mara-brain/agents/code-explorer.js');
   const {
     resolveSafePath, indexCode, readSourceFile, listIndexedFiles,
-    searchIndexedFiles, getCodeOverview, getRecentReads,
+    searchIndexedFiles, getCodeOverview, getRecentReads, clampMaxBytes,
   } = mod;
+
+  // Devin Review #105 regression: clampMaxBytes() must collapse every
+  // non-finite or non-positive input to MAX_READ_BYTES so the 200KB
+  // truncation cap is never silently disabled.
+  const clampCases: Array<[any, number, string]> = [
+    [undefined, 200_000, 'undefined'],
+    [NaN, 200_000, 'NaN'],
+    [Infinity, 200_000, '+Infinity'],
+    [-Infinity, 200_000, '-Infinity'],
+    [0, 200_000, '0'],
+    [-1, 200_000, '-1'],
+    [-1_000_000, 200_000, '-1M'],
+    [500, 500, 'exact 500'],
+    [199_999, 199_999, 'just under cap'],
+    [200_000, 200_000, 'exact cap'],
+    [200_001, 200_000, 'just over cap'],
+    [9_999_999, 200_000, 'far over cap'],
+  ];
+  for (const [input, expected, label] of clampCases) {
+    const got = clampMaxBytes(input);
+    if (got !== expected) fail(`clampMaxBytes(${label}) → ${got}, expected ${expected}`);
+  }
+  ok(`clampMaxBytes covers ${clampCases.length} cases (NaN/Infinity/negative/zero/cap)`);
 
   // 1a: safety — accept canonical paths.
   if (!resolveSafePath('server/db.ts')) fail('resolveSafePath rejected server/db.ts');
@@ -94,11 +117,38 @@ async function testAgent() {
     ok('searchIndexedFiles found growth-engineer.ts');
   }
 
+  // 5pre: maxBytes coercion — NaN/Infinity/0/negative must NOT bypass
+  // the MAX_READ_BYTES cap. Regression for Devin Review #105 (BUG_0001).
+  const big = await readSourceFile('server/routes.ts', {
+    accessedBy: 'smoke-test', reason: 'verify NaN cap',
+    maxBytes: NaN as unknown as number,
+  });
+  if (!big) fail('NaN maxBytes returned null');
+  else if (big.size > 200_000 && !big.truncated) fail(`NaN maxBytes did NOT truncate (size=${big.size}, content=${big.content.length})`);
+  else if (big.content.length > 200_000) fail(`NaN maxBytes produced ${big.content.length} bytes (> 200KB cap)`);
+  else ok(`NaN maxBytes clamped to MAX_READ_BYTES (content=${big.content.length} bytes, truncated=${big.truncated})`);
+
+  const inf = await readSourceFile('server/routes.ts', {
+    accessedBy: 'smoke-test', reason: 'verify Infinity cap',
+    maxBytes: Infinity,
+  });
+  if (!inf) fail('Infinity maxBytes returned null');
+  else if (inf.content.length > 200_000) fail(`Infinity maxBytes produced ${inf.content.length} bytes`);
+  else ok(`Infinity maxBytes clamped (content=${inf.content.length} bytes)`);
+
+  const neg = await readSourceFile('server/routes.ts', {
+    accessedBy: 'smoke-test', reason: 'verify negative cap',
+    maxBytes: -1000,
+  });
+  if (!neg) fail('negative maxBytes returned null');
+  else if (neg.content.length > 200_000) fail(`negative maxBytes produced ${neg.content.length} bytes`);
+  else ok(`negative maxBytes clamped (content=${neg.content.length} bytes)`);
+
   // 5: readSourceFile returns content + writes audit log.
-  const before = getRecentReads(5).length;
+  const auditMarker = `audit-marker-${Date.now()}`;
   const read = await readSourceFile('server/mara-brain/agents/code-explorer.ts', {
     accessedBy: 'smoke-test',
-    reason: 'verify read works',
+    reason: auditMarker,
     maxBytes: 500,
   });
   if (!read) fail('readSourceFile returned null for own source');
@@ -108,10 +158,13 @@ async function testAgent() {
     if (read.size > 500 && !read.truncated) fail('truncated flag wrong');
     else ok('truncated flag matches maxBytes cap');
   }
-  const after = getRecentReads(5);
-  if (after.length === before) fail('readSourceFile did not write audit row');
-  else if (after[0]?.accessedBy !== 'smoke-test') fail(`audit row accessedBy=${after[0]?.accessedBy}`);
-  else ok(`audit row recorded for ${after[0].path} (accessed_by=smoke-test)`);
+  // Match the audit row by our unique reason marker so prior smoke
+  // reads in this run don't shadow the check.
+  const auditRows = getRecentReads(50);
+  const ours = auditRows.find((r: any) => r.reason === auditMarker);
+  if (!ours) fail(`audit row with reason=${auditMarker} not found among ${auditRows.length} recent rows`);
+  else if (ours.accessedBy !== 'smoke-test') fail(`audit accessedBy=${ours.accessedBy}`);
+  else ok(`audit row recorded for ${ours.path} (accessed_by=smoke-test, reason=${auditMarker})`);
 
   // 6: readSourceFile denies dangerous paths.
   const denied = await readSourceFile('../../etc/passwd', { accessedBy: 'smoke' });
@@ -138,6 +191,7 @@ interface SpawnedServer {
 }
 
 async function startServer(): Promise<SpawnedServer> {
+  const logs: string[] = [];
   const proc = spawn(
     'npx',
     ['tsx', 'server/index.ts'],
@@ -151,14 +205,25 @@ async function startServer(): Promise<SpawnedServer> {
         ADMIN_EMAILS: ADMIN_EMAIL,
         BRAIN_AUTOSTART: 'false',
         MARA_LEARNING_ENABLED: 'false',
+        BRAIN_ENABLED: 'false',
       },
       stdio: ['ignore', 'pipe', 'pipe'],
     },
   );
+  proc.stdout?.on('data', (b) => logs.push(`[stdout] ${b.toString()}`));
+  proc.stderr?.on('data', (b) => logs.push(`[stderr] ${b.toString()}`));
+  let early: Error | null = null;
+  proc.on('exit', (code, signal) => {
+    early = new Error(`backend exited early code=${code} signal=${signal}`);
+  });
 
   // wait until /api/runtime answers
-  const deadline = Date.now() + 30_000;
+  const deadline = Date.now() + 60_000;
   while (Date.now() < deadline) {
+    if (early) {
+      console.error('--- backend logs ---\n' + logs.join('') + '--------------------');
+      throw early;
+    }
     try {
       const r = await fetch(`${BASE}/api/runtime`);
       if (r.ok) return { proc, kill: () => proc.kill() };
@@ -167,8 +232,9 @@ async function startServer(): Promise<SpawnedServer> {
     }
     await delay(500);
   }
+  console.error('--- backend logs (timed out) ---\n' + logs.join('') + '--------------------');
   proc.kill();
-  throw new Error('backend did not come up within 30s');
+  throw new Error('backend did not come up within 60s');
 }
 
 interface Jar {
@@ -280,6 +346,22 @@ async function testHttp() {
     const envBlocked = await request(adminJar, 'GET', '/api/admin/mara/code/file?path=server/.env');
     if (envBlocked.status !== 404) fail(`server/.env via HTTP got ${envBlocked.status} instead of 404`);
     else ok('GET /file rejects server/.env with 404');
+
+    // Devin Review #105 regression: junk maxBytes in the query string
+    // (Number('abc') === NaN) must NOT bypass the truncation cap. The
+    // route should coerce it back to the documented default.
+    const junkMaxBytes = await request(
+      adminJar,
+      'GET',
+      '/api/admin/mara/code/file?path=server/routes.ts&maxBytes=abc',
+    );
+    if (junkMaxBytes.status !== 200) fail(`junk maxBytes got ${junkMaxBytes.status}`);
+    else if (typeof junkMaxBytes.body.content !== 'string') fail('junk maxBytes missing content');
+    else if (junkMaxBytes.body.content.length > 200_000) {
+      fail(`junk maxBytes returned ${junkMaxBytes.body.content.length} bytes (> 200KB cap)`);
+    } else {
+      ok(`junk maxBytes=abc clamped to 200KB cap (content=${junkMaxBytes.body.content.length} bytes)`);
+    }
 
     // Audit log shows our admin reads.
     const reads = await request(adminJar, 'GET', '/api/admin/mara/code/reads?limit=10');

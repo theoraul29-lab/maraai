@@ -508,6 +508,17 @@ export async function registerRoutes(
   // admin reviewing what Mara has been looking at — can reason about
   // her own implementation. Every endpoint is admin-gated; readFile
   // additionally writes an audit row to mara_code_reads.
+  //
+  // All numeric query params go through coerceFinite() so that a
+  // garbage value like `?limit=abc` (where Number('abc') === NaN)
+  // collapses to the documented default instead of silently disabling
+  // downstream Math.min/Math.max caps.
+  const coerceFinite = (raw: unknown, fallback: number): number => {
+    if (typeof raw !== 'string' && typeof raw !== 'number') return fallback;
+    const n = typeof raw === 'number' ? raw : Number(raw);
+    return Number.isFinite(n) ? n : fallback;
+  };
+
   app.get('/api/admin/mara/code/overview', requireAdmin, (_req: any, res: any) => {
     try {
       res.json(getCodeOverview());
@@ -521,7 +532,7 @@ export async function registerRoutes(
     try {
       const prefix = typeof req.query.prefix === 'string' ? req.query.prefix : undefined;
       const extension = typeof req.query.extension === 'string' ? req.query.extension : undefined;
-      const limit = req.query.limit ? Number(req.query.limit) : 200;
+      const limit = coerceFinite(req.query.limit, 200);
       res.json({ files: listIndexedFiles({ prefix, extension, limit }) });
     } catch (error) {
       console.error('[admin/mara/code/index]', error);
@@ -533,7 +544,7 @@ export async function registerRoutes(
     try {
       const q = typeof req.query.q === 'string' ? req.query.q : '';
       if (!q.trim()) return res.json({ files: [] });
-      const limit = req.query.limit ? Number(req.query.limit) : 50;
+      const limit = coerceFinite(req.query.limit, 50);
       res.json({ files: searchIndexedFiles(q.trim(), limit) });
     } catch (error) {
       console.error('[admin/mara/code/search]', error);
@@ -548,7 +559,14 @@ export async function registerRoutes(
       const result = await readSourceFile(p, {
         accessedBy: `admin:${req.user?.uid ?? 'unknown'}`,
         reason: typeof req.query.reason === 'string' ? req.query.reason : 'admin browse',
-        maxBytes: req.query.maxBytes ? Number(req.query.maxBytes) : undefined,
+        // Coerce strictly: a junk string like `?maxBytes=abc` would
+        // otherwise produce NaN via Number(...) and silently bypass the
+        // read cap inside readSourceFile. coerceFinite returns NaN on
+        // bad input so the agent's clampMaxBytes() collapses it back to
+        // MAX_READ_BYTES (defense in depth — both layers must hold).
+        maxBytes: req.query.maxBytes === undefined
+          ? undefined
+          : coerceFinite(req.query.maxBytes, NaN),
       });
       if (!result) return res.status(404).json({ error: 'Path not allowed or not found' });
       res.json(result);
@@ -560,7 +578,7 @@ export async function registerRoutes(
 
   app.get('/api/admin/mara/code/reads', requireAdmin, (req: any, res: any) => {
     try {
-      const limit = req.query.limit ? Number(req.query.limit) : 50;
+      const limit = coerceFinite(req.query.limit, 50);
       res.json({ reads: getRecentReads(limit) });
     } catch (error) {
       console.error('[admin/mara/code/reads]', error);
