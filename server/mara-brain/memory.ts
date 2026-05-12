@@ -8,6 +8,7 @@ import { getPlatformContext } from './platform-context.js';
 
 export interface UserMemoryContext {
   userId: string;
+  isAdmin: boolean;
   recentMessages: { role: string; content: string }[];
   preferences: { personality?: string; language?: string } | null;
   emotionalProfile: ReturnType<typeof detectEmotion>;
@@ -25,12 +26,18 @@ function getDefaultToxicityState(): ToxicityState {
 
 /**
  * Build the full context for a user's chat interaction
- * This is the main function that connects personality + memory + knowledge
+ * This is the main function that connects personality + memory + knowledge.
+ *
+ * When `isAdmin` is true, Mara switches to the admin persona
+ * (see buildPersonalityPrompt). Toxicity scaffolding is still tracked but
+ * not surfaced in the prompt, so the per-user state still gets cleaned up
+ * if the admin happens to test a toxic message.
  */
 export async function buildUserContext(
   userId: string,
   currentMessage: string,
   module?: string,
+  isAdmin: boolean = false,
 ): Promise<UserMemoryContext> {
   // 1. Get user preferences
   const preferences = await storage.getUserPreferences(userId);
@@ -57,11 +64,14 @@ export async function buildUserContext(
   // 6. Get relevant knowledge context
   const knowledgeContext = await getKnowledgeContext(topics);
 
-  // 7. Build personality prompt with toxicity and emotion awareness
-  const personalityPrompt = buildPersonalityPrompt(newToxicityState, emotionalProfile);
+  // 7. Build personality prompt with toxicity, emotion, and admin awareness.
+  //    When isAdmin=true, the admin persona replaces the entire user-facing
+  //    block — toxicity & emotion still tracked but not surfaced in the prompt.
+  const personalityPrompt = buildPersonalityPrompt(newToxicityState, emotionalProfile, isAdmin);
 
   return {
     userId,
+    isAdmin,
     recentMessages,
     preferences,
     emotionalProfile,

@@ -101,6 +101,7 @@ jobs:
           npm run smoke:growth
           npm run smoke:audit-p2
           npm run smoke:auth
+          npm run smoke:admin-chat
 
       - name: Print backend logs on failure
         if: failure()

@@ -1,6 +1,7 @@
 import { buildUserContext, buildSystemInstruction, recordLearningFromChat, getPlatformContext } from './mara-brain/index.js';
 import { llmChat, llmGenerate, isLLMConfigured } from './llm.js';
 import { logError } from './logger.js';
+import { isUserAdmin } from './lib/admin-check.js';
 
 // Localized Mara "Guided Muse" persona used when the brain module is
 // unavailable. English is the canonical source; other languages are kept as
@@ -143,11 +144,14 @@ export async function getMaraResponse(
 		};
 	}
 
-	// Build full user context with personality + knowledge + memory
+	// Build full user context with personality + knowledge + memory.
+	// `isAdmin` switches Mara to the admin persona (direct, strategic, no
+	// emotional scaffolding). Computed via ADMIN_USER_IDS / ADMIN_EMAILS env.
 	let systemInstruction: string;
 	try {
 		if (userId) {
-			const context = await buildUserContext(userId, message, module);
+			const isAdmin = await isUserAdmin(userId);
+			const context = await buildUserContext(userId, message, module, isAdmin);
 			systemInstruction = buildSystemInstruction(context, prefs?.language);
 
 			// Async: record learning from this interaction (non-blocking)
