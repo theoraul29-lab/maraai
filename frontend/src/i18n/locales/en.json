@@ -81,6 +81,14 @@
     "switchToSignup": "Switch to sign up",
     "switchToLogin": "Switch to login",
     "or": "OR",
+    "helpMara": {
+      "title": "Help Mara grow",
+      "p1": "Mara is a hybrid AI: she runs partly in the cloud and partly on people's devices. When you turn this on, a tiny slice of your phone's or laptop's spare power helps route other people's questions — making the whole network faster.",
+      "p2": "In return, you earn Mara Credits you can spend on premium features. Nothing runs in the background unless you pick it. Bandwidth caps and a kill-switch are always one tap away.",
+      "p3": "You can change your mind at any time from your settings. Mara never shares your data with peers — only encrypted compute tasks pass through.",
+      "confirm": "Yes, I want to help Mara grow",
+      "learnMore": "Learn more about P2P mode →"
+    },
     "errors": {
       "signup_body_invalid": "Email, password (min 6 chars) and name are required.",
       "login_body_invalid": "Email and password are required.",
