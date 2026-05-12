@@ -31,6 +31,21 @@ export {
 export { brainManager, type BrainStatus } from './manager.js';
 export { getPlatformContext } from './platform-context.js';
 export {
+  indexCode,
+  readSourceFile,
+  readRelevantFiles,
+  listIndexedFiles,
+  searchIndexedFiles,
+  getCodeOverview,
+  getRecentReads,
+  resolveSafePath,
+  REPO_ROOT,
+  type CodeIndexEntry,
+  type ReadFileResult,
+  type CodeOverview,
+  type IndexSummary,
+} from './agents/code-explorer.js';
+export {
   runGrowthEngineerCycle,
   readFunnelData,
   identifyDropOffPoint,

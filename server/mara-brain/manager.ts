@@ -153,6 +153,25 @@ class BrainManagerImpl {
       logger(`Initial learning failed: ${err}`, 'mara-brain');
     });
 
+    // Code visibility (Item 3): scan the repo's source files in the
+    // background so Mara's self-improvement phase can ground its
+    // hypotheses in actual code. Runs out-of-band — if it fails (e.g.
+    // file permissions in some hosting env), the brain continues
+    // normally and the rest of the cycle just doesn't get code context.
+    // Lazy import to keep the manager module's startup cost small.
+    void (async () => {
+      try {
+        const { indexCode } = await import('./agents/code-explorer.js');
+        const summary = await indexCode();
+        logger(
+          `code-explorer indexed ${summary.indexed}/${summary.scanned} files (skipped ${summary.skipped}) in ${summary.durationMs}ms`,
+          'mara-brain',
+        );
+      } catch (err) {
+        logger(`code-explorer index failed: ${(err as Error).message}`, 'mara-brain');
+      }
+    })();
+
     // First cycle after 30s (give the server time to boot and settle)
     const firstCycleDelay = 30 * 1000;
     this._nextRunAt = Date.now() + firstCycleDelay;

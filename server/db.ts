@@ -188,6 +188,41 @@ sqlite.exec(`
   );
   CREATE INDEX IF NOT EXISTS idx_mara_knowledge_conflicts_resolved
     ON mara_knowledge_conflicts(resolved, created_at DESC);
+
+  -- Code visibility (Item 3): index of repo source files so Mara can
+  -- reason about her own implementation. Populated by indexCode() on
+  -- boot and refreshed on demand. Only metadata lives in the index;
+  -- contents are read on-demand by code-explorer.ts.
+  CREATE TABLE IF NOT EXISTS mara_code_index (
+    path TEXT PRIMARY KEY,
+    size INTEGER NOT NULL,
+    mtime INTEGER NOT NULL,
+    sha256 TEXT NOT NULL,
+    lines INTEGER NOT NULL,
+    extension TEXT NOT NULL,
+    indexed_at INTEGER DEFAULT (unixepoch()) NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_mara_code_index_extension
+    ON mara_code_index(extension, mtime DESC);
+  CREATE INDEX IF NOT EXISTS idx_mara_code_index_mtime
+    ON mara_code_index(mtime DESC);
+
+  -- Code visibility audit log: every readFile() call writes a row so we
+  -- can answer "what has Mara been looking at?" without inferring it
+  -- from prompts or LLM outputs.
+  CREATE TABLE IF NOT EXISTS mara_code_reads (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    path TEXT NOT NULL,
+    accessed_by TEXT NOT NULL,
+    reason TEXT,
+    size INTEGER NOT NULL,
+    truncated INTEGER DEFAULT 0 NOT NULL,
+    accessed_at INTEGER DEFAULT (unixepoch()) NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_mara_code_reads_accessed_at
+    ON mara_code_reads(accessed_at DESC);
+  CREATE INDEX IF NOT EXISTS idx_mara_code_reads_path
+    ON mara_code_reads(path);
 `);
 
 export const db = drizzle(sqlite, { schema });

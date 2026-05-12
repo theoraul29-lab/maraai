@@ -92,6 +92,13 @@
       "when": 1778561400000,
       "tag": "0018_audit_p2",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1778567500000,
+      "tag": "0019_mara_code_visibility",
+      "breakpoints": true
     }
   ]
 }

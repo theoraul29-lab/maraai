@@ -103,6 +103,7 @@ jobs:
           npm run smoke:auth
           npm run smoke:admin-chat
           npm run smoke:mara-cli
+          npm run smoke:code-explorer
 
       - name: Print backend logs on failure
         if: failure()
