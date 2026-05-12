@@ -99,6 +99,7 @@ jobs:
           npm run smoke:runtime
           npm run smoke:credits
           npm run smoke:growth
+          npm run smoke:audit-p2
 
       - name: Print backend logs on failure
         if: failure()

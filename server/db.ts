@@ -161,6 +161,33 @@ sqlite.exec(`
     updated_by TEXT,
     created_at INTEGER DEFAULT (unixepoch()) NOT NULL
   );
+
+  -- Audit P2: cross-process advisory lock for the brain cycle. A single
+  -- row per lock name, with a TTL'd lease and a heartbeat column. Managed
+  -- exclusively by server/lib/singleton-lock.ts.
+  CREATE TABLE IF NOT EXISTS mara_singleton_locks (
+    name TEXT PRIMARY KEY,
+    holder TEXT NOT NULL,
+    acquired_at INTEGER NOT NULL,
+    expires_at INTEGER NOT NULL,
+    heartbeat_at INTEGER NOT NULL
+  );
+
+  -- Audit P2: knowledge conflict markers. Inserted by storeKnowledge()
+  -- when two rows in the same category disagree on a polarity pair.
+  CREATE TABLE IF NOT EXISTS mara_knowledge_conflicts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    knowledge_a_id INTEGER NOT NULL,
+    knowledge_b_id INTEGER NOT NULL,
+    reason TEXT NOT NULL,
+    category TEXT NOT NULL,
+    resolved INTEGER DEFAULT 0 NOT NULL,
+    resolved_by TEXT,
+    resolved_at INTEGER,
+    created_at INTEGER DEFAULT (unixepoch()) NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_mara_knowledge_conflicts_resolved
+    ON mara_knowledge_conflicts(resolved, created_at DESC);
 `);
 
 export const db = drizzle(sqlite, { schema });

@@ -527,6 +527,28 @@ export const maraCoreObjective = pgTable('mara_core_objective', {
     .notNull(),
 });
 
+// === MARA KNOWLEDGE CONFLICTS ===
+// Audit P2: when `storeKnowledge` detects two same-category rows whose
+// contents disagree on a polarity pair (e.g. "trading is risky" vs
+// "trading is safe"), it flags both by inserting a row here. Admin UI
+// can list these and resolve them (decide which to keep, merge, or
+// edit). Never blocks the write itself — the conflict marker is purely
+// observational so the brain keeps learning instead of stalling on the
+// first contradiction it sees.
+export const maraKnowledgeConflicts = pgTable('mara_knowledge_conflicts', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  knowledgeAId: integer('knowledge_a_id').notNull(),
+  knowledgeBId: integer('knowledge_b_id').notNull(),
+  reason: text('reason').notNull(), // e.g. "polarity:safe-vs-risky"
+  category: text('category').notNull(), // category of the conflicting rows
+  resolved: integer('resolved', { mode: 'boolean' }).default(false).notNull(),
+  resolvedBy: text('resolved_by'),
+  resolvedAt: integer('resolved_at', { mode: 'timestamp' }),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
 // === SCHEMAS ===
 export const insertVideoSchema = createInsertSchema(videos).omit({
   id: true,
