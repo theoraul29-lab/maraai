@@ -6,6 +6,7 @@ import { storage } from '../storage.js';
 import { db } from '../db.js';
 import { maraKnowledgeBase } from '../../shared/schema.js';
 import { sql, inArray, eq, like, desc } from 'drizzle-orm';
+import { flagConflictsForKnowledge } from './conflict-detector.js';
 
 export type KnowledgeCategory =
   | 'user_pattern'
@@ -102,7 +103,27 @@ export async function storeKnowledge(
       })
       .returning()
       .all();
-    return inserted[0].id;
+    const newId = inserted[0].id;
+
+    // Audit P2: scan the same-topic / same-category neighbours we already
+    // pulled and flag any polarity disagreement against the row we just
+    // wrote. Observational only — never throws, never blocks the write.
+    // We pass `existing` as the neighbour list because storeKnowledge has
+    // already filtered it down to ~20 rows topic-matched by LIKE; calling
+    // detectPolarityConflict on more rows would be wasted work.
+    try {
+      flagConflictsForKnowledge(
+        newId,
+        content,
+        category,
+        existing.map((r) => ({ id: r.id, content: r.content, category: r.category })),
+      );
+    } catch (err) {
+      // Conflict flagging is purely advisory; if SQLite errors out (e.g.
+      // table missing on an old DB), log and keep the insert.
+      console.warn('[KnowledgeBase] conflict detector failed:', err);
+    }
+    return newId;
   });
 }
 

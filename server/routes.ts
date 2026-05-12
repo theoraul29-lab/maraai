@@ -59,6 +59,11 @@ import {
 } from './mara-brain/index';
 import { learningRateLimiter } from './mara-brain/rate-limiter';
 import { getObjectiveRow, setObjective } from './mara-core/objective.js';
+import {
+  listUnresolvedConflicts,
+  resolveConflict,
+} from './mara-brain/conflict-detector.js';
+import { listSingletonLocks } from './lib/singleton-lock.js';
 import { chatRateLimit } from './rate-limit.js';
 import { users as usersTable } from '../shared/models/auth.js';
 import { registerMaraAIRoutes } from './maraai/routes.js';
@@ -546,6 +551,72 @@ export async function registerRoutes(
       const message = error instanceof Error ? error.message : 'Failed to save objective';
       console.error('[admin/mara/objective] PUT failed:', error);
       res.status(400).json({ error: message });
+    }
+  });
+
+  // === Audit P2: knowledge conflicts (admin only) ===
+  // Each row in mara_knowledge_conflicts pairs two same-category knowledge
+  // entries whose contents disagree on a polarity word (e.g. risky vs safe).
+  // Inserted by storeKnowledge() — observational, never blocks the write.
+  // GET returns unresolved conflicts; POST .../resolve marks one as resolved
+  // so it drops off the dashboard.
+  app.get('/api/admin/mara/knowledge/conflicts', requireAdmin, (req: any, res: any) => {
+    try {
+      const limitRaw = Number.parseInt(String(req.query?.limit ?? '50'), 10);
+      const limit = Number.isFinite(limitRaw)
+        ? Math.min(Math.max(limitRaw, 1), 200)
+        : 50;
+      const rows = listUnresolvedConflicts(limit);
+      res.json({ conflicts: rows, count: rows.length });
+    } catch (error) {
+      console.error('[admin/mara/knowledge/conflicts] GET failed:', error);
+      res.status(500).json({ error: 'Failed to list conflicts' });
+    }
+  });
+
+  app.post(
+    '/api/admin/mara/knowledge/conflicts/:id/resolve',
+    requireAdmin,
+    async (req: any, res: any) => {
+      try {
+        const id = Number.parseInt(String(req.params?.id), 10);
+        if (!Number.isInteger(id) || id <= 0) {
+          return res.status(400).json({ error: 'Invalid conflict id.' });
+        }
+        let resolvedBy = 'admin';
+        const userId: string | undefined = req.user?.uid;
+        if (userId) {
+          try {
+            const user = await storage.getUserById(userId);
+            resolvedBy = user?.email || userId;
+          } catch {
+            resolvedBy = userId;
+          }
+        }
+        const ok = resolveConflict(id, resolvedBy);
+        if (!ok) {
+          return res
+            .status(404)
+            .json({ error: 'Conflict not found or already resolved.' });
+        }
+        res.json({ ok: true, resolvedBy });
+      } catch (error) {
+        console.error('[admin/mara/knowledge/conflicts] resolve failed:', error);
+        res.status(500).json({ error: 'Failed to resolve conflict' });
+      }
+    },
+  );
+
+  // Diagnostic: list the cross-process advisory locks held in this DB.
+  // Helps operators confirm which Railway replica is the active brain
+  // orchestrator and when its lease expires.
+  app.get('/api/admin/mara/locks', requireAdmin, (_req: any, res: any) => {
+    try {
+      const rows = listSingletonLocks();
+      res.json({ locks: rows, count: rows.length });
+    } catch (error) {
+      console.error('[admin/mara/locks] GET failed:', error);
+      res.status(500).json({ error: 'Failed to list locks' });
     }
   });
 

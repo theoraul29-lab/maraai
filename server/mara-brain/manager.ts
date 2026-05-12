@@ -10,10 +10,14 @@
 import { storage } from '../storage.js';
 import { runBrainCycle, runInitialLearning } from './core.js';
 import { generateMarketingPost } from '../ai.js';
+import { SingletonLock } from '../lib/singleton-lock.js';
 
 export type BrainStatus = {
   enabled: boolean;
   running: boolean;
+  /** True if this instance booted but failed to take the brain_cycle
+   *  advisory lock — another replica is the active orchestrator. */
+  passive: boolean;
   startedAt: string | null;
   lastRunAt: string | null;
   lastDurationMs: number | null;
@@ -54,6 +58,12 @@ class BrainManagerImpl {
   private _selfPostTimer: NodeJS.Timeout | null = null;
   private _initialTimeout: NodeJS.Timeout | null = null;
   private _started = false;
+  // Cross-process advisory lock — prevents two instances (e.g. during a
+  // Railway rolling deploy) from running brain cycles in parallel against
+  // the same database. Lazily created in start() so unit tests can mock
+  // the DB before instantiation.
+  private _cycleLock: SingletonLock | null = null;
+  private _passive = false; // true if we lost the lock at boot
 
   get cycleIntervalMs(): number {
     return parseIntervalMs(process.env.BRAIN_CYCLE_INTERVAL_MS, DEFAULT_CYCLE_INTERVAL_MS);
@@ -100,6 +110,43 @@ class BrainManagerImpl {
       );
       return;
     }
+
+    // Cross-process advisory lock. TTL = 2.5x cycleIntervalMs so a healthy
+    // cycle's heartbeat keeps it owned even if a single cycle runs long,
+    // and a crashed holder is reclaimable within roughly one cycle.
+    const lockTtlMs = Math.max(60_000, Math.floor(this.cycleIntervalMs * 2.5));
+    this._cycleLock = new SingletonLock('brain_cycle', { ttlMs: lockTtlMs });
+    if (!this._cycleLock.acquire()) {
+      const existing = this._cycleLock.inspect();
+      const holderInfo = existing
+        ? `holder=${existing.holder}, expires_at=${new Date(existing.expires_at).toISOString()}`
+        : 'unknown';
+      logger(
+        `Brain cycle lock already held by another instance (${holderInfo}). ` +
+          'Running in passive mode (no scheduler, no manual triggers, no initial learning).',
+        'mara-scheduler',
+      );
+      this._passive = true;
+      return;
+    }
+    this._cycleLock.startHeartbeat();
+    logger(
+      `Acquired brain_cycle advisory lock (ttl=${Math.round(lockTtlMs / 1000)}s)`,
+      'mara-scheduler',
+    );
+
+    // Release the lock when the process is winding down so the next deploy
+    // can grab it immediately instead of waiting for the TTL to expire.
+    const releaseOnExit = () => {
+      try {
+        this._cycleLock?.release();
+      } catch {
+        // best-effort
+      }
+    };
+    process.once('SIGTERM', releaseOnExit);
+    process.once('SIGINT', releaseOnExit);
+    process.once('beforeExit', releaseOnExit);
 
     // Fire-and-forget bootstrap
     runInitialLearning().catch((err) => {
@@ -153,7 +200,21 @@ class BrainManagerImpl {
       clearInterval(this._selfPostTimer);
       this._selfPostTimer = null;
     }
+    if (this._cycleLock) {
+      try {
+        this._cycleLock.release();
+      } catch {
+        // best-effort
+      }
+      this._cycleLock = null;
+    }
+    this._passive = false;
     this._started = false;
+  }
+
+  /** True if this instance is running but did NOT win the advisory lock. */
+  get isPassive(): boolean {
+    return this._passive;
   }
 
   /** Current admin-facing status snapshot. */
@@ -165,6 +226,7 @@ class BrainManagerImpl {
     return {
       enabled: this.isEnabled,
       running: this._running,
+      passive: this._passive,
       startedAt: this._startedAt ? new Date(this._startedAt).toISOString() : null,
       lastRunAt: this._lastRunAt ? new Date(this._lastRunAt).toISOString() : null,
       lastDurationMs: this._lastDurationMs,
@@ -182,9 +244,14 @@ class BrainManagerImpl {
   /** Manually trigger a cycle. Returns the trigger outcome for the admin UI. */
   async triggerManual(): Promise<
     | { ok: true; started: true }
-    | { ok: false; reason: 'disabled' | 'running' | 'cooldown'; retryAfterMs?: number }
+    | {
+        ok: false;
+        reason: 'disabled' | 'running' | 'cooldown' | 'passive';
+        retryAfterMs?: number;
+      }
   > {
     if (!this.isEnabled) return { ok: false, reason: 'disabled' };
+    if (this._passive) return { ok: false, reason: 'passive' };
     if (this._running) return { ok: false, reason: 'running' };
 
     const now = Date.now();
@@ -208,6 +275,17 @@ class BrainManagerImpl {
   private async _scheduledCycle(logger: (msg: string, tag?: string) => void): Promise<void> {
     if (!this._started) return; // stop() called before this tick fired
     if (!this.isEnabled) return;
+    if (this._passive) return; // another replica owns the lock
+    // Heartbeat is best-effort; if we lose the lock mid-cycle the next
+    // _runCycleInternal call will be skipped and the new holder takes over.
+    if (this._cycleLock && !this._cycleLock.heartbeat()) {
+      logger(
+        'Lost brain_cycle advisory lock to another instance — switching to passive mode.',
+        'mara-scheduler',
+      );
+      this._passive = true;
+      return;
+    }
     // Anchor the next-run display to the tick time (now), not to the cycle's
     // completion time. setInterval fires at fixed cadence from start(), so the
     // true next fire is approx. now + cycleIntervalMs regardless of how long
