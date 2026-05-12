@@ -10,8 +10,10 @@ import { researchModuleTrends, researchCompetitors, generateResearchAgenda, batc
 import { generateGrowthSuggestions, identifyWeakModules } from './agents/platform-analyzer.js';
 import { runAllModuleAnalyzers } from './agents/module-analyzers.js';
 import { runGrowthEngineerCycle } from './agents/growth-engineer.js';
-import { getKnowledgeStats, storeKnowledge, learnFromText } from './knowledge-base.js';
-import { readNextLibraryBook, getLibraryProgress } from './library.js';
+import { getKnowledgeStats, storeKnowledge, learnFromText, searchKnowledge } from './knowledge-base.js';
+import { readNextLibraryBook, getLibraryProgress, bootstrapReadBookIds } from './library.js';
+import { getObjective } from '../mara-core/objective.js';
+import { DEFAULT_OBJECTIVE, type ObjectiveFunction } from '../mara-core/types.js';
 
 /** Wrap a promise with a timeout (ms). Rejects with an error if it takes too long. */
 function withTimeout<T>(promise: Promise<T>, ms: number, label = 'operation'): Promise<T> {
@@ -78,22 +80,101 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
   let knowledgeLearned = 0;
   let reflectionId: number | null = null;
 
+  // Read the ObjectiveFunction ONCE for this cycle. Re-used by every phase
+  // below; never called inside a loop. If the load fails we fall back to
+  // DEFAULT_OBJECTIVE so a misconfigured DB never blocks autonomous work.
+  let objective: ObjectiveFunction;
+  try {
+    objective = getObjective();
+  } catch (err) {
+    console.warn('[MaraBrain] getObjective() failed, using DEFAULT_OBJECTIVE:', err);
+    objective = DEFAULT_OBJECTIVE;
+  }
+
+  // Pre-compute cycle-mode flags derived from the objective. Each flag is
+  // applied at the call site so the rest of the cycle reads top-to-bottom
+  // even when individual phases are skipped/promoted/extended.
+  const shortTermMode = objective.horizonDays < 30;
+  const revenueMode = objective.primary === 'revenue';
+  const retentionMode = objective.primary === 'user_retention';
+  const fastMode = objective.tradeoffs.growthSpeedVsQuality > 0.7;
+
   try {
     // === PHASE 0: Library Reading ===
-    console.log('[MaraBrain] Phase 0: Reading from library...');
+    // Short-term mode skips deep reading — the brain prefers quick wins over
+    // foundational learning when horizonDays < 30.
+    if (shortTermMode) {
+      research.push(
+        `⏩ Short-term mode (horizonDays=${objective.horizonDays}d): skipped library + business strategy`,
+      );
+    } else {
+      console.log('[MaraBrain] Phase 0: Reading from library...');
+      try {
+        await withTimeout((async () => {
+          const bookResult = await readNextLibraryBook();
+          if (bookResult) {
+            research.push(`📚 Read "${bookResult.title}": ${bookResult.totalIdeas} ideas extracted`);
+            knowledgeLearned += bookResult.savedKnowledgeIds.length;
+          } else {
+            const progress = await getLibraryProgress();
+            research.push(`📚 Library complete: ${progress.read}/${progress.total} books read`);
+          }
+        })(), PHASE_TIMEOUT, 'Phase 0: Library');
+      } catch (err) {
+        console.error('[MaraBrain] Library reading failed:', err);
+      }
+    }
+
+    // === PHASE 0.5: Knowledge gap detection ===
+    // For each MaraAI module, count how many knowledge entries reference it.
+    // If a module is starved (< 10 entries), enqueue a high-priority learning
+    // task so Mara fills the gap in the next cycle. Also bootstraps a
+    // critical platform-overview task if the whole KB is < 50 entries.
+    // Wrapped in withTimeout + try/catch so this NEVER blocks the rest of
+    // the cycle even if the queue insert misbehaves.
+    console.log('[MaraBrain] Phase 0.5: Knowledge gap detection...');
     try {
       await withTimeout((async () => {
-        const bookResult = await readNextLibraryBook();
-        if (bookResult) {
-          research.push(`📚 Read "${bookResult.title}": ${bookResult.totalIdeas} ideas extracted`);
-          knowledgeLearned += bookResult.savedKnowledgeIds.length;
-        } else {
-          const progress = await getLibraryProgress();
-          research.push(`📚 Library complete: ${progress.read}/${progress.total} books read`);
+        const modules = ['trading', 'creator', 'writers', 'reels', 'vip', 'chat'];
+        const counts: Array<{ module: string; count: number }> = [];
+        for (const mod of modules) {
+          // searchKnowledge does a topic+content text search — sufficient as a
+          // best-effort gap signal without adding a dedicated index column.
+          const matches = await searchKnowledge(mod, 200);
+          counts.push({ module: mod, count: matches.length });
         }
-      })(), PHASE_TIMEOUT, 'Phase 0: Library');
+        counts.sort((a, b) => a.count - b.count);
+        const weakest = counts[0];
+        if (weakest && weakest.count < 10) {
+          await storage.createLearningTask({
+            topic: `${weakest.module} module — strategii și best practices pentru hellomara.net`,
+            reason: `Knowledge gap detected: only ${weakest.count} entries for this module`,
+            priority: 'high',
+            source: 'brain_cycle',
+            status: 'pending',
+          });
+          research.push(
+            `🔍 Knowledge gap: "${weakest.module}" has only ${weakest.count} entries — added to learning queue`,
+          );
+        }
+
+        const stats = await getKnowledgeStats();
+        if (stats.total < 50) {
+          await storage.createLearningTask({
+            topic:
+              'hellomara.net platform overview — toate modulele, valoare oferită, audiență țintă, diferențiatori față de competitori',
+            reason: `Bootstrap: only ${stats.total} total knowledge entries`,
+            priority: 'critical',
+            source: 'brain_cycle',
+            status: 'pending',
+          });
+          research.push(
+            `🆕 Bootstrap task added: total knowledge entries=${stats.total} (< 50)`,
+          );
+        }
+      })(), PHASE_TIMEOUT, 'Phase 0.5: Knowledge gaps');
     } catch (err) {
-      console.error('[MaraBrain] Library reading failed:', err);
+      console.error('[MaraBrain] Phase 0.5 (knowledge gaps) failed:', err);
     }
 
     // === PHASE 1: Process Learning Queue ===
@@ -155,20 +236,88 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
     }
 
     // === PHASE 2: Autonomous Research ===
-    console.log('[MaraBrain] Phase 2: Autonomous research...');
-    try {
-      await withTimeout((async () => {
-        const agenda = await generateResearchAgenda();
-        if (agenda.length > 0) {
-          const results = await batchResearch(agenda.slice(0, 3));
-          for (const r of results) {
-            research.push(`Researched: ${r.query}`);
-            knowledgeLearned += r.knowledgeIds.length;
+    // Extracted into a closure so revenue mode can promote Phase 4 ahead
+    // of Phase 2 without copy-pasting the body.
+    const runAutonomousResearchPhase = async () => {
+      console.log('[MaraBrain] Phase 2: Autonomous research...');
+      try {
+        await withTimeout((async () => {
+          const agenda = await generateResearchAgenda();
+          if (agenda.length > 0) {
+            const results = await batchResearch(agenda.slice(0, 3));
+            for (const r of results) {
+              research.push(`Researched: ${r.query}`);
+              knowledgeLearned += r.knowledgeIds.length;
+            }
           }
-        }
-      })(), PHASE_TIMEOUT, 'Phase 2: Autonomous research');
-    } catch (err) {
-      console.error('[MaraBrain] Phase 2 failed:', err);
+        })(), PHASE_TIMEOUT, 'Phase 2: Autonomous research');
+      } catch (err) {
+        console.error('[MaraBrain] Phase 2 failed:', err);
+      }
+    };
+
+    // === PHASE 4: Growth Engineer Cycle ===
+    // Replaces the legacy generic platform analysis. Runs the disciplined
+    // 5-step Growth Engineer loop:
+    //   1. read funnel  → 2. identify worst drop-off
+    //   3. propose ONE experiment (ICE-scored, framework-grounded, stored in
+    //      mara_growth_experiments with status='proposed')
+    //   4. wait for admin decision (out-of-band, via /api/admin/mara/experiments/:id/...)
+    //   5. measure due experiments and write learnings back to knowledge base
+    const runGrowthEngineerPhase = async () => {
+      console.log('[MaraBrain] Phase 4: Growth Engineer cycle...');
+      try {
+        await withTimeout((async () => {
+          const cycle = await runGrowthEngineerCycle();
+          research.push(
+            `📊 Funnel (${cycle.funnel.windowDays}d): ${cycle.funnel.stages
+              .map((s) => `${s.stage}=${s.count}`)
+              .join(', ')}`,
+          );
+          if (cycle.skipReason) {
+            research.push(`⏭️  Growth proposal skipped — ${cycle.skipReason}`);
+          }
+          if (cycle.dropOff) {
+            research.push(
+              `🔻 Worst drop-off: ${cycle.dropOff.stage} (${(cycle.dropOff.dropOffRate * 100).toFixed(0)}%, ${cycle.dropOff.usersAffectedInWindow} users)`,
+            );
+          }
+          if (cycle.proposal) {
+            productIdeas.push(
+              `[GROWTH#${cycle.proposal.experimentId}] (${cycle.proposal.framework}, ICE=${cycle.proposal.ice.score.toFixed(1)}, expected ${(cycle.proposal.expectedImpactPct * 100).toFixed(0)}%) ${cycle.proposal.hypothesis}`,
+            );
+          }
+          if (cycle.secondaryProposals) {
+            for (const p of cycle.secondaryProposals) {
+              productIdeas.push(
+                `[GROWTH#${p.experimentId}] 🔬 (${p.framework}, ICE=${p.ice.score.toFixed(1)}, expected ${(p.expectedImpactPct * 100).toFixed(0)}%) ${p.hypothesis}`,
+              );
+            }
+          }
+          for (const m of cycle.measured) {
+            if (m.status === 'measured') {
+              research.push(
+                `📏 Experiment #${m.experimentId}: ${m.succeeded ? '✅' : '❌'} ${m.learnings ?? ''}`,
+              );
+              if (m.succeeded) knowledgeLearned += 1;
+            }
+          }
+        })(), PHASE_TIMEOUT, 'Phase 4: Growth Engineer cycle');
+      } catch (err) {
+        console.error('[MaraBrain] Phase 4 (Growth Engineer) failed:', err);
+      }
+    };
+
+    // Revenue mode: promote Growth Engineer to run BEFORE Autonomous Research.
+    // Rationale: when revenue is the primary metric, prefer adding to the
+    // experiment funnel ahead of any further open-ended research.
+    if (revenueMode) {
+      research.push(`💰 Revenue mode: Growth Engineer promoted to Phase 2 slot`);
+      await runGrowthEngineerPhase();
+      await runAutonomousResearchPhase();
+    } else {
+      await runAutonomousResearchPhase();
+      // Phase 4 runs after Phase 3 (module trend research) below.
     }
 
     // === PHASE 3: Module Trend Research ===
@@ -194,47 +343,9 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
       console.error('[MaraBrain] Phase 3 failed:', err);
     }
 
-    // === PHASE 4: Growth Engineer Cycle ===
-    // Replaces the legacy generic platform analysis. Runs the disciplined
-    // 5-step Growth Engineer loop:
-    //   1. read funnel  → 2. identify worst drop-off
-    //   3. propose ONE experiment (ICE-scored, framework-grounded, stored in
-    //      mara_growth_experiments with status='proposed')
-    //   4. wait for admin decision (out-of-band, via /api/admin/mara/experiments/:id/...)
-    //   5. measure due experiments and write learnings back to knowledge base
-    console.log('[MaraBrain] Phase 4: Growth Engineer cycle...');
-    try {
-      await withTimeout((async () => {
-        const cycle = await runGrowthEngineerCycle();
-        research.push(
-          `📊 Funnel (${cycle.funnel.windowDays}d): ${cycle.funnel.stages
-            .map((s) => `${s.stage}=${s.count}`)
-            .join(', ')}`,
-        );
-        if (cycle.skipReason) {
-          research.push(`⏭️  Growth proposal skipped — ${cycle.skipReason}`);
-        }
-        if (cycle.dropOff) {
-          research.push(
-            `🔻 Worst drop-off: ${cycle.dropOff.stage} (${(cycle.dropOff.dropOffRate * 100).toFixed(0)}%, ${cycle.dropOff.usersAffectedInWindow} users)`,
-          );
-        }
-        if (cycle.proposal) {
-          productIdeas.push(
-            `[GROWTH#${cycle.proposal.experimentId}] (${cycle.proposal.framework}, ICE=${cycle.proposal.ice.score.toFixed(1)}, expected ${(cycle.proposal.expectedImpactPct * 100).toFixed(0)}%) ${cycle.proposal.hypothesis}`,
-          );
-        }
-        for (const m of cycle.measured) {
-          if (m.status === 'measured') {
-            research.push(
-              `📏 Experiment #${m.experimentId}: ${m.succeeded ? '✅' : '❌'} ${m.learnings ?? ''}`,
-            );
-            if (m.succeeded) knowledgeLearned += 1;
-          }
-        }
-      })(), PHASE_TIMEOUT, 'Phase 4: Growth Engineer cycle');
-    } catch (err) {
-      console.error('[MaraBrain] Phase 4 (Growth Engineer) failed:', err);
+    // In non-revenue modes Phase 4 runs here, at its conventional spot.
+    if (!revenueMode) {
+      await runGrowthEngineerPhase();
     }
 
     // === PHASE 4.5: Per-Module Growth Analysis ===
@@ -291,33 +402,46 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
     }
 
     // === PHASE 7: Validate Ideas with LLM ===
-    console.log('[MaraBrain] Phase 7: Validating ideas...');
-    try {
-      await withTimeout((async () => {
-        if (productIdeas.length > 0) {
-          const validated = await validateIdeas(productIdeas.slice(0, 5));
-          for (const v of validated) {
-            if (v.score >= 7) {
-              research.push(`✅ Validated idea (${v.score}/10): ${v.original}`);
+    // Fast mode skips validation — when growthSpeedVsQuality > 0.7 we
+    // accept lower-confidence proposals to ship faster.
+    if (fastMode) {
+      research.push(
+        `⚡ Fast mode: Phase 7 skipped — growthSpeedVsQuality=${objective.tradeoffs.growthSpeedVsQuality.toFixed(2)}`,
+      );
+    } else {
+      console.log('[MaraBrain] Phase 7: Validating ideas...');
+      try {
+        await withTimeout((async () => {
+          if (productIdeas.length > 0) {
+            const validated = await validateIdeas(productIdeas.slice(0, 5));
+            for (const v of validated) {
+              if (v.score >= 7) {
+                research.push(`✅ Validated idea (${v.score}/10): ${v.original}`);
+              }
             }
           }
-        }
-      })(), PHASE_TIMEOUT, 'Phase 7: Validate ideas');
-    } catch (err) {
-      console.error('[MaraBrain] Phase 7 failed:', err);
+        })(), PHASE_TIMEOUT, 'Phase 7: Validate ideas');
+      } catch (err) {
+        console.error('[MaraBrain] Phase 7 failed:', err);
+      }
     }
 
     // === PHASE 8: Business Strategy Learning ===
-    console.log('[MaraBrain] Phase 8: Business strategy learning...');
-    try {
-      await withTimeout((async () => {
-        const knowledgeStats = await getKnowledgeStats();
-        const platformContext = `Current knowledge: ${JSON.stringify(knowledgeStats)}. Users: ${(await storage.getAllUsers()).length}. Total content: ${(await storage.getVideos()).length} videos.`;
-        const businessLearning = await learnBusinessStrategy(platformContext);
-        knowledgeLearned += businessLearning.savedKnowledgeIds.length;
-      })(), PHASE_TIMEOUT, 'Phase 8: Business strategy');
-    } catch (err) {
-      console.error('[MaraBrain] Phase 8 failed:', err);
+    // Short-term mode also skips this — same horizon-based reasoning as Phase 0.
+    if (shortTermMode) {
+      // Banner already pushed when Phase 0 was skipped; no second message.
+    } else {
+      console.log('[MaraBrain] Phase 8: Business strategy learning...');
+      try {
+        await withTimeout((async () => {
+          const knowledgeStats = await getKnowledgeStats();
+          const platformContext = `Current knowledge: ${JSON.stringify(knowledgeStats)}. Users: ${(await storage.getAllUsers()).length}. Total content: ${(await storage.getVideos()).length} videos.`;
+          const businessLearning = await learnBusinessStrategy(platformContext);
+          knowledgeLearned += businessLearning.savedKnowledgeIds.length;
+        })(), PHASE_TIMEOUT, 'Phase 8: Business strategy');
+      } catch (err) {
+        console.error('[MaraBrain] Phase 8 failed:', err);
+      }
     }
 
     // === PHASE 9: Self-Improvement ===
@@ -326,7 +450,13 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
     // Grounding the self-improvement query in real code prevents the
     // generic "be more empathetic" non-answers we used to get when the
     // LLM had nothing concrete to look at.
-    console.log('[MaraBrain] Phase 9: Self-improvement...');
+    //
+    // Retention mode: double the per-phase timeout so Mara has more time
+    // to deeply analyse user chat history when retention is the north star.
+    const phase9Timeout = retentionMode ? PHASE_TIMEOUT * 2 : PHASE_TIMEOUT;
+    console.log(
+      `[MaraBrain] Phase 9: Self-improvement... (timeout=${phase9Timeout / 1000}s${retentionMode ? ', retention mode doubled' : ''})`,
+    );
     try {
       await withTimeout((async () => {
         const recentMessages = await storage.getChatMessages();
@@ -369,7 +499,7 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
         } catch {
           // overview is observability-only; ignore failures
         }
-      })(), PHASE_TIMEOUT, 'Phase 9: Self-improvement');
+      })(), phase9Timeout, 'Phase 9: Self-improvement');
     } catch (err) {
       console.error('[MaraBrain] Phase 9 failed:', err);
     }
@@ -393,6 +523,12 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
     console.log(
       `[MaraBrain] 🧠 Brain cycle complete in ${elapsed}s. Learned ${knowledgeLearned} pieces of knowledge.`,
+    );
+
+    // Footer line so a brain-log reader can see at a glance which ObjectiveFunction
+    // settings shaped this cycle.
+    research.push(
+      `🎯 Objective: primary=${objective.primary}, horizon=${objective.horizonDays}d, exploration=${objective.tradeoffs.explorationVsExploitation.toFixed(2)}`,
     );
 
     return {
@@ -431,6 +567,14 @@ export async function runInitialLearning(): Promise<void> {
 }
 
 async function _runInitialLearningInner(): Promise<void> {
+  // Warm the library read-cache from DB before any cycle could fire — keeps
+  // book progress consistent across server restarts (Etapa 3 Task 5 final check).
+  try {
+    await bootstrapReadBookIds();
+  } catch (err) {
+    console.warn('[MaraBrain] bootstrapReadBookIds failed:', err);
+  }
+
   const stats = await getKnowledgeStats();
   if (stats.total > 0) {
     console.log(`[MaraBrain] Already have ${stats.total} knowledge entries. Skipping bootstrap.`);
