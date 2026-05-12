@@ -539,12 +539,14 @@
   <script>
     // === Stars ===
     (function generateStars() {
-      const stars = document.getElementById('stars');
-      const count = window.innerWidth < 700 ? 50 : 120;
-      for (let i = 0; i < count; i++) {
-        const s = document.createElement('div');
+      var stars = document.getElementById('stars');
+      if (!stars) return;
+      stars.innerHTML = '';
+      var count = window.innerWidth < 700 ? 50 : 120;
+      for (var i = 0; i < count; i++) {
+        var s = document.createElement('div');
         s.className = 'star';
-        const size = Math.random() * 2 + 0.5;
+        var size = Math.random() * 2 + 0.5;
         s.style.width = size + 'px';
         s.style.height = size + 'px';
         s.style.top = Math.random() * 100 + '%';
@@ -555,145 +557,192 @@
     })();
 
     // === Cursor ===
-    (function () {
-      const cursor = document.getElementById('cursor');
+    (function setupCursor() {
+      var cursor = document.getElementById('cursor');
       if (!cursor) return;
-      document.addEventListener('mousemove', (e) => {
+
+      document.addEventListener('mousemove', function (e) {
         cursor.style.left = e.clientX + 'px';
         cursor.style.top = e.clientY + 'px';
       });
-      document.querySelectorAll('a, button, .mod-card').forEach((el) => {
-        el.addEventListener('mouseenter', () => cursor.classList.add('hover'));
-        el.addEventListener('mouseleave', () => cursor.classList.remove('hover'));
+
+      var hoverEls = document.querySelectorAll('a, button, .mod-card');
+      hoverEls.forEach(function (el) {
+        el.addEventListener('mouseenter', function () { cursor.classList.add('hover'); });
+        el.addEventListener('mouseleave', function () { cursor.classList.remove('hover'); });
       });
     })();
 
     // === Countdown ===
-    const LAUNCH_DATE = new Date('2026-06-01T00:00:00Z');
-    const REDIRECT_URL = 'https://hellomara.net';
+    var LAUNCH_TIMESTAMP = Date.UTC(2026, 5, 1, 0, 0, 0);
+    var TOTAL_DURATION = 20 * 24 * 60 * 60 * 1000;
+    var REDIRECT_URL = 'https://hellomara.net';
+    var launched = false;
+    var redirectTimerId = null;
+    var countdownIntervalId = null;
 
-    function pad(n) { return String(n).padStart(2, '0'); }
+    function pad2(n) {
+      return n < 10 ? '0' + n : '' + n;
+    }
 
-    function setVal(id, value) {
-      const el = document.getElementById(id);
-      if (el) el.textContent = value;
+    function setTextById(id, value) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = value;
+    }
+
+    function setTextBySelector(selector, value) {
+      var el = document.querySelector(selector);
+      if (!el) return;
+      el.textContent = value;
     }
 
     function setAndTick(id, value) {
-      const el = document.getElementById(id);
+      var el = document.getElementById(id);
       if (!el) return;
-      if (el.textContent !== value) {
-        el.textContent = value;
-        el.classList.add('tick');
-        setTimeout(() => el.classList.remove('tick'), 150);
-      }
+      if (el.textContent === value) return;
+
+      el.textContent = value;
+      el.classList.remove('tick');
+      void el.offsetWidth;
+      el.classList.add('tick');
+      setTimeout(function () { el.classList.remove('tick'); }, 150);
     }
 
-    function updateCountdown() {
-      const now = new Date();
-      const diff = LAUNCH_DATE - now;
+    function setCountdownValues(days, hours, mins, secs, withTick) {
+      var setter = withTick ? setAndTick : setTextById;
+      var d = pad2(days);
+      var h = pad2(hours);
+      var m = pad2(mins);
+      var s = pad2(secs);
+
+      setter('lbDays', d);
+      setter('lbHours', h);
+      setter('lbMins', m);
+      setter('lbSecs', s);
+      setter('hcDays', d);
+      setter('hcHours', h);
+      setter('hcMins', m);
+      setter('hcSecs', s);
+    }
+
+    function scheduleRedirectOnce() {
+      if (redirectTimerId !== null) return;
+      redirectTimerId = setTimeout(function () {
+        window.location.href = REDIRECT_URL;
+      }, 3000);
+    }
+
+    function applyLaunchState() {
+      if (launched) return;
+      launched = true;
+
+      setCountdownValues(0, 0, 0, 0, false);
+      setTextBySelector('.lb-text', '🚀 WE ARE LIVE');
+      setTextBySelector('.hc-label', 'hellomara.net is live!');
+
+      var fill = document.getElementById('lpFill');
+      if (fill) fill.style.width = '100%';
+
+      setTextById('lpDaysLeft', '0');
+      document.title = 'Live — hellomara.net';
+
+      scheduleRedirectOnce();
+    }
+
+    function tick() {
+      var now = Date.now();
+      var diff = LAUNCH_TIMESTAMP - now;
 
       if (diff <= 0) {
-        setVal('lbDays', '00');
-        setVal('lbHours', '00');
-        setVal('lbMins', '00');
-        setVal('lbSecs', '00');
-        setVal('hcDays', '00');
-        setVal('hcHours', '00');
-        setVal('hcMins', '00');
-        setVal('hcSecs', '00');
-
-        const lbText = document.querySelector('.lb-text');
-        if (lbText) lbText.textContent = '🚀 WE ARE LIVE';
-
-        const hcLabel = document.querySelector('.hc-label');
-        if (hcLabel) hcLabel.textContent = 'hellomara.net is live!';
-
-        setTimeout(() => { window.location.href = REDIRECT_URL; }, 3000);
+        applyLaunchState();
+        if (countdownIntervalId !== null) {
+          clearInterval(countdownIntervalId);
+          countdownIntervalId = null;
+        }
         return;
       }
 
-      const days = Math.floor(diff / 86400000);
-      const hours = Math.floor((diff % 86400000) / 3600000);
-      const mins = Math.floor((diff % 3600000) / 60000);
-      const secs = Math.floor((diff % 60000) / 1000);
+      var totalSec = Math.floor(diff / 1000);
+      var days = Math.floor(totalSec / 86400);
+      var hours = Math.floor((totalSec % 86400) / 3600);
+      var mins = Math.floor((totalSec % 3600) / 60);
+      var secs = totalSec % 60;
 
-      setAndTick('lbDays', pad(days));
-      setAndTick('lbHours', pad(hours));
-      setAndTick('lbMins', pad(mins));
-      setAndTick('lbSecs', pad(secs));
-      setAndTick('hcDays', pad(days));
-      setAndTick('hcHours', pad(hours));
-      setAndTick('hcMins', pad(mins));
-      setAndTick('hcSecs', pad(secs));
+      setCountdownValues(days, hours, mins, secs, true);
 
-      // Progress bar (20-day window before launch)
-      const total = 20 * 24 * 60 * 60 * 1000;
-      const elapsed = total - diff;
-      const pct = Math.min(100, Math.max(0, (elapsed / total) * 100));
-      const fill = document.getElementById('lpFill');
+      var elapsed = TOTAL_DURATION - diff;
+      var pct = Math.min(100, Math.max(0, (elapsed / TOTAL_DURATION) * 100));
+      var fill = document.getElementById('lpFill');
       if (fill) fill.style.width = pct + '%';
 
-      const dLeft = document.getElementById('lpDaysLeft');
-      if (dLeft) dLeft.textContent = pad(days);
-
-      document.title = pad(days) + 'd ' + pad(hours) + 'h — hellomara.net';
+      setTextById('lpDaysLeft', '' + days);
+      document.title = pad2(days) + 'd ' + pad2(hours) + 'h — hellomara.net';
     }
 
-    updateCountdown();
-    setInterval(updateCountdown, 1000);
+    tick();
+    countdownIntervalId = setInterval(tick, 1000);
 
-    // === Waitlist form — POSTs to our own /api/waitlist on Railway ===
-    // The endpoint lives on the same origin (hellomara.net) so no CORS
-    // config is needed. The endpoint is idempotent: duplicate emails
-    // return {ok:true} silently so the user sees a success state and
-    // never learns whether they already signed up.
-    document.getElementById('waitlistForm')?.addEventListener('submit', async function (e) {
-      e.preventDefault();
-      const btn = this.querySelector('.wl-btn');
-      const email = document.getElementById('wlEmail');
+    // === Waitlist form ===
+    var waitlistForm = document.getElementById('waitlistForm');
+    if (waitlistForm) {
+      waitlistForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
 
-      btn.textContent = '...';
-      btn.disabled = true;
+        var btn = this.querySelector('.wl-btn');
+        var emailInput = document.getElementById('wlEmail');
+        if (!btn || !emailInput) return;
 
-      const payload = {
-        email: email.value.trim(),
-        // Honeypot — real users leave this empty; bots fill it.
-        website: this.querySelector('input[name="website"]')?.value || '',
-        source: 'landing',
-        referrer: document.referrer || null,
-      };
+        var email = (emailInput.value || '').trim();
+        var emailIsValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        if (!emailIsValid) {
+          emailInput.style.borderColor = 'rgba(236,72,153,0.8)';
+          setTimeout(function () { emailInput.style.borderColor = ''; }, 1500);
+          return;
+        }
 
-      let ok = false;
-      try {
-        const res = await fetch('/api/waitlist', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-        ok = res.ok;
-      } catch {
-        ok = false;
-      }
+        btn.textContent = '...';
+        btn.disabled = true;
 
-      if (ok) {
-        btn.textContent = "✓ You're in!";
-        btn.style.boxShadow = '0 0 30px rgba(46,204,113,0.5)';
-        email.value = '';
-        email.placeholder = 'Welcome to hellomara 🌱';
-      } else {
-        btn.textContent = 'Try again';
-        btn.style.background = 'rgba(236,72,153,0.6)';
-      }
+        var websiteInput = this.querySelector('input[name="website"]');
+        var payload = {
+          email: email,
+          website: websiteInput ? websiteInput.value : '',
+          source: 'landing',
+          referrer: document.referrer || null,
+        };
 
-      setTimeout(() => {
-        btn.textContent = 'Join free →';
-        btn.style.background = '';
-        btn.style.boxShadow = '';
-        btn.disabled = false;
-        email.placeholder = 'your@email.com';
-      }, 4000);
-    });
+        var ok = false;
+        try {
+          var res = await fetch('/api/waitlist', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          ok = res.ok || res.status === 409;
+        } catch (err) {
+          ok = false;
+        }
+
+        if (ok) {
+          btn.textContent = "✓ You're in!";
+          btn.style.boxShadow = '0 0 30px rgba(46,204,113,0.5)';
+          emailInput.value = '';
+          emailInput.placeholder = 'Welcome to hellomara 🌱';
+        } else {
+          btn.textContent = 'Try again';
+          btn.style.background = 'rgba(236,72,153,0.6)';
+        }
+
+        setTimeout(function () {
+          btn.textContent = 'Join free →';
+          btn.style.background = '';
+          btn.style.boxShadow = '';
+          btn.disabled = false;
+          emailInput.placeholder = 'your@email.com';
+        }, 4000);
+      });
+    }
   </script>
 
   <!--
