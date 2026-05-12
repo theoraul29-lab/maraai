@@ -604,9 +604,27 @@
 
       el.textContent = value;
       el.classList.remove('tick');
+      // Without a forced reflow, removing/re-adding 'tick' in one frame won't retrigger CSS animation.
       void el.offsetWidth;
       el.classList.add('tick');
       setTimeout(function () { el.classList.remove('tick'); }, 150);
+    }
+
+    function isValidEmail(emailInput, email) {
+      if (!emailInput.checkValidity()) return false;
+      if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) return false;
+
+      var parts = email.split('@');
+      if (parts.length !== 2) return false;
+      var local = parts[0];
+      var domain = parts[1];
+
+      if (!local || !domain) return false;
+      if (local.indexOf('..') !== -1 || domain.indexOf('..') !== -1) return false;
+      if (local.charAt(0) === '.' || local.charAt(local.length - 1) === '.') return false;
+      if (domain.charAt(0) === '.' || domain.charAt(domain.length - 1) === '.') return false;
+
+      return true;
     }
 
     function setCountdownValues(days, hours, mins, secs, withTick) {
@@ -686,7 +704,7 @@
     // === Waitlist form ===
     var waitlistForm = document.getElementById('waitlistForm');
     if (waitlistForm) {
-      waitlistForm.addEventListener('submit', async function (e) {
+      waitlistForm.addEventListener('submit', function (e) {
         e.preventDefault();
 
         var btn = this.querySelector('.wl-btn');
@@ -694,12 +712,18 @@
         if (!btn || !emailInput) return;
 
         var email = (emailInput.value || '').trim();
-        var emailIsValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        var emailIsValid = isValidEmail(emailInput, email);
         if (!emailIsValid) {
+          emailInput.setCustomValidity('Please enter a valid email address.');
+          emailInput.reportValidity();
           emailInput.style.borderColor = 'rgba(236,72,153,0.8)';
-          setTimeout(function () { emailInput.style.borderColor = ''; }, 1500);
+          setTimeout(function () {
+            emailInput.style.borderColor = '';
+            emailInput.setCustomValidity('');
+          }, 1500);
           return;
         }
+        emailInput.setCustomValidity('');
 
         btn.textContent = '...';
         btn.disabled = true;
@@ -712,35 +736,38 @@
           referrer: document.referrer || null,
         };
 
-        var ok = false;
-        try {
-          var res = await fetch('/api/waitlist', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
+        fetch('/api/waitlist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+          .then(function (res) {
+            // Waitlist signup is intentionally idempotent; server can return 409 for duplicates.
+            // We treat that as success so users don't see a confusing "error" for re-submission.
+            return res.ok || res.status === 409;
+          })
+          .catch(function () {
+            return false;
+          })
+          .then(function (ok) {
+            if (ok) {
+              btn.textContent = "✓ You're in!";
+              btn.style.boxShadow = '0 0 30px rgba(46,204,113,0.5)';
+              emailInput.value = '';
+              emailInput.placeholder = 'Welcome to hellomara 🌱';
+            } else {
+              btn.textContent = 'Try again';
+              btn.style.background = 'rgba(236,72,153,0.6)';
+            }
+
+            setTimeout(function () {
+              btn.textContent = 'Join free →';
+              btn.style.background = '';
+              btn.style.boxShadow = '';
+              btn.disabled = false;
+              emailInput.placeholder = 'your@email.com';
+            }, 4000);
           });
-          ok = res.ok || res.status === 409;
-        } catch (err) {
-          ok = false;
-        }
-
-        if (ok) {
-          btn.textContent = "✓ You're in!";
-          btn.style.boxShadow = '0 0 30px rgba(46,204,113,0.5)';
-          emailInput.value = '';
-          emailInput.placeholder = 'Welcome to hellomara 🌱';
-        } else {
-          btn.textContent = 'Try again';
-          btn.style.background = 'rgba(236,72,153,0.6)';
-        }
-
-        setTimeout(function () {
-          btn.textContent = 'Join free →';
-          btn.style.background = '';
-          btn.style.boxShadow = '';
-          btn.disabled = false;
-          emailInput.placeholder = 'your@email.com';
-        }, 4000);
       });
     }
   </script>
