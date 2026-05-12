@@ -175,7 +175,10 @@ export async function getMaraResponse(
 	// already treats it as a normal message bubble.
 	let responseText: string;
 	try {
-		responseText = await llmChat(conversationMessages, 0.95);
+		responseText = await llmChat(conversationMessages, {
+			temperature: 0.95,
+			source: 'user_chat',
+		});
 	} catch (err) {
 		logError(err, { scope: 'getMaraResponse' });
 		return {
@@ -213,6 +216,7 @@ export async function generateImprovementIdeas(context: string): Promise<string[
 		const text = (
 			await llmGenerate(
 				`Give 3 concise improvement ideas for this AI system context: ${context}. Return a JSON array of strings.`,
+				{ source: 'admin.improvement-ideas' },
 			)
 		).trim();
 		const json = text.match(/\[.*\]/s)?.[0];
@@ -232,6 +236,7 @@ export async function generateMarketingPost(topic?: string): Promise<string> {
 	try {
 		const text = await llmGenerate(
 			`Write a short, engaging social media post about: ${postTopic}. Under 280 characters.`,
+			{ source: 'admin.marketing-post' },
 		);
 		return text.trim();
 	} catch {

@@ -8,7 +8,7 @@ import { researchModuleTrends, researchCompetitors, generateResearchAgenda, batc
 import { generateGrowthSuggestions, identifyWeakModules } from './agents/platform-analyzer.js';
 import { runAllModuleAnalyzers } from './agents/module-analyzers.js';
 import { runGrowthEngineerCycle } from './agents/growth-engineer.js';
-import { getKnowledgeStats, storeKnowledge } from './knowledge-base.js';
+import { getKnowledgeStats, storeKnowledge, learnFromText } from './knowledge-base.js';
 import { readNextLibraryBook, getLibraryProgress } from './library.js';
 
 /** Wrap a promise with a timeout (ms). Rejects with an error if it takes too long. */
@@ -95,6 +95,15 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
     }
 
     // === PHASE 1: Process Learning Queue ===
+    // Two task families share this queue:
+    //   - `chat_excerpt`: a user-chat snippet enqueued by `recordLearningFromChat`.
+    //     We feed the snippet (in `task.reason`) into `learnFromText` so its
+    //     ideas land in `mara_knowledge_base` under the transaction guard. The
+    //     `task.topic` is a route key (`chat:<userId>:<module>`), not a real
+    //     subject — passing it to `learnFromLLM` would generate a generic
+    //     lesson about "chat", which isn't useful.
+    //   - everything else (`auto`, `user_gap`, `brain_cycle`, `trend`): a
+    //     subject to research broadly via `learnFromGemini`.
     console.log('[MaraBrain] Phase 1: Processing learning queue...');
     try {
       await withTimeout((async () => {
@@ -102,13 +111,26 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
         for (const task of pendingTasks) {
           try {
             await storage.updateLearningTask(task.id, 'in_progress');
-            const result = await learnFromGemini(task.topic, task.reason);
-            await storage.updateLearningTask(
-              task.id,
-              'completed',
-              result.learned.substring(0, 2000),
-            );
-            knowledgeLearned += result.savedKnowledgeIds.length;
+
+            let learnedSummary: string;
+            let savedCount: number;
+
+            if (task.source === 'chat_excerpt') {
+              const extraction = await learnFromText(
+                task.reason,
+                'user_interaction',
+                task.topic,
+              );
+              learnedSummary = `Extracted ${extraction.ideas.length} idea(s) from ${task.topic}`;
+              savedCount = extraction.savedIds.length;
+            } else {
+              const result = await learnFromGemini(task.topic, task.reason);
+              learnedSummary = result.learned.substring(0, 2000);
+              savedCount = result.savedKnowledgeIds.length;
+            }
+
+            await storage.updateLearningTask(task.id, 'completed', learnedSummary);
+            knowledgeLearned += savedCount;
             research.push(`Learned about: ${task.topic}`);
           } catch (err) {
             await storage.updateLearningTask(task.id, 'failed', String(err));

@@ -2,7 +2,7 @@
 // Replaces the old mara-brain.ts with an integrated system
 
 import { storage } from '../storage.js';
-import { getKnowledgeContext, searchKnowledge, learnFromText } from './knowledge-base.js';
+import { getKnowledgeContext, searchKnowledge } from './knowledge-base.js';
 import { buildPersonalityPrompt, detectEmotion, detectToxicity, getToxicityLevel, type ToxicityState } from './personality.js';
 import { getPlatformContext } from './platform-context.js';
 
@@ -100,8 +100,26 @@ export function buildSystemInstruction(context: UserMemoryContext, language?: st
 }
 
 /**
- * Record a learning moment from a conversation
- * Now extracts ideas IMMEDIATELY from the conversation (not just queuing)
+ * Record a learning moment from a conversation.
+ *
+ * Previously this fired `learnFromText` inline (one LLM call per chat
+ * message) which:
+ *   1. Bypassed the autonomous rate limiter (LLM cost ran away with chat
+ *      traffic).
+ *   2. Raced with the brain cycle's phases on `mara_knowledge_base` —
+ *      both writers could see "no duplicate" simultaneously and both
+ *      insert near-identical rows (audit §F1).
+ *
+ * Now it ONLY enqueues into `mara_learning_queue`. The brain cycle's
+ * Phase 1 picks tasks up and processes them serially under the manager's
+ * single-cycle lock + the universal rate-limit funnel. The conversation
+ * excerpt rides along on the `reason` column so Phase 1 can feed it back
+ * to `learnFromText` exactly once, on the autonomous path, where the
+ * `storeKnowledge` transaction guards against duplicates.
+ *
+ * This keeps chat latency to a single DB INSERT (no synchronous LLM call)
+ * while still feeding everything the user says back into Mara's knowledge
+ * base. See `audit-mara-brain.md` §4 (Phase 1 of Option A migration).
  */
 export async function recordLearningFromChat(
   userId: string,
@@ -110,26 +128,35 @@ export async function recordLearningFromChat(
   module?: string,
 ): Promise<void> {
   try {
-    // Extract topics the user is interested in
     const topics = extractConversationTopics(userMessage, module);
     if (topics.length === 0) return;
 
-    // Immediate learning: extract structured ideas from the conversation
-    const conversationText = `Utilizator (${module || 'general'}): ${userMessage}\n\nMara: ${maraResponse}`;
+    const moduleLabel = module || 'general';
+    const conversationText = `Utilizator (${moduleLabel}): ${userMessage}\n\nMara: ${maraResponse}`;
+
+    // 1) Stage the conversation snippet for autonomous extraction by Phase 1.
+    //    The brain cycle's queue processor reads `task.source === 'chat_excerpt'`
+    //    and feeds `task.reason` into `learnFromText` instead of the topic-broad
+    //    `learnFromLLM` it uses for `auto`/`user_gap` tasks.
     if (conversationText.length > 100) {
-      // Only extract from substantial conversations
-      await learnFromText(conversationText, 'user_interaction', `chat:${userId}:${module || 'general'}`).catch((err) =>
-        console.error('[Memory] Immediate learning failed (non-blocking):', err),
-      );
+      await storage.createLearningTask({
+        topic: `chat:${userId}:${moduleLabel}`,
+        reason: conversationText.slice(0, 4000),
+        priority: 'medium',
+        source: 'chat_excerpt',
+      });
     }
 
-    // Also queue unknown topics for deeper research
+    // 2) Also queue unknown topics for deeper research. We still gate on
+    //    `searchKnowledge` first so we don't pile up tasks for things Mara
+    //    already knows about — Phase 1 will dedupe internally too, but
+    //    skipping the INSERT keeps the queue table tidy.
     for (const topic of topics) {
       const existing = await searchKnowledge(topic, 1);
       if (existing.length === 0) {
         await storage.createLearningTask({
           topic,
-          reason: `User ${userId} asked about "${topic}" in ${module || 'general'} chat`,
+          reason: `User ${userId} asked about "${topic}" in ${moduleLabel} chat`,
           priority: 'medium',
           source: 'user_gap',
         });

@@ -103,7 +103,9 @@ Returnează JSON:
 Generează MINIM 3 insights și 3 propuneri concrete. Fii specific și acționabil.`;
 
   try {
-    const text = (await llmGenerate(prompt)).trim();
+    const text = (
+      await llmGenerate(prompt, { source: 'agent.platform-analyzer.analyze' })
+    ).trim();
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) return { insights: ['Could not parse analysis'], proposals: [] };
 
@@ -156,7 +158,9 @@ export async function generateGrowthSuggestions(): Promise<string[]> {
 Generează 5 sugestii concrete de growth. Răspunde ca JSON array: ["sugestie1", ...]`;
 
   try {
-    const text = (await llmGenerate(prompt)).trim();
+    const text = (
+      await llmGenerate(prompt, { source: 'agent.platform-analyzer.growth-suggestions' })
+    ).trim();
     const jsonMatch = text.match(/\[[\s\S]*\]/);
     return jsonMatch ? JSON.parse(jsonMatch[0]) : [];
   } catch {

@@ -36,7 +36,7 @@ Răspunde structurat:
 Fii concis dar informativ. Răspunde în limba română.`;
 
   try {
-    const text = await llmGenerate(prompt);
+    const text = await llmGenerate(prompt, { source: 'agent.llm-learner.learn' });
 
     // Parse and store knowledge
     const savedIds: number[] = [];
@@ -103,7 +103,7 @@ Răspunde cu:
 Fii concis și practic.`;
 
   try {
-    return await llmGenerate(prompt);
+    return await llmGenerate(prompt, { source: 'agent.llm-learner.analyze-patterns' });
   } catch (error) {
     console.error('[LLMLearner] Failed to analyze patterns:', error);
     return 'Analysis failed';
@@ -126,7 +126,9 @@ Răspunde în JSON format:
 Fii sincer — dacă o idee e slabă, spune de ce.`;
 
   try {
-    const text = (await llmGenerate(prompt)).trim();
+    const text = (
+      await llmGenerate(prompt, { source: 'agent.llm-learner.validate-ideas' })
+    ).trim();
     const jsonMatch = text.match(/\[[\s\S]*\]/);
     if (!jsonMatch) return ideas.map((idea) => ({ original: idea, validation: 'Could not parse', score: 5 }));
 
@@ -159,7 +161,7 @@ Dă-mi 3-5 sugestii concrete de îmbunătățire a răspunsurilor mele. Focus pe
 - Personalizare`;
 
   try {
-    return await llmGenerate(prompt);
+    return await llmGenerate(prompt, { source: 'agent.llm-learner.self-improve' });
   } catch {
     return 'Self-improvement query failed';
   }

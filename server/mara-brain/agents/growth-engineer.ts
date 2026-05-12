@@ -438,7 +438,9 @@ Rules:
 
   let raw: string;
   try {
-    raw = (await llmGenerate(prompt)).trim();
+    raw = (
+      await llmGenerate(prompt, { source: 'cycle.phase_4.growth-engineer' })
+    ).trim();
   } catch (err) {
     console.error('[GrowthEngineer] LLM call failed:', err);
     return null;
