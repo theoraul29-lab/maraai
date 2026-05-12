@@ -27,6 +27,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  // P2P opt-in at signup. Defaults to OFF so consent is always explicit
+  // (GDPR + spec §2 "no hidden background activity" guarantee). The
+  // checkbox lives only in the signup branch; logged-in users manage
+  // this from /onboarding or transparency dashboard.
+  const [helpMara, setHelpMara] = useState(false);
   const [validation, setValidation] = useState<FormValidation>({
     email: [],
     password: [],
@@ -133,7 +138,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       if (mode === 'login') {
         await login(email, password);
       } else {
-        await signup(email, password, name);
+        await signup(email, password, name, { helpMara });
       }
       onClose();
     } catch (err) {
@@ -178,6 +183,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     setMode(newMode);
     setError('');
     setValidation({ email: [], password: [], name: [] });
+    // Reset opt-in so toggling login -> signup -> login -> signup never
+    // surfaces a stale "Yes" state from a previous attempt.
+    setHelpMara(false);
     // Focus email field for accessibility
     setTimeout(() => emailInputRef.current?.focus(), 0);
   };
@@ -306,6 +314,56 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               </small>
             )}
           </div>
+
+          {/* P2P opt-in card (signup only) — explains what P2P is and
+              gives the user an explicit "yes, help Mara" checkbox. Default
+              is OFF: consent is always explicit. */}
+          {mode === 'signup' && (
+            <div className="auth-help-mara-card" role="group" aria-labelledby="help-mara-title">
+              <div className="auth-help-mara-header">
+                <span className="auth-help-mara-spark" aria-hidden="true">✨</span>
+                <h3 id="help-mara-title">{t('auth.helpMara.title', 'Help Mara grow')}</h3>
+              </div>
+              <p className="auth-help-mara-text">
+                {t(
+                  'auth.helpMara.p1',
+                  'Mara is a hybrid AI: she runs partly in the cloud and partly on people\u2019s devices. When you turn this on, a tiny slice of your phone\u2019s or laptop\u2019s spare power helps route other people\u2019s questions \u2014 making the whole network faster.'
+                )}
+              </p>
+              <p className="auth-help-mara-text">
+                {t(
+                  'auth.helpMara.p2',
+                  'In return, you earn Mara Credits you can spend on premium features. Nothing runs in the background unless you pick it. Bandwidth caps and a kill-switch are always one tap away.'
+                )}
+              </p>
+              <p className="auth-help-mara-text">
+                {t(
+                  'auth.helpMara.p3',
+                  'You can change your mind at any time from your settings. Mara never shares your data with peers \u2014 only encrypted compute tasks pass through.'
+                )}
+              </p>
+
+              <label className="auth-help-mara-checkbox">
+                <input
+                  type="checkbox"
+                  checked={helpMara}
+                  onChange={(e) => setHelpMara(e.target.checked)}
+                  disabled={loading}
+                  aria-describedby="help-mara-title"
+                />
+                <span>{t('auth.helpMara.confirm', 'Yes, I want to help Mara grow')}</span>
+              </label>
+
+              <a
+                className="auth-help-mara-link"
+                href="/onboarding"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {t('auth.helpMara.learnMore', 'Learn more about P2P mode \u2192')}
+              </a>
+            </div>
+          )}
 
           {/* General error message */}
           {error && (

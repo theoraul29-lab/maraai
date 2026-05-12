@@ -127,6 +127,102 @@
   cursor: not-allowed;
 }
 
+/* ----------------------------------------------------------------------
+ * P2P opt-in card (signup only).
+ *
+ * Renders inside the auth form, just above the submit button. The
+ * gradient + faint glow match the .auth-submit / .mara-orb hero colors
+ * so the new card reads as "part of the family" rather than a bolt-on
+ * notice. Bottom margin is part of the parent `.auth-form` gap.
+ * ---------------------------------------------------------------------- */
+.auth-help-mara-card {
+  background: linear-gradient(135deg, rgba(157, 78, 221, 0.18), rgba(123, 47, 247, 0.10));
+  border: 1px solid rgba(157, 78, 221, 0.45);
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin-top: 4px;
+  box-shadow: 0 4px 16px rgba(157, 78, 221, 0.15);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.auth-help-mara-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.auth-help-mara-spark {
+  font-size: 18px;
+  filter: drop-shadow(0 0 6px rgba(255, 230, 120, 0.6));
+}
+
+.auth-help-mara-card h3 {
+  margin: 0;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.auth-help-mara-text {
+  margin: 0 0 10px 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.auth-help-mara-text:last-of-type {
+  margin-bottom: 12px;
+}
+
+.auth-help-mara-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(157, 78, 221, 0.35);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.auth-help-mara-checkbox:hover {
+  background: rgba(157, 78, 221, 0.18);
+  border-color: #9d4edd;
+}
+
+.auth-help-mara-checkbox input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  accent-color: #9d4edd;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.auth-help-mara-checkbox input[type='checkbox']:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.auth-help-mara-link {
+  display: inline-block;
+  margin-top: 10px;
+  color: #c77dff;
+  font-size: 12px;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.auth-help-mara-link:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
 /* OAuth Divider */
 .auth-divider {
   text-align: center;
@@ -230,5 +326,21 @@
 
   .auth-oauth {
     grid-template-columns: 1fr;
+  }
+
+  /* On phones the modal already has reduced horizontal padding, so the
+     P2P card pads tighter to match and the body copy size drops a half
+     step to keep all 3 paragraphs above the fold without scroll. */
+  .auth-help-mara-card {
+    padding: 14px;
+  }
+
+  .auth-help-mara-card h3 {
+    font-size: 14px;
+  }
+
+  .auth-help-mara-text {
+    font-size: 12.5px;
+    line-height: 1.5;
   }
 }

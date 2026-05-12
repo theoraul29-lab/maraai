@@ -43,6 +43,25 @@ async function applyServerLanguage(code: string | null | undefined): Promise<voi
   }
 }
 
+/**
+ * Optional flags surfaced by the signup form. Today we only carry the
+ * P2P opt-in checkbox; this is its own type so adding new boolean
+ * preferences (e.g. marketing consent) doesn't require widening the
+ * `signup()` signature again.
+ */
+export interface SignupOptions {
+  /**
+   * The user explicitly ticked the "Yes, I want to help Mara grow"
+   * checkbox on the signup form. When true, we follow up the signup
+   * with a single POST /api/consent that switches the account into
+   * hybrid mode, enables P2P routing + background work, and accepts
+   * the current consent version's terms. Failures are non-fatal:
+   * the user still gets a working account and can opt in later from
+   * /onboarding.
+   */
+  helpMara?: boolean;
+}
+
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
@@ -53,7 +72,12 @@ interface AuthContextType {
   oauthError: string | null;
   clearOAuthError: () => void;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, name: string) => Promise<void>;
+  signup: (
+    email: string,
+    password: string,
+    name: string,
+    options?: SignupOptions,
+  ) => Promise<void>;
   loginWithOAuth: (provider: 'google') => Promise<void>;
   logout: () => Promise<void>;
   upgradeTier: (newTier: UserTier) => Promise<void>;
@@ -224,7 +248,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const signup = async (email: string, password: string, name: string): Promise<void> => {
+  const signup = async (
+    email: string,
+    password: string,
+    name: string,
+    options: SignupOptions = {},
+  ): Promise<void> => {
     try {
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
@@ -273,6 +302,32 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         });
       } catch {
         /* non-fatal: user can change language manually later */
+      }
+
+      // P2P opt-in handler. When the user ticked "Yes, help Mara grow",
+      // POST a single consent patch that flips the account into hybrid
+      // mode + enables P2P/background work + accepts the current terms
+      // version. Best-effort: any failure here is logged but doesn't
+      // surface to the user — they still have a working account and
+      // can opt in later from /onboarding or the transparency dashboard.
+      if (options.helpMara) {
+        void fetch('/api/consent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            mode: 'hybrid',
+            p2pEnabled: true,
+            backgroundNode: true,
+            // Conservative default that respects metered connections
+            // (5 GB/month ≈ ~170 MB/day). Users can raise it later.
+            bandwidthShareGbMonth: 5,
+            acceptTerms: true,
+          }),
+        }).catch((err) => {
+          // Non-fatal — user still has working account.
+          console.warn('[auth] P2P opt-in POST /api/consent failed:', err);
+        });
       }
     } catch (error) {
       console.error('Signup error:', error);

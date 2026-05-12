@@ -81,6 +81,14 @@
     "switchToSignup": "Treci la înregistrare",
     "switchToLogin": "Treci la autentificare",
     "or": "SAU",
+    "helpMara": {
+      "title": "Ajut-o pe Mara să crească",
+      "p1": "Mara este un AI hibrid: rulează parțial în cloud și parțial pe dispozitivele oamenilor. Când activezi această opțiune, o mică parte din puterea liberă a telefonului sau laptopului tău ajută la rutarea întrebărilor altor utilizatori — făcând întreaga rețea mai rapidă.",
+      "p2": "În schimb, primești Mara Credits pe care îi poți folosi pentru funcții premium. Nimic nu rulează în fundal decât dacă alegi tu. Limitele de bandă și butonul de oprire sunt mereu la un tap distanță.",
+      "p3": "Te poți răzgândi oricând din setări. Mara nu împărtășește datele tale cu alți useri — doar sarcini de calcul criptate trec prin rețea.",
+      "confirm": "Da, vreau să o ajut pe Mara să crească",
+      "learnMore": "Află mai multe despre modul P2P →"
+    },
     "errors": {
       "signup_body_invalid": "Email, parolă (minim 6 caractere) și nume sunt obligatorii.",
       "login_body_invalid": "Email și parolă sunt obligatorii.",
