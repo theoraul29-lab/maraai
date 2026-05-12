@@ -6,9 +6,11 @@ import { z } from 'zod';
 import {
   creatorPostRequestSchema,
   likes as likesTable,
+  maraPlatformInsights,
+  brainLogs,
 } from '../shared/schema';
 import { db } from './db';
-import { eq } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import { csrfProtection } from './auth';
 import * as videoModule from '../backend/src/modules/video.js';
 import * as reelsModule from '../backend/src/modules/reels.js';
@@ -341,9 +343,13 @@ export async function registerRoutes(
   // requires the creator.payouts feature).
   app.get('/api/creator/payouts', requireAuth, creatorsModule.listMyPayouts);
   app.post('/api/creator/payouts', requireAuth, creatorsModule.createPayout);
-  // Admin endpoints.
-  app.get('/api/admin/creator/payouts', creatorsModule.adminListPayouts);
-  app.patch('/api/admin/creator/payouts/:id', creatorsModule.adminUpdatePayout);
+  // Admin endpoints. The handlers themselves are wrapped with
+  // `requireAdmin` (see backend/src/modules/creators.ts:110), but we add the
+  // route-level guard too: defense-in-depth + visual consistency with every
+  // other `/api/admin/*` line in this file. The handler's own check will
+  // still run, so this is belt-and-suspenders, not a behaviour change.
+  app.get('/api/admin/creator/payouts', requireAdmin, creatorsModule.adminListPayouts);
+  app.patch('/api/admin/creator/payouts/:id', requireAdmin, creatorsModule.adminUpdatePayout);
 
   // Creator endpoints (require auth)
   app.get('/api/creator/post-status', requireAuth, videoModule.creatorPostStatus);
@@ -356,10 +362,12 @@ export async function registerRoutes(
   app.get(api.chat.list.path, requireAuth, chatModule.getChatHistory);
   app.post(api.chat.send.path, requireAuth, chatModule.sendChatMessage);
 
-  // TTS/STT endpoints
-  app.post('/api/mara-speak', ttsModule.maraSpeak);
-  app.post('/api/tts', ttsModule.tts);
-  app.post('/api/stt', sttModule.stt);
+  // TTS / STT — gated behind `requireAuth` so an unauthenticated bot can't
+  // hammer a paid provider (ElevenLabs / OpenAI Whisper / etc.) and rack up
+  // bills. The frontend always hits these from a logged-in session anyway.
+  app.post('/api/mara-speak', requireAuth, ttsModule.maraSpeak);
+  app.post('/api/tts', requireAuth, ttsModule.tts);
+  app.post('/api/stt', requireAuth, sttModule.stt);
 
   // Python bridge — requires auth to prevent SSRF abuse
   app.post('/api/maraai/python-fetch', requireAuth, pythonBridgeModule.fetchWithPython);
@@ -1000,21 +1008,80 @@ export async function registerRoutes(
   // Global search — public, no auth required.
   app.get('/api/search', searchModule.search);
 
-  // Trading signals — returns the latest Mara-generated market signal.
+  // Trading signals — returns the most recent Mara-generated insight for the
+  // trading module, or the latest brain log as a fallback. Until PR #108 this
+  // endpoint always returned a hardcoded placeholder string regardless of
+  // what Mara had produced, so the frontend showed the same "analyzing"
+  // message forever.
+  //
+  // Lookup order:
+  //   1. mara_platform_insights WHERE module='trading' ORDER BY created_at DESC
+  //   2. brain_logs (most recent) — `growthIdeas` / `productIdeas` often
+  //      contain trading-relevant signals when no module-specific insight
+  //      has been published yet.
+  //   3. placeholder string with `placeholder: true` so the frontend can
+  //      render a "no data yet" state instead of a stale signal.
   app.get('/api/trading/signals', async (_req: any, res: any) => {
     try {
-      res.json({
+      const [insight] = await db
+        .select()
+        .from(maraPlatformInsights)
+        .where(eq(maraPlatformInsights.module, 'trading'))
+        .orderBy(desc(maraPlatformInsights.createdAt))
+        .limit(1);
+
+      if (insight) {
+        return res.json({
+          source: 'platform_insight',
+          title: insight.title,
+          content: insight.description,
+          priority: insight.priority,
+          impact: insight.estimatedImpact,
+          status: insight.status,
+          updatedAt: insight.createdAt,
+        });
+      }
+
+      const [log] = await db
+        .select()
+        .from(brainLogs)
+        .orderBy(desc(brainLogs.createdAt))
+        .limit(1);
+
+      if (log) {
+        // brain_logs has no `module` column, so we surface the growth/product
+        // ideas blob and let the client decide what's trading-relevant.
+        return res.json({
+          source: 'brain_log',
+          content: log.growthIdeas || log.productIdeas,
+          updatedAt: log.createdAt,
+        });
+      }
+
+      return res.json({
+        source: 'placeholder',
+        placeholder: true,
         content: 'Mara AI is analyzing markets. Check back in a few minutes for updated signals.',
         updatedAt: new Date().toISOString(),
       });
     } catch (error) {
-      res.status(500).json({ error: 'Failed to get signals' });
+      console.error('[trading/signals] lookup failed:', error);
+      return res.status(500).json({ error: 'Failed to get signals' });
     }
   });
 
-  // Upgrade user tier — requires auth; updates users.tier in DB.
-  app.post('/api/user/upgrade', requireAuth, async (req: any, res: any) => {
-    const userId: string = req.user?.uid;
+  // Upgrade user tier — admin-only. Before this guard was just `requireAuth`,
+  // which let ANY logged-in account set its own tier to 'premium' / 'vip' for
+  // free by POSTing here directly. The legitimate paid path is
+  // POST /api/premium/order (Stripe / PayPal verified). This endpoint is now
+  // reserved for admin overrides (comping VIP, fixing bad Stripe state, etc.).
+  //
+  // Admin must specify which user to upgrade via `body.userId`; if omitted we
+  // fall back to the admin's own uid (covers admin self-promotion during
+  // bootstrap).
+  app.post('/api/user/upgrade', requireAdmin, async (req: any, res: any) => {
+    const adminId: string = req.user?.uid;
+    const targetUserId: string = (req.body?.userId as string) || adminId;
     const VALID_TIERS = ['free', 'trial', 'premium', 'vip'] as const;
     type ValidTier = typeof VALID_TIERS[number];
     const newTier = req.body?.newTier as string;
@@ -1025,18 +1092,29 @@ export async function registerRoutes(
       const updated = await db
         .update(usersTable)
         .set({ tier: newTier as ValidTier })
-        .where(eq(usersTable.id, userId))
+        .where(eq(usersTable.id, targetUserId))
         .returning()
         .all();
       if (!updated[0]) return res.status(404).json({ message: 'User not found' });
-      return res.json({ ok: true, tier: updated[0].tier });
+      console.log(`[upgrade] admin=${adminId} target=${targetUserId} tier=${updated[0].tier}`);
+      return res.json({ ok: true, tier: updated[0].tier, userId: updated[0].id });
     } catch (err) {
       console.error('[upgrade] failed:', err);
       return res.status(500).json({ message: 'Failed to upgrade tier' });
     }
   });
 
-  seedDatabase().catch(console.error);
+  // Seed sample videos / data on boot. Previously this ran on every server
+  // start which hit the DB on every Railway redeploy and (briefly) doubled
+  // boot time on cold starts. Now it only runs when explicitly opted in:
+  //   - NODE_ENV=development  (local dev convenience)
+  //   - SEED_ON_START=true    (manual one-shot override on any env)
+  const shouldSeed =
+    process.env.NODE_ENV === 'development' || process.env.SEED_ON_START === 'true';
+  if (shouldSeed) {
+    console.log('[seed] running seedDatabase() (NODE_ENV=development or SEED_ON_START=true)');
+    seedDatabase().catch((err) => console.error('[seed] failed:', err));
+  }
 
   // AI provider health check endpoint. Returns the currently-primary
   // provider plus a `fallback` block describing the secondary when one is
