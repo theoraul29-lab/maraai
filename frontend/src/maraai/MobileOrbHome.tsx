@@ -21,7 +21,6 @@
 //     This keeps DOM size constant regardless of item count.
 
 import {
-  type CSSProperties,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
   useCallback,
@@ -116,8 +115,6 @@ const ITEMS: OrbItem[] = [
   { id: 'vip', label: 'VIP', to: '/membership', icon: ICONS.vip },
   { id: 'creators', label: 'Creators', to: '/creator-panel', icon: ICONS.creators },
 ];
-
-const PARTICLE_COUNT = 14;
 
 type DragState = {
   pointerId: number;
@@ -435,15 +432,10 @@ export function MobileOrbHome({ items = ITEMS }: MobileOrbHomeProps) {
     >
       <div className="mara-orb-home__bg-glow" aria-hidden />
 
-      {/* CSS-only background particles. */}
-      {Array.from({ length: PARTICLE_COUNT }, (_, i) => (
-        <span
-          key={i}
-          className="mara-orb-home__particle"
-          aria-hidden
-          style={particleStyle(i)}
-        />
-      ))}
+      {/* Background particles intentionally removed: the rising/fading
+          dots read as a flicker on real phones (14× independent 10s
+          opacity cycles). The only ambient motion on mobile is the
+          slow 90s hue drift on .mara-orb-home__bg-glow. */}
 
       <header className="mara-orb-home__brand" aria-hidden>
         <span className="mara-orb-home__brand-name">Mara AI</span>
@@ -550,22 +542,3 @@ function easeOutCubic(t: number): number {
   return 1 - u * u * u;
 }
 
-function particleStyle(seed: number): CSSProperties {
-  // Stable pseudo-random placement so SSR/CSR match if this ever runs
-  // server-side. Pure deterministic from `seed`.
-  const rand = (n: number) => {
-    const x = Math.sin(seed * 9.1 + n * 31.7) * 10000;
-    return x - Math.floor(x);
-  };
-  const left = `${(rand(1) * 100).toFixed(2)}%`;
-  const delay = `${(rand(2) * 10).toFixed(2)}s`;
-  const duration = `${(8 + rand(3) * 6).toFixed(2)}s`;
-  const size = `${(2 + rand(4) * 3).toFixed(2)}px`;
-  return {
-    left,
-    width: size,
-    height: size,
-    animationDelay: delay,
-    animationDuration: duration,
-  };
-}
