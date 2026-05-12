@@ -56,32 +56,11 @@
   100% { filter: hue-rotate(360deg); }
 }
 
+/* Background particles intentionally disabled: 14 independent 10s
+   opacity cycles read as flicker on real phones. Defence in depth in
+   case anything in the tree re-introduces .mara-orb-home__particle. */
 .mara-orb-home__particle {
-  position: absolute;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: rgba(199, 125, 255, 0.8);
-  box-shadow: 0 0 6px rgba(168, 85, 247, 0.7);
-  animation: maraOrbParticle 10s linear infinite;
-  pointer-events: none;
-}
-
-@keyframes maraOrbParticle {
-  0% {
-    transform: translateY(40vh) translateX(0);
-    opacity: 0;
-  }
-  10% {
-    opacity: 0.9;
-  }
-  90% {
-    opacity: 0.4;
-  }
-  100% {
-    transform: translateY(-40vh) translateX(8px);
-    opacity: 0;
-  }
+  display: none;
 }
 
 .mara-orb-home__brand {
