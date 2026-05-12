@@ -20,6 +20,7 @@
     "smoke:auth": "node scripts/smoke-auth.mjs",
     "smoke:admin-chat": "tsx scripts/test-admin-chat.mts",
     "smoke:mara-cli": "node scripts/smoke-mara-cli.mjs",
+    "smoke:code-explorer": "tsx scripts/test-code-explorer.mts",
     "mara": "node scripts/mara-cli.mjs"
   },
   "dependencies": {

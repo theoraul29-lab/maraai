@@ -5,6 +5,7 @@
 import { storage } from '../storage.js';
 import { LLMRateLimitedError } from '../llm.js';
 import { learnFromGemini, learnBusinessStrategy, validateIdeas, selfImproveQuery } from './agents/llm-learner.js';
+import { readRelevantFiles, getCodeOverview } from './agents/code-explorer.js';
 import { researchModuleTrends, researchCompetitors, generateResearchAgenda, batchResearch } from './agents/web-research.js';
 import { generateGrowthSuggestions, identifyWeakModules } from './agents/platform-analyzer.js';
 import { runAllModuleAnalyzers } from './agents/module-analyzers.js';
@@ -320,17 +321,53 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
     }
 
     // === PHASE 9: Self-Improvement ===
+    // Mara reads recent user conversations AND a handful of her own
+    // source files (Item 3) before asking the LLM what to do better.
+    // Grounding the self-improvement query in real code prevents the
+    // generic "be more empathetic" non-answers we used to get when the
+    // LLM had nothing concrete to look at.
     console.log('[MaraBrain] Phase 9: Self-improvement...');
     try {
       await withTimeout((async () => {
         const recentMessages = await storage.getChatMessages();
-        if (recentMessages.length > 0) {
-          const sample = recentMessages
-            .slice(0, 20)
-            .map((m) => `[${m.sender}]: ${m.content.substring(0, 100)}`)
-            .join('\n');
-          const selfImprovement = await selfImproveQuery(sample);
-          devTasks.push(`Self-improvement: ${selfImprovement.substring(0, 500)}`);
+        if (recentMessages.length === 0) return;
+
+        const sample = recentMessages
+          .slice(0, 20)
+          .map((m) => `[${m.sender}]: ${m.content.substring(0, 100)}`)
+          .join('\n');
+
+        // Pull up to 3 relevant source files based on keywords from the
+        // recent sample (module names, file references, etc.). Audit
+        // log records each read; selfImproveQuery sees inlined snippets.
+        let codeContext = '';
+        try {
+          const files = await readRelevantFiles(sample, {
+            accessedBy: 'phase-9-self-improvement',
+            reason: 'ground self-improvement query in real code',
+            maxFiles: 3,
+            maxBytesPerFile: 6_000,
+          });
+          if (files.length > 0) {
+            codeContext = '\n\n=== Recent source-code excerpts Mara is examining ===\n' +
+              files.map((f) => `--- ${f.path} (${f.size} bytes${f.truncated ? ', truncated' : ''}) ---\n${f.content.slice(0, 2_000)}`).join('\n\n');
+          }
+        } catch (err) {
+          console.warn('[MaraBrain] Phase 9 code-context fetch failed:', (err as Error).message);
+        }
+
+        const selfImprovement = await selfImproveQuery(sample + codeContext);
+        devTasks.push(`Self-improvement: ${selfImprovement.substring(0, 500)}`);
+
+        // Persist a tiny code overview so the admin dashboard / track
+        // record page can show "Mara has visibility over N files".
+        try {
+          const overview = getCodeOverview();
+          if (overview.totalFiles > 0) {
+            devTasks.push(`Code visibility: ${overview.totalFiles} files indexed (${(overview.totalBytes / 1024).toFixed(0)} KB)`);
+          }
+        } catch {
+          // overview is observability-only; ignore failures
         }
       })(), PHASE_TIMEOUT, 'Phase 9: Self-improvement');
     } catch (err) {

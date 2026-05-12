@@ -56,6 +56,12 @@ import {
   decideExperiment,
   markImplemented,
   readFunnelData,
+  indexCode,
+  readSourceFile,
+  listIndexedFiles,
+  searchIndexedFiles,
+  getCodeOverview,
+  getRecentReads,
 } from './mara-brain/index';
 import { learningRateLimiter } from './mara-brain/rate-limiter';
 import { getObjectiveRow, setObjective } from './mara-core/objective.js';
@@ -494,6 +500,81 @@ export async function registerRoutes(
       res.json(stats);
     } catch (error) {
       res.status(500).json({ error: 'Failed to get knowledge stats' });
+    }
+  });
+
+  // === Code visibility (Item 3) ===
+  // Read-only access into the repo's source files so Mara — and the
+  // admin reviewing what Mara has been looking at — can reason about
+  // her own implementation. Every endpoint is admin-gated; readFile
+  // additionally writes an audit row to mara_code_reads.
+  app.get('/api/admin/mara/code/overview', requireAdmin, (_req: any, res: any) => {
+    try {
+      res.json(getCodeOverview());
+    } catch (error) {
+      console.error('[admin/mara/code/overview]', error);
+      res.status(500).json({ error: 'Failed to get code overview' });
+    }
+  });
+
+  app.get('/api/admin/mara/code/index', requireAdmin, (req: any, res: any) => {
+    try {
+      const prefix = typeof req.query.prefix === 'string' ? req.query.prefix : undefined;
+      const extension = typeof req.query.extension === 'string' ? req.query.extension : undefined;
+      const limit = req.query.limit ? Number(req.query.limit) : 200;
+      res.json({ files: listIndexedFiles({ prefix, extension, limit }) });
+    } catch (error) {
+      console.error('[admin/mara/code/index]', error);
+      res.status(500).json({ error: 'Failed to list code index' });
+    }
+  });
+
+  app.get('/api/admin/mara/code/search', requireAdmin, (req: any, res: any) => {
+    try {
+      const q = typeof req.query.q === 'string' ? req.query.q : '';
+      if (!q.trim()) return res.json({ files: [] });
+      const limit = req.query.limit ? Number(req.query.limit) : 50;
+      res.json({ files: searchIndexedFiles(q.trim(), limit) });
+    } catch (error) {
+      console.error('[admin/mara/code/search]', error);
+      res.status(500).json({ error: 'Failed to search code index' });
+    }
+  });
+
+  app.get('/api/admin/mara/code/file', requireAdmin, async (req: any, res: any) => {
+    const p = typeof req.query.path === 'string' ? req.query.path : '';
+    if (!p) return res.status(400).json({ error: 'path query param required' });
+    try {
+      const result = await readSourceFile(p, {
+        accessedBy: `admin:${req.user?.uid ?? 'unknown'}`,
+        reason: typeof req.query.reason === 'string' ? req.query.reason : 'admin browse',
+        maxBytes: req.query.maxBytes ? Number(req.query.maxBytes) : undefined,
+      });
+      if (!result) return res.status(404).json({ error: 'Path not allowed or not found' });
+      res.json(result);
+    } catch (error) {
+      console.error('[admin/mara/code/file]', error);
+      res.status(500).json({ error: (error as Error).message });
+    }
+  });
+
+  app.get('/api/admin/mara/code/reads', requireAdmin, (req: any, res: any) => {
+    try {
+      const limit = req.query.limit ? Number(req.query.limit) : 50;
+      res.json({ reads: getRecentReads(limit) });
+    } catch (error) {
+      console.error('[admin/mara/code/reads]', error);
+      res.status(500).json({ error: 'Failed to list recent reads' });
+    }
+  });
+
+  app.post('/api/admin/mara/code/reindex', requireAdmin, async (_req: any, res: any) => {
+    try {
+      const summary = await indexCode();
+      res.json(summary);
+    } catch (error) {
+      console.error('[admin/mara/code/reindex]', error);
+      res.status(500).json({ error: (error as Error).message });
     }
   });
 
