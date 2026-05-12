@@ -284,6 +284,14 @@ class BrainManagerImpl {
         'mara-scheduler',
       );
       this._passive = true;
+      // Stop the self-post interval too so we don't keep publishing
+      // marketing posts while the new active holder also publishes them.
+      // (See _scheduledSelfPost — it has a _passive guard as belt-and-
+      // braces, but clearing the timer also stops the unnecessary wakeups.)
+      if (this._selfPostTimer) {
+        clearInterval(this._selfPostTimer);
+        this._selfPostTimer = null;
+      }
       return;
     }
     // Anchor the next-run display to the tick time (now), not to the cycle's
@@ -340,6 +348,13 @@ class BrainManagerImpl {
   ): Promise<void> {
     if (!this._started) return;
     if (!this.isEnabled) return;
+    // A demoted instance must not keep publishing marketing posts — the
+    // new active holder is already doing it and we'd end up with
+    // duplicates in the creator feed. _scheduledCycle clears
+    // _selfPostTimer when it discovers the lock was lost, but a stale
+    // tick can still fire between the lock loss and the clearInterval
+    // call. This guard catches that window.
+    if (this._passive) return;
     try {
       logger('Auto self-marketing post starting...', 'mara-marketing');
       const postContent = await generateMarketingPost();
