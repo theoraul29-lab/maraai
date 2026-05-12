@@ -1,7 +1,7 @@
 // Mara LLM Learner Agent
 // Learns from the configured LLM via OpenRouter: asks questions, deepens concepts, validates ideas, self-improves
 
-import { llmGenerate, isLLMConfigured } from '../../llm.js';
+import { llmGenerate, isLLMConfigured, LLMRateLimitedError } from '../../llm.js';
 import { storeKnowledge } from '../knowledge-base.js';
 import { storage } from '../../storage.js';
 
@@ -77,6 +77,13 @@ Fii concis dar informativ. Răspunde în limba română.`;
 
     return { topic, learned: text, savedKnowledgeIds: savedIds };
   } catch (error) {
+    // Same rationale as `learnFromText`: a rate-limit / open-circuit
+    // must propagate so Phase 1 can leave the learning_queue task in
+    // `pending` for the next cycle. Swallowing it would discard the
+    // task with zero saved knowledge and no retry. See PR #96 review.
+    if (error instanceof LLMRateLimitedError) {
+      throw error;
+    }
     console.error(`[LLMLearner] Failed to learn about "${topic}":`, error);
     return { topic, learned: `Error learning about ${topic}`, savedKnowledgeIds: [] };
   }

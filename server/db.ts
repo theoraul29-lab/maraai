@@ -148,6 +148,19 @@ sqlite.exec(`
   );
   CREATE INDEX IF NOT EXISTS idx_mara_growth_exp_status ON mara_growth_experiments (status, created_at);
   CREATE INDEX IF NOT EXISTS idx_mara_growth_exp_measure ON mara_growth_experiments (status, measure_after_at);
+
+  -- MaraCore Etapa 1: singleton table for the ObjectiveFunction.
+  -- Auto-created here (alongside the rest of the brain tables) so that
+  -- environments which skip Drizzle migrations on boot still get a usable
+  -- mara_core_objective table. The seed row is inserted by
+  -- server/mara-core/objective.ts at boot time.
+  CREATE TABLE IF NOT EXISTS mara_core_objective (
+    id INTEGER PRIMARY KEY,
+    payload TEXT NOT NULL,
+    updated_at INTEGER DEFAULT (unixepoch()) NOT NULL,
+    updated_by TEXT,
+    created_at INTEGER DEFAULT (unixepoch()) NOT NULL
+  );
 `);
 
 export const db = drizzle(sqlite, { schema });

@@ -58,6 +58,7 @@ import {
   readFunnelData,
 } from './mara-brain/index';
 import { learningRateLimiter } from './mara-brain/rate-limiter';
+import { getObjectiveRow, setObjective } from './mara-core/objective.js';
 import { chatRateLimit } from './rate-limit.js';
 import { users as usersTable } from '../shared/models/auth.js';
 import { registerMaraAIRoutes } from './maraai/routes.js';
@@ -488,6 +489,63 @@ export async function registerRoutes(
       res.json(stats);
     } catch (error) {
       res.status(500).json({ error: 'Failed to get knowledge stats' });
+    }
+  });
+
+  // === MaraCore Objective (admin only) ===
+  // Etapa 1 of the single-brain migration: the ObjectiveFunction lives in
+  // a singleton row of `mara_core_objective`. GET reads it (returns
+  // defaults if the row is missing); PUT performs a partial update merged
+  // onto the current value. Future PRs route the brain cycle's
+  // rate-limit + ICE scoring through this row, so editing it here will
+  // start actually steering behaviour.
+  app.get('/api/admin/mara/objective', requireAdmin, (_req: any, res: any) => {
+    try {
+      const { objective, updatedAt, updatedBy } = getObjectiveRow();
+      res.json({
+        objective,
+        updatedAt: updatedAt ? updatedAt.toISOString() : null,
+        updatedBy,
+      });
+    } catch (error) {
+      console.error('[admin/mara/objective] GET failed:', error);
+      res.status(500).json({ error: 'Failed to load objective' });
+    }
+  });
+
+  app.put('/api/admin/mara/objective', requireAdmin, async (req: any, res: any) => {
+    try {
+      const body = req.body;
+      if (!body || typeof body !== 'object' || Array.isArray(body)) {
+        return res.status(400).json({ error: 'Body must be a JSON object.' });
+      }
+
+      // Identify the editor for the audit log. Prefer email so the
+      // history is human-readable; fall back to user_id, then 'admin'.
+      let updatedBy = 'admin';
+      const userId: string | undefined = req.user?.uid;
+      if (userId) {
+        try {
+          const user = await storage.getUserById(userId);
+          updatedBy = user?.email || userId;
+        } catch {
+          updatedBy = userId;
+        }
+      }
+
+      const merged = setObjective(body, updatedBy);
+      const { updatedAt } = getObjectiveRow();
+      res.json({
+        objective: merged,
+        updatedAt: updatedAt ? updatedAt.toISOString() : null,
+        updatedBy,
+      });
+    } catch (error) {
+      // `setObjective` throws plain Errors for validation issues. Surface
+      // the message so the operator sees *what* was wrong.
+      const message = error instanceof Error ? error.message : 'Failed to save objective';
+      console.error('[admin/mara/objective] PUT failed:', error);
+      res.status(400).json({ error: message });
     }
   });
 

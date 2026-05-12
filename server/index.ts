@@ -22,6 +22,7 @@ import { UPLOADS_DIR } from '../backend/src/modules/reels.js';
 import { IMAGE_UPLOADS_DIR } from '../backend/src/modules/uploads.js';
 import { seedPlans } from './billing/seed.js';
 import { seedTradingAcademy } from './trading/seed.js';
+import { seedDefaultObjective } from './mara-core/objective.js';
 import {
   bindPeerSender,
   failJob,
@@ -574,6 +575,18 @@ app.use((req, res, next) => {
     // Do NOT throw: if the content seed fails, the API is still usable
     // (just with an empty catalogue). We'd rather boot than crash-loop.
     console.error('[trading] seed failed (continuing):', err);
+  }
+
+  // MaraCore Etapa 1: seed the singleton ObjectiveFunction row if it
+  // doesn't exist yet. Idempotent — will not overwrite admin edits.
+  // See `server/mara-core/objective.ts`.
+  try {
+    seedDefaultObjective();
+  } catch (err) {
+    // Same boot-survival policy as the trading seed: log and move on.
+    // The admin endpoint can still fix things, and `getObjective()`
+    // falls back to DEFAULT_OBJECTIVE if the row is missing.
+    console.error('[mara-core] objective seed failed (continuing):', err);
   }
 
   // Serve uploaded reel files from the configured volume. Mounted BEFORE

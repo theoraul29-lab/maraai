@@ -3,6 +3,7 @@
 // Coordinates all agents: learning, research, analysis, self-reflection
 
 import { storage } from '../storage.js';
+import { LLMRateLimitedError } from '../llm.js';
 import { learnFromGemini, learnBusinessStrategy, validateIdeas, selfImproveQuery } from './agents/llm-learner.js';
 import { researchModuleTrends, researchCompetitors, generateResearchAgenda, batchResearch } from './agents/web-research.js';
 import { generateGrowthSuggestions, identifyWeakModules } from './agents/platform-analyzer.js';
@@ -109,9 +110,8 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
       await withTimeout((async () => {
         const pendingTasks = await storage.getPendingLearningTasks(5);
         for (const task of pendingTasks) {
+          await storage.updateLearningTask(task.id, 'in_progress');
           try {
-            await storage.updateLearningTask(task.id, 'in_progress');
-
             let learnedSummary: string;
             let savedCount: number;
 
@@ -133,6 +133,18 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
             knowledgeLearned += savedCount;
             research.push(`Learned about: ${task.topic}`);
           } catch (err) {
+            // If the LLM call was rate-limited or the circuit is open,
+            // put the task back to `pending` so the NEXT cycle retries it.
+            // Marking it `failed` would silently drop user chat excerpts
+            // and `user_gap` research items. Break the loop because every
+            // remaining task in this batch would hit the same cap.
+            if (err instanceof LLMRateLimitedError) {
+              await storage.updateLearningTask(task.id, 'pending');
+              console.warn(
+                `[MaraBrain] Phase 1: LLM cap reached — re-queued task #${task.id} (source=${task.source}). Skipping remaining tasks this cycle.`,
+              );
+              break;
+            }
             await storage.updateLearningTask(task.id, 'failed', String(err));
           }
         }

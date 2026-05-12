@@ -78,6 +78,13 @@
       "when": 1778011986000,
       "tag": "0016_mara_credits",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1778560000000,
+      "tag": "0017_mara_core_objective",
+      "breakpoints": true
     }
   ]
 }

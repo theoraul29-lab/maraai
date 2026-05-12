@@ -505,6 +505,28 @@ export const maraGrowthExperiments = pgTable('mara_growth_experiments', {
     .notNull(),
 });
 
+// === MARA CORE OBJECTIVE ===
+// Single-row table holding the ObjectiveFunction (see
+// `server/mara-core/types.ts`). Etapa 1 of the MaraCore migration: this is
+// where the brain's "north star" is persisted so it survives restarts,
+// can be edited from the admin UI, and is read by every phase of the
+// existing brain cycle without scattering env-var defaults.
+//
+// Invariant: id=1, always exactly one row. The boot-time seed in
+// `server/mara-core/objective.ts` uses INSERT OR IGNORE so a second seed
+// pass is a no-op (won't overwrite admin edits).
+export const maraCoreObjective = pgTable('mara_core_objective', {
+  id: integer('id').primaryKey({ autoIncrement: false }), // hard-coded to 1
+  payload: text('payload').notNull(), // JSON-encoded ObjectiveFunction
+  updatedAt: integer('updated_at', { mode: 'timestamp' })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+  updatedBy: text('updated_by'), // admin email, or 'system' for the boot seed
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
 // === SCHEMAS ===
 export const insertVideoSchema = createInsertSchema(videos).omit({
   id: true,

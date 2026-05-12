@@ -1,7 +1,7 @@
 // Mara Knowledge Base — Long-term memory & knowledge retrieval
 // Stores everything Mara learns: from LLM, web, users, self-reflection
 
-import { llmGenerate, isLLMConfigured } from '../llm.js';
+import { llmGenerate, isLLMConfigured, LLMRateLimitedError } from '../llm.js';
 import { storage } from '../storage.js';
 import { db } from '../db.js';
 import { maraKnowledgeBase } from '../../shared/schema.js';
@@ -290,6 +290,14 @@ Răspunde DOAR cu JSON array-ul, fără alt text. Exemplu:
 
     return { ideas: validIdeas, savedIds };
   } catch (error) {
+    // Rate-limit / open-circuit must propagate so Phase 1 of the brain
+    // cycle (`server/mara-brain/core.ts`) can leave the learning_queue
+    // task in `pending` for the next cycle. Swallowing it here would
+    // mark the task `completed` with zero ideas extracted and the chat
+    // excerpt would be lost forever. See PR #96 review feedback.
+    if (error instanceof LLMRateLimitedError) {
+      throw error;
+    }
     console.error('[KnowledgeBase] learnFromText failed:', error);
     return { ideas: [], savedIds: [] };
   }
