@@ -38,7 +38,11 @@
   opacity: 0.3;
 }
 
-/* Ambient light overlay - Mercedes-style scanning */
+/* Ambient light overlay - Mercedes-style scanning.
+   The colour-cycling animation `ambientLightScan` is desktop-only — see
+   the consolidated `@media (min-width: 769px)` block at the bottom. On
+   mobile the orb itself stays a steady purple; the only motion is the
+   90s background hue drift inside MobileOrbHome (locally scoped). */
 .matrix-background::after {
   content: '';
   position: absolute;
@@ -46,7 +50,6 @@
   height: 100%;
   background: radial-gradient(ellipse 600px 600px at center, transparent 0%, rgba(0, 0, 0, 0.5) 100%);
   pointer-events: none;
-  animation: ambientLightScan 12s ease-in-out infinite;
 }
 
 @keyframes ambientLightScan {
@@ -122,12 +125,16 @@
   border: 3px solid;
   border-radius: 50%;
   background: radial-gradient(circle at 35% 35%, rgba(147, 51, 234, 0.4), rgba(147, 51, 234, 0.1));
+  border-color: rgba(147, 51, 234, 0.8);
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   cursor: default;
-  animation: maraAmbientGlow 12s ease-in-out infinite;
+  /* `animation: maraAmbientGlow 12s` is applied ONLY on desktop
+     (`@media (min-width: 769px)` block at the bottom of this file).
+     On mobile / phones the orb stays a steady purple so the OLED
+     panel does not read the 4s-per-stop colour cycle as flicker. */
   transition: transform 0.3s ease;
   box-shadow: 
     0 0 40px rgba(147, 51, 234, 0.5),
@@ -135,7 +142,9 @@
     0 0 160px rgba(147, 51, 234, 0.15);
 }
 
-/* Holographic ray effect - Layer 1 */
+/* Holographic ray effect - Layer 1.
+   Desktop-only. On mobile this pseudo is hidden (opacity 0) so the
+   8s spin + 12s colour pulse cannot contribute to the perceived blink. */
 .mara-orb::before {
   content: '';
   position: absolute;
@@ -147,12 +156,13 @@
     rgba(147, 51, 234, 0.4),
     rgba(147, 51, 234, 0.8)
   );
-  opacity: 0.6;
+  opacity: 0;
   z-index: -1;
-  animation: holographicSpin 8s linear infinite, maraGlowPulse 12s ease-in-out infinite;
 }
 
-/* Holographic aura - Layer 2 */
+/* Holographic aura - Layer 2.
+   Desktop-only. On mobile this pseudo stays at zero opacity so its
+   12s colour cycle cannot animate at all. */
 .mara-orb::after {
   content: '';
   position: absolute;
@@ -161,7 +171,7 @@
   background: radial-gradient(circle, rgba(147, 51, 234, 0.35), transparent);
   filter: blur(25px);
   z-index: -2;
-  animation: maraAuraExpand 12s ease-in-out infinite;
+  opacity: 0;
 }
 
 @keyframes holographicSpin {
@@ -258,7 +268,8 @@
   letter-spacing: 6px;
   color: #fff;
   z-index: 10;
-  animation: maraTextIlluminate 12s ease-in-out infinite;
+  /* `maraTextIlluminate` is desktop-only — see the consolidated
+     `@media (min-width: 769px)` block. */
   text-shadow: 
     0 0 20px rgba(147, 51, 234, 0.8),
     0 0 40px rgba(147, 51, 234, 0.5);
@@ -303,10 +314,11 @@
   transition: all 0.3s ease;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   z-index: 50;
-  animation: holographicPulse 12s ease-in-out infinite;
+  /* `holographicPulse` is desktop-only. On mobile the module orbs sit
+     at their per-module static colour. */
 }
 
-/* Holographic ray effect - emanating from MARA */
+/* Holographic ray effect - emanating from MARA. Desktop-only. */
 .orb::before {
   content: '';
   position: absolute;
@@ -315,12 +327,11 @@
   background: inherit;
   border: inherit;
   z-index: -1;
-  opacity: 0.8;
+  opacity: 0;
   filter: blur(2px);
-  animation: rayGlow 12s ease-in-out infinite;
 }
 
-/* Holographic aura glow */
+/* Holographic aura glow. Desktop-only. */
 .orb::after {
   content: '';
   position: absolute;
@@ -328,9 +339,8 @@
   border-radius: 50%;
   background: inherit;
   z-index: -2;
-  opacity: 0.5;
+  opacity: 0;
   filter: blur(15px);
-  animation: haloGlow 12s ease-in-out infinite;
 }
 
 @keyframes holographicPulse {
@@ -498,24 +508,34 @@
     font-size: 9px;
   }
 
-  /* === MOBILE-ONLY: remove the perceived "blink".
-     The desktop look layers three high-contrast animations on every
-     orb (spin + pulse + halo) which on a phone OLED reads as a 1–2 Hz
-     flicker. On mobile we keep ONLY the slow ambient hue/colour cycle
-     (`maraAmbientGlow` on the centre orb, `ambientLightScan` on the
-     page background) and drop the rotating conic gradient + halo/ray
-     pulses. The result: a steady glow whose colour drifts gently in
-     the background — ambient light, not strobe. */
-  .mara-orb::before {
-    animation: none;
-    opacity: 0;
+  /* === MOBILE-ONLY: every orb animation is GATED OFF.
+     Earlier attempts disabled animations selector-by-selector here,
+     but a few still leaked through (`.mara-orb` itself, `.mara-orb::after`,
+     `.mara-text`, `.matrix-background::after`) which on real OLED phones
+     was readable as flicker. The fix now lives in two places:
+       1. Every orb animation is defined ONLY inside the
+          `@media (min-width: 769px)` block at the bottom of this file.
+       2. As defence in depth, this mobile block belt-and-braces sets
+          `animation: none` on every element that could ever be
+          target by one of those keyframes (including stale ones from a
+          cached service worker bundle). Future contributors: if you
+          add a NEW orb animation, gate it inside the desktop block.
+          Do NOT add it to a base selector that mobile shares. */
+  .mara-orb,
+  .mara-orb::before,
+  .mara-orb::after,
+  .mara-text,
+  .orb,
+  .orb::before,
+  .orb::after,
+  .matrix-background::after {
+    animation: none !important;
   }
-  .orb {
-    animation: none;
-  }
+  .mara-orb::before,
+  .mara-orb::after,
   .orb::before,
   .orb::after {
-    animation: none;
+    opacity: 0 !important;
   }
 }
 
@@ -691,4 +711,57 @@
 /* Swipe feedback - glow enhancement */
 .mobile-orbital:active {
   filter: drop-shadow(0 0 40px rgba(147, 51, 234, 0.4));
+}
+
+/* ============================================================
+   DESKTOP-ONLY orb animations (>=769px).
+
+   Why this whole block exists:
+     Until 2026-05-12 the holographic colour-cycling animations
+     were declared on the base selectors (`.mara-orb`, `.orb`, etc.)
+     and then "disabled" at `@media (max-width: 768px)`. Some of
+     them (`maraAmbientGlow`, `maraAuraExpand`, `maraTextIlluminate`,
+     `ambientLightScan`) leaked through the disable list and on real
+     OLED phones read as a 1-2Hz blink.
+
+     This block re-enables every animation EXPLICITLY at the desktop
+     viewport. Mobile NEVER receives them. To add a new orb animation,
+     declare it here, NOT on the base selector.
+   ============================================================ */
+@media (min-width: 769px) {
+  .matrix-background::after {
+    animation: ambientLightScan 12s ease-in-out infinite;
+  }
+
+  .mara-orb {
+    animation: maraAmbientGlow 12s ease-in-out infinite;
+  }
+
+  .mara-orb::before {
+    opacity: 0.6;
+    animation: holographicSpin 8s linear infinite, maraGlowPulse 12s ease-in-out infinite;
+  }
+
+  .mara-orb::after {
+    opacity: 1;
+    animation: maraAuraExpand 12s ease-in-out infinite;
+  }
+
+  .mara-text {
+    animation: maraTextIlluminate 12s ease-in-out infinite;
+  }
+
+  .orb {
+    animation: holographicPulse 12s ease-in-out infinite;
+  }
+
+  .orb::before {
+    opacity: 0.8;
+    animation: rayGlow 12s ease-in-out infinite;
+  }
+
+  .orb::after {
+    opacity: 0.5;
+    animation: haloGlow 12s ease-in-out infinite;
+  }
 }

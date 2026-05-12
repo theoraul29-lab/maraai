@@ -6,7 +6,12 @@ import { useErrorHandler } from './hooks/useErrorHandler';
 import { useTouchGesture } from './hooks/useTouchGesture';
 import { useAccessible } from './hooks/useAccessible';
 import './OrbitalStyles.css';
-import ChatWidget from './components/ChatWidget';
+// NOTE: the chat widget is now rendered globally in App.tsx (`<MaraChatWidget />`)
+// so we do NOT mount a second one here. Until 2026-05 the home rendered two
+// stacked FABs in the bottom-right: the legacy `ChatWidget` (this import)
+// AND the modern `MaraChatWidget`. They sat 10px apart and looked like one
+// chat in front of another. Removing the home-local one keeps the modern
+// auth/mood-aware widget as the single chat surface across the app.
 import { AuthButton } from './components/AuthButton';
 import { LanguageSelector } from './components/LanguageSelector';
 import { MobileOrbHome } from './maraai/MobileOrbHome';
@@ -430,8 +435,7 @@ function HomePage() {
         <LanguageSelector compact />
       </div>
 
-      {/* Chat Widget - Bottom Right */}
-      <ChatWidget />
+      {/* Chat surface is provided globally by <MaraChatWidget /> in App.tsx. */}
     </main>
   );
 }
