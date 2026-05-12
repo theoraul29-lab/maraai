@@ -5,7 +5,7 @@ import { llmGenerate, isLLMConfigured } from '../llm.js';
 import { storage } from '../storage.js';
 import { db } from '../db.js';
 import { maraKnowledgeBase } from '../../shared/schema.js';
-import { sql, inArray } from 'drizzle-orm';
+import { sql, inArray, eq, like, desc } from 'drizzle-orm';
 
 export type KnowledgeCategory =
   | 'user_pattern'
@@ -34,7 +34,17 @@ export interface KnowledgeSearchResult {
 }
 
 /**
- * Store a new piece of knowledge Mara has learned
+ * Store a new piece of knowledge Mara has learned.
+ *
+ * The read-modify-write (similarity check + upsert) is wrapped in a single
+ * SQLite transaction so two concurrent writers cannot both see "no
+ * duplicate" and both INSERT a near-identical row. Before this guard the
+ * brain cycle (autonomous phases) and user-chat learning could race on the
+ * same topic; the resulting duplicates inflated the knowledge base and
+ * confused `getKnowledgeContext`. See `audit-mara-brain.md` §F1.
+ *
+ * Drizzle's better-sqlite3 transaction is synchronous, so the body uses the
+ * `.all()` / `.run()` builder API rather than awaiting `storage.*` helpers.
  */
 export async function storeKnowledge(
   category: KnowledgeCategory,
@@ -44,33 +54,56 @@ export async function storeKnowledge(
   confidence = 70,
   metadata: Record<string, unknown> = {},
 ): Promise<number> {
-  // Check if similar knowledge already exists
-  const existing = await storage.getKnowledgeByTopic(topic);
-  const duplicate = existing.find(
-    (k) => k.category === category && k.source === source && similarity(k.content, content) > 0.8,
-  );
+  return db.transaction((tx) => {
+    // Pull candidate duplicates by topic (mirrors storage.getKnowledgeByTopic
+    // which fans out to a LIKE search, ordered by confidence).
+    const existing = tx
+      .select()
+      .from(maraKnowledgeBase)
+      .where(like(maraKnowledgeBase.topic, `%${topic}%`))
+      .orderBy(desc(maraKnowledgeBase.confidence))
+      .limit(20)
+      .all();
+    const duplicate = existing.find(
+      (k) =>
+        k.category === category &&
+        k.source === source &&
+        similarity(k.content, content) > 0.8,
+    );
 
-  if (duplicate) {
-    // Update existing with higher confidence if we're seeing it again
-    const newConfidence = Math.min(100, duplicate.confidence + 5);
-    await storage.updateKnowledgeEntry(duplicate.id, {
-      content: content.length > duplicate.content.length ? content : duplicate.content,
-      confidence: newConfidence,
-      metadata: JSON.stringify(metadata),
-    });
-    await storage.incrementKnowledgeAccess(duplicate.id);
-    return duplicate.id;
-  }
+    if (duplicate) {
+      // Seeing it again — bump confidence (capped at 100), keep the longer
+      // content, refresh metadata, and increment access count in one UPDATE
+      // so we don't issue two queries inside the transaction.
+      const newConfidence = Math.min(100, duplicate.confidence + 5);
+      tx.update(maraKnowledgeBase)
+        .set({
+          content:
+            content.length > duplicate.content.length ? content : duplicate.content,
+          confidence: newConfidence,
+          metadata: JSON.stringify(metadata),
+          accessCount: sql`${maraKnowledgeBase.accessCount} + 1`,
+          updatedAt: new Date(),
+        })
+        .where(eq(maraKnowledgeBase.id, duplicate.id))
+        .run();
+      return duplicate.id;
+    }
 
-  const entry = await storage.createKnowledgeEntry({
-    category,
-    topic,
-    content,
-    source,
-    confidence,
-    metadata: JSON.stringify(metadata),
+    const inserted = tx
+      .insert(maraKnowledgeBase)
+      .values({
+        category,
+        topic,
+        content,
+        source,
+        confidence,
+        metadata: JSON.stringify(metadata),
+      })
+      .returning()
+      .all();
+    return inserted[0].id;
   });
-  return entry.id;
 }
 
 /**
@@ -187,7 +220,9 @@ Răspunde DOAR cu JSON array-ul, fără alt text. Exemplu:
 [{"idea":"...", "category":"business_insight", "how_to_apply":"..."}]`;
 
   try {
-    const raw = (await llmGenerate(prompt)).trim();
+    const raw = (
+      await llmGenerate(prompt, { source: 'learning.extract-ideas' })
+    ).trim();
     const jsonMatch = raw.match(/\[[\s\S]*\]/);
     if (!jsonMatch) {
       console.warn(

@@ -42,7 +42,7 @@ Format:
 Răspunde în română.`;
 
   try {
-    const text = await llmGenerate(prompt);
+    const text = await llmGenerate(prompt, { source: 'agent.web-research.research' });
 
     const knowledgeIds: number[] = [];
 
@@ -159,7 +159,9 @@ Focus pe: tendințe actuale, business strategy, user experience, monetizare, teh
 Returnează doar un JSON array de strings: ["topic1", "topic2", ...]`;
 
   try {
-    const text = (await llmGenerate(prompt)).trim();
+    const text = (
+      await llmGenerate(prompt, { source: 'agent.web-research.agenda' })
+    ).trim();
     const jsonMatch = text.match(/\[[\s\S]*\]/);
     return jsonMatch ? JSON.parse(jsonMatch[0]) : [];
   } catch {

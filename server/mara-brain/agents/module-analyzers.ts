@@ -11,10 +11,9 @@
 // Each analyzer costs at most 1 LLM call. The learning rate limiter gates
 // all calls against the daily cap.
 
-import { llmGenerate, isLLMConfigured } from '../../llm.js';
+import { llmGenerate, isLLMConfigured, LLMRateLimitedError } from '../../llm.js';
 import { storage } from '../../storage.js';
 import { storeKnowledge } from '../knowledge-base.js';
-import { guardedLLMCall } from '../rate-limiter.js';
 
 export type ModuleKey = 'you' | 'reels' | 'trading' | 'writers' | 'creators' | 'vip';
 
@@ -92,9 +91,14 @@ Return STRICT JSON:
   ]
 }`;
 
-  const raw = await guardedLLMCall(`module-analyzer:${module}`, () => llmGenerate(prompt));
-  if (raw === null) {
-    return { module, proposalsCreated: 0, insightsStored: 0, skipped: true, reason: 'rate limit or circuit open' };
+  let raw: string;
+  try {
+    raw = await llmGenerate(prompt, { source: `agent.module-analyzer.${module}` });
+  } catch (err) {
+    if (err instanceof LLMRateLimitedError) {
+      return { module, proposalsCreated: 0, insightsStored: 0, skipped: true, reason: 'rate limit or circuit open' };
+    }
+    throw err;
   }
 
   const parsed = extractJson(raw) as
