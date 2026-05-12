@@ -99,6 +99,13 @@
       "when": 1778567500000,
       "tag": "0019_mara_code_visibility",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "6",
+      "when": 1778606000000,
+      "tag": "0020_waitlist",
+      "breakpoints": true
     }
   ]
 }

@@ -62,9 +62,21 @@ function resolveSessionStoreDir(): string {
  *   - NODE_ENV is not 'production' AND no CORS_ORIGINS are configured
  *     (local development without configured origins).
  */
+// Public endpoints that have no session/auth implications and are
+// expected to be POSTed from a plain static HTML page (the pre-launch
+// landing page, in particular) without any CSRF token machinery.
+//
+// These endpoints are still protected against abuse by IP rate limits
+// and per-handler input validation; CSRF doesn't add anything here.
+const CSRF_EXEMPT_PATHS = new Set<string>([
+  '/api/waitlist',
+]);
+
 export function csrfProtection(req: Request, res: Response, next: NextFunction) {
   const safeMethods = ['GET', 'HEAD', 'OPTIONS'];
   if (safeMethods.includes(req.method)) return next();
+
+  if (CSRF_EXEMPT_PATHS.has(req.path)) return next();
 
   const allowedOrigins = process.env.CORS_ORIGINS
     ? process.env.CORS_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean)

@@ -712,6 +712,24 @@ export type InsertSelfReflection = z.infer<typeof insertSelfReflectionSchema>;
 export type PlatformInsight = typeof maraPlatformInsights.$inferSelect;
 export type InsertPlatformInsight = z.infer<typeof insertPlatformInsightSchema>;
 
+// === LAUNCH WAITLIST ===
+// Captures email submissions from the pre-launch landing page so we can
+// notify subscribers on June 1st 2026 when the platform goes live.
+// `ipHash` is a sha256 of the source IP (not the raw IP) so we can dedupe
+// abusive submissions without storing PII.
+export const maraWaitlist = pgTable('mara_waitlist', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  email: text('email').notNull().unique(),
+  source: text('source').default('landing').notNull(),
+  referrer: text('referrer'),
+  ipHash: text('ip_hash'),
+  userAgent: text('user_agent'),
+  createdAt: integer('created_at').default(sql`(unixepoch())`).notNull(),
+});
+
+export type WaitlistEntry = typeof maraWaitlist.$inferSelect;
+export type InsertWaitlistEntry = typeof maraWaitlist.$inferInsert;
+
 // === TRADING ACADEMY (PR F) ===
 // Modules group lessons (e.g. "Fundamentals", "Technical Analysis"). Access
 // is gated by a billing FeatureKey stored as text here (not a FK) so the
