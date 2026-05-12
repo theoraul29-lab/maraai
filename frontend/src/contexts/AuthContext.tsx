@@ -118,7 +118,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const res = await fetch('/api/auth/me', { credentials: 'include' });
         if (!res.ok) return;
         const payload = await res.json();
-        if (cancelled || !payload?.user) return;
+        if (cancelled) return;
+        // Server is the source of truth. When it says the session is
+        // anonymous, drop any stale localStorage user — otherwise the SPA
+        // shows the user as logged in (from the cached payload above) but
+        // every authenticated API call quietly fails because the cookie is
+        // expired or was invalidated by a redeploy. That mismatch surfaced
+        // as "login form does nothing" on returning visitors whose 24h
+        // cookie had lapsed (since fixed to 30 days in PR #95, but the
+        // stale-state path is the real root cause).
+        if (!payload?.user) {
+          localStorage.removeItem('user');
+          setUser(null);
+          setIsAuthenticated(false);
+          return;
+        }
         const trialFields = freshOAuth
           ? {
               trialStartTime: Date.now(),
@@ -175,12 +189,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
 
       const userData = await response.json();
-      const newUser: User = {
-        ...userData,
-        trialStartTime: Date.now(),
-        trialEndsAt: Date.now() + 60 * 60 * 1000, // 1 hour trial
-        tier: 'trial',
-      };
+      // Trust the server payload: a returning premium user must NOT be
+      // re-classified as `tier: 'trial'` on every login (that overwrites
+      // localStorage with a downgrade and looks like "login didn't work"
+      // when the avatar dropdown flips from Premium to Trial). Only a
+      // genuinely empty/missing tier (defensive guard against a malformed
+      // response) falls back to a fresh trial window.
+      const hasServerTier = typeof userData?.tier === 'string' && userData.tier.length > 0;
+      const newUser: User = hasServerTier
+        ? {
+            ...userData,
+            trialStartTime: userData.trialStartTime ?? null,
+            trialEndsAt: userData.trialEndsAt ?? null,
+          }
+        : {
+            ...userData,
+            trialStartTime: Date.now(),
+            trialEndsAt: Date.now() + 60 * 60 * 1000, // 1 hour trial
+            tier: 'trial',
+          };
 
       localStorage.setItem('user', JSON.stringify(newUser));
       setUser(newUser);
