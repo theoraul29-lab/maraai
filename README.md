@@ -171,6 +171,32 @@ curl https://<your-railway-domain>/api/ai/health
 # Expected: {"provider":"anthropic","configured":true,"ok":true,"model":"claude-sonnet-4-6"}
 ```
 
+## Talking to Mara from the terminal
+
+`scripts/mara-cli.mjs` is a small CLI that talks to the live
+`/api/maraai/ai` chat endpoint from a shell — useful for admin-mode
+conversations or quick smoke checks without opening a browser.
+
+```bash
+# Interactive REPL against production
+MARA_EMAIL=you@example.com MARA_PASSWORD=... npm run mara
+
+# One-shot prompt
+npm run mara -- "ce drop-off vezi pe Trading?"
+
+# Different host / module
+MARA_BASE_URL=http://localhost:3001 npm run mara -- --module=trading "salut"
+```
+
+After the first successful login the cookie is cached at
+`~/.config/mara/session.json` so subsequent runs don't need credentials.
+Slash commands inside the REPL: `/help`, `/quit`, `/clear`, `/history`,
+`/runtime`, `/health`, `/whoami`, `/module <name>`.
+
+Admin mode is detected server-side from `ADMIN_EMAILS` /
+`ADMIN_USER_IDS`. When the logged-in user matches, Mara switches to the
+direct/strategic persona automatically — no CLI flag needed.
+
 ## Smoke Tests
 
 ```bash

@@ -18,7 +18,9 @@
     "smoke:growth": "node scripts/test-growth-engineer.mjs",
     "smoke:audit-p2": "tsx scripts/test-audit-p2.mts",
     "smoke:auth": "node scripts/smoke-auth.mjs",
-    "smoke:admin-chat": "tsx scripts/test-admin-chat.mts"
+    "smoke:admin-chat": "tsx scripts/test-admin-chat.mts",
+    "smoke:mara-cli": "node scripts/smoke-mara-cli.mjs",
+    "mara": "node scripts/mara-cli.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.33.1",
