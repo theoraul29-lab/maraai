@@ -761,6 +761,21 @@ export async function registerRoutes(
     }
   });
 
+  // Force-release the brain_cycle advisory lock so a stuck passive instance
+  // can become active on the next cycle (30 s warm-up after restart).
+  app.post('/api/admin/mara/locks/release', requireAdmin, (req: any, res: any) => {
+    try {
+      const { rawSqlite } = require('./db.js');
+      rawSqlite
+        .prepare("DELETE FROM mara_singleton_locks WHERE lock_name = 'brain_cycle'")
+        .run();
+      res.json({ ok: true, message: 'Lock eliberat. Brain cycle pornește în 30s.' });
+    } catch (err: any) {
+      console.error('[admin/mara/locks/release] failed:', err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // === Mara Growth Engineer experiments (admin only) ===
   //
   // Each brain cycle proposes ONE experiment via the Growth Engineer loop and
