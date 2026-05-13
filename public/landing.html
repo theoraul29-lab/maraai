@@ -71,7 +71,7 @@
     .lb-dot { width: 8px; height: 8px; background: var(--mara); border-radius: 50%; box-shadow: 0 0 12px var(--mara-glow); animation: blink 1.5s infinite; }
     @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
     .lb-text { color: rgba(240, 240, 240, 0.85); text-transform: uppercase; font-weight: 500; }
-    .lb-clock { color: var(--mara); font-weight: 500; font-variant-numeric: tabular-nums; }
+    .lb-date { color: var(--mara); font-weight: 700; letter-spacing: 0.08em; }
     .lb-cta { color: var(--mara); border: 1px solid rgba(168, 85, 247, 0.4); padding: 6px 14px; transition: all 0.2s; font-weight: 500; }
     .lb-cta:hover { background: var(--mara); color: var(--bg); }
     @media (max-width: 700px) { .lb-cta { display: none; } .lb { gap: 12px; font-size: 11px; } }
@@ -110,18 +110,15 @@
     .btn-ghost { background: transparent; color: var(--white); border-color: rgba(255, 255, 255, 0.2); }
     .btn-ghost:hover { border-color: var(--white); }
 
-    /* === HERO COUNTDOWN === */
+    /* === HERO LAUNCH DATE === */
     .hc { max-width: 480px; }
     .hc-label { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
-    .hc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-    .hc-box {
-      background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(168, 85, 247, 0.2);
-      padding: 18px 0 0; text-align: center; position: relative; overflow: hidden;
+    .hc-launch-date {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: clamp(36px, 6vw, 64px); color: var(--mara);
+      letter-spacing: 0.04em;
+      text-shadow: 0 0 40px var(--mara-glow);
     }
-    .hc-box::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: var(--mara); box-shadow: 0 0 12px var(--mara-glow); }
-    .hc-num { font-family: 'Syne', sans-serif; font-weight: 800; font-size: clamp(28px, 5vw, 44px); color: var(--mara); font-variant-numeric: tabular-nums; transition: transform 0.15s; }
-    .hc-num.tick { transform: scale(1.08); }
-    .hc-cap { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); padding: 6px 0 12px; }
 
     /* === ORB UNIVERSE === */
     .universe {
@@ -277,8 +274,8 @@
   <!-- 1. Countdown bar -->
   <div class="lb">
     <span class="lb-dot"></span>
-    <span class="lb-text">Launching in</span>
-    <span class="lb-clock"><span id="lbDays">00</span>:<span id="lbHours">00</span>:<span id="lbMins">00</span>:<span id="lbSecs">00</span></span>
+    <span class="lb-text">Launching</span>
+    <span class="lb-date">01.06.2026</span>
     <a href="#waitlist" class="lb-cta">Get early access →</a>
   </div>
 
@@ -308,13 +305,8 @@
         <a href="#how" class="btn btn-ghost">See how it works</a>
       </div>
       <div class="hc">
-        <div class="hc-label">Platform goes live in</div>
-        <div class="hc-grid">
-          <div class="hc-box"><div class="hc-num" id="hcDays">00</div><div class="hc-cap">Days</div></div>
-          <div class="hc-box"><div class="hc-num" id="hcHours">00</div><div class="hc-cap">Hours</div></div>
-          <div class="hc-box"><div class="hc-num" id="hcMins">00</div><div class="hc-cap">Minutes</div></div>
-          <div class="hc-box"><div class="hc-num" id="hcSecs">00</div><div class="hc-cap">Seconds</div></div>
-        </div>
+        <div class="hc-label">Platform goes live on</div>
+        <div class="hc-launch-date">01.06.2026</div>
       </div>
     </div>
 
@@ -497,7 +489,7 @@
   <section id="waitlist" class="waitlist">
     <div class="sec-label">Join the waitlist</div>
     <h2 class="sec-title">Be first. Build with <span class="green">Mara</span>.</h2>
-    <p class="sec-desc">Join now. When the countdown hits zero, hellomara.net goes live — and you'll be the first ones in.</p>
+    <p class="sec-desc">Join now. On <strong style="color:var(--mara)">01.06.2026</strong>, hellomara.net goes live — and you'll be the first ones in.</p>
 
     <form id="waitlistForm" class="wl-form" novalidate>
       <!-- Honeypot: real users never see/fill this; bots happily do. -->
@@ -509,9 +501,9 @@
     <div class="lp">
       <div class="lp-meta">
         <span>Launch progress</span>
-        <span><span id="lpDaysLeft">20</span> days left</span>
+        <span>01.06.2026</span>
       </div>
-      <div class="lp-bar"><div class="lp-fill" id="lpFill"></div></div>
+      <div class="lp-bar"><div class="lp-fill" id="lpFill" style="width:5%"></div></div>
     </div>
 
     <div class="wl-perks">
@@ -573,47 +565,6 @@
       });
     })();
 
-    // === Countdown ===
-    // window.MARA_LAUNCH_TS is injected by the server (launch-countdown.ts)
-    // from process.env.LAUNCH_DATE_ISO so client + server always agree.
-    var LAUNCH_TIMESTAMP = (window.MARA_LAUNCH_TS && window.MARA_LAUNCH_TS > 0)
-      ? window.MARA_LAUNCH_TS
-      : Date.UTC(2026, 5, 1, 0, 0, 0);
-    var TOTAL_DURATION = 20 * 24 * 60 * 60 * 1000;
-    var REDIRECT_URL = 'https://hellomara.net';
-    var launched = false;
-    var redirectTimerId = null;
-    var countdownIntervalId = null;
-
-    function pad2(n) {
-      return n < 10 ? '0' + n : '' + n;
-    }
-
-    function setTextById(id, value) {
-      var el = document.getElementById(id);
-      if (!el) return;
-      el.textContent = value;
-    }
-
-    function setTextBySelector(selector, value) {
-      var el = document.querySelector(selector);
-      if (!el) return;
-      el.textContent = value;
-    }
-
-    function setAndTick(id, value) {
-      var el = document.getElementById(id);
-      if (!el) return;
-      if (el.textContent === value) return;
-
-      el.textContent = value;
-      el.classList.remove('tick');
-      // Without a forced reflow, removing/re-adding 'tick' in one frame won't retrigger CSS animation.
-      void el.offsetWidth;
-      el.classList.add('tick');
-      setTimeout(function () { el.classList.remove('tick'); }, 150);
-    }
-
     function isValidEmail(emailInput, email) {
       if (!emailInput.checkValidity()) return false;
       if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) return false;
@@ -629,93 +580,6 @@
       if (domain.charAt(0) === '.' || domain.charAt(domain.length - 1) === '.') return false;
 
       return true;
-    }
-
-    function setCountdownValues(days, hours, mins, secs, withTick) {
-      var setter = withTick ? setAndTick : setTextById;
-      var d = pad2(days);
-      var h = pad2(hours);
-      var m = pad2(mins);
-      var s = pad2(secs);
-
-      setter('lbDays', d);
-      setter('lbHours', h);
-      setter('lbMins', m);
-      setter('lbSecs', s);
-      setter('hcDays', d);
-      setter('hcHours', h);
-      setter('hcMins', m);
-      setter('hcSecs', s);
-    }
-
-    function scheduleRedirectOnce() {
-      if (redirectTimerId !== null) return;
-      redirectTimerId = setTimeout(function () {
-        window.location.href = REDIRECT_URL;
-      }, 3000);
-    }
-
-    function applyLaunchState() {
-      if (launched) return;
-      launched = true;
-
-      setCountdownValues(0, 0, 0, 0, false);
-      setTextBySelector('.lb-text', '🚀 WE ARE LIVE');
-      setTextBySelector('.hc-label', 'hellomara.net is live!');
-
-      var fill = document.getElementById('lpFill');
-      if (fill) fill.style.width = '100%';
-
-      setTextById('lpDaysLeft', '0');
-      document.title = 'Live — hellomara.net';
-
-      scheduleRedirectOnce();
-    }
-
-    function tick() {
-      var now = Date.now();
-      var diff = LAUNCH_TIMESTAMP - now;
-
-      if (diff <= 0) {
-        applyLaunchState();
-        if (countdownIntervalId !== null) {
-          clearInterval(countdownIntervalId);
-          countdownIntervalId = null;
-        }
-        return;
-      }
-
-      var totalSec = Math.floor(diff / 1000);
-      var days = Math.floor(totalSec / 86400);
-      var hours = Math.floor((totalSec % 86400) / 3600);
-      var mins = Math.floor((totalSec % 3600) / 60);
-      var secs = totalSec % 60;
-
-      setCountdownValues(days, hours, mins, secs, true);
-
-      var elapsed = TOTAL_DURATION - diff;
-      var pct = Math.min(100, Math.max(0, (elapsed / TOTAL_DURATION) * 100));
-      var fill = document.getElementById('lpFill');
-      if (fill) fill.style.width = pct + '%';
-
-      setTextById('lpDaysLeft', '' + days);
-      document.title = pad2(days) + 'd ' + pad2(hours) + 'h — hellomara.net';
-    }
-
-    // Start immediately (script is at end of body so DOM is ready),
-    // but also guard with DOMContentLoaded in case the browser delays.
-    function startCountdown() {
-      try {
-        tick();
-        countdownIntervalId = setInterval(tick, 1000);
-      } catch (e) {
-        // Silently ignore — countdown is cosmetic, not load-blocking.
-      }
-    }
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', startCountdown);
-    } else {
-      startCountdown();
     }
 
     // === Waitlist form ===
