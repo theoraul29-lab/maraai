@@ -26,6 +26,7 @@ import { db, rawSqlite } from '../db.js';
 import { maraWaitlist } from '../../shared/schema.js';
 import { desc, sql as drizzleSql } from 'drizzle-orm';
 import { createIPRateLimit } from '../rate-limit.js';
+import { sendWaitlistConfirmationEmail } from '../lib/email.js';
 
 const LAUNCH_DATE = new Date(
   process.env.LAUNCH_DATE_ISO || '2026-06-01T00:00:00Z',
@@ -308,6 +309,7 @@ export function registerLaunchCountdown(
           // hiccup — we'll see the error in logs.
         }
 
+        sendWaitlistConfirmationEmail(email).catch(() => {});
         return res.json({ ok: true });
       } catch (err) {
         console.error('[waitlist] handler error:', err);
