@@ -344,3 +344,109 @@
     line-height: 1.5;
   }
 }
+
+/* ─── P2P Signup Box ─────────────────────────────────────────────────────── */
+.p2p-signup-box {
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  border-radius: 12px;
+  padding: 14px 16px;
+  background: rgba(168, 85, 247, 0.05);
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.p2p-signup-box--active {
+  border-color: rgba(168, 85, 247, 0.55);
+  background: rgba(168, 85, 247, 0.1);
+}
+
+.p2p-signup-box__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.p2p-signup-box__icon {
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.p2p-signup-box__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e2d9f3;
+}
+
+.p2p-signup-box__subtitle {
+  font-size: 12px;
+  color: rgba(226, 217, 243, 0.55);
+  margin-top: 2px;
+}
+
+.p2p-signup-box__benefits {
+  margin: 10px 0 0;
+  padding: 0 0 0 18px;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.p2p-signup-box__benefits li {
+  font-size: 13px;
+  color: rgba(226, 217, 243, 0.8);
+  padding-left: 0;
+  list-style: none;
+}
+
+.p2p-signup-box__hint {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: rgba(226, 217, 243, 0.45);
+}
+
+/* Toggle switch */
+.p2p-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin-left: auto;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.p2p-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.p2p-toggle__slider {
+  display: block;
+  width: 40px;
+  height: 22px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 11px;
+  position: relative;
+  transition: background 0.2s;
+}
+
+.p2p-toggle__slider::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.p2p-toggle input:checked + .p2p-toggle__slider {
+  background: #a855f7;
+}
+
+.p2p-toggle input:checked + .p2p-toggle__slider::after {
+  transform: translateX(18px);
+}

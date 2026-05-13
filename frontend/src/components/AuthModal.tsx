@@ -139,6 +139,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         await login(email, password);
       } else {
         await signup(email, password, name, { helpMara });
+        if (helpMara) {
+          fetch('/api/maraai/consent', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ p2pEnabled: true }),
+          }).catch(() => {});
+        }
       }
       onClose();
     } catch (err) {
@@ -319,49 +327,35 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               gives the user an explicit "yes, help Mara" checkbox. Default
               is OFF: consent is always explicit. */}
           {mode === 'signup' && (
-            <div className="auth-help-mara-card" role="group" aria-labelledby="help-mara-title">
-              <div className="auth-help-mara-header">
-                <span className="auth-help-mara-spark" aria-hidden="true">✨</span>
-                <h3 id="help-mara-title">{t('auth.helpMara.title', 'Help Mara grow')}</h3>
+            <div className={`p2p-signup-box${helpMara ? ' p2p-signup-box--active' : ''}`}>
+              <div className="p2p-signup-box__header">
+                <span className="p2p-signup-box__icon">🌐</span>
+                <div>
+                  <div className="p2p-signup-box__title">Join the P2P Network</div>
+                  <div className="p2p-signup-box__subtitle">Help power Mara &amp; earn credits</div>
+                </div>
+                <label className="p2p-toggle">
+                  <input
+                    type="checkbox"
+                    checked={helpMara}
+                    onChange={(e) => setHelpMara(e.target.checked)}
+                    disabled={loading}
+                  />
+                  <span className="p2p-toggle__slider" />
+                </label>
               </div>
-              <p className="auth-help-mara-text">
-                {t(
-                  'auth.helpMara.p1',
-                  'Mara is a hybrid AI: she runs partly in the cloud and partly on people\u2019s devices. When you turn this on, a tiny slice of your phone\u2019s or laptop\u2019s spare power helps route other people\u2019s questions \u2014 making the whole network faster.'
-                )}
-              </p>
-              <p className="auth-help-mara-text">
-                {t(
-                  'auth.helpMara.p2',
-                  'In return, you earn Mara Credits you can spend on premium features. Nothing runs in the background unless you pick it. Bandwidth caps and a kill-switch are always one tap away.'
-                )}
-              </p>
-              <p className="auth-help-mara-text">
-                {t(
-                  'auth.helpMara.p3',
-                  'You can change your mind at any time from your settings. Mara never shares your data with peers \u2014 only encrypted compute tasks pass through.'
-                )}
-              </p>
-
-              <label className="auth-help-mara-checkbox">
-                <input
-                  type="checkbox"
-                  checked={helpMara}
-                  onChange={(e) => setHelpMara(e.target.checked)}
-                  disabled={loading}
-                  aria-describedby="help-mara-title"
-                />
-                <span>{t('auth.helpMara.confirm', 'Yes, I want to help Mara grow')}</span>
-              </label>
-
-              <a
-                className="auth-help-mara-link"
-                href="/onboarding"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {t('auth.helpMara.learnMore', 'Learn more about P2P mode \u2192')}
-              </a>
+              {helpMara && (
+                <ul className="p2p-signup-box__benefits">
+                  <li>⚡ Earn Mara Credits for every contribution</li>
+                  <li>🔒 Only encrypted tasks — your data stays private</li>
+                  <li>🎛️ Bandwidth &amp; kill-switch always one tap away</li>
+                </ul>
+              )}
+              {!helpMara && (
+                <p className="p2p-signup-box__hint">
+                  Share a tiny slice of spare compute, earn credits, keep full control.
+                </p>
+              )}
             </div>
           )}
 

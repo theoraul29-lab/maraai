@@ -136,3 +136,145 @@
   color: #fca5a5;
   font-size: 13px;
 }
+
+/* ─── P2P Settings Section ───────────────────────────────────────────────── */
+.p2p-settings-section {
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  background: rgba(168, 85, 247, 0.06);
+}
+
+.p2p-settings-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.p2p-settings-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.p2p-settings-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.p2p-settings-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #e2d9f3;
+}
+
+.p2p-settings-subtitle {
+  font-size: 12px;
+  color: rgba(226, 217, 243, 0.5);
+  margin-top: 2px;
+}
+
+.p2p-settings-benefits {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.p2p-settings-benefits li {
+  font-size: 13px;
+  color: rgba(226, 217, 243, 0.75);
+}
+
+/* Independence meter */
+.p2p-independence-meter {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.p2p-independence-meter__label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: rgba(226, 217, 243, 0.6);
+}
+
+.p2p-independence-meter__track {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.p2p-independence-meter__fill {
+  height: 100%;
+  background: linear-gradient(90deg, #a855f7, #7c3aed);
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+/* Toggle (shared with AuthModal via same class names) */
+.p2p-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin-left: auto;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.p2p-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.p2p-toggle__slider {
+  display: block;
+  width: 40px;
+  height: 22px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 11px;
+  position: relative;
+  transition: background 0.2s;
+}
+
+.p2p-toggle__slider::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.p2p-toggle input:checked + .p2p-toggle__slider {
+  background: #a855f7;
+}
+
+.p2p-toggle input:checked + .p2p-toggle__slider::after {
+  transform: translateX(18px);
+}
+
+.p2p-toggle--large .p2p-toggle__slider {
+  width: 48px;
+  height: 26px;
+  border-radius: 13px;
+}
+
+.p2p-toggle--large .p2p-toggle__slider::after {
+  width: 20px;
+  height: 20px;
+}
+
+.p2p-toggle--large input:checked + .p2p-toggle__slider::after {
+  transform: translateX(22px);
+}

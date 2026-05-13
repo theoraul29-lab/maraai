@@ -51,6 +51,9 @@ export function SubsystemSettings({ onClose, onRequestLogin }: Props) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [p2pEnabled, setP2pEnabled] = useState(false);
+  const [activeNodes, setActiveNodes] = useState(0);
+  const [networkStatsLoading, setNetworkStatsLoading] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -63,7 +66,10 @@ export function SubsystemSettings({ onClose, onRequestLogin }: Props) {
         const res = await fetch('/api/consent', { credentials: 'include' });
         if (!res.ok) throw new Error(String(res.status));
         const json = await res.json();
-        if (!cancelled) setConsent(json.consent ?? null);
+        if (!cancelled) {
+          setConsent(json.consent ?? null);
+          setP2pEnabled(json.consent?.p2pEnabled ?? false);
+        }
       } catch {
         if (!cancelled) setError('load_failed');
       } finally {
@@ -74,6 +80,44 @@ export function SubsystemSettings({ onClose, onRequestLogin }: Props) {
       cancelled = true;
     };
   }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    setNetworkStatsLoading(true);
+    (async () => {
+      try {
+        const res = await fetch('/api/maraai/p2p/network-stats', { credentials: 'include' });
+        if (!res.ok) return;
+        const json = await res.json();
+        if (!cancelled) setActiveNodes(json.activeNodes ?? 0);
+      } catch {
+        // non-critical — keep defaults
+      } finally {
+        if (!cancelled) setNetworkStatsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  const handleP2PToggle = async (enabled: boolean) => {
+    setP2pEnabled(enabled);
+    try {
+      const res = await fetch('/api/maraai/consent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ p2pEnabled: enabled }),
+      });
+      if (res.ok) {
+        await patch({ p2pEnabled: enabled });
+      }
+    } catch {
+      setP2pEnabled(!enabled);
+    }
+  };
 
   // ESC closes the panel — matches the rest of the modal-style UI.
   useEffect(() => {
@@ -169,6 +213,50 @@ export function SubsystemSettings({ onClose, onRequestLogin }: Props) {
 
         {user && !loading && consent && (
           <>
+            <section className="p2p-settings-section">
+              <div className="p2p-settings-header">
+                <div className="p2p-settings-title-row">
+                  <span className="p2p-settings-icon">🌐</span>
+                  <div>
+                    <div className="p2p-settings-title">P2P Network</div>
+                    <div className="p2p-settings-subtitle">
+                      {networkStatsLoading ? 'Loading…' : `${activeNodes} active nodes`}
+                    </div>
+                  </div>
+                  <label className="p2p-toggle p2p-toggle--large">
+                    <input
+                      type="checkbox"
+                      checked={p2pEnabled}
+                      onChange={(e) => handleP2PToggle(e.target.checked)}
+                      disabled={saving}
+                    />
+                    <span className="p2p-toggle__slider" />
+                  </label>
+                </div>
+                {p2pEnabled && (
+                  <div className="p2p-independence-meter">
+                    <div className="p2p-independence-meter__label">
+                      <span>Network independence</span>
+                      <span>{Math.min(100, Math.round((activeNodes / 200) * 100))}%</span>
+                    </div>
+                    <div className="p2p-independence-meter__track">
+                      <div
+                        className="p2p-independence-meter__fill"
+                        style={{ width: `${Math.min(100, Math.round((activeNodes / 200) * 100))}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+                {p2pEnabled && (
+                  <ul className="p2p-settings-benefits">
+                    <li>⚡ Earn Mara Credits passively</li>
+                    <li>🔒 Encrypted tasks only — zero data exposure</li>
+                    <li>🎛️ Full bandwidth control below</li>
+                  </ul>
+                )}
+              </div>
+            </section>
+
             <section className="mara-settings-section">
               <h3>{t('settings.modeTitle', 'Mode')}</h3>
               <div className="mara-settings-modes">

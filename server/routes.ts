@@ -43,7 +43,8 @@ import {
   generateImprovementIdeas,
   generateMarketingPost,
 } from './ai';
-import { getAIHealth } from './llm';
+import { getAIHealth, llmChat } from './llm';
+import type { LLMMessage } from './llm';
 import {
   getLibraryProgress,
   addAndReadCustomBook,
@@ -1214,6 +1215,32 @@ export async function registerRoutes(
     }
 
     return res.json({ received: true });
+  });
+
+  // === Admin Mara Command Center chat (admin only) ===
+  app.post('/api/admin/mara/chat', requireAdmin, async (req: any, res: any) => {
+    try {
+      const message = typeof req.body?.message === 'string' ? req.body.message.trim() : '';
+      if (!message) return res.status(400).json({ error: 'message is required' });
+
+      const status = brainManager.status();
+      const systemPrompt = `You are Mara, an autonomous AI growth engineer for the MaraAI platform. \
+You are speaking directly with a system administrator. \
+Current brain status: ${JSON.stringify(status)}. \
+Speak honestly, analytically and briefly. Provide actionable insights about the platform's growth, \
+experiments, and learning cycles. If asked about experiments or strategy, be specific and data-driven.`;
+
+      const messages: LLMMessage[] = [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: message },
+      ];
+
+      const reply = await llmChat(messages, { temperature: 0.7, source: 'admin.mara_chat' });
+      res.json({ reply });
+    } catch (error) {
+      console.error('[admin/mara/chat] failed:', error);
+      res.status(500).json({ error: 'Failed to get Mara response' });
+    }
   });
 
   // Pre-launch landing page + /preview gate + waitlist API.

@@ -21,6 +21,7 @@ import HomePage from './HomePage';
 import AdminBrain from './AdminBrain';
 import AdminExperiments from './AdminExperiments';
 import AdminWaitlist from './AdminWaitlist';
+import AdminMaraChat from './AdminMaraChat';
 import { OnboardingFlow } from './maraai/OnboardingFlow';
 import { TransparencyDashboard } from './maraai/TransparencyDashboard';
 import NotFound from './NotFound';
@@ -56,6 +57,7 @@ function App() {
                 <Route path="/admin/brain" element={<AdminGuard><AdminBrain /></AdminGuard>} />
                 <Route path="/admin/experiments" element={<AdminGuard><AdminExperiments /></AdminGuard>} />
                 <Route path="/admin/waitlist" element={<AdminGuard><AdminWaitlist /></AdminGuard>} />
+                <Route path="/admin/mara" element={<AdminGuard><AdminMaraChat /></AdminGuard>} />
                 <Route
                   path="/onboarding"
                   element={<OnboardingFlow onClose={() => navigate('/')} />}
