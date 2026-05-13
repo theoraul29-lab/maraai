@@ -34,7 +34,11 @@ export default defineConfig({
         // push-specific event wiring.
         importScripts: ['/push-sw.js'],
         navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/api\//, /^\/uploads\//],
+        // Deny-list routes that must be handled by the Express server, not the
+        // SW cache. Without this, the SW intercepts GET / on mobile and returns
+        // the cached SPA index.html instead of letting the server serve
+        // landing.html (pre-launch) or the real SPA (post-launch).
+        navigateFallbackDenylist: [/^\/api\//, /^\/uploads\//, /^\/$/, /^\/preview/],
         cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
