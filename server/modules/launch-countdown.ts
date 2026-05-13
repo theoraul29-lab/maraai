@@ -69,13 +69,23 @@ function escapeHtml(s: string): string {
 
 // Pre-launch landing page is cached in memory at boot. We re-read on
 // every request only in development so designers can edit and refresh.
+// The server injects window.MARA_LAUNCH_TS so the client JS always uses
+// the exact same timestamp as the server — no drift from hardcoded dates.
 let cachedLandingHtml: string | null = null;
 function readLandingHtml(): string {
   if (process.env.NODE_ENV === 'production' && cachedLandingHtml) {
     return cachedLandingHtml;
   }
   const p = path.resolve(process.cwd(), 'public', 'landing.html');
-  cachedLandingHtml = fs.readFileSync(p, 'utf8');
+  const raw = fs.readFileSync(p, 'utf8');
+  const ts = LAUNCH_DATE.getTime();
+  // Inject the authoritative launch timestamp right before </head> so the
+  // client countdown script can read window.MARA_LAUNCH_TS instead of
+  // relying on a hardcoded Date.UTC() value.
+  cachedLandingHtml = raw.replace(
+    '</head>',
+    `<script>window.MARA_LAUNCH_TS=${ts};</script>\n</head>`,
+  );
   return cachedLandingHtml;
 }
 

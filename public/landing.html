@@ -574,7 +574,11 @@
     })();
 
     // === Countdown ===
-    var LAUNCH_TIMESTAMP = Date.UTC(2026, 5, 1, 0, 0, 0);
+    // window.MARA_LAUNCH_TS is injected by the server (launch-countdown.ts)
+    // from process.env.LAUNCH_DATE_ISO so client + server always agree.
+    var LAUNCH_TIMESTAMP = (window.MARA_LAUNCH_TS && window.MARA_LAUNCH_TS > 0)
+      ? window.MARA_LAUNCH_TS
+      : Date.UTC(2026, 5, 1, 0, 0, 0);
     var TOTAL_DURATION = 20 * 24 * 60 * 60 * 1000;
     var REDIRECT_URL = 'https://hellomara.net';
     var launched = false;
@@ -698,8 +702,21 @@
       document.title = pad2(days) + 'd ' + pad2(hours) + 'h — hellomara.net';
     }
 
-    tick();
-    countdownIntervalId = setInterval(tick, 1000);
+    // Start immediately (script is at end of body so DOM is ready),
+    // but also guard with DOMContentLoaded in case the browser delays.
+    function startCountdown() {
+      try {
+        tick();
+        countdownIntervalId = setInterval(tick, 1000);
+      } catch (e) {
+        // Silently ignore — countdown is cosmetic, not load-blocking.
+      }
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', startCountdown);
+    } else {
+      startCountdown();
+    }
 
     // === Waitlist form ===
     var waitlistForm = document.getElementById('waitlistForm');
