@@ -70,6 +70,7 @@ function resolveSessionStoreDir(): string {
 // and per-handler input validation; CSRF doesn't add anything here.
 const CSRF_EXEMPT_PATHS = new Set<string>([
   '/api/waitlist',
+  '/api/webhooks/stripe',
 ]);
 
 export function csrfProtection(req: Request, res: Response, next: NextFunction) {

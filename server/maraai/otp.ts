@@ -16,6 +16,7 @@ import { createHash, randomInt } from 'crypto';
 import { db } from '../db.js';
 import { emailOtpCodes } from '../../shared/schema.js';
 import { logActivity } from './activity.js';
+import { sendOtpEmail } from '../lib/email.js';
 
 const OTP_TTL_MS = 10 * 60 * 1000;
 const MAX_ATTEMPTS = 5;
@@ -50,12 +51,13 @@ export async function requestOtp(
 
   const isProd = process.env.NODE_ENV === 'production';
   const transport = (process.env.MARAAI_OTP_TRANSPORT || '').trim();
+  const hasResend = Boolean(process.env.RESEND_API_KEY);
 
   // In production, refuse to claim delivery if no real transport is
   // wired up. Logging the code to stdout is fine for dev/CI but is not
   // delivery — the user can't see it. We log activity for ops visibility
   // but do NOT insert a code that no one can ever retrieve.
-  if (isProd && !transport) {
+  if (isProd && !transport && !hasResend) {
     await logActivity(null, 'auth.otp.requested', {
       email,
       purpose,
@@ -77,10 +79,12 @@ export async function requestOtp(
     expiresAt,
   });
 
-  // Best-effort transport. MARAAI_OTP_TRANSPORT is reserved for future
-  // use (smtp, ses, sendgrid). When unset in dev we log the code to
-  // stdout so engineers can complete the flow.
-  if (!isProd) {
+  // Deliver via Resend when configured; fall back to console in dev.
+  if (hasResend) {
+    await sendOtpEmail(email, code, purpose).catch((err) =>
+      console.error('[maraai/otp] sendOtpEmail failed:', err),
+    );
+  } else if (!isProd) {
     console.log(`[maraai/otp] ${purpose} code for ${email}: ${code}`);
   } else {
     console.log(`[maraai/otp] ${purpose} code dispatched via ${transport} to ${email}`);

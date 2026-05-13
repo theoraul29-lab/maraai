@@ -90,6 +90,7 @@ import {
   confirmReset as authConfirmReset,
 } from './modules/auth-api.js';
 import { registerLaunchCountdown } from './modules/launch-countdown.js';
+import { startFacebook, facebookCallback } from './modules/oauth-facebook.js';
 
 export async function registerRoutes(
   httpServer: Server,
@@ -187,6 +188,16 @@ export async function registerRoutes(
   // signup/login as failed.
   // Per-route IP rate limits: signup 5/15min, login 10/15min. Tunable via env
   // (AUTH_RL_SIGNUP_MAX, AUTH_RL_LOGIN_MAX). See server/rate-limit.ts.
+  // Facebook OAuth — only registered when both env vars are set so dev
+  // environments without Meta credentials don't see broken /api/auth/facebook
+  // endpoints. The handlers themselves redirect to /?oauth_error=oauth_not_configured
+  // when invoked without credentials, but not registering saves an extra round-trip.
+  if (process.env.FACEBOOK_APP_ID && process.env.FACEBOOK_APP_SECRET) {
+    app.get('/api/auth/facebook', startFacebook);
+    app.get('/api/auth/facebook/callback', facebookCallback);
+    console.log('[auth] Facebook OAuth routes registered');
+  }
+
   app.post('/api/auth/signup', signupRateLimit, authSignup);
   app.post('/api/auth/login', loginRateLimit, authLogin);
   app.post('/api/auth/logout', authLogout);
@@ -1145,6 +1156,64 @@ export async function registerRoutes(
   app.get('/api/ai/health', async (_req: any, res: any) => {
     const snap = await getAIHealth();
     return res.status(snap.ok ? 200 : 503).json(snap);
+  });
+
+  // --- Stripe webhook (POST /api/webhooks/stripe) ----------------------------
+  // Raw body is available as req.rawBody (Buffer) because server/index.ts
+  // wires express.json with a `verify` callback that saves it. The route is
+  // CSRF-exempt (see server/auth.ts CSRF_EXEMPT_PATHS). Stripe requires the
+  // raw payload for signature verification — do NOT re-parse with JSON.parse.
+  app.post('/api/webhooks/stripe', async (req: any, res: Response) => {
+    const sig = req.headers['stripe-signature'];
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    const stripeKey = process.env.STRIPE_SECRET_KEY;
+
+    if (!webhookSecret || !stripeKey) {
+      console.warn('[stripe-webhook] STRIPE_WEBHOOK_SECRET or STRIPE_SECRET_KEY not set');
+      return res.status(200).json({ received: true });
+    }
+
+    if (!sig) {
+      return res.status(400).json({ error: 'Missing stripe-signature header' });
+    }
+
+    let event: any;
+    try {
+      const { default: Stripe } = await import('stripe');
+      const stripe = new (Stripe as any)(stripeKey, { apiVersion: '2023-10-16' });
+      event = stripe.webhooks.constructEvent(req.rawBody as Buffer, sig, webhookSecret);
+    } catch (err) {
+      console.error('[stripe-webhook] signature verification failed:', err);
+      return res.status(400).json({ error: 'Signature verification failed' });
+    }
+
+    switch (event.type) {
+      case 'customer.subscription.created':
+      case 'customer.subscription.updated': {
+        const sub = event.data.object;
+        console.log('[stripe-webhook] subscription updated:', sub.id, sub.status);
+        break;
+      }
+      case 'customer.subscription.deleted': {
+        const sub = event.data.object;
+        console.log('[stripe-webhook] subscription deleted:', sub.id);
+        break;
+      }
+      case 'invoice.payment_succeeded': {
+        const inv = event.data.object;
+        console.log('[stripe-webhook] invoice paid:', inv.id);
+        break;
+      }
+      case 'invoice.payment_failed': {
+        const inv = event.data.object;
+        console.warn('[stripe-webhook] invoice payment failed:', inv.id);
+        break;
+      }
+      default:
+        console.log('[stripe-webhook] unhandled event:', event.type);
+    }
+
+    return res.json({ received: true });
   });
 
   // Pre-launch landing page + /preview gate + waitlist API.

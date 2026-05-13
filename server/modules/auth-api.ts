@@ -19,7 +19,8 @@ import { randomBytes } from 'crypto';
 import type { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { db } from '../db.js';
-import { users, localAuthCredentials, passwordResetTokens } from '../../shared/schema.js';
+import { users, localAuthCredentials, passwordResetTokens, userPreferences } from '../../shared/schema.js';
+import { sendPasswordResetEmail, sendWelcomeEmail } from '../lib/email.js';
 import { eq, sql, and, gt } from 'drizzle-orm';
 import { z } from 'zod';
 
@@ -272,6 +273,9 @@ async function signupHandler(req: Request, res: Response) {
     return authError(res, 500, 'session_create_failed', 'Failed to create session. Please try again.');
   }
   console.log('[auth] signup done', { ms: Date.now() - t0, userId: user.id });
+  void sendWelcomeEmail(email, name).catch((err) =>
+    console.error('[auth] sendWelcomeEmail failed:', err),
+  );
   // Brand-new user has no language preference yet; return null so the
   // client falls back to localStorage / browser-detected language.
   return res.status(201).json(toPayload({ ...user, preferredLanguage: null }));
@@ -428,8 +432,9 @@ export async function requestReset(req: Request, res: Response) {
     return res.status(200).json({ ok: true, devToken: token });
   }
 
-  // TODO: send the token via your email provider (e.g. Resend / SendGrid).
-  // Example: await sendResetEmail(email, token);
+  await sendPasswordResetEmail(email, token).catch((err) =>
+    console.error('[auth] sendPasswordResetEmail failed:', err),
+  );
   return res.status(200).json({ ok: true });
 }
 

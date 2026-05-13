@@ -31,9 +31,13 @@ const LAUNCH_DATE = new Date(
   process.env.LAUNCH_DATE_ISO || '2026-06-01T00:00:00Z',
 );
 
-const DEFAULT_PREVIEW_TOKEN = 'marapreview2026';
-function getPreviewToken(): string {
-  return process.env.PREVIEW_TOKEN || DEFAULT_PREVIEW_TOKEN;
+function getPreviewToken(): string | null {
+  const envToken = process.env.PREVIEW_TOKEN;
+  if (envToken) return envToken;
+  // In production the default token must not be the fallback — it is public
+  // knowledge (it's in the repo). Require an explicit env var in production.
+  if (process.env.NODE_ENV === 'production') return null;
+  return 'marapreview2026';
 }
 
 const PREVIEW_COOKIE = 'preview_token';
@@ -56,6 +60,17 @@ function readCookie(req: Request, name: string): string | null {
     }
   }
   return null;
+}
+
+// Prevent CSV formula injection. Spreadsheet apps (Excel, Sheets) interpret
+// cells that start with =, +, -, or @ as formulas. Prefix with a single quote
+// so the value is treated as a literal string. Double-quotes are escaped as
+// per RFC 4180, and the whole field is wrapped in double-quotes.
+function sanitizeCsvField(v: string | null | undefined): string {
+  const s = String(v ?? '');
+  const FORMULA_CHARS = /^[=+\-@\t\r]/;
+  const safe = FORMULA_CHARS.test(s) ? `'${s}` : s;
+  return '"' + safe.replace(/"/g, '""') + '"';
 }
 
 function escapeHtml(s: string): string {
@@ -163,8 +178,9 @@ export function registerLaunchCountdown(
   // landing to the world.
   app.get('/', (req: Request, res: Response, next: NextFunction) => {
     if (isLaunched()) return next();
+    const PREVIEW_TOKEN = getPreviewToken();
     const cookieTok = readCookie(req, PREVIEW_COOKIE);
-    if (cookieTok && cookieTok === getPreviewToken()) return next();
+    if (PREVIEW_TOKEN && cookieTok && cookieTok === PREVIEW_TOKEN) return next();
     try {
       const html = readLandingHtml();
       res.setHeader('Cache-Control', 'public, max-age=60');
@@ -181,6 +197,12 @@ export function registerLaunchCountdown(
       typeof req.query.token === 'string' ? req.query.token : '';
     const cookieToken = readCookie(req, PREVIEW_COOKIE) || '';
     const PREVIEW_TOKEN = getPreviewToken();
+
+    // If PREVIEW_TOKEN is null (production without env var set), redirect with
+    // an error instead of silently denying access with no guidance.
+    if (!PREVIEW_TOKEN) {
+      return res.redirect(302, '/?preview_error=not_configured');
+    }
 
     const tokenOk =
       (queryToken && queryToken === PREVIEW_TOKEN) ||
@@ -210,8 +232,9 @@ export function registerLaunchCountdown(
 
   // GET /preview/* — same gate, used for direct links to deep SPA paths.
   app.get('/preview/*', (req: Request, res: Response, next: NextFunction) => {
+    const PREVIEW_TOKEN = getPreviewToken();
     const cookieToken = readCookie(req, PREVIEW_COOKIE) || '';
-    if (cookieToken !== getPreviewToken()) {
+    if (!PREVIEW_TOKEN || cookieToken !== PREVIEW_TOKEN) {
       return res.redirect('/preview');
     }
     try {
@@ -347,13 +370,11 @@ export function registerLaunchCountdown(
         const header = 'email,source,referrer,created_at_iso\n';
         const lines = rows.map((r) => {
           const created = new Date(r.createdAt * 1000).toISOString();
-          const safe = (v: string | null | undefined) =>
-            '"' + String(v ?? '').replace(/"/g, '""') + '"';
           return [
-            safe(r.email),
-            safe(r.source),
-            safe(r.referrer),
-            safe(created),
+            sanitizeCsvField(r.email),
+            sanitizeCsvField(r.source),
+            sanitizeCsvField(r.referrer),
+            sanitizeCsvField(created),
           ].join(',');
         });
 

@@ -5,6 +5,7 @@
 
 # Dependencies
 node_modules/
+venv/
 venv_back/
 __pycache__/
 *.pyc

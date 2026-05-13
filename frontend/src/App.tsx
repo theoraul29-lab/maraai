@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
-import { Route, Routes, useNavigate, useLocation } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
+import { Route, Routes, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import './App.css';
 
@@ -23,6 +23,13 @@ import AdminExperiments from './AdminExperiments';
 import AdminWaitlist from './AdminWaitlist';
 import { OnboardingFlow } from './maraai/OnboardingFlow';
 import { TransparencyDashboard } from './maraai/TransparencyDashboard';
+import NotFound from './NotFound';
+
+function AdminGuard({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated } = useAuth();
+  if (!isAuthenticated) return <Navigate to="/" replace />;
+  return <>{children}</>;
+}
 
 function App() {
   const navigate = useNavigate();
@@ -46,14 +53,15 @@ function App() {
                 <Route path="/writers-hub" element={<WritersHub onClose={() => navigate('/')} />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/reset-password/confirmation" element={<ResetPasswordConfirmation />} />
-                <Route path="/admin/brain" element={<AdminBrain />} />
-                <Route path="/admin/experiments" element={<AdminExperiments />} />
-                <Route path="/admin/waitlist" element={<AdminWaitlist />} />
+                <Route path="/admin/brain" element={<AdminGuard><AdminBrain /></AdminGuard>} />
+                <Route path="/admin/experiments" element={<AdminGuard><AdminExperiments /></AdminGuard>} />
+                <Route path="/admin/waitlist" element={<AdminGuard><AdminWaitlist /></AdminGuard>} />
                 <Route
                   path="/onboarding"
                   element={<OnboardingFlow onClose={() => navigate('/')} />}
                 />
                 <Route path="/transparency" element={<TransparencyDashboard />} />
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
           </ErrorBoundary>
