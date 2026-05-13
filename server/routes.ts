@@ -204,6 +204,12 @@ export async function registerRoutes(
   app.post('/api/auth/logout', authLogout);
   // Full user payload (matches the AuthContext's expected shape).
   app.get('/api/auth/me', authMe);
+  // CSRF token for the current session. Called by frontend/src/csrf.ts
+  // before every mutating request. Returns the token that csrfProtection()
+  // validates — without this endpoint login/signup 403 in production.
+  app.get('/api/auth/csrf', (req: any, res: any) => {
+    return res.json({ csrfToken: req.session?.csrfToken ?? null });
+  });
   // Password reset: backend handlers existed in auth-api.ts but were never
   // routed. The forgot-password UI link is a separate follow-up (PR II);
   // wiring the backend here means the endpoints are reachable + rate-limited
