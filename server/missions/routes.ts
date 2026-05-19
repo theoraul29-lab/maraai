@@ -13,7 +13,7 @@ import {
 } from './engine.js';
 
 function getUserId(req: any): string {
-  return req.user?.uid ?? req.user?.id ?? req.user?.userId;
+  return req.user?.uid;
 }
 
 export function registerMissionRoutes(app: Express, requireAuth: any) {
