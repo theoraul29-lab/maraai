@@ -13,7 +13,7 @@ const API_URL = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'ht
 const linkKeys = [
 	{ to: '/', key: 'home', icon: '🏠' },
 	{ to: '/reels', key: 'reels', icon: '🎬' },
-	{ to: '/trading-academy', key: 'trading', icon: '📈' },
+	{ to: '/missions', key: 'missions', icon: '🎯' },
 	{ to: '/membership', key: 'vip', icon: '👑' },
 	{ to: '/creator-panel', key: 'creator', icon: '✨' },
 	{ to: '/writers-hub', key: 'writers', icon: '✍️' },

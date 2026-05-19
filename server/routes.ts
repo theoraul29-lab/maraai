@@ -16,7 +16,8 @@ import * as videoModule from '../backend/src/modules/video.js';
 import * as reelsModule from '../backend/src/modules/reels.js';
 import * as uploadsModule from '../backend/src/modules/uploads.js';
 import * as writersModule from '../backend/src/modules/writers.js';
-import * as tradingAcademyModule from '../backend/src/modules/trading-academy.js';
+// DEZACTIVAT: înlocuit de Mara Missions
+// import * as tradingAcademyModule from '../backend/src/modules/trading-academy.js';
 import * as creatorsModule from '../backend/src/modules/creators.js';
 import * as chatModule from '../backend/src/modules/chat.js';
 import * as ttsModule from '../backend/src/modules/tts.js';
@@ -91,6 +92,7 @@ import {
   confirmReset as authConfirmReset,
 } from './modules/auth-api.js';
 import { registerLaunchCountdown } from './modules/launch-countdown.js';
+import { registerMissionRoutes } from './missions/routes.js';
 import { startFacebook, facebookCallback } from './modules/oauth-facebook.js';
 
 export async function registerRoutes(
@@ -139,7 +141,8 @@ export async function registerRoutes(
   videoModule.injectDeps({ storage, db, api, z, creatorPostRequestSchema, likesTable });
   reelsModule.injectDeps({ storage });
   writersModule.injectDeps({ storage });
-  tradingAcademyModule.injectDeps({ storage });
+  // DEZACTIVAT: înlocuit de Mara Missions
+  // tradingAcademyModule.injectDeps({ storage });
   creatorsModule.injectDeps({ storage });
   ttsModule.injectDeps({
     classic: 'nova',
@@ -352,22 +355,15 @@ export async function registerRoutes(
   app.get('/api/writers/:id/access', writersModule.getAccess);
   app.post('/api/writers/:id/purchase', requireAuth, writersModule.purchaseArticle);
 
+  // DEZACTIVAT: înlocuit de Mara Missions
   // --- Trading Academy (PR F) -----------------------------------------------
-  //
-  // Feature gating is checked inside the handlers themselves rather than with
-  // `requireFeature` middleware because:
-  //   * `listModules` and `getModule` must respond 200 even for locked
-  //     modules (the frontend renders a paywalled preview)
-  //   * `getLesson` / `completeLesson` / `submitQuiz` need to know which
-  //     FeatureKey to enforce, and that key is read from the module row
-  //     (not fixed on the route).
-  app.get('/api/trading/modules', tradingAcademyModule.listModules);
-  app.get('/api/trading/modules/:slug', tradingAcademyModule.getModule);
-  app.get('/api/trading/lessons/:id', tradingAcademyModule.getLesson);
-  app.post('/api/trading/lessons/:id/complete', requireAuth, tradingAcademyModule.completeLesson);
-  app.post('/api/trading/lessons/:id/quiz', requireAuth, tradingAcademyModule.submitQuiz);
-  app.get('/api/trading/progress', requireAuth, tradingAcademyModule.getProgress);
-  app.get('/api/trading/certificates', requireAuth, tradingAcademyModule.getCertificates);
+  // app.get('/api/trading/modules', tradingAcademyModule.listModules);
+  // app.get('/api/trading/modules/:slug', tradingAcademyModule.getModule);
+  // app.get('/api/trading/lessons/:id', tradingAcademyModule.getLesson);
+  // app.post('/api/trading/lessons/:id/complete', requireAuth, tradingAcademyModule.completeLesson);
+  // app.post('/api/trading/lessons/:id/quiz', requireAuth, tradingAcademyModule.submitQuiz);
+  // app.get('/api/trading/progress', requireAuth, tradingAcademyModule.getProgress);
+  // app.get('/api/trading/certificates', requireAuth, tradingAcademyModule.getCertificates);
 
   // --- Creator Tools (PR G) -------------------------------------------------
   // Aggregated earnings (requires creator.revenue_share feature).
@@ -1263,6 +1259,9 @@ experiments, and learning cycles. If asked about experiments or strategy, be spe
       res.status(500).json({ error: 'Failed to get Mara response' });
     }
   });
+
+  // Mara Missions V3
+  registerMissionRoutes(app, requireAuth);
 
   // Pre-launch landing page + /preview gate + waitlist API.
   //

@@ -9,7 +9,7 @@ import Nav from './Nav';
 import { MaraChatWidget } from './components/MaraChatWidget';
 
 // Heavy route modules are lazy-loaded to reduce initial bundle size.
-const TradingAcademy = lazy(() => import('./Trading').then((m) => ({ default: m.Trading })));
+const Missions = lazy(() => import('./Missions'));
 const VIP = lazy(() => import('./VIP').then((m) => ({ default: m.VIP })));
 const Creators = lazy(() => import('./creator').then((m) => ({ default: m.Creator })));
 const Reels = lazy(() => import('./reels'));
@@ -46,7 +46,9 @@ function App() {
             <Suspense fallback={null}>
               <Routes>
                 <Route path="/" element={<HomePage />} />
-                <Route path="/trading-academy" element={<TradingAcademy onClose={() => navigate('/')} />} />
+                <Route path="/missions" element={<Missions />} />
+                {/* DEZACTIVAT: înlocuit de Mara Missions */}
+                {/* <Route path="/trading-academy" element={<TradingAcademy onClose={() => navigate('/')} />} /> */}
                 <Route path="/membership" element={<VIP onClose={() => navigate('/')} />} />
                 <Route path="/creator-panel" element={<Creators onClose={() => navigate('/')} />} />
                 <Route path="/you" element={<You />} />

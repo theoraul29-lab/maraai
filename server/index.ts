@@ -23,6 +23,7 @@ import { IMAGE_UPLOADS_DIR } from '../backend/src/modules/uploads.js';
 import { seedPlans } from './billing/seed.js';
 import { seedTradingAcademy } from './trading/seed.js';
 import { seedDefaultObjective } from './mara-core/objective.js';
+import { seedMissions } from './missions/seed.js';
 import {
   bindPeerSender,
   failJob,
@@ -575,6 +576,14 @@ app.use((req, res, next) => {
     // Do NOT throw: if the content seed fails, the API is still usable
     // (just with an empty catalogue). We'd rather boot than crash-loop.
     console.error('[trading] seed failed (continuing):', err);
+  }
+
+  // Mara Missions V3 — seed mission catalogue
+  try {
+    seedMissions();
+    console.log('[missions] catalogue seeded');
+  } catch (err) {
+    console.error('[missions] seed failed (continuing):', err);
   }
 
   // MaraCore Etapa 1: seed the singleton ObjectiveFunction row if it

@@ -38,7 +38,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { SubsystemSettings } from './SubsystemSettings';
 import './MobileOrbHome.css';
 
-type OrbId = 'you' | 'reels' | 'trading' | 'writers' | 'vip' | 'creators';
+type OrbId = 'you' | 'reels' | 'missions' | 'writers' | 'vip' | 'creators';
 
 type OrbItem = {
   id: OrbId;
@@ -73,12 +73,13 @@ const ICONS: Record<OrbId, ReactNode> = {
       />
     </svg>
   ),
-  trading: (
+  missions: (
     <svg viewBox="0 0 24 24" width="32" height="32" aria-hidden>
       <path
         fill="currentColor"
-        d="M3 18h18v2H3v-2Zm2-2V8h2v8H5Zm4 0V5h2v11H9Zm4 0v-7h2v7h-2Zm4 0v-3h2v3h-2Z"
+        d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"
       />
+      <circle fill="currentColor" cx="12" cy="12" r="3" />
     </svg>
   ),
   writers: (
@@ -110,7 +111,7 @@ const ICONS: Record<OrbId, ReactNode> = {
 const ITEMS: OrbItem[] = [
   { id: 'you', label: 'You', to: '/you', icon: ICONS.you },
   { id: 'reels', label: 'Reels', to: '/reels', icon: ICONS.reels },
-  { id: 'trading', label: 'Trading Akademie', to: '/trading-academy', icon: ICONS.trading },
+  { id: 'missions', label: 'Missions', to: '/missions', icon: ICONS.missions },
   { id: 'writers', label: 'Writers', to: '/writers-hub', icon: ICONS.writers },
   { id: 'vip', label: 'VIP', to: '/membership', icon: ICONS.vip },
   { id: 'creators', label: 'Creators', to: '/creator-panel', icon: ICONS.creators },

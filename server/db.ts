@@ -238,6 +238,77 @@ sqlite.exec(`
   );
   CREATE INDEX IF NOT EXISTS idx_mara_waitlist_created_at
     ON mara_waitlist(created_at DESC);
+
+  -- Mara Missions V3
+  CREATE TABLE IF NOT EXISTS missions (
+    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    pillar TEXT NOT NULL,
+    difficulty TEXT NOT NULL DEFAULT 'gentle',
+    xp_reward INTEGER NOT NULL DEFAULT 100,
+    proof_type TEXT NOT NULL DEFAULT 'text',
+    proof_prompt TEXT NOT NULL DEFAULT 'Cum te-ai simțit?',
+    steps TEXT DEFAULT '[]',
+    reflection TEXT,
+    is_active INTEGER DEFAULT 1,
+    is_daily INTEGER DEFAULT 0,
+    created_at INTEGER DEFAULT (unixepoch())
+  );
+  CREATE TABLE IF NOT EXISTS user_missions (
+    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    user_id TEXT NOT NULL,
+    mission_id TEXT NOT NULL,
+    status TEXT DEFAULT 'active',
+    progress INTEGER DEFAULT 0,
+    proof_text TEXT,
+    proof_media_url TEXT,
+    reflection_answer TEXT,
+    mara_feedback TEXT,
+    started_at INTEGER DEFAULT (unixepoch()),
+    completed_at INTEGER
+  );
+  CREATE TABLE IF NOT EXISTS user_xp (
+    user_id TEXT PRIMARY KEY,
+    xp INTEGER DEFAULT 0,
+    level INTEGER DEFAULT 1,
+    streak INTEGER DEFAULT 0,
+    last_activity_at INTEGER,
+    updated_at INTEGER DEFAULT (unixepoch())
+  );
+  CREATE TABLE IF NOT EXISTS mission_events (
+    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    user_id TEXT NOT NULL,
+    mission_id TEXT NOT NULL,
+    event_type TEXT NOT NULL,
+    meta TEXT DEFAULT '{}',
+    created_at INTEGER DEFAULT (unixepoch())
+  );
+  CREATE TABLE IF NOT EXISTS user_personality (
+    user_id TEXT PRIMARY KEY,
+    onboarding_done INTEGER DEFAULT 0,
+    what_you_love TEXT,
+    want_to_change TEXT,
+    current_hobbies TEXT,
+    dream_life TEXT,
+    biggest_fear TEXT,
+    preferred_pillars TEXT DEFAULT '[]',
+    mara_notes TEXT DEFAULT '{}',
+    updated_at INTEGER DEFAULT (unixepoch())
+  );
+  CREATE TABLE IF NOT EXISTS mission_shares (
+    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    user_id TEXT NOT NULL,
+    user_mission_id TEXT NOT NULL,
+    caption TEXT,
+    media_url TEXT,
+    platform TEXT NOT NULL,
+    xp_awarded INTEGER DEFAULT 50,
+    created_at INTEGER DEFAULT (unixepoch())
+  );
+  CREATE INDEX IF NOT EXISTS idx_user_missions_user ON user_missions(user_id);
+  CREATE INDEX IF NOT EXISTS idx_mission_events_user ON mission_events(user_id);
+  CREATE INDEX IF NOT EXISTS idx_mission_shares_user ON mission_shares(user_id);
 `);
 
 export const db = drizzle(sqlite, { schema });

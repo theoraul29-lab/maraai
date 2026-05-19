@@ -802,3 +802,83 @@ export type Conversation = typeof conversations.$inferSelect;
 export type InsertConversation = typeof conversations.$inferInsert;
 export type DirectMessage = typeof directMessages.$inferSelect;
 export type InsertDirectMessage = typeof directMessages.$inferInsert;
+
+// === MARA MISSIONS V3 ===
+
+export const missions = pgTable('missions', {
+  id: text('id').primaryKey().default(sql`lower(hex(randomblob(16)))`),
+  title: text('title').notNull(),
+  description: text('description').notNull(),
+  pillar: text('pillar').notNull(),
+  difficulty: text('difficulty').notNull(),
+  xpReward: integer('xp_reward').notNull(),
+  proofType: text('proof_type').notNull(),
+  proofPrompt: text('proof_prompt').notNull(),
+  steps: text('steps').default('[]').notNull(),
+  reflection: text('reflection'),
+  isActive: integer('is_active', { mode: 'boolean' }).default(true).notNull(),
+  isDaily: integer('is_daily', { mode: 'boolean' }).default(false).notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+export const userMissions = pgTable('user_missions', {
+  id: text('id').primaryKey().default(sql`lower(hex(randomblob(16)))`),
+  userId: text('user_id').notNull(),
+  missionId: text('mission_id').notNull(),
+  status: text('status').default('active').notNull(),
+  progress: integer('progress').default(0).notNull(),
+  proofText: text('proof_text'),
+  proofMediaUrl: text('proof_media_url'),
+  reflection: text('reflection_answer'),
+  maraFeedback: text('mara_feedback'),
+  startedAt: integer('started_at', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+  completedAt: integer('completed_at', { mode: 'timestamp' }),
+});
+
+export const userXp = pgTable('user_xp', {
+  userId: text('user_id').primaryKey(),
+  xp: integer('xp').default(0).notNull(),
+  level: integer('level').default(1).notNull(),
+  streak: integer('streak').default(0).notNull(),
+  lastActivityAt: integer('last_activity_at', { mode: 'timestamp' }),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+export const missionEvents = pgTable('mission_events', {
+  id: text('id').primaryKey().default(sql`lower(hex(randomblob(16)))`),
+  userId: text('user_id').notNull(),
+  missionId: text('mission_id').notNull(),
+  eventType: text('event_type').notNull(),
+  meta: text('meta').default('{}').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+export const userPersonality = pgTable('user_personality', {
+  userId: text('user_id').primaryKey(),
+  onboardingDone: integer('onboarding_done', { mode: 'boolean' }).default(false).notNull(),
+  whatYouLove: text('what_you_love'),
+  wantToChange: text('want_to_change'),
+  currentHobbies: text('current_hobbies'),
+  dreamLife: text('dream_life'),
+  biggestFear: text('biggest_fear'),
+  preferredPillars: text('preferred_pillars').default('[]').notNull(),
+  maraNotes: text('mara_notes').default('{}').notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+export const missionShares = pgTable('mission_shares', {
+  id: text('id').primaryKey().default(sql`lower(hex(randomblob(16)))`),
+  userId: text('user_id').notNull(),
+  userMissionId: text('user_mission_id').notNull(),
+  caption: text('caption'),
+  mediaUrl: text('media_url'),
+  platform: text('platform').notNull(),
+  xpAwarded: integer('xp_awarded').default(50).notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+export type Mission = typeof missions.$inferSelect;
+export type UserMission = typeof userMissions.$inferSelect;
+export type UserXp = typeof userXp.$inferSelect;
+export type UserPersonality = typeof userPersonality.$inferSelect;
+export type MissionShare = typeof missionShares.$inferSelect;

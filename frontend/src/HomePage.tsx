@@ -19,7 +19,7 @@ import { MobileOrbHome } from './maraai/MobileOrbHome';
 const moduleKeys = [
   { id: 'you', titleKey: 'home.you', to: '/you', icon: '👤', color: '#a855f7' },
   { id: 'reels', titleKey: 'home.reels', to: '/reels', icon: '🎬', color: '#06b6d4' },
-  { id: 'trading', titleKey: 'home.trading', to: '/trading-academy', icon: '📈', color: '#22c55e' },
+  { id: 'missions', titleKey: 'home.missions', to: '/missions', icon: '🎯', color: '#a855f7' },
   { id: 'vip', titleKey: 'home.vip', to: '/membership', icon: '👑', color: '#ec4899' },
   { id: 'creators', titleKey: 'home.creators', to: '/creator-panel', icon: '✨', color: '#f59e0b' },
   { id: 'writers', titleKey: 'home.writers', to: '/writers-hub', icon: '✍️', color: '#8b5cf6' },
