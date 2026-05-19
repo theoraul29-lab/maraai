@@ -27,8 +27,9 @@ import { TransparencyDashboard } from './maraai/TransparencyDashboard';
 import NotFound from './NotFound';
 
 function AdminGuard({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   if (!isAuthenticated) return <Navigate to="/" replace />;
+  if (!user?.isAdmin) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 
@@ -56,6 +57,7 @@ function App() {
                 <Route path="/writers-hub" element={<WritersHub onClose={() => navigate('/')} />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/reset-password/confirmation" element={<ResetPasswordConfirmation />} />
+                <Route path="/admin" element={<Navigate to="/admin/brain" replace />} />
                 <Route path="/admin/brain" element={<AdminGuard><AdminBrain /></AdminGuard>} />
                 <Route path="/admin/experiments" element={<AdminGuard><AdminExperiments /></AdminGuard>} />
                 <Route path="/admin/waitlist" element={<AdminGuard><AdminWaitlist /></AdminGuard>} />

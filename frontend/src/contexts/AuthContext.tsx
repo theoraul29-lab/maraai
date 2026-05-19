@@ -24,6 +24,8 @@ export interface User {
    * choice follows them across devices (spec §2.5).
    */
   preferredLanguage?: string | null;
+  /** True when ADMIN_EMAILS or ADMIN_USER_IDS env var matches this user. */
+  isAdmin?: boolean;
 }
 
 /**
@@ -173,6 +175,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           ...trialFields,
           earnings: payload.user.earnings ?? 0,
           badges: payload.user.badges ?? [],
+          isAdmin: payload.user.isAdmin ?? false,
         };
         localStorage.setItem('user', JSON.stringify(sessionUser));
         setUser(sessionUser);
@@ -408,6 +411,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         tier: payload.user.tier || 'free',
         earnings: payload.user.earnings ?? 0,
         badges: payload.user.badges ?? [],
+        isAdmin: payload.user.isAdmin ?? false,
       };
       localStorage.setItem('user', JSON.stringify(sessionUser));
       setUser(sessionUser);
