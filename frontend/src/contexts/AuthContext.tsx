@@ -175,13 +175,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           ...trialFields,
           earnings: payload.user.earnings ?? 0,
           badges: payload.user.badges ?? [],
-          isAdmin: payload.user.isAdmin ?? false,
+          isAdmin: payload?.user?.isAdmin ?? false,
         };
         localStorage.setItem('user', JSON.stringify(sessionUser));
         setUser(sessionUser);
         setIsAuthenticated(true);
         // Server-stored language wins on app load (spec §2.5).
-        void applyServerLanguage(payload.user.preferredLanguage);
+        void applyServerLanguage(payload?.user?.preferredLanguage);
       } catch {
         /* keep localStorage state */
       }
@@ -411,7 +411,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         tier: payload.user.tier || 'free',
         earnings: payload.user.earnings ?? 0,
         badges: payload.user.badges ?? [],
-        isAdmin: payload.user.isAdmin ?? false,
+        isAdmin: payload?.user?.isAdmin ?? false,
       };
       localStorage.setItem('user', JSON.stringify(sessionUser));
       setUser(sessionUser);

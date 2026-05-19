@@ -29,6 +29,7 @@ import NotFound from './NotFound';
 function AdminGuard({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, user } = useAuth();
   if (!isAuthenticated) return <Navigate to="/" replace />;
+  if (user === null) return null; // loading
   if (!user?.isAdmin) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
