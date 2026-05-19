@@ -6,7 +6,6 @@ const API_URL = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'ht
 
 const ChatBox: React.FC = () => {
   const { t } = useTranslation();
-  const [showLangMenu, setShowLangMenu] = useState(false);
   const [prompt, setPrompt] = useState<string>('');
   const [response, setResponse] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
