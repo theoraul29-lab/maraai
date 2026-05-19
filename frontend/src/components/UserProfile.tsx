@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import '../styles/UserProfile.css';
 
 export interface UserProfileData {
@@ -26,6 +27,7 @@ interface UserProfileProps {
 }
 
 const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
+  const { t } = useTranslation();
   const [profile, setProfile] = useState<UserProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -55,7 +57,6 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
         profileColor: (data as any).profileColor || '#9d4edd',
       });
 
-      // Load user posts
       const postsResponse = await fetch(`/api/users/${userId}/posts`);
       const posts = await postsResponse.json();
       setUserPosts(Array.isArray(posts) ? posts : []);
@@ -155,7 +156,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
     return (
       <div className="profile-overlay" onClick={onClose}>
         <div className="profile-container" onClick={(e) => e.stopPropagation()}>
-          <div className="profile-loading">Loading profile...</div>
+          <div className="profile-loading">{t('userProfile.loading')}</div>
         </div>
       </div>
     );
@@ -165,7 +166,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
     return (
       <div className="profile-overlay" onClick={onClose}>
         <div className="profile-container" onClick={(e) => e.stopPropagation()}>
-          <div className="profile-error">Profile not found</div>
+          <div className="profile-error">{t('userProfile.notFound')}</div>
         </div>
       </div>
     );
@@ -196,7 +197,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
                   onChange={handleBannerUpload}
                   hidden
                 />
-                📸 Change Banner
+                {t('userProfile.changeBanner')}
               </label>
             )}
           </div>
@@ -204,9 +205,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
           {/* Profile Picture */}
           <div className="profile-pic-container">
             <div className="profile-pic-wrapper">
-              <div 
-                className="profile-pic" 
-                style={{ 
+              <div
+                className="profile-pic"
+                style={{
                   backgroundImage: profile.avatar && profile.avatar.startsWith('http') ? `url(${profile.avatar})` : undefined,
                   backgroundColor: !profile.avatar || !profile.avatar.startsWith('http') ? profile.avatar : undefined,
                   backgroundSize: 'cover',
@@ -249,16 +250,16 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
                     className={`action-btn follow-btn ${isFollowing ? 'following' : ''}`}
                     onClick={handleFollow}
                   >
-                    {isFollowing ? '✓ Following' : '+ Follow'}
+                    {isFollowing ? t('userProfile.following') : t('userProfile.follow')}
                   </button>
-                  <button className="action-btn message-btn">💬 Message</button>
+                  <button className="action-btn message-btn">{t('userProfile.message')}</button>
                 </>
               ) : (
                 <button
                   className="action-btn edit-btn"
                   onClick={() => setIsEditing(!isEditing)}
                 >
-                  {isEditing ? '✕ Cancel' : '✎ Edit Profile'}
+                  {isEditing ? t('userProfile.cancel') : t('userProfile.editProfile')}
                 </button>
               )}
             </div>
@@ -270,7 +271,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
               <textarea
                 value={editData.bio}
                 onChange={(e) => setEditData({ ...editData, bio: e.target.value })}
-                placeholder="Your bio..."
+                placeholder={t('userProfile.bioPlaceholder')}
                 className="edit-input"
                 maxLength={160}
               />
@@ -279,18 +280,18 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
                   type="text"
                   value={editData.location}
                   onChange={(e) => setEditData({ ...editData, location: e.target.value })}
-                  placeholder="Location"
+                  placeholder={t('userProfile.locationPlaceholder')}
                   className="edit-input"
                 />
                 <input
                   type="url"
                   value={editData.website}
                   onChange={(e) => setEditData({ ...editData, website: e.target.value })}
-                  placeholder="Website URL"
+                  placeholder={t('userProfile.websitePlaceholder')}
                   className="edit-input"
                 />
                 <div className="edit-color-picker">
-                  <label>Profile Theme Color:</label>
+                  <label>{t('userProfile.themeColor')}</label>
                   <input
                     type="color"
                     value={editData.profileColor}
@@ -300,7 +301,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
                 </div>
               </div>
               <button className="save-btn" onClick={handleSaveProfile}>
-                Save Changes
+                {t('userProfile.saveChanges')}
               </button>
             </div>
           ) : (
@@ -331,32 +332,32 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
           <div className="stat-card posts">
             <div className="stat-icon">📝</div>
             <div className="stat-value">{profile.posts}</div>
-            <div className="stat-label">Posts</div>
+            <div className="stat-label">{t('userProfile.posts')}</div>
           </div>
           <div className="stat-card followers">
             <div className="stat-icon">👥</div>
             <div className="stat-value">{profile.followers.toLocaleString()}</div>
-            <div className="stat-label">Followers</div>
+            <div className="stat-label">{t('userProfile.followers')}</div>
           </div>
           <div className="stat-card following">
             <div className="stat-icon">🔗</div>
             <div className="stat-value">{profile.following}</div>
-            <div className="stat-label">Following</div>
+            <div className="stat-label">{t('userProfile.following_count')}</div>
           </div>
           <div className="stat-card earnings">
             <div className="stat-icon">💰</div>
             <div className="stat-value">${profile.earnings.toFixed(0)}</div>
-            <div className="stat-label">Earnings</div>
+            <div className="stat-label">{t('userProfile.earnings')}</div>
           </div>
         </div>
 
         {/* Posts Feed */}
         <div className="profile-posts-section">
-          <h2>Recent Posts</h2>
+          <h2>{t('userProfile.recentPosts')}</h2>
           <div className="profile-posts-list">
             {userPosts.length === 0 ? (
               <div className="no-posts">
-                <p>No posts yet</p>
+                <p>{t('userProfile.noPosts')}</p>
               </div>
             ) : (
               userPosts.map((post: any) => (

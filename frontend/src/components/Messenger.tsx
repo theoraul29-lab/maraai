@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
+import { useTranslation } from 'react-i18next';
 import '../styles/Messenger.css';
 
 const API_URL = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:5000');
@@ -35,6 +36,7 @@ const Messenger: React.FC<MessengerProps> = ({
   initialRecipientId,
   initialRecipientName,
 }) => {
+  const { t } = useTranslation();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConvId, setSelectedConvId] = useState<number | null>(null);
   const [selectedOtherName, setSelectedOtherName] = useState<string>('');
@@ -132,7 +134,7 @@ const Messenger: React.FC<MessengerProps> = ({
 
   const selectConversation = async (conv: Conversation) => {
     setSelectedConvId(conv.id);
-    setSelectedOtherName(conv.otherName || 'User');
+    setSelectedOtherName(conv.otherName || t('messenger.userFallback'));
     await fetchMessages(conv.id);
   };
 
@@ -159,16 +161,16 @@ const Messenger: React.FC<MessengerProps> = ({
     <div className="messenger-backdrop" onClick={onClose}>
       <div className="messenger-panel" onClick={e => e.stopPropagation()}>
         <div className="messenger-header">
-          <span className="messenger-title">💬 Messages</span>
-          <button className="messenger-close" onClick={onClose} aria-label="Close">✕</button>
+          <span className="messenger-title">{t('messenger.title')}</span>
+          <button className="messenger-close" onClick={onClose} aria-label={t('messenger.close')}>✕</button>
         </div>
 
         <div className="messenger-body">
           {/* Conversation list */}
           <div className="messenger-convs">
-            {loadingConvs && <p className="messenger-muted">Loading…</p>}
+            {loadingConvs && <p className="messenger-muted">{t('messenger.loading')}</p>}
             {!loadingConvs && conversations.length === 0 && (
-              <p className="messenger-muted">No conversations yet.</p>
+              <p className="messenger-muted">{t('messenger.noConversations')}</p>
             )}
             {conversations.map(conv => (
               <button
@@ -184,7 +186,7 @@ const Messenger: React.FC<MessengerProps> = ({
                   )}
                 </div>
                 <div className="messenger-conv-info">
-                  <strong>{conv.otherName || 'User'}</strong>
+                  <strong>{conv.otherName || t('messenger.userFallback')}</strong>
                   {conv.lastMessage && (
                     <span className="messenger-conv-preview">{conv.lastMessage}</span>
                   )}
@@ -199,7 +201,7 @@ const Messenger: React.FC<MessengerProps> = ({
           {/* Message thread */}
           <div className="messenger-thread">
             {!selectedConvId && (
-              <p className="messenger-muted messenger-muted-center">Select a conversation</p>
+              <p className="messenger-muted messenger-muted-center">{t('messenger.selectConversation')}</p>
             )}
             {selectedConvId && (
               <>
@@ -207,7 +209,7 @@ const Messenger: React.FC<MessengerProps> = ({
                   <strong>{selectedOtherName}</strong>
                 </div>
                 <div className="messenger-messages">
-                  {loadingMsgs && <p className="messenger-muted">Loading…</p>}
+                  {loadingMsgs && <p className="messenger-muted">{t('messenger.loading')}</p>}
                   {messages.map(msg => (
                     <div
                       key={msg.id}
@@ -224,7 +226,7 @@ const Messenger: React.FC<MessengerProps> = ({
                 <div className="messenger-input-row">
                   <input
                     className="messenger-input"
-                    placeholder="Write a message…"
+                    placeholder={t('messenger.messagePlaceholder')}
                     value={messageInput}
                     onChange={e => setMessageInput(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}

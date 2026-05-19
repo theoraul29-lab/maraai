@@ -1,24 +1,26 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from './contexts/AuthContext';
 import './styles/Missions.css';
 
 const API = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:5000');
 
-const PILLAR_LABELS: Record<string, { label: string; icon: string; color: string }> = {
-  discipline:  { label: 'Disciplină',  icon: '🎯', color: '#a855f7' },
-  creativity:  { label: 'Creativitate', icon: '🎨', color: '#ec4899' },
-  life:        { label: 'Viață',        icon: '🌱', color: '#22c55e' },
-  acceptance:  { label: 'Acceptare',    icon: '🤍', color: '#06b6d4' },
-  helping:     { label: 'Ajutare',      icon: '🤝', color: '#f59e0b' },
-  self:        { label: 'Eu',           icon: '🔍', color: '#8b5cf6' },
-  hobby:       { label: 'Hobby',        icon: '🎭', color: '#ef4444' },
+// Static visual properties only — labels come from i18n.
+const PILLAR_META: Record<string, { icon: string; color: string }> = {
+  discipline: { icon: '🎯', color: '#a855f7' },
+  creativity: { icon: '🎨', color: '#ec4899' },
+  life:        { icon: '🌱', color: '#22c55e' },
+  acceptance:  { icon: '🤍', color: '#06b6d4' },
+  helping:     { icon: '🤝', color: '#f59e0b' },
+  self:        { icon: '🔍', color: '#8b5cf6' },
+  hobby:       { icon: '🎭', color: '#ef4444' },
 };
 
-const DIFFICULTY_LABELS: Record<string, { label: string; color: string }> = {
-  gentle: { label: 'Ușor',   color: '#22c55e' },
-  medium: { label: 'Mediu',  color: '#f59e0b' },
-  deep:   { label: 'Profund', color: '#ef4444' },
+const DIFFICULTY_META: Record<string, { color: string }> = {
+  gentle: { color: '#22c55e' },
+  medium: { color: '#f59e0b' },
+  deep:   { color: '#ef4444' },
 };
 
 interface Mission {
@@ -60,6 +62,7 @@ function apiFetchJson<T>(path: string, opts: RequestInit = {}): Promise<T> {
 }
 
 export default function Missions() {
+  const { t } = useTranslation();
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [view, setView] = useState<View>('list');
@@ -97,15 +100,14 @@ export default function Missions() {
       setUserXp(data.userXp);
       setDailyMissions(daily.missions);
     } catch (e) {
-      setError('Nu am putut încărca misiunile. Reîncearcă.');
+      setError(t('missions.errorLoad'));
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, selectedPillar]);
+  }, [isAuthenticated, selectedPillar, t]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
-    // Check onboarding
     apiFetchJson<{ done: boolean }>('/api/missions/onboarding').then((res) => {
       if (!res.done) setView('onboarding');
       else loadMissions();
@@ -123,7 +125,7 @@ export default function Missions() {
       setActiveMission(mission);
       setView('detail');
     } catch {
-      setError('Nu am putut porni misiunea.');
+      setError(t('missions.errorStart'));
     }
   };
 
@@ -135,7 +137,7 @@ export default function Missions() {
 
   const handleSubmitProof = async () => {
     if (!activeMission || !proofText.trim()) {
-      setError('Completează câmpul de dovadă înainte de a trimite.');
+      setError(t('missions.errorProofRequired'));
       return;
     }
     setLoading(true);
@@ -156,7 +158,7 @@ export default function Missions() {
         setReflectionText('');
       }
     } catch {
-      setError('Nu am putut trimite dovada. Reîncearcă.');
+      setError(t('missions.errorProof'));
     } finally {
       setLoading(false);
     }
@@ -173,7 +175,7 @@ export default function Missions() {
         setMissions((prev) => [result.mission, ...prev]);
       }
     } catch {
-      setError('AI indisponibil momentan. Reîncearcă.');
+      setError(t('missions.errorAI'));
     } finally {
       setGenerating(false);
     }
@@ -181,7 +183,7 @@ export default function Missions() {
 
   const handleOnboardingSubmit = async () => {
     if (!onboardingAnswers.whatYouLove.trim()) {
-      setError('Completează cel puțin primul câmp.');
+      setError(t('missions.errorFill'));
       return;
     }
     setLoading(true);
@@ -192,7 +194,7 @@ export default function Missions() {
       });
       setView('list');
     } catch {
-      setError('Nu am putut salva profilul tău.');
+      setError(t('missions.errorSave'));
     } finally {
       setLoading(false);
     }
@@ -207,9 +209,9 @@ export default function Missions() {
         <div className="missions-auth-wall">
           <div className="missions-auth-icon">🎯</div>
           <h2>Mara Missions</h2>
-          <p>Autentifică-te pentru a începe călătoria ta de transformare personală.</p>
+          <p>{t('missions.authWall')}</p>
           <button className="missions-btn-primary" onClick={() => navigate('/')}>
-            Autentifică-te
+            {t('missions.loginBtn')}
           </button>
         </div>
       </div>
@@ -218,23 +220,24 @@ export default function Missions() {
 
   // ONBOARDING
   if (view === 'onboarding') {
+    const onboardingQuestions = [
+      { key: 'whatYouLove',     q: t('missions.q1') },
+      { key: 'wantToChange',    q: t('missions.q2') },
+      { key: 'currentHobbies', q: t('missions.q3') },
+      { key: 'dreamLife',       q: t('missions.q4') },
+      { key: 'biggestFear',     q: t('missions.q5') },
+    ];
     return (
       <div className="missions-page">
         <div className="missions-onboarding">
           <div className="missions-onboarding-header">
             <div className="missions-mara-avatar">🌟</div>
-            <h1>Bună! Sunt Mara.</h1>
-            <p>Înainte să îți generez misiuni personalizate, vreau să te cunosc puțin.</p>
+            <h1>{t('missions.onboardingTitle')}</h1>
+            <p>{t('missions.onboardingSubtitle')}</p>
           </div>
           {error && <div className="missions-error">{error}</div>}
           <div className="missions-onboarding-form">
-            {[
-              { key: 'whatYouLove', q: 'Ce te face să te simți cel mai viu?' },
-              { key: 'wantToChange', q: 'Ce vrei cel mai mult să schimbi la tine?' },
-              { key: 'currentHobbies', q: 'Ce faci în timpul liber?' },
-              { key: 'dreamLife', q: 'Cum arată viața ta ideală peste 5 ani?' },
-              { key: 'biggestFear', q: 'Care e cea mai mare frică a ta?' },
-            ].map(({ key, q }) => (
+            {onboardingQuestions.map(({ key, q }) => (
               <div key={key} className="missions-onboarding-field">
                 <label>{q}</label>
                 <textarea
@@ -242,7 +245,7 @@ export default function Missions() {
                   onChange={(e) =>
                     setOnboardingAnswers((prev) => ({ ...prev, [key]: e.target.value }))
                   }
-                  placeholder="Scrie liber, fără să judeci..."
+                  placeholder={t('missions.placeholderFree')}
                   rows={3}
                 />
               </div>
@@ -252,10 +255,10 @@ export default function Missions() {
               onClick={handleOnboardingSubmit}
               disabled={loading}
             >
-              {loading ? 'Se salvează...' : 'Continuă → Misiunile mele'}
+              {loading ? t('missions.saving') : t('missions.continue')}
             </button>
             <button className="missions-btn-ghost" onClick={() => setView('list')}>
-              Sari peste pentru acum
+              {t('missions.skip')}
             </button>
           </div>
         </div>
@@ -270,11 +273,11 @@ export default function Missions() {
         <div className="missions-completion">
           <div className="missions-completion-top">
             <div className="missions-completion-icon">{completionResult.leveledUp ? '🎉' : '✅'}</div>
-            <h2>{completionResult.leveledUp ? 'LEVEL UP!' : 'Misiune Completată!'}</h2>
+            <h2>{completionResult.leveledUp ? t('missions.levelUp') : t('missions.missionCompleted')}</h2>
             <div className="missions-xp-gained">{completionResult.message}</div>
           </div>
           <div className="missions-mara-feedback">
-            <div className="missions-mara-label">🌟 Mara îți spune:</div>
+            <div className="missions-mara-label">{t('missions.maraLabel')}</div>
             <p>{completionResult.maraFeedback}</p>
           </div>
           <div className="missions-completion-actions">
@@ -282,7 +285,7 @@ export default function Missions() {
               className="missions-btn-primary"
               onClick={() => { setView('list'); setCompletionResult(null); }}
             >
-              ← Înapoi la misiuni
+              {t('missions.backToMissions')}
             </button>
           </div>
         </div>
@@ -295,22 +298,25 @@ export default function Missions() {
     const steps: string[] = (() => {
       try { return JSON.parse(activeMission.steps); } catch { return []; }
     })();
+    const pillarMeta = PILLAR_META[activeMission.pillar] ?? { icon: '🎯', color: '#a855f7' };
     return (
       <div className="missions-page">
         <div className="missions-proof-view">
-          <button className="missions-back-btn" onClick={() => setView('list')}>← Înapoi</button>
+          <button className="missions-back-btn" onClick={() => setView('list')}>
+            {t('missions.backToMissions')}
+          </button>
           <div className="missions-proof-header">
             <span
               className="missions-pillar-badge"
-              style={{ color: PILLAR_LABELS[activeMission.pillar]?.color }}
+              style={{ color: pillarMeta.color }}
             >
-              {PILLAR_LABELS[activeMission.pillar]?.icon} {PILLAR_LABELS[activeMission.pillar]?.label}
+              {pillarMeta.icon} {t(`missions.pillar.${activeMission.pillar}`, activeMission.pillar)}
             </span>
             <h2>{activeMission.title}</h2>
           </div>
           {steps.length > 0 && (
             <div className="missions-steps">
-              <h4>Pași de urmat:</h4>
+              <h4>{t('missions.stepsTitle')}</h4>
               <ol>
                 {steps.map((step, i) => <li key={i}>{step}</li>)}
               </ol>
@@ -321,19 +327,19 @@ export default function Missions() {
             <textarea
               value={proofText}
               onChange={(e) => setProofText(e.target.value)}
-              placeholder="Scrie dovada ta here..."
+              placeholder={t('missions.proofPlaceholder')}
               rows={5}
               className="missions-proof-textarea"
             />
             {activeMission.reflection && (
               <>
                 <label className="missions-proof-label missions-reflection-label">
-                  🔍 Reflecție: {activeMission.reflection}
+                  {t('missions.reflectLabel')}{activeMission.reflection}
                 </label>
                 <textarea
                   value={reflectionText}
                   onChange={(e) => setReflectionText(e.target.value)}
-                  placeholder="Opțional, dar puternic..."
+                  placeholder={t('missions.reflectionPlaceholder')}
                   rows={3}
                   className="missions-proof-textarea"
                 />
@@ -345,7 +351,9 @@ export default function Missions() {
               onClick={handleSubmitProof}
               disabled={loading || !proofText.trim()}
             >
-              {loading ? 'Mara analizează...' : `Trimite dovada → +${activeMission.xp_reward} XP`}
+              {loading
+                ? t('missions.analyzing')
+                : t('missions.submitProof', { xp: activeMission.xp_reward })}
             </button>
           </div>
         </div>
@@ -358,25 +366,27 @@ export default function Missions() {
     const steps: string[] = (() => {
       try { return JSON.parse(activeMission.steps); } catch { return []; }
     })();
-    const pillarInfo = PILLAR_LABELS[activeMission.pillar] ?? { label: activeMission.pillar, icon: '🎯', color: '#a855f7' };
-    const diffInfo = DIFFICULTY_LABELS[activeMission.difficulty] ?? { label: activeMission.difficulty, color: '#a855f7' };
+    const pillarMeta = PILLAR_META[activeMission.pillar] ?? { icon: '🎯', color: '#a855f7' };
+    const diffMeta = DIFFICULTY_META[activeMission.difficulty] ?? { color: '#a855f7' };
     return (
       <div className="missions-page">
         <div className="missions-detail-view">
-          <button className="missions-back-btn" onClick={() => setView('list')}>← Înapoi</button>
+          <button className="missions-back-btn" onClick={() => setView('list')}>
+            {t('missions.backToMissions')}
+          </button>
           <div className="missions-detail-header">
-            <span className="missions-pillar-badge" style={{ color: pillarInfo.color }}>
-              {pillarInfo.icon} {pillarInfo.label}
+            <span className="missions-pillar-badge" style={{ color: pillarMeta.color }}>
+              {pillarMeta.icon} {t(`missions.pillar.${activeMission.pillar}`, activeMission.pillar)}
             </span>
-            <span className="missions-difficulty-badge" style={{ color: diffInfo.color }}>
-              {diffInfo.label}
+            <span className="missions-difficulty-badge" style={{ color: diffMeta.color }}>
+              {t(`missions.difficulty.${activeMission.difficulty}`, activeMission.difficulty)}
             </span>
           </div>
           <h2 className="missions-detail-title">{activeMission.title}</h2>
           <p className="missions-detail-desc">{activeMission.description}</p>
           {steps.length > 0 && (
             <div className="missions-steps">
-              <h4>Cum faci asta:</h4>
+              <h4>{t('missions.howToTitle')}</h4>
               <ol>
                 {steps.map((step, i) => <li key={i}>{step}</li>)}
               </ol>
@@ -384,26 +394,26 @@ export default function Missions() {
           )}
           {activeMission.reflection && (
             <div className="missions-reflection-preview">
-              <span>💭 Vei reflecta: </span>{activeMission.reflection}
+              <span>{t('missions.reflectLabel')}</span>{activeMission.reflection}
             </div>
           )}
           <div className="missions-detail-xp">
             <span>+{activeMission.xp_reward} XP</span>
           </div>
           {activeMission.user_status === 'completed' ? (
-            <div className="missions-completed-badge">✅ Completată</div>
+            <div className="missions-completed-badge">{t('missions.completedBadge')}</div>
           ) : (
             <button
               className="missions-btn-primary missions-btn-full"
               onClick={() => handleStartMission(activeMission)}
               disabled={loading}
             >
-              Acceptă Misiunea 🚀
+              {t('missions.accept')}
             </button>
           )}
           {activeMission.mara_feedback && (
             <div className="missions-mara-feedback">
-              <div className="missions-mara-label">🌟 Mara a spus:</div>
+              <div className="missions-mara-label">{t('missions.maraSaid')}</div>
               <p>{activeMission.mara_feedback}</p>
             </div>
           )}
@@ -421,22 +431,26 @@ export default function Missions() {
     <div className="missions-page">
       {/* Header */}
       <div className="missions-header">
-        <button className="missions-back-btn" onClick={() => navigate('/')}>← Acasă</button>
+        <button className="missions-back-btn" onClick={() => navigate('/')}>
+          {t('missions.backHome')}
+        </button>
         <div className="missions-header-center">
-          <h1 className="missions-title">🎯 Missions</h1>
-          <p className="missions-subtitle">Transformă-te printr-o misiune pe zi</p>
+          <h1 className="missions-title">{t('missions.title')}</h1>
+          <p className="missions-subtitle">{t('missions.subtitle')}</p>
         </div>
         {/* XP Bar */}
         <div className="missions-xp-bar-wrap">
           <div className="missions-xp-info">
-            <span>Nivel {userXp.level}</span>
+            <span>{t('missions.levelLabel', { level: userXp.level })}</span>
             <span>{userXp.xp} XP</span>
           </div>
           <div className="missions-xp-bar">
             <div className="missions-xp-fill" style={{ width: `${xpProgress}%` }} />
           </div>
           {userXp.streak > 0 && (
-            <div className="missions-streak">🔥 {userXp.streak} zile streak</div>
+            <div className="missions-streak">
+              {t('missions.streakLabel', { count: userXp.streak })}
+            </div>
           )}
         </div>
       </div>
@@ -449,16 +463,16 @@ export default function Missions() {
           className={`missions-filter-btn ${selectedPillar === 'all' ? 'active' : ''}`}
           onClick={() => setSelectedPillar('all')}
         >
-          Toate
+          {t('missions.filterAll')}
         </button>
-        {Object.entries(PILLAR_LABELS).map(([key, info]) => (
+        {Object.entries(PILLAR_META).map(([key, meta]) => (
           <button
             key={key}
             className={`missions-filter-btn ${selectedPillar === key ? 'active' : ''}`}
-            style={selectedPillar === key ? { borderColor: info.color, color: info.color } : {}}
+            style={selectedPillar === key ? { borderColor: meta.color, color: meta.color } : {}}
             onClick={() => setSelectedPillar(key)}
           >
-            {info.icon} {info.label}
+            {meta.icon} {t(`missions.pillar.${key}`, key)}
           </button>
         ))}
       </div>
@@ -466,15 +480,10 @@ export default function Missions() {
       {/* Daily Missions */}
       {dailyMissions.length > 0 && (
         <section className="missions-section">
-          <h3 className="missions-section-title">⚡ Daily Check-in</h3>
+          <h3 className="missions-section-title">{t('missions.dailyTitle')}</h3>
           <div className="missions-grid">
             {dailyMissions.map((m) => (
-              <MissionCard
-                key={m.id}
-                mission={m}
-                onOpen={handleOpenDetail}
-                isDaily
-              />
+              <MissionCard key={m.id} mission={m} onOpen={handleOpenDetail} isDaily />
             ))}
           </div>
         </section>
@@ -483,7 +492,7 @@ export default function Missions() {
       {/* Active Missions */}
       {activeMissions.length > 0 && (
         <section className="missions-section">
-          <h3 className="missions-section-title">🔥 În Desfășurare</h3>
+          <h3 className="missions-section-title">{t('missions.activeTitle')}</h3>
           <div className="missions-grid">
             {activeMissions.map((m) => (
               <MissionCard key={m.id} mission={m} onOpen={handleOpenDetail} />
@@ -495,25 +504,25 @@ export default function Missions() {
       {/* Available Missions */}
       <section className="missions-section">
         <div className="missions-section-header">
-          <h3 className="missions-section-title">🎯 Misiuni Disponibile</h3>
+          <h3 className="missions-section-title">{t('missions.availableTitle')}</h3>
           <button
             className="missions-btn-generate"
             onClick={handleGenerateMission}
             disabled={generating}
           >
-            {generating ? '⚙️ Generez...' : '✨ Generează misiune personalizată'}
+            {generating ? t('missions.generating') : t('missions.generate')}
           </button>
         </div>
         {loading ? (
           <div className="missions-loading">
             <div className="missions-spinner" />
-            <p>Mara pregătește misiunile...</p>
+            <p>{t('missions.loadingMissions')}</p>
           </div>
         ) : availableMissions.length === 0 ? (
           <div className="missions-empty">
-            <p>Toate misiunile disponibile au fost acceptate sau completate! 🎉</p>
+            <p>{t('missions.allDone')}</p>
             <button className="missions-btn-primary" onClick={handleGenerateMission} disabled={generating}>
-              {generating ? '⚙️ Generez...' : '✨ Cere o misiune nouă de la Mara'}
+              {generating ? t('missions.generating') : t('missions.requestNew')}
             </button>
           </div>
         ) : (
@@ -528,7 +537,9 @@ export default function Missions() {
       {/* Completed Missions */}
       {completedMissions.length > 0 && (
         <section className="missions-section missions-section-completed">
-          <h3 className="missions-section-title">✅ Completate ({completedMissions.length})</h3>
+          <h3 className="missions-section-title">
+            {t('missions.completedSection', { count: completedMissions.length })}
+          </h3>
           <div className="missions-grid">
             {completedMissions.map((m) => (
               <MissionCard key={m.id} mission={m} onOpen={handleOpenDetail} />
@@ -549,8 +560,9 @@ function MissionCard({
   onOpen: (m: Mission) => void;
   isDaily?: boolean;
 }) {
-  const pillarInfo = PILLAR_LABELS[mission.pillar] ?? { label: mission.pillar, icon: '🎯', color: '#a855f7' };
-  const diffInfo = DIFFICULTY_LABELS[mission.difficulty] ?? { label: mission.difficulty, color: '#a855f7' };
+  const { t } = useTranslation();
+  const pillarMeta = PILLAR_META[mission.pillar] ?? { icon: '🎯', color: '#a855f7' };
+  const diffMeta = DIFFICULTY_META[mission.difficulty] ?? { color: '#a855f7' };
   const isCompleted = mission.user_status === 'completed';
   const isActive = mission.user_status === 'active';
 
@@ -558,13 +570,13 @@ function MissionCard({
     <button
       className={`missions-card ${isCompleted ? 'missions-card--done' : ''} ${isActive ? 'missions-card--active' : ''} ${isDaily ? 'missions-card--daily' : ''}`}
       onClick={() => onOpen(mission)}
-      style={{ '--pillar-color': pillarInfo.color } as React.CSSProperties}
+      style={{ '--pillar-color': pillarMeta.color } as React.CSSProperties}
     >
       <div className="missions-card-top">
-        <span className="missions-card-icon">{pillarInfo.icon}</span>
+        <span className="missions-card-icon">{pillarMeta.icon}</span>
         <div className="missions-card-badges">
-          <span className="missions-card-diff" style={{ color: diffInfo.color }}>
-            {diffInfo.label}
+          <span className="missions-card-diff" style={{ color: diffMeta.color }}>
+            {t(`missions.difficulty.${mission.difficulty}`, mission.difficulty)}
           </span>
           {isCompleted && <span className="missions-card-done">✅</span>}
           {isActive && <span className="missions-card-active-badge">▶</span>}
@@ -574,8 +586,8 @@ function MissionCard({
       <h4 className="missions-card-title">{mission.title}</h4>
       <p className="missions-card-desc">{mission.description}</p>
       <div className="missions-card-footer">
-        <span className="missions-card-pillar" style={{ color: pillarInfo.color }}>
-          {pillarInfo.label}
+        <span className="missions-card-pillar" style={{ color: pillarMeta.color }}>
+          {t(`missions.pillar.${mission.pillar}`, mission.pillar)}
         </span>
         <span className="missions-card-xp">+{mission.xp_reward} XP</span>
       </div>
