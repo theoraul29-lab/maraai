@@ -125,6 +125,23 @@ function fmtDate(ts: number) {
   return new Date(ts * 1000).toLocaleString();
 }
 
+function timeAgo(ts: any): string {
+  if (!ts) return '—';
+  // Suportă timestamp Unix (secunde) și ISO string
+  const timestamp = typeof ts === 'string'
+    ? new Date(ts).getTime() / 1000
+    : typeof ts === 'number' && ts > 1e10
+    ? ts / 1000  // milliseconds
+    : ts;        // seconds
+  if (isNaN(timestamp)) return '—';
+  const diff = Math.floor(Date.now() / 1000) - timestamp;
+  if (diff < 0) return 'acum';
+  if (diff < 60) return `${diff}s`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
+  return `${Math.floor(diff / 86400)}z`;
+}
+
 function fmtUptime(s: number) {
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);

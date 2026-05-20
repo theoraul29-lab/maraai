@@ -2,9 +2,11 @@
 
 .adb-root {
   min-height: 100vh;
-  background: #0f0f13;
-  color: #e5e7eb;
-  font-family: 'Inter', system-ui, sans-serif;
+  height: 100vh;
+  overflow-y: auto;
+  background: #020008;
+  color: rgba(255,255,255,0.85);
+  font-family: 'Inter', sans-serif;
   padding: 24px;
 }
 
@@ -67,6 +69,9 @@
 /* ── Content ── */
 
 .adb-content {
+  padding: 20px 24px;
+  overflow-y: auto;
+  height: calc(100vh - 120px);
   animation: adb-fade 0.2s ease;
 }
 
@@ -540,4 +545,25 @@
 
 .adb-chat-input-row .adb-input {
   flex: 1;
+}
+
+/* ── Scroll containers ── */
+
+.adb-brain {
+  overflow-y: auto;
+}
+
+.adb-reflections {
+  overflow-y: auto;
+  max-height: 600px;
+}
+
+.adb-logs-list {
+  overflow-y: auto;
+  max-height: 500px;
+}
+
+.adb-knowledge-list {
+  overflow-y: auto;
+  max-height: 600px;
 }
