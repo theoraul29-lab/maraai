@@ -14,6 +14,9 @@ import { SingletonLock } from '../lib/singleton-lock.js';
 import { cleanupKnowledgeBase } from './knowledge-base.js';
 import { decayAllToxicity } from './memory.js';
 import { ensureAlertsTable, analyzePlatformAndAlert } from './alerts.js';
+import { db } from '../db.js';
+import { pushSubscriptions } from '../../shared/schema.js';
+import { sendToUser } from '../push/vapid.js';
 
 export type BrainStatus = {
   enabled: boolean;
@@ -59,6 +62,8 @@ class BrainManagerImpl {
   private _lastManualTriggerAt: number | null = null;
   private _cycleTimer: NodeJS.Timeout | null = null;
   private _selfPostTimer: NodeJS.Timeout | null = null;
+  private _dailyNotifTimer: NodeJS.Timeout | null = null;
+  private _lastNotifDay: number | null = null;
   private _initialTimeout: NodeJS.Timeout | null = null;
   private _started = false;
   // Cross-process advisory lock — prevents two instances (e.g. during a
@@ -210,6 +215,12 @@ class BrainManagerImpl {
       );
     }
 
+    // Daily mission push notifications — check every 30 min, fire at 9 AM
+    this._dailyNotifTimer = setInterval(
+      () => void this._checkDailyMissionNotif(logger),
+      30 * 60 * 1000,
+    );
+
     logger(
       `Mara auto-scheduler started: brain cycle every ${Math.round(this.cycleIntervalMs / 60000)}min${selfPostMsg}`,
       'mara-scheduler',
@@ -229,6 +240,10 @@ class BrainManagerImpl {
     if (this._selfPostTimer) {
       clearInterval(this._selfPostTimer);
       this._selfPostTimer = null;
+    }
+    if (this._dailyNotifTimer) {
+      clearInterval(this._dailyNotifTimer);
+      this._dailyNotifTimer = null;
     }
     if (this._cycleLock) {
       try {
@@ -381,6 +396,35 @@ class BrainManagerImpl {
       this._lastRunAt = endedAt;
       this._lastDurationMs = endedAt - startedAt;
       this._startedAt = null;
+    }
+  }
+
+  private async _checkDailyMissionNotif(logger: (msg: string, tag?: string) => void): Promise<void> {
+    if (!this._started || this._passive) return;
+    const now = new Date();
+    const hour = now.getHours();
+    if (hour < 8 || hour > 10) return;
+    const today = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+    if (this._lastNotifDay === today) return;
+    this._lastNotifDay = today;
+    try {
+      const rows = await db.selectDistinct({ userId: pushSubscriptions.userId }).from(pushSubscriptions);
+      let sent = 0;
+      for (const row of rows) {
+        try {
+          await sendToUser(row.userId, {
+            title: '🎯 Misiunea ta de azi te așteaptă!',
+            body: 'Mara a pregătit o misiune specială pentru tine. Durează 5 minute.',
+            url: '/missions',
+            icon: '/icons/icon-192.png',
+            tag: 'daily-mission',
+          });
+          sent += 1;
+        } catch { /* per-user failures are non-fatal */ }
+      }
+      logger(`Daily mission push sent to ${sent}/${rows.length} users`, 'mara-push');
+    } catch (err) {
+      logger(`Daily mission push failed: ${(err as Error).message}`, 'mara-push');
     }
   }
 

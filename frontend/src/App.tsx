@@ -11,6 +11,7 @@ import { MaraChatWidget } from './components/MaraChatWidget';
 // Heavy route modules are lazy-loaded to reduce initial bundle size.
 const AdminDashboard = lazy(() => import('./AdminDashboard'));
 const Missions = lazy(() => import('./Missions'));
+const Pricing = lazy(() => import('./Pricing'));
 const VIP = lazy(() => import('./VIP').then((m) => ({ default: m.VIP })));
 const Creators = lazy(() => import('./creator').then((m) => ({ default: m.Creator })));
 const Reels = lazy(() => import('./reels'));
@@ -67,6 +68,7 @@ function App() {
                 <Route path="/you" element={<You />} />
                 <Route path="/reels" element={<Reels />} />
                 <Route path="/writers-hub" element={<WritersHub onClose={() => navigate('/')} />} />
+                <Route path="/pricing" element={<Pricing />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/reset-password/confirmation" element={<ResetPasswordConfirmation />} />
                 <Route path="/admin" element={<AdminGuard><AdminDashboard /></AdminGuard>} />

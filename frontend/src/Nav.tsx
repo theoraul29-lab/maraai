@@ -18,6 +18,7 @@ const linkKeys = [
 	{ to: '/creator-panel', key: 'creator', icon: '✨' },
 	{ to: '/writers-hub', key: 'writers', icon: '✍️' },
 	{ to: '/you', key: 'profile', icon: '👤' },
+	{ to: '/pricing', key: 'pricing', icon: '💎' },
 ];
 
 interface NotificationItem {
