@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import TikTokFeed from './TikTokFeed';
 import type { TikTokReel } from './TikTokFeed';
+import ShareButton from './ShareButton';
 import '../styles/Reels.css';
 
 const API_URL = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:5000');
@@ -426,6 +427,13 @@ const ReelsComponent: React.FC = () => {
                 <button className={`action-btn ${selectedReel.isLiked ? 'liked' : ''}`} onClick={() => handleLike(selectedReel.id)}>❤️ {formatNumber(selectedReel.likes)}</button>
                 <button className="action-btn">💬 {selectedReel.comments}</button>
                 <button className={`action-btn ${selectedReel.isSaved ? 'liked' : ''}`} onClick={() => handleSave(selectedReel.id)}>🔖 {selectedReel.isSaved ? t('reels.saved') : t('reels.saveLabel')}</button>
+                <ShareButton
+                  sourceModule="reel"
+                  sourceId={selectedReel.id}
+                  title={selectedReel.title}
+                  caption={selectedReel.description}
+                  compact={true}
+                />
               </div>
               <div className="reel-tags">
                 {selectedReel.tags.map(tag => <span key={tag} className="tag">#{tag}</span>)}

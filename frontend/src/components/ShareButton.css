@@ -1,0 +1,190 @@
+/* ShareButton — universal cross-module share trigger.
+ *
+ * Two modes:
+ *   .share-btn--compact: 28px round icon button + 4-column grid popover.
+ *   .share-btn--full:    text label + vertical list popover.
+ *
+ * Sizing and z-indexes are kept self-contained so the component drops into
+ * any card / header without leaking styles to siblings.
+ */
+
+.share-btn {
+  position: relative;
+  display: inline-block;
+}
+
+.share-btn__trigger {
+  border: 1px solid rgba(155, 81, 224, 0.4);
+  background: rgba(155, 81, 224, 0.08);
+  color: #9d4edd;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+  border-radius: 9999px;
+}
+
+.share-btn__trigger:hover {
+  background: rgba(155, 81, 224, 0.18);
+}
+
+.share-btn__trigger:active {
+  transform: scale(0.96);
+}
+
+.share-btn--compact .share-btn__trigger {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.share-btn--full .share-btn__trigger {
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+.share-btn__popover {
+  position: absolute;
+  z-index: 9999;
+  margin-top: 8px;
+  background: #ffffff;
+  color: #111111;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+  padding: 12px;
+}
+
+/* Right-aligned by default so the popover doesn't overflow card edges. */
+.share-btn__popover {
+  right: 0;
+}
+
+.share-btn__popover--grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  width: 240px;
+}
+
+.share-btn__popover--list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 220px;
+}
+
+.share-btn__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.share-btn__close {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  color: #888;
+}
+
+.share-btn__close:hover {
+  color: #111;
+}
+
+.share-btn__option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: #f7f7f9;
+  cursor: pointer;
+  font-size: 13px;
+  color: #222;
+  text-align: left;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.share-btn__option:hover:not(:disabled) {
+  background: #eef0f4;
+}
+
+.share-btn__option:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+
+.share-btn__popover--grid .share-btn__option {
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 4px;
+  background: transparent;
+}
+
+.share-btn__popover--grid .share-btn__option .share-btn__hint {
+  display: none;
+}
+
+.share-btn__icon {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.share-btn__label {
+  flex: 1;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.share-btn__hint {
+  font-size: 11px;
+  color: #888;
+}
+
+.share-btn__toast {
+  position: absolute;
+  z-index: 10000;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  background: #1a1a1a;
+  color: #ffffff;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 12px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+  white-space: nowrap;
+  max-width: 90vw;
+}
+
+/* Mobile: pin the popover to the bottom of the viewport so we don't get
+ * cut off by card edges or scroll containers. */
+@media (max-width: 640px) {
+  .share-btn__popover {
+    position: fixed;
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    top: auto;
+    margin: 0;
+    width: auto;
+  }
+
+  .share-btn__popover--grid {
+    width: auto;
+  }
+}

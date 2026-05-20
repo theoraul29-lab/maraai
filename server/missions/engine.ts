@@ -25,8 +25,15 @@ export function getPersonality(userId: string) {
   ).get(userId) as Record<string, any> | undefined;
 }
 
-export function addXP(userId: string, amount: number) {
-  const current = getUserXP(userId);
+// Atomic XP write — wraps the read-modify-write inside a SQLite transaction
+// so two concurrent calls cannot read the same baseline and both write
+// `current.xp + gained`, dropping one update. better-sqlite3's `transaction()`
+// serialises the inner block through SQLite's write lock.
+const addXPTxn = rawSqlite.transaction((userId: string, amount: number) => {
+  const current = (rawSqlite.prepare(
+    'SELECT xp, level, streak FROM user_xp WHERE user_id = ?'
+  ).get(userId) as { xp: number; level: number; streak: number } | undefined)
+    ?? { xp: 0, level: 1, streak: 0 };
   const multiplier = current.streak >= 7 ? 1.5 : current.streak >= 3 ? 1.2 : 1.0;
   const gained = Math.round(amount * multiplier);
   const newXP = current.xp + gained;
@@ -39,6 +46,10 @@ export function addXP(userId: string, amount: number) {
       last_activity_at = unixepoch(), updated_at = unixepoch()
   `).run(userId, newXP, newLevel, current.streak);
   return { xp: newXP, level: newLevel, leveledUp: newLevel > current.level, gained };
+});
+
+export function addXP(userId: string, amount: number) {
+  return addXPTxn(userId, amount);
 }
 
 export function saveOnboarding(userId: string, answers: {
@@ -87,6 +98,40 @@ export async function startMission(userId: string, missionId: string) {
   return { success: true, userMissionId: id };
 }
 
+// Atomic transition active → completed + XP award + event log + knowledge
+// update. Called from submitProof() after the LLM call completes. better-sqlite3
+// supports nesting (the inner addXPTxn becomes a SAVEPOINT) so XP stays atomic.
+const submitProofTxn = rawSqlite.transaction((
+  userId: string,
+  missionId: string,
+  xpReward: number,
+  proof: {
+    text: string | null;
+    mediaUrl: string | null;
+    reflectionAnswer: string | null;
+    maraFeedback: string;
+  },
+) => {
+  rawSqlite.prepare(`
+    UPDATE user_missions SET
+      status = 'completed', progress = 100,
+      proof_text = ?, proof_media_url = ?, reflection_answer = ?,
+      mara_feedback = ?, completed_at = unixepoch()
+    WHERE user_id = ? AND mission_id = ? AND status = 'active'
+  `).run(
+    proof.text,
+    proof.mediaUrl,
+    proof.reflectionAnswer,
+    proof.maraFeedback,
+    userId,
+    missionId,
+  );
+  const xpResult = addXPTxn(userId, xpReward);
+  logEvent(userId, missionId, 'complete', { xpAwarded: xpReward });
+  updateMaraKnowledge(userId, missionId, proof.text ?? '');
+  return xpResult;
+});
+
 export async function submitProof(
   userId: string,
   missionId: string,
@@ -112,24 +157,17 @@ Nu fi generic. Vorbește ca unui prieten apropiat.`;
     maraFeedback = 'Bravo că ai completat această misiune! Fiecare pas contează în călătoria ta.';
   }
 
-  rawSqlite.prepare(`
-    UPDATE user_missions SET
-      status = 'completed', progress = 100,
-      proof_text = ?, proof_media_url = ?, reflection_answer = ?,
-      mara_feedback = ?, completed_at = unixepoch()
-    WHERE user_id = ? AND mission_id = ? AND status = 'active'
-  `).run(
-    proof.text ?? null,
-    proof.mediaUrl ?? null,
-    proof.reflectionAnswer ?? null,
+  // Wrap the proof write + XP award + audit log + knowledge note in a single
+  // SQLite transaction. Without this, two concurrent submitProof() calls (e.g.
+  // double-click) could each pass the WHERE status='active' guard, double-award
+  // XP and double-log the completion. The LLM call stayed outside so we keep
+  // the transaction short and don't hold the write lock during a network call.
+  const xpResult = submitProofTxn(userId, missionId, mission.xp_reward, {
+    text: proof.text ?? null,
+    mediaUrl: proof.mediaUrl ?? null,
+    reflectionAnswer: proof.reflectionAnswer ?? null,
     maraFeedback,
-    userId,
-    missionId,
-  );
-
-  const xpResult = addXP(userId, mission.xp_reward);
-  logEvent(userId, missionId, 'complete', { xpAwarded: mission.xp_reward });
-  updateMaraKnowledge(userId, missionId, proof.text ?? '');
+  });
 
   return {
     success: true,

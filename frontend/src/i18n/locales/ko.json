@@ -993,5 +993,28 @@
     "updateBody": "Mara의 새 버전이 있습니다.",
     "updateCta": "새로고침",
     "updateDismissAria": "업데이트 닫기"
+  },
+  "share": {
+    "title": "Share",
+    "trigger": "↗ Share",
+    "close": "Close",
+    "copied": "Link copied! 🔗",
+    "instagramHint": "copy + open",
+    "tiktokHint": "copy + open",
+    "instagramMsg": "Link copied! Open Instagram and paste. 📸",
+    "tiktokMsg": "Link copied! Open TikTok and paste. 🎵",
+    "successMsg": "Shared! +25 XP 🎉",
+    "errorMsg": "Share failed. Try again.",
+    "recentlyShared": "Already shared recently.",
+    "platforms": {
+      "hellomara": "Mara Feed",
+      "you": "My Profile",
+      "instagram": "Instagram",
+      "tiktok": "TikTok",
+      "x": "X",
+      "whatsapp": "WhatsApp",
+      "telegram": "Telegram",
+      "link": "Copy Link"
+    }
   }
 }

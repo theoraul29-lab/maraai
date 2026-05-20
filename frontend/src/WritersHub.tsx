@@ -20,6 +20,7 @@ import { useTranslation } from 'react-i18next';
 import DOMPurify from 'dompurify';
 import { useAuth } from './contexts/AuthContext';
 import { RichEditor, sanitizeRichHtml } from './components/RichEditor';
+import ShareButton from './components/ShareButton';
 import './styles/WritersHub.css';
 
 const API_URL = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:5000');
@@ -808,6 +809,13 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
                   {shareBusyId === readingWork.id ? '…' : '📣 ' + t('writers.shareOnYou', 'Share on You')}
                 </button>
               )}
+              <ShareButton
+                sourceModule="article"
+                sourceId={readingWork.id}
+                title={readingWork.title}
+                caption={readingWork.title}
+                compact={false}
+              />
             </div>
           </div>
         )}

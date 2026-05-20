@@ -27,7 +27,7 @@ import { route as routeAi } from './ai-router.js';
 import { eventBusStatus, KAFKA_TOPICS } from './kafka.js';
 import { requestOtp, verifyOtp } from './otp.js';
 import { logActivity } from './activity.js';
-import { otpRateLimit } from '../rate-limit.js';
+import { otpRateLimit, p2pHeartbeatRateLimit } from '../rate-limit.js';
 import {
   awardCredits,
   CREDIT_REASONS,
@@ -166,7 +166,7 @@ export function registerMaraAIRoutes(
     }
   });
 
-  app.post('/api/p2p/heartbeat', requireAuth, async (req: AuthedReq, res: Response) => {
+  app.post('/api/p2p/heartbeat', requireAuth, p2pHeartbeatRateLimit, async (req: AuthedReq, res: Response) => {
     const parsed = heartbeatSchema.safeParse(req.body ?? {});
     if (!parsed.success) return res.status(400).json({ message: 'Invalid heartbeat.', errors: parsed.error.flatten() });
     const node = await heartbeat({ userId: req.user!.uid, ...parsed.data });

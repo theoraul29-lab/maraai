@@ -6,11 +6,9 @@ import { z } from 'zod';
 import {
   creatorPostRequestSchema,
   likes as likesTable,
-  maraPlatformInsights,
-  brainLogs,
 } from '../shared/schema';
 import { db } from './db';
-import { desc, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { csrfProtection } from './auth';
 import * as videoModule from '../backend/src/modules/video.js';
 import * as reelsModule from '../backend/src/modules/reels.js';
@@ -80,6 +78,12 @@ import {
   loginRateLimit,
   requestResetRateLimit,
   confirmResetRateLimit,
+  messengerSendRateLimit,
+  uploadImageRateLimit,
+  sttRateLimit,
+  ttsRateLimit,
+  maraSpeakRateLimit,
+  videoViewRateLimit,
 } from './rate-limit.js';
 import { users as usersTable } from '../shared/models/auth.js';
 import { registerMaraAIRoutes } from './maraai/routes.js';
@@ -93,6 +97,7 @@ import {
 } from './modules/auth-api.js';
 import { registerLaunchCountdown } from './modules/launch-countdown.js';
 import { registerMissionRoutes } from './missions/routes.js';
+import { registerShareRoutes } from './share/routes.js';
 import { startFacebook, facebookCallback } from './modules/oauth-facebook.js';
 
 export async function registerRoutes(
@@ -269,7 +274,7 @@ export async function registerRoutes(
   app.get('/api/messenger/conversations', requireAuth, messengerModule.listConversations);
   app.post('/api/messenger/conversations', requireAuth, messengerModule.getOrCreateConv);
   app.get('/api/messenger/conversations/:convId/messages', requireAuth, messengerModule.getMessages);
-  app.post('/api/messenger/conversations/:convId/messages', requireAuth, messengerModule.sendMessage);
+  app.post('/api/messenger/conversations/:convId/messages', requireAuth, messengerSendRateLimit, messengerModule.sendMessage);
   app.post('/api/messenger/conversations/:convId/read', requireAuth, messengerModule.markRead);
 
   // Global search (Phase 2 P2.4) — public, returns ranked results across
@@ -281,7 +286,7 @@ export async function registerRoutes(
   app.get('/api/mara-feed', videoModule.maraFeed);
   app.post(api.videos.create.path, requireAuth, videoModule.createVideo);
   app.post('/api/videos/:id/like', requireAuth, videoModule.likeVideo);
-  app.post('/api/videos/:id/view', videoModule.viewVideo);
+  app.post('/api/videos/:id/view', videoViewRateLimit, videoModule.viewVideo);
   app.post('/api/videos/:id/save', requireAuth, videoModule.saveVideo);
   app.delete('/api/videos/:id/save', requireAuth, videoModule.unsaveVideo);
   app.get('/api/videos/saved', requireAuth, videoModule.getSavedVideos);
@@ -312,6 +317,7 @@ export async function registerRoutes(
   app.post(
     '/api/uploads/image',
     requireAuth,
+    uploadImageRateLimit,
     (req: any, res: any, next: any) => {
       uploadsModule.imageUploadMiddleware(req, res, (err: unknown) => {
         if (err) {
@@ -401,9 +407,9 @@ export async function registerRoutes(
   // TTS / STT — gated behind `requireAuth` so an unauthenticated bot can't
   // hammer a paid provider (ElevenLabs / OpenAI Whisper / etc.) and rack up
   // bills. The frontend always hits these from a logged-in session anyway.
-  app.post('/api/mara-speak', requireAuth, ttsModule.maraSpeak);
-  app.post('/api/tts', requireAuth, ttsModule.tts);
-  app.post('/api/stt', requireAuth, sttModule.stt);
+  app.post('/api/mara-speak', requireAuth, maraSpeakRateLimit, ttsModule.maraSpeak);
+  app.post('/api/tts', requireAuth, ttsRateLimit, ttsModule.tts);
+  app.post('/api/stt', requireAuth, sttRateLimit, sttModule.stt);
 
   // Python bridge — requires auth to prevent SSRF abuse
   app.post('/api/maraai/python-fetch', requireAuth, pythonBridgeModule.fetchWithPython);
@@ -1056,8 +1062,10 @@ export async function registerRoutes(
     }
   });
 
-  // Global search — public, no auth required.
-  app.get('/api/search', searchModule.search);
+  // DEZACTIVAT: duplicat al rutei GET /api/search înregistrată mai sus
+  // (~line 277). Express ar fi păstrat handler-ul de aici, fără diferență de
+  // comportament — îl comentăm ca să avem o singură sursă de adevăr.
+  // app.get('/api/search', searchModule.search);
 
   // Trading signals — returns the most recent Mara-generated insight for the
   // trading module, or the latest brain log as a fallback. Until PR #108 this
@@ -1072,54 +1080,26 @@ export async function registerRoutes(
   //      has been published yet.
   //   3. placeholder string with `placeholder: true` so the frontend can
   //      render a "no data yet" state instead of a stale signal.
-  app.get('/api/trading/signals', async (_req: any, res: any) => {
-    try {
-      const [insight] = await db
-        .select()
-        .from(maraPlatformInsights)
-        .where(eq(maraPlatformInsights.module, 'trading'))
-        .orderBy(desc(maraPlatformInsights.createdAt))
-        .limit(1);
-
-      if (insight) {
-        return res.json({
-          source: 'platform_insight',
-          title: insight.title,
-          content: insight.description,
-          priority: insight.priority,
-          impact: insight.estimatedImpact,
-          status: insight.status,
-          updatedAt: insight.createdAt,
-        });
-      }
-
-      const [log] = await db
-        .select()
-        .from(brainLogs)
-        .orderBy(desc(brainLogs.createdAt))
-        .limit(1);
-
-      if (log) {
-        // brain_logs has no `module` column, so we surface the growth/product
-        // ideas blob and let the client decide what's trading-relevant.
-        return res.json({
-          source: 'brain_log',
-          content: log.growthIdeas || log.productIdeas,
-          updatedAt: log.createdAt,
-        });
-      }
-
-      return res.json({
-        source: 'placeholder',
-        placeholder: true,
-        content: 'Mara AI is analyzing markets. Check back in a few minutes for updated signals.',
-        updatedAt: new Date().toISOString(),
-      });
-    } catch (error) {
-      console.error('[trading/signals] lookup failed:', error);
-      return res.status(500).json({ error: 'Failed to get signals' });
-    }
-  });
+  // DEZACTIVAT: modulul Trading Academy a fost înlocuit complet de Mara
+  // Missions. Frontend-ul nu mai apelează acest endpoint și ținerea lui în
+  // viață obliga proiectul să importe maraPlatformInsights/brainLogs doar
+  // pentru o rută orfană. Lăsat ca comentariu istoric — dacă revenim la
+  // module de trading, ne dorim oricum o agregare/format nou.
+  //
+  // app.get('/api/trading/signals', async (_req: any, res: any) => {
+  //   try {
+  //     const [insight] = await db
+  //       .select()
+  //       .from(maraPlatformInsights)
+  //       .where(eq(maraPlatformInsights.module, 'trading'))
+  //       .orderBy(desc(maraPlatformInsights.createdAt))
+  //       .limit(1);
+  //     ...
+  //   } catch (error) {
+  //     console.error('[trading/signals] lookup failed:', error);
+  //     return res.status(500).json({ error: 'Failed to get signals' });
+  //   }
+  // });
 
   // Upgrade user tier — admin-only. Before this guard was just `requireAuth`,
   // which let ANY logged-in account set its own tier to 'premium' / 'vip' for
@@ -1262,6 +1242,10 @@ experiments, and learning cycles. If asked about experiments or strategy, be spe
 
   // Mara Missions V3
   registerMissionRoutes(app, requireAuth);
+
+  // Universal content share endpoint — see server/share/routes.ts for the
+  // full contract. Lives at /api/share so any future module gets it for free.
+  registerShareRoutes(app, requireAuth);
 
   // Pre-launch landing page + /preview gate + waitlist API.
   //

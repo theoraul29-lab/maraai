@@ -1070,5 +1070,28 @@
     "updateBody": "O versiune mai nouă de Mara este disponibilă.",
     "updateCta": "Reîmprospătează",
     "updateDismissAria": "Închide actualizarea"
+  },
+  "share": {
+    "title": "Distribuie",
+    "trigger": "↗ Distribuie",
+    "close": "Închide",
+    "copied": "Link copiat! 🔗",
+    "instagramHint": "copiază + deschide",
+    "tiktokHint": "copiază + deschide",
+    "instagramMsg": "Link copiat! Deschide Instagram și lipește. 📸",
+    "tiktokMsg": "Link copiat! Deschide TikTok și lipește. 🎵",
+    "successMsg": "Distribuit! +25 XP 🎉",
+    "errorMsg": "Distribuirea a eșuat. Încearcă din nou.",
+    "recentlyShared": "Deja distribuit recent.",
+    "platforms": {
+      "hellomara": "Feed Mara",
+      "you": "Profilul Meu",
+      "instagram": "Instagram",
+      "tiktok": "TikTok",
+      "x": "X",
+      "whatsapp": "WhatsApp",
+      "telegram": "Telegram",
+      "link": "Copiază Link"
+    }
   }
 }
