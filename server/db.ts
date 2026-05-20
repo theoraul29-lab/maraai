@@ -309,10 +309,32 @@ sqlite.exec(`
   CREATE INDEX IF NOT EXISTS idx_user_missions_user ON user_missions(user_id);
   CREATE INDEX IF NOT EXISTS idx_mission_events_user ON mission_events(user_id);
   CREATE INDEX IF NOT EXISTS idx_mission_shares_user ON mission_shares(user_id);
+
+  -- Universal content shares: tracks who shared what, where, and when. The
+  -- table is module-agnostic -- source_module is the producer (mission /
+  -- reel / post / article / profile) and target_module / target_platform
+  -- describe the destination (internal feed vs. external network).
+  CREATE TABLE IF NOT EXISTS content_shares (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    source_module TEXT NOT NULL,
+    source_id TEXT NOT NULL,
+    source_type TEXT,
+    target_module TEXT,
+    target_platform TEXT,
+    caption TEXT,
+    share_url TEXT,
+    xp_awarded INTEGER DEFAULT 25,
+    created_at INTEGER DEFAULT (unixepoch())
+  );
 `);
 
-// FIX 2: per-user toxicity state persisted across restarts
-// FIX 4: performance indexes for knowledge base queries
+// FIX 2 (from main): per-user toxicity state persisted across restarts.
+// FIX 4 (from main): mara_knowledge_base indexes.
+// We unconditionally create the toxicity table because nothing else creates
+// it, but we guard the knowledge-base indexes so a fresh CI DB (where
+// mara_knowledge_base is created later by another module) doesn't crash on
+// startup with "no such table".
 sqlite.exec(`
   CREATE TABLE IF NOT EXISTS user_toxicity_state (
     user_id TEXT PRIMARY KEY,
@@ -322,13 +344,55 @@ sqlite.exec(`
     last_escalation TEXT,
     updated_at INTEGER DEFAULT (unixepoch()) NOT NULL
   );
-
-  CREATE INDEX IF NOT EXISTS idx_mkb_category ON mara_knowledge_base (category);
-  CREATE INDEX IF NOT EXISTS idx_mkb_source ON mara_knowledge_base (source);
-  CREATE INDEX IF NOT EXISTS idx_mkb_confidence ON mara_knowledge_base (confidence DESC);
-  CREATE INDEX IF NOT EXISTS idx_mkb_updated_at ON mara_knowledge_base (updated_at DESC);
-  CREATE INDEX IF NOT EXISTS idx_mkb_topic ON mara_knowledge_base (topic);
 `);
+
+// --- Audit fix #4: indexes for hot queries -------------------------------
+// Adds covering indexes for the most common WHERE/JOIN columns that were
+// previously doing full table scans on each request. We run them as a guarded
+// loop instead of one big sqlite.exec because on a fresh DB the underlying
+// tables may not exist yet — Drizzle creates them only after this module
+// finishes initialising. Missing tables are skipped silently; the next boot
+// (or the first time the module touches the table) will pick them up.
+{
+  const indexDefs: ReadonlyArray<readonly [name: string, table: string, cols: string]> = [
+    ['idx_chat_messages_user_id', 'chat_messages', 'user_id'],
+    ['idx_user_posts_user_id', 'user_posts', 'user_id'],
+    ['idx_notifications_user_read', 'notifications', 'user_id, read'],
+    ['idx_notifications_user_id', 'notifications', 'user_id'],
+    ['idx_direct_messages_conversation', 'direct_messages', 'conversation_id'],
+    ['idx_videos_creator_id', 'videos', 'creator_id'],
+    ['idx_post_likes_post_id', 'post_likes', 'post_id'],
+    ['idx_post_comments_post_id', 'post_comments', 'post_id'],
+    ['idx_followers_follower_id', 'followers', 'follower_id'],
+    ['idx_followers_following_id', 'followers', 'following_id'],
+    ['idx_user_missions_user_status', 'user_missions', 'user_id, status'],
+    ['idx_mission_events_user_id', 'mission_events', 'user_id'],
+    ['idx_writer_pages_user_id', 'writer_pages', 'user_id'],
+    ['idx_conversations_users', 'conversations', 'user_a_id, user_b_id'],
+    ['idx_push_subscriptions_user', 'push_subscriptions', 'user_id'],
+    ['idx_content_shares_user', 'content_shares', 'user_id'],
+    // From main: knowledge-base hot paths.
+    ['idx_mkb_category', 'mara_knowledge_base', 'category'],
+    ['idx_mkb_source', 'mara_knowledge_base', 'source'],
+    ['idx_mkb_confidence', 'mara_knowledge_base', 'confidence DESC'],
+    ['idx_mkb_updated_at', 'mara_knowledge_base', 'updated_at DESC'],
+    ['idx_mkb_topic', 'mara_knowledge_base', 'topic'],
+  ];
+  const tableExists = sqlite.prepare(
+    "SELECT 1 FROM sqlite_master WHERE type='table' AND name = ?",
+  );
+  for (const [name, table, cols] of indexDefs) {
+    if (!tableExists.get(table)) continue;
+    try {
+      sqlite.exec(`CREATE INDEX IF NOT EXISTS ${name} ON ${table}(${cols});`);
+    } catch (err) {
+      // Most likely an unexpected column rename — log and continue so the
+      // app can boot. The query planner just keeps the existing plan.
+      console.warn(`[db] skipping index ${name} on ${table}:`, err);
+    }
+  }
+}
+
 
 export const db = drizzle(sqlite, { schema });
 

@@ -3,6 +3,7 @@ import type { IStorage } from '../../../server/storage';
 import { insertVideoSchema } from '../../../shared/schema';
 import { eq, sql } from 'drizzle-orm';
 import { notifyReelLike } from '../../../server/notifications/producer.js';
+import { rawSqlite } from '../../../server/db.js';
 
 let deps: {
   storage: IStorage;
@@ -29,14 +30,25 @@ export async function listVideos(req: Request, res: Response) {
 
 export async function maraFeed(_req: Request, res: Response) {
   try {
-    const videos = await deps.storage.getVideos();
-    // Fisher-Yates shuffle for a uniform random permutation
-    for (let i = videos.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [videos[i], videos[j]] = [videos[j], videos[i]];
-    }
-    res.json(videos.slice(0, 50));
+    // Push the randomisation into SQLite — previously we loaded every approved
+    // video into Node, ran Fisher-Yates over 10k+ rows, then sliced off the
+    // first 50 and discarded the rest. `ORDER BY RANDOM() LIMIT 50` is O(n) at
+    // most but stays inside SQLite's row engine, and the response stops
+    // streaming once 50 rows are emitted.
+    const rows = rawSqlite.prepare(`
+      SELECT v.id, v.url, v.type, v.title, v.description, v.creator_id AS creatorId,
+             v.likes, v.views, v.shares, v.uploaded_at AS uploadedAt,
+             v.moderation_status AS moderationStatus, v.topic,
+             u.display_name AS displayName, u.profile_image_url AS profileImageUrl
+        FROM videos v
+        LEFT JOIN users u ON u.id = v.creator_id
+       WHERE v.moderation_status = 'approved' OR v.moderation_status IS NULL
+       ORDER BY RANDOM()
+       LIMIT 50
+    `).all();
+    res.json(rows);
   } catch (error) {
+    console.error('[maraFeed] failed:', error);
     res.status(500).json({ message: 'Failed to load feed' });
   }
 }

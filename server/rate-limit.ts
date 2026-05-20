@@ -185,3 +185,103 @@ export const otpRateLimit = createIPRateLimit({
   max: envInt('AUTH_RL_OTP_MAX', 3),
   windowMs: FIFTEEN_MIN,
 });
+
+// --- Per-user rate limiter -------------------------------------------------
+//
+// IP-only buckets don't fit endpoints that protect expensive per-user
+// operations (e.g. OpenAI STT/TTS, messenger writes). Multiple users behind
+// the same NAT would share a bucket; a single attacker rotating IPs would
+// dodge the limit entirely.
+//
+// `createUserRateLimit` keys the bucket on the authenticated uid when
+// available, falling back to the IP for anonymous traffic. Method filter is
+// optional — unlike `createIPRateLimit` we limit every verb, since these
+// limiters protect things like POST/GET reads to /api/messenger/messages.
+export type UserRateLimitOptions = {
+  name: string;
+  max: number;
+  windowMs: number;
+};
+
+export function createUserRateLimit(opts: UserRateLimitOptions) {
+  if (!rateLimitBuckets.has(opts.name)) {
+    rateLimitBuckets.set(opts.name, new Map<string, number[]>());
+  }
+  const bucket = rateLimitBuckets.get(opts.name)!;
+  const { max, windowMs } = opts;
+
+  return function userRateLimit(req: Request, res: Response, next: NextFunction) {
+    try {
+      const uid = req.user?.uid;
+      const key = uid ?? `ip:${req.ip ?? 'unknown'}`;
+      const now = Date.now();
+      let timestamps = bucket.get(key) || [];
+      timestamps = timestamps.filter((ts) => now - ts < windowMs);
+      if (timestamps.length >= max) {
+        const oldestTimestamp = Math.min(...timestamps);
+        const retryAfterMs = windowMs - (now - oldestTimestamp);
+        res.setHeader('Retry-After', Math.ceil(retryAfterMs / 1000));
+        return res.status(429).json({
+          message: 'Too many requests. Try again later.',
+          retryAfterMs,
+        });
+      }
+      timestamps.push(now);
+      bucket.set(key, timestamps);
+      return next();
+    } catch (err) {
+      console.error(`[rate-limit:${opts.name}] middleware error:`, err);
+      return next();
+    }
+  };
+}
+
+// Pre-configured limiters for the routes the audit flagged as unprotected.
+// Tuned for current free-tier traffic — bump via env if real users hit ceilings.
+const ONE_MIN = 60 * 1000;
+const ONE_HOUR = 60 * 60 * 1000;
+const TEN_SEC = 10 * 1000;
+
+export const messengerSendRateLimit = createUserRateLimit({
+  name: 'messenger:send',
+  max: envInt('RL_MESSENGER_SEND_MAX', 30),
+  windowMs: ONE_MIN,
+});
+
+export const uploadImageRateLimit = createUserRateLimit({
+  name: 'uploads:image',
+  max: envInt('RL_UPLOAD_IMAGE_MAX', 20),
+  windowMs: ONE_HOUR,
+});
+
+export const sttRateLimit = createUserRateLimit({
+  name: 'speech:stt',
+  max: envInt('RL_STT_MAX', 10),
+  windowMs: ONE_MIN,
+});
+
+export const ttsRateLimit = createUserRateLimit({
+  name: 'speech:tts',
+  max: envInt('RL_TTS_MAX', 10),
+  windowMs: ONE_MIN,
+});
+
+export const maraSpeakRateLimit = createUserRateLimit({
+  name: 'speech:mara',
+  max: envInt('RL_MARA_SPEAK_MAX', 10),
+  windowMs: ONE_MIN,
+});
+
+// IP-scoped: unauthenticated heartbeats are common, so per-IP throttling
+// is the right knob here. Without a method filter so GET probes count too.
+export const p2pHeartbeatRateLimit = createUserRateLimit({
+  name: 'p2p:heartbeat',
+  max: envInt('RL_P2P_HEARTBEAT_MAX', 1),
+  windowMs: TEN_SEC,
+});
+
+export const videoViewRateLimit = createUserRateLimit({
+  name: 'videos:view',
+  max: envInt('RL_VIDEO_VIEW_MAX', 5),
+  windowMs: ONE_MIN,
+});

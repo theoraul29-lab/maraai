@@ -990,19 +990,19 @@
   },
   "userProfile": {
     "close": "Închide profil",
-    "follow": "+ Urmărește",
+    "follow": "Urmărește",
     "unfollow": "Nu mai urmări",
-    "message": "💬 Mesaj",
+    "message": "Mesaj",
     "editProfileBtn": "Editează",
     "bio": "Bio",
     "website": "Website",
     "joined": "S-a alăturat",
     "posts": "Postări",
     "followers": "Urmăritori",
-    "following": "✓ Urmărești",
+    "following": "Urmărești",
     "following_count": "Urmărești",
     "likes": "Aprecieri",
-    "noPosts": "Nicio postare încă",
+    "noPosts": "Nicio postare încă.",
     "saveBio": "Salvează",
     "bannerLabel": "Schimbă banner",
     "color": "Culoare",
@@ -1232,6 +1232,29 @@
       "gentle": "Ușor",
       "medium": "Mediu",
       "deep": "Profund"
+    }
+  },
+  "share": {
+    "title": "Distribuie",
+    "trigger": "↗ Distribuie",
+    "close": "Închide",
+    "copied": "Link copiat! 🔗",
+    "instagramHint": "copiază + deschide",
+    "tiktokHint": "copiază + deschide",
+    "instagramMsg": "Link copiat! Deschide Instagram și lipește. 📸",
+    "tiktokMsg": "Link copiat! Deschide TikTok și lipește. 🎵",
+    "successMsg": "Distribuit! +25 XP 🎉",
+    "errorMsg": "Distribuirea a eșuat. Încearcă din nou.",
+    "recentlyShared": "Deja distribuit recent.",
+    "platforms": {
+      "hellomara": "Feed Mara",
+      "you": "Profilul Meu",
+      "instagram": "Instagram",
+      "tiktok": "TikTok",
+      "x": "X",
+      "whatsapp": "WhatsApp",
+      "telegram": "Telegram",
+      "link": "Copiază Link"
     }
   }
 }

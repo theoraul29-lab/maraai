@@ -929,7 +929,7 @@
     "close": "Fermer le profil",
     "follow": "Suivre",
     "unfollow": "Ne plus suivre",
-    "message": "💬 Message",
+    "message": "Message",
     "editProfileBtn": "Modifier",
     "bio": "Bio",
     "website": "Site web",
@@ -1169,6 +1169,29 @@
       "gentle": "Easy",
       "medium": "Medium",
       "deep": "Deep"
+    }
+  },
+  "share": {
+    "title": "Share",
+    "trigger": "↗ Share",
+    "close": "Close",
+    "copied": "Link copied! 🔗",
+    "instagramHint": "copy + open",
+    "tiktokHint": "copy + open",
+    "instagramMsg": "Link copied! Open Instagram and paste. 📸",
+    "tiktokMsg": "Link copied! Open TikTok and paste. 🎵",
+    "successMsg": "Shared! +25 XP 🎉",
+    "errorMsg": "Share failed. Try again.",
+    "recentlyShared": "Already shared recently.",
+    "platforms": {
+      "hellomara": "Mara Feed",
+      "you": "My Profile",
+      "instagram": "Instagram",
+      "tiktok": "TikTok",
+      "x": "X",
+      "whatsapp": "WhatsApp",
+      "telegram": "Telegram",
+      "link": "Copy Link"
     }
   }
 }

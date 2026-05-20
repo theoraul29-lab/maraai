@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from './contexts/AuthContext';
+import ShareButton from './components/ShareButton';
 import './styles/Missions.css';
 
 const API = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:5000');
@@ -287,6 +288,15 @@ export default function Missions() {
             >
               {t('missions.backToMissions')}
             </button>
+            {activeMission && (
+              <ShareButton
+                sourceModule="mission"
+                sourceId={activeMission.id}
+                title={activeMission.title}
+                caption={completionResult.maraFeedback ?? undefined}
+                compact={false}
+              />
+            )}
           </div>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import ShareButton from './ShareButton';
 import '../styles/UserProfile.css';
 
 export interface UserProfileData {
@@ -46,18 +47,66 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
 
   const loadProfile = async () => {
     try {
-      const response = await fetch(`/api/users/${userId}/profile`);
-      const data: UserProfileData = await response.json();
-      setProfile(data);
-      setIsFollowing(data.isFollowed);
+      // The backend serves the public profile under /api/profile/:id and the
+      // user posts under /api/profile/:id/posts. The previous /api/users/:id/*
+      // routes never existed and returned the SPA index.html, leaving the
+      // profile page stuck on "Loading profile..." indefinitely.
+      const response = await fetch(`/api/profile/${userId}`, { credentials: 'include' });
+      const payload = await response.json() as {
+        user: {
+          id: string;
+          displayName: string | null;
+          firstName: string | null;
+          bio: string | null;
+          profileImageUrl: string | null;
+          coverImageUrl: string | null;
+          location: string | null;
+          website: string | null;
+          createdAt: number | string | null;
+        };
+        videoCount: number;
+        postCount: number;
+        followerCount: number;
+        followingCount: number;
+        isFollowing: boolean;
+        isSelf: boolean;
+      };
+      const u = payload.user;
+      const joinDateMs = (() => {
+        if (!u.createdAt) return Date.now();
+        if (typeof u.createdAt === 'number') return u.createdAt > 1e12 ? u.createdAt : u.createdAt * 1000;
+        const parsed = Date.parse(u.createdAt);
+        return Number.isFinite(parsed) ? parsed : Date.now();
+      })();
+      const mapped: UserProfileData = {
+        id: u.id,
+        name: u.displayName ?? u.firstName ?? 'User',
+        email: '',
+        avatar: u.profileImageUrl ?? '',
+        banner: u.coverImageUrl ?? undefined,
+        bio: u.bio ?? '',
+        tier: '',
+        followers: payload.followerCount,
+        following: payload.followingCount,
+        posts: payload.postCount,
+        earnings: 0,
+        isFollowed: payload.isFollowing,
+        isSelf: payload.isSelf,
+        joinDate: joinDateMs,
+        website: u.website ?? undefined,
+        location: u.location ?? undefined,
+      };
+      setProfile(mapped);
+      setIsFollowing(mapped.isFollowed);
       setEditData({
-        bio: data.bio,
-        website: data.website || '',
-        location: data.location || '',
-        profileColor: (data as any).profileColor || '#9d4edd',
+        bio: mapped.bio,
+        website: mapped.website || '',
+        location: mapped.location || '',
+        profileColor: '#9d4edd',
       });
 
-      const postsResponse = await fetch(`/api/users/${userId}/posts`);
+      // Load user posts from the existing /api/profile/:id/posts endpoint.
+      const postsResponse = await fetch(`/api/profile/${userId}/posts`, { credentials: 'include' });
       const posts = await postsResponse.json();
       setUserPosts(Array.isArray(posts) ? posts : []);
     } catch (error) {
@@ -70,8 +119,9 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
   const handleFollow = async () => {
     if (!profile) return;
     try {
-      const response = await fetch(`/api/users/${profile.id}/follow`, {
+      const response = await fetch(`/api/profile/${profile.id}/follow`, {
         method: 'POST',
+        credentials: 'include',
       });
       if (response.ok) {
         setIsFollowing(!isFollowing);
@@ -90,17 +140,28 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
     const file = e.target.files?.[0];
     if (!file || !profile) return;
 
+    // Banner / avatar uploads are routed through the generic image upload
+    // endpoint; profile-row updates are then issued via PATCH /api/profile/me.
     const formData = new FormData();
-    formData.append('banner', file);
+    formData.append('image', file);
 
     try {
-      const response = await fetch(`/api/users/${profile.id}/banner`, {
+      const response = await fetch('/api/uploads/image', {
         method: 'POST',
         body: formData,
+        credentials: 'include',
       });
       if (response.ok) {
-        const data = await response.json();
-        setProfile({ ...profile, banner: data.banner });
+        const data = await response.json() as { url?: string };
+        if (data.url) {
+          await fetch('/api/profile/me', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ coverImageUrl: data.url }),
+          });
+          setProfile({ ...profile, banner: data.url });
+        }
       }
     } catch (error) {
       console.error('Error uploading banner:', error);
@@ -112,16 +173,25 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
     if (!file || !profile) return;
 
     const formData = new FormData();
-    formData.append('avatar', file);
+    formData.append('image', file);
 
     try {
-      const response = await fetch(`/api/users/${profile.id}/avatar`, {
+      const response = await fetch('/api/uploads/image', {
         method: 'POST',
         body: formData,
+        credentials: 'include',
       });
       if (response.ok) {
-        const data = await response.json();
-        setProfile({ ...profile, avatar: data.avatar });
+        const data = await response.json() as { url?: string };
+        if (data.url) {
+          await fetch('/api/profile/me', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ profileImageUrl: data.url }),
+          });
+          setProfile({ ...profile, avatar: data.url });
+        }
       }
     } catch (error) {
       console.error('Error uploading avatar:', error);
@@ -132,10 +202,15 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
     if (!profile) return;
 
     try {
-      const response = await fetch(`/api/users/${profile.id}/profile`, {
-        method: 'PUT',
+      const response = await fetch('/api/profile/me', {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editData),
+        credentials: 'include',
+        body: JSON.stringify({
+          bio: editData.bio,
+          website: editData.website || null,
+          location: editData.location || null,
+        }),
       });
 
       if (response.ok) {
@@ -262,6 +337,13 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
                   {isEditing ? t('userProfile.cancel') : t('userProfile.editProfile')}
                 </button>
               )}
+              <ShareButton
+                sourceModule="profile"
+                sourceId={profile.id}
+                title={profile.name}
+                caption={profile.bio || undefined}
+                compact={false}
+              />
             </div>
           </div>
 
@@ -366,6 +448,13 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
                   <div className="post-engagement">
                     <span>❤️ {post.likes}</span>
                     <span>💬 {post.comments}</span>
+                    <ShareButton
+                      sourceModule="post"
+                      sourceId={post.id}
+                      title={typeof post.content === 'string' ? post.content.slice(0, 80) : undefined}
+                      caption={typeof post.content === 'string' ? post.content : undefined}
+                      compact={true}
+                    />
                   </div>
                 </div>
               ))

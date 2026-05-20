@@ -20,10 +20,13 @@ import You from './you';
 import ResetPassword from './ResetPassword';
 import ResetPasswordConfirmation from './ResetPasswordConfirmation';
 import HomePage from './HomePage';
-import AdminBrain from './AdminBrain';
-import AdminExperiments from './AdminExperiments';
-import AdminWaitlist from './AdminWaitlist';
-import AdminMaraChat from './AdminMaraChat';
+// Admin pages are gated behind AdminGuard and never reached by 99% of
+// visitors. Loading them eagerly bloated the initial bundle by ~110 kB; lazy
+// chunks isolate that cost to the admins who actually visit /admin/*.
+const AdminBrain = lazy(() => import('./AdminBrain'));
+const AdminExperiments = lazy(() => import('./AdminExperiments'));
+const AdminWaitlist = lazy(() => import('./AdminWaitlist'));
+const AdminMaraChat = lazy(() => import('./AdminMaraChat'));
 import { OnboardingFlow } from './maraai/OnboardingFlow';
 import { TransparencyDashboard } from './maraai/TransparencyDashboard';
 import NotFound from './NotFound';
