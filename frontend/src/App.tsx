@@ -28,10 +28,20 @@ import { TransparencyDashboard } from './maraai/TransparencyDashboard';
 import NotFound from './NotFound';
 
 function AdminGuard({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, loading } = useAuth();
+
+  // Dacă încă se încarcă — nu face nimic
+  if (loading) return null;
+
+  // Dacă nu e autentificat
   if (!isAuthenticated) return <Navigate to="/" replace />;
-  if (user === null) return null; // loading
+
+  // Dacă user nu e încă hidratat
+  if (user === null) return null;
+
+  // Dacă nu e admin
   if (!user?.isAdmin) return <Navigate to="/" replace />;
+
   return <>{children}</>;
 }
 

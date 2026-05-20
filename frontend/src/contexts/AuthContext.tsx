@@ -67,6 +67,7 @@ export interface SignupOptions {
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
+  loading: boolean;
   userTier: UserTier;
   isTrialActive: boolean;
   trialTimeRemaining: number; // minutes
@@ -97,6 +98,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [oauthError, setOAuthError] = useState<string | null>(null);
   const clearOAuthError = () => setOAuthError(null);
 
@@ -184,6 +186,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         void applyServerLanguage(payload?.user?.preferredLanguage);
       } catch {
         /* keep localStorage state */
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     })();
     return () => { cancelled = true; };
@@ -434,6 +438,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       value={{
         user,
         isAuthenticated,
+        loading,
         userTier,
         isTrialActive,
         trialTimeRemaining,
