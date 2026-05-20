@@ -140,7 +140,7 @@ const Nav: React.FC = () => {
 						</NavLink>
 					))}
 					{user?.isAdmin && (
-						<a href="/admin/brain" className="nav-admin-link">
+						<a href="/admin" className="nav-admin-link">
 							🧠 Admin
 						</a>
 					)}
@@ -184,7 +184,7 @@ const Nav: React.FC = () => {
 						</NavLink>
 					))}
 					{user?.isAdmin && (
-						<a href="/admin/brain" className="nav-admin-link nav-mobile-link" onClick={() => setMenuOpen(false)}>
+						<a href="/admin" className="nav-admin-link nav-mobile-link" onClick={() => setMenuOpen(false)}>
 							<span className="mobile-link-icon">🧠</span>
 							<span className="mobile-link-label">Admin</span>
 						</a>

@@ -9,7 +9,7 @@ import {
   maraPlatformInsights,
   brainLogs,
 } from '../shared/schema';
-import { db } from './db';
+import { db, rawSqlite } from './db';
 import { desc, eq } from 'drizzle-orm';
 import { csrfProtection } from './auth';
 import * as videoModule from '../backend/src/modules/video.js';
@@ -1258,6 +1258,98 @@ experiments, and learning cycles. If asked about experiments or strategy, be spe
       console.error('[admin/mara/chat] failed:', error);
       res.status(500).json({ error: 'Failed to get Mara response' });
     }
+  });
+
+  // ─── ADMIN DASHBOARD ────────────────────────────────────────────────────────
+  // Helpers — each query is wrapped so a missing table returns a safe default.
+  const sqlGet = <T>(q: string): T | null => { try { return rawSqlite.prepare(q).get() as T; } catch { return null; } };
+  const sqlAll = <T>(q: string): T[] => { try { return rawSqlite.prepare(q).all() as T[]; } catch { return []; } };
+
+  app.get('/api/admin/dashboard', requireAdmin, async (_req: any, res: any) => {
+    try {
+      const totalUsers   = sqlGet<{cnt:number}>('SELECT COUNT(*) as cnt FROM users')?.cnt ?? 0;
+      const newUsersToday = sqlGet<{cnt:number}>('SELECT COUNT(*) as cnt FROM users WHERE created_at > unixepoch()-86400')?.cnt ?? 0;
+      const activeUsers7d = sqlGet<{cnt:number}>('SELECT COUNT(DISTINCT user_id) as cnt FROM chat_messages WHERE created_at > unixepoch()-604800')?.cnt ?? 0;
+      const languages    = sqlAll('SELECT language, COUNT(*) as cnt FROM user_preferences WHERE language IS NOT NULL GROUP BY language ORDER BY cnt DESC LIMIT 10');
+      const totalRevenue  = sqlGet<{total:number}>('SELECT COALESCE(SUM(amount),0) as total FROM premium_orders WHERE status="confirmed"')?.total ?? 0;
+      const revenueMonth  = sqlGet<{total:number}>('SELECT COALESCE(SUM(amount),0) as total FROM premium_orders WHERE status="confirmed" AND created_at>unixepoch()-2592000')?.total ?? 0;
+      const pendingOrders = sqlGet<{cnt:number}>('SELECT COUNT(*) as cnt FROM premium_orders WHERE status="pending"')?.cnt ?? 0;
+      const notifTotal   = sqlGet<{cnt:number}>('SELECT COUNT(*) as cnt FROM notifications')?.cnt ?? 0;
+      const notifToday   = sqlGet<{cnt:number}>('SELECT COUNT(*) as cnt FROM notifications WHERE created_at>unixepoch()-86400')?.cnt ?? 0;
+      const pwaInstalls  = sqlGet<{cnt:number}>('SELECT COUNT(*) as cnt FROM push_subscriptions')?.cnt ?? 0;
+      const missionsComp = sqlGet<{cnt:number}>('SELECT COUNT(*) as cnt FROM user_missions WHERE status="completed"')?.cnt ?? 0;
+      const totalXP      = sqlGet<{total:number}>('SELECT COALESCE(SUM(xp),0) as total FROM user_xp')?.total ?? 0;
+      const aiRoutes     = sqlAll('SELECT route, COUNT(*) as cnt, AVG(latency_ms) as avg_latency, SUM(CASE WHEN success=1 THEN 1 ELSE 0 END) as successes FROM ai_route_log WHERE created_at>unixepoch()-86400 GROUP BY route');
+      const lastBrainLog = sqlGet('SELECT message, level, created_at FROM brain_logs ORDER BY created_at DESC LIMIT 1');
+      const brainToday   = sqlGet<{cnt:number}>('SELECT COUNT(*) as cnt FROM brain_logs WHERE created_at>unixepoch()-86400')?.cnt ?? 0;
+
+      res.json({
+        users:         { total: totalUsers, newToday: newUsersToday, active7d: activeUsers7d },
+        languages,
+        revenue:       { total: totalRevenue, thisMonth: revenueMonth, pendingOrders },
+        notifications: { total: notifTotal, today: notifToday },
+        pwa:           { installs: pwaInstalls },
+        missions:      { completed: missionsComp, totalXP },
+        aiRoutes,
+        system: {
+          uptimeSeconds:  process.uptime(),
+          memoryMB:       Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+          totalMemoryMB:  Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
+          nodeVersion:    process.version,
+        },
+        brain: { lastLog: lastBrainLog, logsToday: brainToday },
+      });
+    } catch (err: any) {
+      console.error('[admin/dashboard]', err);
+      res.status(500).json({ message: 'Eroare la dashboard stats.' });
+    }
+  });
+
+  app.get('/api/admin/dashboard/knowledge', requireAdmin, (_req: any, res: any) => {
+    const entries = sqlAll('SELECT id, category, topic, content, source, confidence, access_count, created_at, updated_at FROM mara_knowledge_base ORDER BY updated_at DESC LIMIT 20');
+    res.json({ entries });
+  });
+
+  app.get('/api/admin/dashboard/reflections', requireAdmin, (_req: any, res: any) => {
+    const reflections = sqlAll('SELECT id, content, created_at FROM mara_self_reflection ORDER BY created_at DESC LIMIT 10');
+    res.json({ reflections });
+  });
+
+  app.get('/api/admin/dashboard/experiments', requireAdmin, (_req: any, res: any) => {
+    const experiments = sqlAll('SELECT id, name, description, hypothesis, ice_score, status, funnel_stage, created_at, decided_at, implemented_at FROM mara_growth_experiments ORDER BY created_at DESC LIMIT 20');
+    res.json({ experiments });
+  });
+
+  app.patch('/api/admin/dashboard/experiments/:id', requireAdmin, (req: any, res: any) => {
+    const { status } = req.body;
+    if (!['approved', 'rejected', 'implemented'].includes(status)) {
+      return res.status(400).json({ message: 'Status invalid.' });
+    }
+    try {
+      rawSqlite.prepare('UPDATE mara_growth_experiments SET status=?, decided_at=unixepoch() WHERE id=?').run(status, req.params.id);
+    } catch { /* table may not exist yet */ }
+    res.json({ success: true });
+  });
+
+  app.get('/api/admin/dashboard/library', requireAdmin, (_req: any, res: any) => {
+    const books = sqlAll('SELECT * FROM mara_knowledge_base WHERE source="document" ORDER BY created_at DESC LIMIT 50');
+    res.json({ books });
+  });
+
+  app.get('/api/admin/dashboard/brain-logs', requireAdmin, (_req: any, res: any) => {
+    const logs = sqlAll('SELECT id, phase, message, level, created_at FROM brain_logs ORDER BY created_at DESC LIMIT 50');
+    res.json({ logs });
+  });
+
+  app.get('/api/admin/dashboard/ai-routes', requireAdmin, (_req: any, res: any) => {
+    const routes = sqlAll('SELECT route, module, latency_ms, tokens_in, tokens_out, success, error, created_at FROM ai_route_log ORDER BY created_at DESC LIMIT 100');
+    res.json({ routes });
+  });
+
+  app.get('/api/admin/dashboard/messages', requireAdmin, (req: any, res: any) => {
+    const adminId = req.user?.uid;
+    const messages = sqlAll(`SELECT id, content, sender, created_at FROM chat_messages WHERE user_id='${adminId}' ORDER BY created_at DESC LIMIT 100`);
+    res.json({ messages: messages.reverse() });
   });
 
   // Mara Missions V3
