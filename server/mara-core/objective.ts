@@ -120,30 +120,41 @@ export function setObjective(
 }
 
 /**
- * Idempotent boot-time seed. Inserts the default ObjectiveFunction iff
- * the row is missing. Safe to call on every restart — it will not
- * overwrite an admin's edits.
+ * Boot-time UPSERT. On first boot inserts DEFAULT_OBJECTIVE; on subsequent
+ * deploys updates the payload so new targets (goals, milestones, KPIs) take
+ * effect automatically without manual admin action. Admin edits via
+ * `PUT /api/admin/mara/objective` always win for the session — but the next
+ * deploy re-seeds from DEFAULT_OBJECTIVE, so keep runtime tweaks in the DB
+ * and structural changes here.
  */
 export function seedDefaultObjective(): void {
+  const now = new Date();
+  const payload = JSON.stringify(DEFAULT_OBJECTIVE);
+
   const existing = db
     .select({ id: maraCoreObjective.id })
     .from(maraCoreObjective)
     .where(eq(maraCoreObjective.id, SINGLETON_ID))
     .all()[0];
 
-  if (existing) return;
-
-  const now = new Date();
-  db.insert(maraCoreObjective)
-    .values({
-      id: SINGLETON_ID,
-      payload: JSON.stringify(DEFAULT_OBJECTIVE),
-      updatedAt: now,
-      updatedBy: 'system',
-      createdAt: now,
-    })
-    .run();
-  console.log('[MaraCore] Seeded default ObjectiveFunction (primary=growth).');
+  if (existing) {
+    db.update(maraCoreObjective)
+      .set({ payload, updatedAt: now, updatedBy: 'system:deploy' })
+      .where(eq(maraCoreObjective.id, SINGLETON_ID))
+      .run();
+    console.log('[MaraCore] Updated ObjectiveFunction on deploy (primary=grow_platform).');
+  } else {
+    db.insert(maraCoreObjective)
+      .values({
+        id: SINGLETON_ID,
+        payload,
+        updatedAt: now,
+        updatedBy: 'system',
+        createdAt: now,
+      })
+      .run();
+    console.log('[MaraCore] Seeded default ObjectiveFunction (primary=grow_platform).');
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -173,6 +184,12 @@ function mergeWithDefaults(partial: Partial<ObjectiveFunction>): ObjectiveFuncti
       ...(partial.weights ?? {}),
     },
     rationale: partial.rationale ?? DEFAULT_OBJECTIVE.rationale,
+    ...(partial.goals !== undefined ? { goals: partial.goals } : DEFAULT_OBJECTIVE.goals ? { goals: DEFAULT_OBJECTIVE.goals } : {}),
+    ...(partial.milestones !== undefined ? { milestones: partial.milestones } : DEFAULT_OBJECTIVE.milestones ? { milestones: DEFAULT_OBJECTIVE.milestones } : {}),
+    ...(partial.researchTopics !== undefined ? { researchTopics: partial.researchTopics } : DEFAULT_OBJECTIVE.researchTopics ? { researchTopics: DEFAULT_OBJECTIVE.researchTopics } : {}),
+    ...(partial.focusModules !== undefined ? { focusModules: partial.focusModules } : DEFAULT_OBJECTIVE.focusModules ? { focusModules: DEFAULT_OBJECTIVE.focusModules } : {}),
+    ...(partial.kpis !== undefined ? { kpis: partial.kpis } : DEFAULT_OBJECTIVE.kpis ? { kpis: DEFAULT_OBJECTIVE.kpis } : {}),
+    ...(partial.alertThresholds !== undefined ? { alertThresholds: partial.alertThresholds } : DEFAULT_OBJECTIVE.alertThresholds ? { alertThresholds: DEFAULT_OBJECTIVE.alertThresholds } : {}),
   };
 }
 
@@ -187,6 +204,7 @@ function validateObjective(o: ObjectiveFunction): void {
     'user_retention',
     'engagement',
     'growth',
+    'grow_platform',
   ];
   if (!primaries.includes(o.primary)) {
     throw new Error(`Invalid primary metric: ${o.primary}`);

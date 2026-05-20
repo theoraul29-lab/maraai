@@ -103,6 +103,17 @@ interface CircuitBreakerStatus {
   openUntil: number | null;
 }
 
+interface MaraAlert {
+  id: number;
+  type: string;
+  severity: 'critical' | 'warning' | 'info';
+  title: string;
+  message: string;
+  metadata: string;
+  read: number;
+  created_at: number;
+}
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function StatCard({ icon, label, value, sub, color }: StatCardProps) {
@@ -723,11 +734,122 @@ function AiLogsTab() {
   );
 }
 
+// ─── Tab: Alerts ─────────────────────────────────────────────────────────────
+
+function AlertsTab({ onUnreadChange }: { onUnreadChange: (n: number) => void }) {
+  const [alerts, setAlerts] = useState<MaraAlert[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [msg, setMsg] = useState('');
+
+  const loadAlerts = () => {
+    setLoading(true);
+    fetch('/api/admin/alerts', { credentials: 'include' })
+      .then(r => r.json())
+      .then(d => {
+        setAlerts(d.alerts ?? []);
+        onUnreadChange((d.alerts ?? []).filter((a: MaraAlert) => !a.read).length);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { loadAlerts(); }, []);
+
+  const markRead = (id: number) => {
+    fetch(`/api/admin/alerts/${id}/read`, { method: 'POST', credentials: 'include' })
+      .then(() => {
+        setAlerts(prev => prev.map(a => a.id === id ? { ...a, read: 1 } : a));
+        onUnreadChange(alerts.filter(a => !a.read && a.id !== id).length);
+      })
+      .catch(() => {});
+  };
+
+  const markAllRead = () => {
+    fetch('/api/admin/alerts/read-all', { method: 'POST', credentials: 'include' })
+      .then(() => { setAlerts(prev => prev.map(a => ({ ...a, read: 1 }))); onUnreadChange(0); })
+      .catch(() => {});
+  };
+
+  const runAnalysis = async () => {
+    setAnalyzing(true);
+    setMsg('');
+    try {
+      const r = await fetch('/api/admin/alerts/analyze', { method: 'POST', credentials: 'include' });
+      const d = await r.json();
+      setAlerts(d.alerts ?? []);
+      onUnreadChange((d.alerts ?? []).filter((a: MaraAlert) => !a.read).length);
+      setMsg(`Analiză completă. ${d.count} alerte totale.`);
+    } catch {
+      setMsg('Eroare la analiză.');
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  const sevColor = (s: string) =>
+    s === 'critical' ? '#f87171' : s === 'warning' ? '#f59e0b' : '#38bdf8';
+
+  const unread = alerts.filter(a => !a.read).length;
+
+  return (
+    <div>
+      <div className="adb-card">
+        <SectionHeader
+          icon="🔔"
+          title={`Alerte platform${unread > 0 ? ` (${unread} necitite)` : ''}`}
+          action={
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="adb-btn adb-btn--primary" onClick={runAnalysis} disabled={analyzing}>
+                {analyzing ? 'Analizez...' : 'Analizează acum'}
+              </button>
+              {unread > 0 && (
+                <button className="adb-btn" style={{ background: '#1e1e2e', color: '#9ca3af' }} onClick={markAllRead}>
+                  Marchează toate citite
+                </button>
+              )}
+            </div>
+          }
+        />
+        {msg && <p className="adb-feedback">{msg}</p>}
+        {loading ? (
+          <p className="adb-loading">Se încarcă alertele...</p>
+        ) : alerts.length === 0 ? (
+          <p className="adb-empty">Nicio alertă. Rulează analiza sau așteaptă următorul ciclu brain.</p>
+        ) : (
+          <div className="adb-alert-list">
+            {alerts.map(a => (
+              <div
+                key={a.id}
+                className={`adb-alert-item${a.read ? ' adb-alert--read' : ''}`}
+                style={{ borderLeftColor: sevColor(a.severity) }}
+              >
+                <div className="adb-alert-header">
+                  <span className="adb-alert-sev" style={{ color: sevColor(a.severity) }}>
+                    {a.severity === 'critical' ? '🚨' : a.severity === 'warning' ? '⚠️' : 'ℹ️'} {a.severity}
+                  </span>
+                  <span className="adb-alert-time">{timeAgo(a.created_at)}</span>
+                  {!a.read && (
+                    <button className="adb-alert-read-btn" onClick={() => markRead(a.id)}>citit</button>
+                  )}
+                </div>
+                <div className="adb-alert-title">{a.title}</div>
+                <div className="adb-alert-msg">{a.message}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const TABS = [
   { id: 'overview', icon: '📊', label: 'Overview' },
   { id: 'brain', icon: '🧠', label: 'Brain' },
+  { id: 'alerts', icon: '🔔', label: 'Alerte' },
   { id: 'knowledge', icon: '📚', label: 'Knowledge' },
   { id: 'experiments', icon: '🧪', label: 'Experiments' },
   { id: 'library', icon: '📖', label: 'Library' },
@@ -739,6 +861,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [statsError, setStatsError] = useState('');
+  const [unreadAlerts, setUnreadAlerts] = useState(0);
 
   useEffect(() => {
     fetch('/api/admin/dashboard', { credentials: 'include' })
@@ -748,6 +871,11 @@ export default function AdminDashboard() {
       })
       .then(d => setStats(d))
       .catch(err => setStatsError(`Eroare la încărcare stats: ${err.message}`));
+
+    fetch('/api/admin/alerts/unread', { credentials: 'include' })
+      .then(r => r.json())
+      .then(d => setUnreadAlerts(d.count ?? 0))
+      .catch(() => {});
   }, []);
 
   return (
@@ -766,6 +894,9 @@ export default function AdminDashboard() {
           >
             <span>{tab.icon}</span>
             <span>{tab.label}</span>
+            {tab.id === 'alerts' && unreadAlerts > 0 && (
+              <span className="adb-tab-badge">{unreadAlerts}</span>
+            )}
           </button>
         ))}
       </div>
@@ -773,6 +904,7 @@ export default function AdminDashboard() {
       <div className="adb-content">
         {activeTab === 'overview'     && <OverviewTab stats={stats} />}
         {activeTab === 'brain'        && <BrainTab />}
+        {activeTab === 'alerts'       && <AlertsTab onUnreadChange={setUnreadAlerts} />}
         {activeTab === 'knowledge'    && <KnowledgeTab />}
         {activeTab === 'experiments'  && <ExperimentsTab />}
         {activeTab === 'library'      && <LibraryTab />}

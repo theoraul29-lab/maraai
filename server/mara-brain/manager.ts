@@ -13,6 +13,7 @@ import { generateMarketingPost } from '../ai.js';
 import { SingletonLock } from '../lib/singleton-lock.js';
 import { cleanupKnowledgeBase } from './knowledge-base.js';
 import { decayAllToxicity } from './memory.js';
+import { ensureAlertsTable, analyzePlatformAndAlert } from './alerts.js';
 
 export type BrainStatus = {
   enabled: boolean;
@@ -136,6 +137,11 @@ class BrainManagerImpl {
       `Acquired brain_cycle advisory lock (ttl=${Math.round(lockTtlMs / 1000)}s)`,
       'mara-scheduler',
     );
+
+    // Ensure the alerts table exists before any cycle can fire.
+    try { ensureAlertsTable(); } catch (err) {
+      logger(`ensureAlertsTable failed (non-fatal): ${(err as Error).message}`, 'mara-scheduler');
+    }
 
     // Release the lock when the process is winding down so the next deploy
     // can grab it immediately instead of waiting for the TTL to expire.
@@ -364,6 +370,7 @@ class BrainManagerImpl {
         const { deleted } = cleanupKnowledgeBase();
         if (deleted > 0) logger(`KB cleanup removed ${deleted} old entries.`, 'mara-brain');
       } catch { /* non-fatal */ }
+      try { await analyzePlatformAndAlert(); } catch { /* non-fatal */ }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       this._lastError = msg;

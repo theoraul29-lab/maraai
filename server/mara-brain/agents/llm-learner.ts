@@ -21,7 +21,7 @@ export async function learnFromLLM(topic: string, context?: string): Promise<Lea
 
   const prompt = `Tu ești un profesor expert. Eu sunt Mara, un AI care învață continuu pentru a îmbunătăți platforma MaraAI.
 
-Platforma MaraAI are aceste module: Trading (50 strategii crypto), Creator Studio (video content), WritersHub (scriere creativă), Reels (video scurt), VIP (servicii premium), Chat AI.
+Platforma MaraAI are aceste module: Creator Studio (video content), WritersHub (scriere creativă), Reels (video scurt), VIP (servicii premium), Chat AI companion.
 
 ${context ? `Context adițional: ${context}\n` : ''}
 
@@ -179,7 +179,7 @@ Dă-mi 3-5 sugestii concrete de îmbunătățire a răspunsurilor mele. Focus pe
  */
 export async function learnBusinessStrategy(platformContext: string): Promise<LearningResult> {
   return learnFromLLM(
-    'Business strategy & growth pentru platformă socială cu AI, trading crypto, creator studio, și writers hub',
+    'Business strategy & growth pentru platformă socială cu AI — creator studio, writers hub, VIP subscriptions, 1M EUR ARR',
     platformContext,
   );
 }

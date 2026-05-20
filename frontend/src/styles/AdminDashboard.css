@@ -585,3 +585,88 @@
   margin-bottom: 12px;
   border-left: 3px solid #4ade80;
 }
+
+/* ── Tab badge (unread count) ── */
+
+.adb-tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  background: #f87171;
+  color: #fff;
+  border-radius: 9px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ── Alerts tab ── */
+
+.adb-alert-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.adb-alert-item {
+  padding: 14px 16px;
+  background: #0f0f16;
+  border-radius: 10px;
+  border-left: 4px solid #38bdf8;
+  transition: opacity 0.15s;
+}
+
+.adb-alert--read {
+  opacity: 0.5;
+}
+
+.adb-alert-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.adb-alert-sev {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.adb-alert-time {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-left: auto;
+}
+
+.adb-alert-read-btn {
+  background: #1e1e2e;
+  border: none;
+  border-radius: 6px;
+  color: #9ca3af;
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.adb-alert-read-btn:hover {
+  background: #2d2d3f;
+  color: #e5e7eb;
+}
+
+.adb-alert-title {
+  font-weight: 600;
+  color: #e5e7eb;
+  margin-bottom: 4px;
+  font-size: 0.9rem;
+}
+
+.adb-alert-msg {
+  font-size: 0.85rem;
+  color: #9ca3af;
+  line-height: 1.5;
+}

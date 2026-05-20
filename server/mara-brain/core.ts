@@ -135,7 +135,7 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
     console.log('[MaraBrain] Phase 0.5: Knowledge gap detection...');
     try {
       await withTimeout((async () => {
-        const modules = ['trading', 'creator', 'writers', 'reels', 'vip', 'chat'];
+        const modules = ['creator', 'writers', 'reels', 'vip', 'chat', 'growth'];
         const counts: Array<{ module: string; count: number }> = [];
         for (const mod of modules) {
           // searchKnowledge does a topic+content text search — sufficient as a
@@ -324,7 +324,7 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
     console.log('[MaraBrain] Phase 3: Module trend research...');
     try {
       await withTimeout((async () => {
-        const modulesToResearch = ['trading', 'creator', 'platform'];
+        const modulesToResearch = ['creator', 'growth', 'platform'];
         for (const mod of modulesToResearch) {
           try {
             const result = await researchModuleTrends(mod);
@@ -585,15 +585,15 @@ async function _runInitialLearningInner(): Promise<void> {
 
   const bootstrapTopics = [
     'Cum să construiești o platformă socială de succes — strategii de creștere, user retention, engagement',
-    'Trading crypto — cele mai importante strategii, risk management, analiza tehnică pentru un AI asistent',
-    'Content creation & creator economy — cum să ajuți creatorii să crească, monetizare, best practices',
+    'Creator economy — cum să monetizezi o platformă de content, modele de subscripție, revenue sharing',
+    'Content creation & creator studio — cum să ajuți creatorii să crească, monetizare, best practices',
     'Creative writing platforms — features esențiale, cum să ajuți scriitorii, publishing industry trends',
     'AI chatbot design — cum să fii un AI companion bun, empatie, personalizare, tone of voice',
     'SaaS monetization — pricing strategies, freemium vs premium, subscription models, conversion optimization',
     'User experience design — principii UX, mobile-first design, accessibility, onboarding flows',
-    'Social media algoritmi — cum funcționează, cum să optimizezi reach-ul, engagement metrics',
-    'Competitive analysis — platforme similare (AI + social + trading + content), ce fac bine, ce le lipsește',
-    'Startup growth strategies — product-market fit, viral loops, community building, retention metrics',
+    'Viral growth loops — cum să construiești mecanisme de viralizare pe o platformă socială cu AI',
+    'Competitive analysis — platforme similare (AI + social + content), ce fac bine, ce le lipsește',
+    'Startup growth strategies — product-market fit, community building, retention metrics, 1M EUR ARR path',
   ];
 
   for (const topic of bootstrapTopics) {

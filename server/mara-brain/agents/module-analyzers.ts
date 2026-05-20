@@ -15,7 +15,7 @@ import { llmGenerate, isLLMConfigured, LLMRateLimitedError } from '../../llm.js'
 import { storage } from '../../storage.js';
 import { storeKnowledge } from '../knowledge-base.js';
 
-export type ModuleKey = 'you' | 'reels' | 'trading' | 'writers' | 'creators' | 'vip';
+export type ModuleKey = 'you' | 'reels' | 'growth' | 'writers' | 'creators' | 'vip';
 
 export interface ModuleAnalysisResult {
   module: ModuleKey;
@@ -206,22 +206,26 @@ async function analyzeReels(): Promise<ModuleAnalysisResult> {
 }
 
 // ============================================================================
-// Trading Academy
+// Growth (funnel + acquisition + conversion)
 // ============================================================================
-async function analyzeTrading(): Promise<ModuleAnalysisResult> {
+async function analyzeGrowth(): Promise<ModuleAnalysisResult> {
   const users = await storage.getAllUsers();
-  // We don't have a granular progress query; surface what we can.
+  const allVideos = await storage.getVideos();
+  const creatorVideos = allVideos.filter((v) => v.type === 'creator');
+  const reels = allVideos.filter((v) => v.type === 'reel' || v.type === 'reels');
+
   const metrics = [
-    `- Total users: ${users.length}`,
-    `- 5 levels exist: L1 Fundamentals (free), L2 Technical, L3 Strategies, L4 Advanced/Crypto (VIP), L5 Live (VIP+)`,
-    `- Quizzes server-graded. Certificates auto-issued at 100% module completion.`,
-    `- Known gap: no per-lesson dropout metric exposed yet.`,
+    `- Total registered users: ${users.length}`,
+    `- Users with content (creators + reels): ${new Set([...creatorVideos, ...reels].map((v) => v.creatorId).filter(Boolean)).size}`,
+    `- Total creator videos: ${creatorVideos.length}`,
+    `- Total reels: ${reels.length}`,
+    `- Activation rate (user created ≥1 piece of content): ${users.length ? ((new Set([...allVideos].map((v) => v.creatorId).filter(Boolean)).size / users.length) * 100).toFixed(1) : '0.0'}%`,
   ].join('\n');
 
   return runAnalyzer(
-    'trading',
+    'growth',
     metrics,
-    'Focus on: lesson-to-lesson completion funnel, quiz retry friction, VIP upsell placement between L3 and L4, missing topics for 2026 (DeFi, on-chain, macro). Propose specific new lessons or re-ordering.',
+    'Focus on: signup-to-activation funnel, viral loop opportunities, referral mechanisms, onboarding improvements for new users, conversion from free to paid. Propose concrete growth levers aligned with 1M EUR ARR goal.',
   );
 }
 
@@ -295,7 +299,7 @@ async function analyzeVIP(): Promise<ModuleAnalysisResult> {
     `- Total users: ${users.length}`,
     `- VIP-tier users (by trading access signal): ${vipCount}`,
     `- VIP conversion ratio: ${ratio}%`,
-    `- Gated features: Trading L4+/L5, VIP-only writer pages, higher tip limits`,
+    `- Gated features: VIP-only creator pages, premium writer templates, higher tip limits, AI chat priority`,
   ].join('\n');
 
   return runAnalyzer(
@@ -317,7 +321,7 @@ export async function runAllModuleAnalyzers(): Promise<ModuleAnalysisResult[]> {
   const analyzers: Array<{ key: ModuleKey; fn: () => Promise<ModuleAnalysisResult> }> = [
     { key: 'you', fn: analyzeYou },
     { key: 'reels', fn: analyzeReels },
-    { key: 'trading', fn: analyzeTrading },
+    { key: 'growth', fn: analyzeGrowth },
     { key: 'writers', fn: analyzeWriters },
     { key: 'creators', fn: analyzeCreators },
     { key: 'vip', fn: analyzeVIP },

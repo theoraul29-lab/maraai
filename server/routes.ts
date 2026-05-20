@@ -12,6 +12,14 @@ import {
 import { db, rawSqlite } from './db';
 import { getAllCircuitStatuses } from './lib/circuit-breaker';
 import { cleanupKnowledgeBase } from './mara-brain/knowledge-base';
+import {
+  getAllAlerts,
+  getUnreadAlerts,
+  getUnreadCount,
+  markAlertRead,
+  markAllAlertsRead,
+  analyzePlatformAndAlert,
+} from './mara-brain/alerts';
 import { desc, eq } from 'drizzle-orm';
 import { csrfProtection } from './auth';
 import * as videoModule from '../backend/src/modules/video.js';
@@ -1377,6 +1385,67 @@ experiments, and learning cycles. If asked about experiments or strategy, be spe
   app.post('/api/admin/dashboard/kb-cleanup', requireAdmin, (_req: any, res: any) => {
     const result = cleanupKnowledgeBase();
     res.json(result);
+  });
+
+  // Cleanup crypto/trading knowledge from the knowledge base (ZERO crypto policy)
+  app.post('/api/admin/dashboard/cleanup-crypto', requireAdmin, (_req: any, res: any) => {
+    try {
+      const r = rawSqlite
+        .prepare(
+          `DELETE FROM mara_knowledge_base
+           WHERE topic  LIKE '%crypto%'  OR topic  LIKE '%trading%'
+              OR topic  LIKE '%bitcoin%' OR topic  LIKE '%ethereum%'
+              OR content LIKE '%trading crypto%' OR content LIKE '%strategii crypto%'`,
+        )
+        .run();
+      res.json({ deleted: r.changes ?? 0 });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // === Mara Alerts (admin only) ===
+  app.get('/api/admin/alerts', requireAdmin, (_req: any, res: any) => {
+    try {
+      const alerts = getAllAlerts(100);
+      res.json({ alerts, count: alerts.length });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get('/api/admin/alerts/unread', requireAdmin, (_req: any, res: any) => {
+    try {
+      const count = getUnreadCount();
+      const alerts = getUnreadAlerts();
+      res.json({ alerts, count });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post('/api/admin/alerts/:id/read', requireAdmin, (req: any, res: any) => {
+    const id = Number.parseInt(String(req.params?.id), 10);
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ error: 'Invalid alert id.' });
+    }
+    const ok = markAlertRead(id);
+    res.json({ ok });
+  });
+
+  app.post('/api/admin/alerts/read-all', requireAdmin, (_req: any, res: any) => {
+    const updated = markAllAlertsRead();
+    res.json({ updated });
+  });
+
+  app.post('/api/admin/alerts/analyze', requireAdmin, async (_req: any, res: any) => {
+    try {
+      await analyzePlatformAndAlert();
+      const alerts = getAllAlerts(100);
+      res.json({ ok: true, alerts, count: alerts.length });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
   // Mara Missions V3
