@@ -321,7 +321,7 @@ export function objectiveStageWeight(
 ): number {
   const axis = stageToObjectiveAxis(stage);
   if (axis === null) {
-    return objective.primary === 'growth' ? 1.0 : 0.5;
+    return (objective.primary === 'growth' || objective.primary === 'grow_platform') ? 1.0 : 0.5;
   }
   const w = objective.weights[axis];
   if (!Number.isFinite(w)) return 0.5;
