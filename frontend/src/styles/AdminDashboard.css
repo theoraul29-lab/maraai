@@ -2,12 +2,12 @@
 
 .adb-root {
   min-height: 100vh;
-  height: 100vh;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
   background: #020008;
   color: rgba(255,255,255,0.85);
   font-family: 'Inter', sans-serif;
-  padding: 24px;
+  overflow-x: hidden;
 }
 
 .adb-header {
@@ -15,6 +15,7 @@
   align-items: center;
   gap: 16px;
   margin-bottom: 24px;
+  padding: 24px 24px 0;
 }
 
 .adb-title {
@@ -34,10 +35,10 @@
 .adb-tabs {
   display: flex;
   gap: 4px;
-  margin-bottom: 24px;
+  margin-bottom: 0;
   flex-wrap: wrap;
   border-bottom: 1px solid #1e1e2e;
-  padding-bottom: 4px;
+  padding: 0 24px 4px;
 }
 
 .adb-tab {
@@ -71,8 +72,13 @@
 .adb-content {
   padding: 20px 24px;
   overflow-y: auto;
-  height: calc(100vh - 120px);
+  flex: 1;
   animation: adb-fade 0.2s ease;
+}
+
+.adb-tabs + .adb-content {
+  flex: 1;
+  overflow-y: auto;
 }
 
 @keyframes adb-fade {

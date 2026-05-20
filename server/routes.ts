@@ -1265,6 +1265,22 @@ experiments, and learning cycles. If asked about experiments or strategy, be spe
   const sqlGet = <T>(q: string): T | null => { try { return rawSqlite.prepare(q).get() as T; } catch { return null; } };
   const sqlAll = <T>(q: string): T[] => { try { return rawSqlite.prepare(q).all() as T[]; } catch { return []; } };
 
+  // Ensure experiments table exists (may not be created by brain modules yet)
+  try {
+    rawSqlite.exec(`CREATE TABLE IF NOT EXISTS mara_growth_experiments (
+      id TEXT PRIMARY KEY,
+      name TEXT,
+      description TEXT,
+      hypothesis TEXT,
+      ice_score REAL,
+      status TEXT DEFAULT 'proposed',
+      funnel_stage TEXT,
+      created_at INTEGER DEFAULT (unixepoch()),
+      decided_at INTEGER,
+      implemented_at INTEGER
+    )`);
+  } catch { /* table already exists or DB not ready */ }
+
   app.get('/api/admin/dashboard', requireAdmin, async (_req: any, res: any) => {
     try {
       const totalUsers   = sqlGet<{cnt:number}>('SELECT COUNT(*) as cnt FROM users')?.cnt ?? 0;

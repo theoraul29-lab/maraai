@@ -120,21 +120,18 @@ function SectionHeader({ icon, title, action }: SectionHeaderProps) {
   );
 }
 
-function fmtDate(ts: number) {
-  if (!ts) return '—';
-  return new Date(ts * 1000).toLocaleString();
-}
-
 function timeAgo(ts: any): string {
-  if (!ts) return '—';
-  // Suportă timestamp Unix (secunde) și ISO string
-  const timestamp = typeof ts === 'string'
-    ? new Date(ts).getTime() / 1000
-    : typeof ts === 'number' && ts > 1e10
-    ? ts / 1000  // milliseconds
-    : ts;        // seconds
-  if (isNaN(timestamp)) return '—';
-  const diff = Math.floor(Date.now() / 1000) - timestamp;
+  if (ts === null || ts === undefined || ts === '') return '—';
+  let date: Date;
+  if (typeof ts === 'string') {
+    date = new Date(ts);
+  } else if (typeof ts === 'number') {
+    date = new Date(ts < 1e10 ? ts * 1000 : ts);
+  } else {
+    return '—';
+  }
+  if (isNaN(date.getTime())) return '—';
+  const diff = Math.floor((Date.now() - date.getTime()) / 1000);
   if (diff < 0) return 'acum';
   if (diff < 60) return `${diff}s`;
   if (diff < 3600) return `${Math.floor(diff / 60)}m`;
@@ -206,7 +203,7 @@ function OverviewTab({ stats }: { stats: DashboardStats | null }) {
           <StatCard icon="⏱️" label="Uptime" value={fmtUptime(stats.system.uptimeSeconds)} />
           <StatCard icon="💾" label="Memorie folosită" value={`${stats.system.memoryMB} MB`} sub={`din ${stats.system.totalMemoryMB} MB`} />
           <StatCard icon="🟩" label="Node.js" value={stats.system.nodeVersion} />
-          <StatCard icon="📝" label="Ultimul log brain" value={stats.brain.lastLog?.message?.slice(0, 40) ?? '—'} sub={stats.brain.lastLog ? fmtDate(stats.brain.lastLog.created_at) : ''} />
+          <StatCard icon="📝" label="Ultimul log brain" value={stats.brain.lastLog?.message?.slice(0, 40) ?? '—'} sub={stats.brain.lastLog ? timeAgo(stats.brain.lastLog.created_at) : ''} />
         </div>
       </div>
     </div>
@@ -261,7 +258,7 @@ function BrainTab() {
               ? <p className="adb-empty">Niciun log disponibil</p>
               : logs.map(l => (
                 <div key={l.id} className={`adb-log-item adb-log--${l.level ?? 'info'}`}>
-                  <span className="adb-log-time">{fmtDate(l.created_at)}</span>
+                  <span className="adb-log-time">{timeAgo(l.created_at)}</span>
                   <span className="adb-log-phase">[{l.phase ?? '—'}]</span>
                   <span className="adb-log-msg">{l.message}</span>
                 </div>
@@ -277,7 +274,7 @@ function BrainTab() {
           : reflections.map(r => (
             <div key={r.id} className="adb-reflection">
               <p>{r.content}</p>
-              <span className="adb-reflection-time">{fmtDate(r.created_at)}</span>
+              <span className="adb-reflection-time">{timeAgo(r.created_at)}</span>
             </div>
           ))}
       </div>
@@ -321,7 +318,7 @@ function KnowledgeTab() {
                     <td>{e.source}</td>
                     <td>{e.confidence ?? '—'}</td>
                     <td>{e.access_count}</td>
-                    <td>{fmtDate(e.updated_at)}</td>
+                    <td>{timeAgo(e.updated_at)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -386,7 +383,7 @@ function ExperimentsTab() {
               {exp.hypothesis && <p className="adb-exp-hyp"><em>Ipoteză:</em> {exp.hypothesis}</p>}
               <div className="adb-exp-meta">
                 <span>{exp.funnel_stage}</span>
-                <span>Creat: {fmtDate(exp.created_at)}</span>
+                <span>Creat: {timeAgo(exp.created_at)}</span>
               </div>
               {exp.status === 'pending' && (
                 <div className="adb-exp-actions">
@@ -514,7 +511,7 @@ function LibraryTab() {
                     <td>{b.id}</td>
                     <td>{b.category}</td>
                     <td title={b.content?.slice(0, 200)}>{b.topic}</td>
-                    <td>{fmtDate(b.created_at)}</td>
+                    <td>{timeAgo(b.created_at)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -577,7 +574,7 @@ function ChatTab() {
         {messages.map(m => (
           <div key={m.id} className={`adb-chat-msg adb-chat-msg--${m.sender}`}>
             <div className="adb-chat-bubble">{m.content}</div>
-            <div className="adb-chat-time">{fmtDate(m.created_at)}</div>
+            <div className="adb-chat-time">{timeAgo(m.created_at)}</div>
           </div>
         ))}
         <div ref={bottomRef} />
@@ -639,7 +636,7 @@ function AiLogsTab() {
                       <td>{r.tokens_in ?? '—'}</td>
                       <td>{r.tokens_out ?? '—'}</td>
                       <td>{r.success ? '✓' : `✗ ${r.error ?? ''}`}</td>
-                      <td>{fmtDate(r.created_at)}</td>
+                      <td>{timeAgo(r.created_at)}</td>
                     </tr>
                   ))}
                 </tbody>
