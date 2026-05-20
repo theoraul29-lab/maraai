@@ -17,6 +17,7 @@
 // no portal, no third-party UI lib) so it works on first launch.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import {
   getConsent,
@@ -49,30 +50,13 @@ const DEFAULT_CONSENT_FORM: ConsentFormState = {
   acceptTerms: false,
 };
 
-const MODE_DESCRIPTIONS: Record<MaraMode, { title: string; body: string; tag: string }> = {
-  centralized: {
-    title: 'Centralized Mode',
-    body: 'Default safe mode. Mara routes every request through the central engine. No P2P, no background work.',
-    tag: 'safe-default',
-  },
-  hybrid: {
-    title: 'Hybrid Mode',
-    body: 'Local-first with optional P2P participation. Mara may share parts of the load with peer nodes you trust.',
-    tag: 'opt-in',
-  },
-  advanced: {
-    title: 'Advanced Contributor',
-    body: 'Full participation in the distributed mesh — you contribute bandwidth and idle compute back to the network.',
-    tag: 'high-touch',
-  },
-};
-
 export type OnboardingFlowProps = {
   onClose: () => void;
   initialStep?: Step;
 };
 
 export function OnboardingFlow({ onClose, initialStep = 'welcome' }: OnboardingFlowProps) {
+  const { t } = useTranslation();
   const auth = useAuth();
   const [step, setStep] = useState<Step>(initialStep);
   const [consent, setConsentState] = useState<ConsentView | null>(null);
@@ -119,10 +103,10 @@ export function OnboardingFlow({ onClose, initialStep = 'welcome' }: OnboardingF
 
   const consentLockedReason = useMemo(() => {
     if (mode === 'centralized') {
-      return 'Centralized mode disables every P2P/background flag automatically — switch to Hybrid or Advanced to enable them.';
+      return t('onboarding.consentHelper');
     }
     return null;
-  }, [mode]);
+  }, [mode, t]);
 
   async function handleEmailPassword(emailRaw: string, password: string, name: string, isSignup: boolean) {
     setError(null);
@@ -162,9 +146,6 @@ export function OnboardingFlow({ onClose, initialStep = 'welcome' }: OnboardingF
       const out = await verifyEmailOtp(otpEmail, code);
       if (!out.ok) throw new Error(out.reason || 'OTP verification failed.');
       setOtpStage('verified');
-      // /api/auth/otp/verify already bound an authenticated session
-      // server-side. Just refresh the AuthContext so the React tree
-      // reflects the new user.
       await auth.refresh();
       setStep('mode');
     } catch (err) {
@@ -212,9 +193,6 @@ export function OnboardingFlow({ onClose, initialStep = 'welcome' }: OnboardingF
   async function handleActivate() {
     setBusy(true);
     try {
-      // Persist a "we have completed onboarding" marker locally so we don't
-      // re-show the flow on every cold start. The server-side consent record
-      // remains the source of truth.
       await localSet(NAMESPACES.ONBOARDING, 'completed', {
         mode,
         completedAtMs: Date.now(),
@@ -231,10 +209,10 @@ export function OnboardingFlow({ onClose, initialStep = 'welcome' }: OnboardingF
       <div className="maraai-onboarding-card">
         <header className="maraai-onboarding-header">
           <span className="maraai-onboarding-step">
-            Step {stepIndex(step)} / 5
+            {t('onboarding.stepLabel', { current: stepIndex(step), total: 5 })}
           </span>
           <h1>MaraAI</h1>
-          <p className="maraai-onboarding-subtitle">Privacy-first hybrid AI</p>
+          <p className="maraai-onboarding-subtitle">{t('onboarding.welcomeSubtitle')}</p>
         </header>
 
         {error ? <div className="maraai-onboarding-error">{error}</div> : null}
@@ -284,7 +262,7 @@ export function OnboardingFlow({ onClose, initialStep = 'welcome' }: OnboardingF
 
         <footer className="maraai-onboarding-footer">
           <button className="maraai-onboarding-skip" onClick={onClose}>
-            {step === 'done' ? 'Close' : 'Skip for now (centralized mode only)'}
+            {step === 'done' ? t('onboarding.skipBtnDone') : t('onboarding.skipBtn')}
           </button>
         </footer>
       </div>
@@ -297,17 +275,18 @@ function stepIndex(step: Step): number {
 }
 
 function WelcomeStep({ onContinue }: { onContinue: () => void }) {
+  const { t } = useTranslation();
   return (
     <section className="maraai-onboarding-section">
-      <h2>Welcome to MaraAI</h2>
+      <h2>{t('onboarding.welcomeTitle')}</h2>
       <ul className="maraai-onboarding-list">
-        <li>Your data stays on your device by default.</li>
-        <li>Every advanced feature is opt-in and explicit.</li>
-        <li>The system gracefully degrades to centralized mode at any time.</li>
-        <li>No hidden compute. No background network calls without your say-so.</li>
+        <li>{t('onboarding.welcomePoint1')}</li>
+        <li>{t('onboarding.welcomePoint2')}</li>
+        <li>{t('onboarding.welcomePoint3')}</li>
+        <li>{t('onboarding.welcomePoint4')}</li>
       </ul>
       <button className="maraai-onboarding-cta" onClick={onContinue}>
-        Continue
+        {t('onboarding.continueBtn')}
       </button>
     </section>
   );
@@ -327,6 +306,7 @@ type AuthStepProps = {
 };
 
 function AuthStep(p: AuthStepProps) {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -334,18 +314,15 @@ function AuthStep(p: AuthStepProps) {
 
   return (
     <section className="maraai-onboarding-section">
-      <h2>Sign in to continue</h2>
-      <p className="maraai-onboarding-helper">
-        Authentication is required for all advanced features. Guest visitors can browse but
-        cannot enable P2P or distributed routing.
-      </p>
+      <h2>{t('onboarding.authTitle')}</h2>
+      <p className="maraai-onboarding-helper">{t('onboarding.authHelper')}</p>
 
       <button
         className="maraai-onboarding-cta maraai-onboarding-cta--google"
         onClick={p.onGoogle}
         disabled={p.busy}
       >
-        Continue with Google
+        {t('onboarding.authGoogle')}
       </button>
 
       <div className="maraai-onboarding-tabs">
@@ -353,10 +330,10 @@ function AuthStep(p: AuthStepProps) {
           className={tab === 'password' ? 'is-active' : ''}
           onClick={() => setTab('password')}
         >
-          Email + password
+          {t('onboarding.authEmailTab')}
         </button>
         <button className={tab === 'otp' ? 'is-active' : ''} onClick={() => setTab('otp')}>
-          Email OTP
+          {t('onboarding.authOtpTab')}
         </button>
       </div>
 
@@ -369,15 +346,15 @@ function AuthStep(p: AuthStepProps) {
           }}
         >
           <label>
-            <span>Email</span>
+            <span>{t('onboarding.authEmailLabel')}</span>
             <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required />
           </label>
           <label>
-            <span>Display name</span>
+            <span>{t('onboarding.authNameLabel')}</span>
             <input value={name} onChange={(e) => setName(e.target.value)} type="text" />
           </label>
           <label>
-            <span>Password</span>
+            <span>{t('onboarding.authPasswordLabel')}</span>
             <input
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -387,7 +364,7 @@ function AuthStep(p: AuthStepProps) {
             />
           </label>
           <button className="maraai-onboarding-cta" disabled={p.busy} type="submit">
-            Create account
+            {t('onboarding.authCreateAccount')}
           </button>
         </form>
       ) : null}
@@ -397,7 +374,7 @@ function AuthStep(p: AuthStepProps) {
           {p.otpStage === 'enter-email' ? (
             <>
               <label>
-                <span>Email</span>
+                <span>{t('onboarding.authEmailLabel')}</span>
                 <input
                   value={p.otpEmail}
                   onChange={(e) => p.onOtpEmailChange(e.target.value)}
@@ -411,17 +388,16 @@ function AuthStep(p: AuthStepProps) {
                 onClick={() => p.onOtpRequest(p.otpEmail)}
                 type="button"
               >
-                Send 6-digit code
+                {t('onboarding.authSendCode')}
               </button>
             </>
           ) : (
             <>
               <p className="maraai-onboarding-helper">
-                We sent a code to <strong>{p.otpEmail}</strong>. In dev the code is logged to the
-                server console.
+                {t('onboarding.authOtpSent', { email: p.otpEmail })}
               </p>
               <label>
-                <span>OTP code</span>
+                <span>{t('onboarding.authOtpLabel')}</span>
                 <input
                   value={p.otpCode}
                   onChange={(e) => p.onOtpCodeChange(e.target.value)}
@@ -436,7 +412,7 @@ function AuthStep(p: AuthStepProps) {
                 onClick={() => p.onOtpVerify(p.otpCode)}
                 type="button"
               >
-                Verify code
+                {t('onboarding.authVerifyCode')}
               </button>
             </>
           )}
@@ -456,49 +432,47 @@ type ConsentStepProps = {
 };
 
 function ConsentStep(p: ConsentStepProps) {
+  const { t } = useTranslation();
   const lockedForCentralized = p.mode === 'centralized';
   return (
     <section className="maraai-onboarding-section">
-      <h2>Consent gate</h2>
-      <p className="maraai-onboarding-helper">
-        Pick exactly which optional features you want to enable. Without consent the system stays
-        in centralized-only mode — the safe default.
-      </p>
+      <h2>{t('onboarding.consentTitle')}</h2>
+      <p className="maraai-onboarding-helper">{t('onboarding.consentHelper')}</p>
       {p.lockedReason ? (
         <div className="maraai-onboarding-info">{p.lockedReason}</div>
       ) : null}
 
       <Toggle
-        label="Enable P2P participation"
-        description="Allow Mara to coordinate structured event/message exchange with peer nodes."
+        label={t('onboarding.p2pLabel')}
+        description={t('onboarding.p2pDesc')}
         checked={p.form.p2pEnabled}
         onChange={(v) => p.onChange({ ...p.form, p2pEnabled: v })}
         disabled={lockedForCentralized}
       />
       <Toggle
-        label="Allow background node participation"
-        description="Permit Mara to remain a P2P node when the app is in the background."
+        label={t('onboarding.backgroundLabel')}
+        description={t('onboarding.backgroundDesc')}
         checked={p.form.backgroundNode}
         onChange={(v) => p.onChange({ ...p.form, backgroundNode: v })}
         disabled={lockedForCentralized || !p.form.p2pEnabled}
       />
       <Toggle
-        label="Enable advanced AI routing"
-        description="Allow the hybrid router to dispatch AI calls across local / central / P2P."
+        label={t('onboarding.aiRoutingLabel')}
+        description={t('onboarding.aiRoutingDesc')}
         checked={p.form.advancedAiRouting}
         onChange={(v) => p.onChange({ ...p.form, advancedAiRouting: v })}
         disabled={lockedForCentralized}
       />
       <Toggle
-        label="Notifications"
-        description="Permit native browser notifications for chat replies and platform events."
+        label={t('onboarding.notificationsLabel')}
+        description={t('onboarding.notificationsDesc')}
         checked={p.form.notificationsEnabled}
         onChange={(v) => p.onChange({ ...p.form, notificationsEnabled: v })}
       />
 
       <label className="maraai-onboarding-slider">
         <span>
-          Bandwidth share <strong>{p.form.bandwidthShareGbMonth} GB/month</strong>
+          {t('onboarding.bandwidthLabel', { gb: p.form.bandwidthShareGbMonth })}
         </span>
         <input
           type="range"
@@ -519,10 +493,7 @@ function ConsentStep(p: ConsentStepProps) {
           checked={p.form.acceptTerms}
           onChange={(e) => p.onChange({ ...p.form, acceptTerms: e.target.checked })}
         />
-        <span>
-          I have read the privacy &amp; consent terms and I understand I can revoke any of these
-          choices at any time from the transparency dashboard.
-        </span>
+        <span>{t('onboarding.consentTerms')}</span>
       </label>
 
       <button
@@ -530,7 +501,7 @@ function ConsentStep(p: ConsentStepProps) {
         onClick={p.onContinue}
         disabled={p.busy || !p.form.acceptTerms}
       >
-        Save consent &amp; continue
+        {t('onboarding.agreeBtn')}
       </button>
     </section>
   );
@@ -567,14 +538,33 @@ type ModeStepProps = {
 };
 
 function ModeStep(p: ModeStepProps) {
+  const { t } = useTranslation();
+
+  // MODE_DESCRIPTIONS must be inside the component so t() is available.
+  const modeDescriptions: Record<MaraMode, { title: string; body: string; tag: string }> = {
+    centralized: {
+      title: t('onboarding.modeCentralizedTitle'),
+      body: t('onboarding.modeCentralizedBody'),
+      tag: t('onboarding.modeCentralizedTag'),
+    },
+    hybrid: {
+      title: t('onboarding.modeHybridTitle'),
+      body: t('onboarding.modeHybridBody'),
+      tag: t('onboarding.modeHybridTag'),
+    },
+    advanced: {
+      title: t('onboarding.modeAdvancedTitle'),
+      body: t('onboarding.modeAdvancedBody'),
+      tag: t('onboarding.modeAdvancedTag'),
+    },
+  };
+
   return (
     <section className="maraai-onboarding-section">
-      <h2>Choose your mode</h2>
-      <p className="maraai-onboarding-helper">
-        You can switch modes at any time from the transparency dashboard.
-      </p>
-      {(Object.keys(MODE_DESCRIPTIONS) as MaraMode[]).map((m) => {
-        const desc = MODE_DESCRIPTIONS[m];
+      <h2>{t('onboarding.modeTitle')}</h2>
+      <p className="maraai-onboarding-helper">{t('onboarding.modeHelper')}</p>
+      {(Object.keys(modeDescriptions) as MaraMode[]).map((m) => {
+        const desc = modeDescriptions[m];
         return (
           <label
             key={m}
@@ -597,7 +587,7 @@ function ModeStep(p: ModeStepProps) {
         );
       })}
       <button className="maraai-onboarding-cta" onClick={p.onContinue} disabled={p.busy}>
-        Save mode &amp; continue
+        {t('onboarding.modeSaveContinue')}
       </button>
     </section>
   );
@@ -611,25 +601,27 @@ type ActivateStepProps = {
 };
 
 function ActivateStep(p: ActivateStepProps) {
+  const { t } = useTranslation();
+
+  const modeTitle: Record<MaraMode, string> = {
+    centralized: t('onboarding.modeCentralizedTitle'),
+    hybrid: t('onboarding.modeHybridTitle'),
+    advanced: t('onboarding.modeAdvancedTitle'),
+  };
+
   return (
     <section className="maraai-onboarding-section">
-      <h2>Activate MaraAI</h2>
+      <h2>{t('onboarding.activateTitle')}</h2>
       <ul className="maraai-onboarding-list">
-        <li>Mode: <strong>{MODE_DESCRIPTIONS[p.mode].title}</strong></li>
-        <li>P2P participation: <strong>{p.consent?.p2pEnabled ? 'on' : 'off'}</strong></li>
-        <li>Background node: <strong>{p.consent?.backgroundNode ? 'on' : 'off'}</strong></li>
-        <li>Advanced AI routing: <strong>{p.consent?.advancedAiRouting ? 'on' : 'off'}</strong></li>
-        <li>
-          Bandwidth share:{' '}
-          <strong>{p.consent?.bandwidthShareGbMonth ?? 0} GB/month</strong>
-        </li>
+        <li>{t('onboarding.activateMode', { mode: modeTitle[p.mode] })}</li>
+        <li>{t('onboarding.activateP2p', { status: p.consent?.p2pEnabled ? t('onboarding.statusOn') : t('onboarding.statusOff') })}</li>
+        <li>{t('onboarding.activateBackground', { status: p.consent?.backgroundNode ? t('onboarding.statusOn') : t('onboarding.statusOff') })}</li>
+        <li>{t('onboarding.activateAiRouting', { status: p.consent?.advancedAiRouting ? t('onboarding.statusOn') : t('onboarding.statusOff') })}</li>
+        <li>{t('onboarding.activateBandwidth', { gb: p.consent?.bandwidthShareGbMonth ?? 0 })}</li>
       </ul>
-      <p className="maraai-onboarding-helper">
-        Activating starts the AI router, the internal event bus, and (if enabled) the P2P node
-        registry. Local storage sync begins after activation. Nothing else will run.
-      </p>
+      <p className="maraai-onboarding-helper">{t('onboarding.activateHelper')}</p>
       <button className="maraai-onboarding-cta" onClick={p.onActivate} disabled={p.busy}>
-        Activate MaraAI
+        {t('onboarding.activateBtn')}
       </button>
     </section>
   );

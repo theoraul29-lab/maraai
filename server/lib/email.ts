@@ -44,17 +44,56 @@ export async function sendOtpEmail(
   });
 }
 
-export async function sendWelcomeEmail(email: string, name: string): Promise<void> {
+export async function sendWelcomeEmail(email: string, firstName?: string): Promise<void> {
   const resend = makeResend();
   if (!resend) {
     console.warn('[email] RESEND_API_KEY not set — skipping welcome email');
     return;
   }
+  const name = firstName ?? 'Prietene';
+  const html = `
+    <div style="background:#020008;font-family:'Inter',sans-serif;padding:0;margin:0">
+      <div style="max-width:560px;margin:0 auto;padding:40px 24px">
+        <!-- Header -->
+        <div style="text-align:center;margin-bottom:32px">
+          <h1 style="background:linear-gradient(135deg,#c084fc,#f472b6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-size:2rem;font-weight:800;margin:0 0 4px">HelloMara</h1>
+          <p style="color:rgba(255,255,255,0.4);font-size:0.8rem;margin:0">Transformarea ta personală, ghidată de AI</p>
+        </div>
+        <!-- Body -->
+        <div style="background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.25);border-radius:20px;padding:32px 28px">
+          <p style="color:rgba(255,255,255,0.9);font-size:1.1rem;font-weight:600;margin:0 0 8px">Bun venit, ${name}! 🌱</p>
+          <p style="color:rgba(255,255,255,0.6);font-size:0.9rem;line-height:1.6;margin:0 0 28px">Contul tău HelloMara este activ. Mara te cunoaște, îți dă misiuni reale și crește cu tine — în fiecare zi.</p>
+          <!-- Steps -->
+          <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:28px">
+            <div style="display:flex;align-items:flex-start;gap:12px">
+              <span style="background:rgba(168,85,247,0.3);color:#c084fc;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.8rem;flex-shrink:0;line-height:28px;text-align:center">1</span>
+              <div><p style="color:rgba(255,255,255,0.85);font-size:0.88rem;font-weight:600;margin:0 0 2px">Descoperă prima ta misiune</p><p style="color:rgba(255,255,255,0.45);font-size:0.8rem;margin:0">Mara a pregătit o misiune personalizată pentru tine.</p></div>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:12px">
+              <span style="background:rgba(168,85,247,0.3);color:#c084fc;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.8rem;flex-shrink:0;line-height:28px;text-align:center">2</span>
+              <div><p style="color:rgba(255,255,255,0.85);font-size:0.88rem;font-weight:600;margin:0 0 2px">Câștigă XP și badge-uri</p><p style="color:rgba(255,255,255,0.45);font-size:0.8rem;margin:0">Fiecare misiune completată îți aduce puncte de experiență.</p></div>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:12px">
+              <span style="background:rgba(168,85,247,0.3);color:#c084fc;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.8rem;flex-shrink:0;line-height:28px;text-align:center">3</span>
+              <div><p style="color:rgba(255,255,255,0.85);font-size:0.88rem;font-weight:600;margin:0 0 2px">Crește alături de comunitate</p><p style="color:rgba(255,255,255,0.45);font-size:0.8rem;margin:0">Reels, Writers Hub, Creator Studio — totul într-un singur loc.</p></div>
+            </div>
+          </div>
+          <!-- CTA -->
+          <div style="text-align:center;display:flex;gap:12px;flex-wrap:wrap;justify-content:center">
+            <a href="${BASE}/missions" style="background:linear-gradient(135deg,#a855f7,#f472b6);color:#fff;text-decoration:none;padding:13px 28px;border-radius:12px;font-weight:700;font-size:0.9rem;display:inline-block">🎯 Prima mea misiune</a>
+            <a href="${BASE}/pricing" style="background:transparent;color:#c084fc;text-decoration:none;padding:13px 28px;border-radius:12px;font-weight:700;font-size:0.9rem;border:1px solid rgba(168,85,247,0.5);display:inline-block">💎 Vezi planurile</a>
+          </div>
+        </div>
+        <!-- Footer -->
+        <p style="color:rgba(255,255,255,0.2);font-size:0.75rem;text-align:center;margin-top:24px">© 2026 HelloMara · <a href="${BASE}" style="color:rgba(168,85,247,0.6);text-decoration:none">hellomara.net</a></p>
+      </div>
+    </div>
+  `;
   await resend.emails.send({
     from: FROM,
     to: email,
-    subject: 'Welcome to Mara!',
-    html: `<p>Hi ${name},</p><p>Welcome to Mara! Your account is ready. <a href="${BASE}">Start exploring</a>.</p>`,
+    subject: `Bun venit la HelloMara, ${name}! 🌱`,
+    html,
   });
 }
 

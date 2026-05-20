@@ -24,6 +24,8 @@ export interface User {
    * choice follows them across devices (spec §2.5).
    */
   preferredLanguage?: string | null;
+  /** True when ADMIN_EMAILS or ADMIN_USER_IDS env var matches this user. */
+  isAdmin?: boolean;
 }
 
 /**
@@ -65,6 +67,7 @@ export interface SignupOptions {
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
+  loading: boolean;
   userTier: UserTier;
   isTrialActive: boolean;
   trialTimeRemaining: number; // minutes
@@ -95,6 +98,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [oauthError, setOAuthError] = useState<string | null>(null);
   const clearOAuthError = () => setOAuthError(null);
 
@@ -173,14 +177,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           ...trialFields,
           earnings: payload.user.earnings ?? 0,
           badges: payload.user.badges ?? [],
+          isAdmin: payload?.user?.isAdmin ?? false,
         };
         localStorage.setItem('user', JSON.stringify(sessionUser));
         setUser(sessionUser);
         setIsAuthenticated(true);
         // Server-stored language wins on app load (spec §2.5).
-        void applyServerLanguage(payload.user.preferredLanguage);
+        void applyServerLanguage(payload?.user?.preferredLanguage);
       } catch {
         /* keep localStorage state */
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     })();
     return () => { cancelled = true; };
@@ -408,6 +415,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         tier: payload.user.tier || 'free',
         earnings: payload.user.earnings ?? 0,
         badges: payload.user.badges ?? [],
+        isAdmin: payload?.user?.isAdmin ?? false,
       };
       localStorage.setItem('user', JSON.stringify(sessionUser));
       setUser(sessionUser);
@@ -430,6 +438,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       value={{
         user,
         isAuthenticated,
+        loading,
         userTier,
         isTrialActive,
         trialTimeRemaining,

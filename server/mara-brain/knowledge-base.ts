@@ -3,7 +3,7 @@
 
 import { llmGenerate, isLLMConfigured, LLMRateLimitedError } from '../llm.js';
 import { storage } from '../storage.js';
-import { db } from '../db.js';
+import { db, rawSqlite } from '../db.js';
 import { maraKnowledgeBase } from '../../shared/schema.js';
 import { sql, inArray, eq, like, desc } from 'drizzle-orm';
 import { flagConflictsForKnowledge } from './conflict-detector.js';
@@ -323,6 +323,42 @@ Răspunde DOAR cu JSON array-ul, fără alt text. Exemplu:
     }
     console.error('[KnowledgeBase] learnFromText failed:', error);
     return { ideas: [], savedIds: [] };
+  }
+}
+
+/**
+ * Prune the knowledge base to prevent unbounded growth.
+ * Keeps the top 2000 entries overall (by confidence + access_count score)
+ * and caps web_research entries at 200.
+ */
+export function cleanupKnowledgeBase(): { deleted: number } {
+  try {
+    const r1 = rawSqlite.prepare(`
+      DELETE FROM mara_knowledge_base
+      WHERE id NOT IN (
+        SELECT id FROM mara_knowledge_base
+        ORDER BY (confidence * 2 + access_count) DESC
+        LIMIT 2000
+      )
+    `).run();
+
+    const r2 = rawSqlite.prepare(`
+      DELETE FROM mara_knowledge_base
+      WHERE category = 'web_research'
+        AND id NOT IN (
+          SELECT id FROM mara_knowledge_base
+          WHERE category = 'web_research'
+          ORDER BY (confidence * 2 + access_count) DESC
+          LIMIT 200
+        )
+    `).run();
+
+    const deleted = (r1.changes ?? 0) + (r2.changes ?? 0);
+    if (deleted > 0) console.info(`[KnowledgeBase] Cleanup removed ${deleted} entries.`);
+    return { deleted };
+  } catch (err) {
+    console.error('[KnowledgeBase] Cleanup failed:', err);
+    return { deleted: 0 };
   }
 }
 

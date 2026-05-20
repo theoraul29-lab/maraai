@@ -88,7 +88,7 @@ export const PLAN_CATALOGUE: readonly PlanDefinition[] = [
     id: 'pro_monthly',
     tier: 'pro',
     period: 'monthly',
-    priceCents: 900, // 9 EUR
+    priceCents: 799, // 7.99 EUR — 70% din media pieței
     currency: 'EUR',
     features: PRO_FEATURES,
   },
@@ -96,7 +96,7 @@ export const PLAN_CATALOGUE: readonly PlanDefinition[] = [
     id: 'pro_yearly',
     tier: 'pro',
     period: 'yearly',
-    priceCents: 7900, // 79 EUR
+    priceCents: 5999, // 59.99 EUR — economisești 37%
     currency: 'EUR',
     features: PRO_FEATURES,
   },
@@ -104,7 +104,7 @@ export const PLAN_CATALOGUE: readonly PlanDefinition[] = [
     id: 'vip_monthly',
     tier: 'vip',
     period: 'monthly',
-    priceCents: 1900, // 19 EUR
+    priceCents: 1199, // 11.99 EUR — 70% din media pieței
     currency: 'EUR',
     features: VIP_FEATURES,
   },
@@ -112,7 +112,7 @@ export const PLAN_CATALOGUE: readonly PlanDefinition[] = [
     id: 'vip_yearly',
     tier: 'vip',
     period: 'yearly',
-    priceCents: 17900, // 179 EUR
+    priceCents: 8999, // 89.99 EUR — economisești 37%
     currency: 'EUR',
     features: VIP_FEATURES,
   },
@@ -120,7 +120,7 @@ export const PLAN_CATALOGUE: readonly PlanDefinition[] = [
     id: 'creator_monthly',
     tier: 'creator',
     period: 'monthly',
-    priceCents: 2900, // 29 EUR
+    priceCents: 1699, // 16.99 EUR — 70% din media pieței
     currency: 'EUR',
     features: CREATOR_FEATURES,
   },
@@ -128,7 +128,7 @@ export const PLAN_CATALOGUE: readonly PlanDefinition[] = [
     id: 'creator_yearly',
     tier: 'creator',
     period: 'yearly',
-    priceCents: 24900, // 249 EUR
+    priceCents: 12999, // 129.99 EUR — economisești 36%
     currency: 'EUR',
     features: CREATOR_FEATURES,
   },

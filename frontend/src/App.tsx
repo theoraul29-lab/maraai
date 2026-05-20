@@ -9,7 +9,9 @@ import Nav from './Nav';
 import { MaraChatWidget } from './components/MaraChatWidget';
 
 // Heavy route modules are lazy-loaded to reduce initial bundle size.
+const AdminDashboard = lazy(() => import('./AdminDashboard'));
 const Missions = lazy(() => import('./Missions'));
+const Pricing = lazy(() => import('./Pricing'));
 const VIP = lazy(() => import('./VIP').then((m) => ({ default: m.VIP })));
 const Creators = lazy(() => import('./creator').then((m) => ({ default: m.Creator })));
 const Reels = lazy(() => import('./reels'));
@@ -30,8 +32,20 @@ import { TransparencyDashboard } from './maraai/TransparencyDashboard';
 import NotFound from './NotFound';
 
 function AdminGuard({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user, loading } = useAuth();
+
+  // Dacă încă se încarcă — nu face nimic
+  if (loading) return null;
+
+  // Dacă nu e autentificat
   if (!isAuthenticated) return <Navigate to="/" replace />;
+
+  // Dacă user nu e încă hidratat
+  if (user === null) return null;
+
+  // Dacă nu e admin
+  if (!user?.isAdmin) return <Navigate to="/" replace />;
+
   return <>{children}</>;
 }
 
@@ -57,8 +71,10 @@ function App() {
                 <Route path="/you" element={<You />} />
                 <Route path="/reels" element={<Reels />} />
                 <Route path="/writers-hub" element={<WritersHub onClose={() => navigate('/')} />} />
+                <Route path="/pricing" element={<Pricing />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/reset-password/confirmation" element={<ResetPasswordConfirmation />} />
+                <Route path="/admin" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
                 <Route path="/admin/brain" element={<AdminGuard><AdminBrain /></AdminGuard>} />
                 <Route path="/admin/experiments" element={<AdminGuard><AdminExperiments /></AdminGuard>} />
                 <Route path="/admin/waitlist" element={<AdminGuard><AdminWaitlist /></AdminGuard>} />

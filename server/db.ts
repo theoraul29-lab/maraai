@@ -329,6 +329,23 @@ sqlite.exec(`
   );
 `);
 
+// FIX 2 (from main): per-user toxicity state persisted across restarts.
+// FIX 4 (from main): mara_knowledge_base indexes.
+// We unconditionally create the toxicity table because nothing else creates
+// it, but we guard the knowledge-base indexes so a fresh CI DB (where
+// mara_knowledge_base is created later by another module) doesn't crash on
+// startup with "no such table".
+sqlite.exec(`
+  CREATE TABLE IF NOT EXISTS user_toxicity_state (
+    user_id TEXT PRIMARY KEY,
+    level INTEGER NOT NULL DEFAULT 0,
+    warmth_reduction INTEGER NOT NULL DEFAULT 0,
+    consecutive_toxic_messages INTEGER NOT NULL DEFAULT 0,
+    last_escalation TEXT,
+    updated_at INTEGER DEFAULT (unixepoch()) NOT NULL
+  );
+`);
+
 // --- Audit fix #4: indexes for hot queries -------------------------------
 // Adds covering indexes for the most common WHERE/JOIN columns that were
 // previously doing full table scans on each request. We run them as a guarded
@@ -354,6 +371,12 @@ sqlite.exec(`
     ['idx_conversations_users', 'conversations', 'user_a_id, user_b_id'],
     ['idx_push_subscriptions_user', 'push_subscriptions', 'user_id'],
     ['idx_content_shares_user', 'content_shares', 'user_id'],
+    // From main: knowledge-base hot paths.
+    ['idx_mkb_category', 'mara_knowledge_base', 'category'],
+    ['idx_mkb_source', 'mara_knowledge_base', 'source'],
+    ['idx_mkb_confidence', 'mara_knowledge_base', 'confidence DESC'],
+    ['idx_mkb_updated_at', 'mara_knowledge_base', 'updated_at DESC'],
+    ['idx_mkb_topic', 'mara_knowledge_base', 'topic'],
   ];
   const tableExists = sqlite.prepare(
     "SELECT 1 FROM sqlite_master WHERE type='table' AND name = ?",
@@ -369,6 +392,7 @@ sqlite.exec(`
     }
   }
 }
+
 
 export const db = drizzle(sqlite, { schema });
 

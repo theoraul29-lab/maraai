@@ -5,6 +5,7 @@ import { storage } from '../storage.js';
 import { getKnowledgeContext, searchKnowledge } from './knowledge-base.js';
 import { buildPersonalityPrompt, detectEmotion, detectToxicity, getToxicityLevel, type ToxicityState } from './personality.js';
 import { getPlatformContext } from './platform-context.js';
+import { rawSqlite } from '../db.js';
 
 export interface UserMemoryContext {
   userId: string;
@@ -17,11 +18,66 @@ export interface UserMemoryContext {
   personalityPrompt: string;
 }
 
-// In-memory toxicity state tracking per user (resets on server restart — that's fine)
-const userToxicityStates = new Map<string, ToxicityState>();
-
 function getDefaultToxicityState(): ToxicityState {
   return { level: 0, warmthReduction: 0, consecutiveToxicMessages: 0, lastEscalation: null };
+}
+
+function getToxicityStateFromDb(userId: string): ToxicityState {
+  try {
+    const row = rawSqlite
+      .prepare('SELECT level, warmth_reduction, consecutive_toxic_messages, last_escalation FROM user_toxicity_state WHERE user_id = ?')
+      .get(userId) as { level: number; warmth_reduction: number; consecutive_toxic_messages: number; last_escalation: string | null } | undefined;
+    if (!row) return getDefaultToxicityState();
+    return {
+      level: (row.level ?? 0) as ToxicityState['level'],
+      warmthReduction: row.warmth_reduction ?? 0,
+      consecutiveToxicMessages: row.consecutive_toxic_messages ?? 0,
+      lastEscalation: row.last_escalation ?? null,
+    };
+  } catch {
+    return getDefaultToxicityState();
+  }
+}
+
+function saveToxicityStateToDb(userId: string, state: ToxicityState): void {
+  try {
+    rawSqlite
+      .prepare(`
+        INSERT INTO user_toxicity_state (user_id, level, warmth_reduction, consecutive_toxic_messages, last_escalation, updated_at)
+        VALUES (?, ?, ?, ?, ?, unixepoch())
+        ON CONFLICT(user_id) DO UPDATE SET
+          level = excluded.level,
+          warmth_reduction = excluded.warmth_reduction,
+          consecutive_toxic_messages = excluded.consecutive_toxic_messages,
+          last_escalation = excluded.last_escalation,
+          updated_at = unixepoch()
+      `)
+      .run(userId, state.level, state.warmthReduction, state.consecutiveToxicMessages, state.lastEscalation ?? null);
+  } catch (err) {
+    console.warn('[Memory] Failed to save toxicity state:', err);
+  }
+}
+
+/**
+ * Decay toxicity for users who haven't triggered an escalation in 7+ days.
+ * Called at the end of every brain cycle.
+ */
+export function decayAllToxicity(): void {
+  try {
+    rawSqlite
+      .prepare(`
+        UPDATE user_toxicity_state
+        SET level = MAX(0, level - 1),
+            warmth_reduction = MAX(0, warmth_reduction - 10),
+            consecutive_toxic_messages = 0,
+            updated_at = unixepoch()
+        WHERE updated_at < unixepoch() - 7 * 86400
+          AND level > 0
+      `)
+      .run();
+  } catch (err) {
+    console.warn('[Memory] Failed to decay toxicity:', err);
+  }
 }
 
 /**
@@ -52,11 +108,11 @@ export async function buildUserContext(
   // 3. Detect emotion from current message
   const emotionalProfile = detectEmotion(currentMessage);
 
-  // 4. Update toxicity state
-  const currentToxicity = userToxicityStates.get(userId) || getDefaultToxicityState();
+  // 4. Update toxicity state (persisted in DB across restarts)
+  const currentToxicity = getToxicityStateFromDb(userId);
   const { isToxic } = detectToxicity(currentMessage);
   const newToxicityState = getToxicityLevel(currentToxicity, isToxic);
-  userToxicityStates.set(userId, newToxicityState);
+  saveToxicityStateToDb(userId, newToxicityState);
 
   // 5. Extract topics for knowledge retrieval
   const topics = extractConversationTopics(currentMessage, module);

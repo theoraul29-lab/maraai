@@ -68,6 +68,15 @@ interface AuthUserPayload {
   avatar?: string | null;
   bio?: string | null;
   preferredLanguage?: string | null;
+  isAdmin?: boolean;
+}
+
+function isAdminUser(id: string, email: string | null | undefined): boolean {
+  const adminEmails = (process.env.ADMIN_EMAILS ?? '')
+    .split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+  const adminIds = (process.env.ADMIN_USER_IDS ?? '')
+    .split(',').map(i => i.trim()).filter(Boolean);
+  return adminEmails.includes(email?.toLowerCase() ?? '') || adminIds.includes(id);
 }
 
 function toPayload(u: { id: string; email: string | null; displayName: string | null; firstName: string | null; bio: string | null; profileImageUrl: string | null; createdAt: Date | null | number | undefined; tier?: string | null; trialStartTime?: number | null; trialEndsAt?: number | null }): AuthUserPayload {
@@ -90,6 +99,7 @@ function toPayload(u: { id: string; email: string | null; displayName: string | 
     avatar: u.profileImageUrl,
     bio: u.bio,
     preferredLanguage: u.preferredLanguage ?? null,
+    isAdmin: isAdminUser(u.id, u.email),
   };
 }
 

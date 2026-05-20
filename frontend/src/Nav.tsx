@@ -18,6 +18,7 @@ const linkKeys = [
 	{ to: '/creator-panel', key: 'creator', icon: '✨' },
 	{ to: '/writers-hub', key: 'writers', icon: '✍️' },
 	{ to: '/you', key: 'profile', icon: '👤' },
+	{ to: '/pricing', key: 'pricing', icon: '💎' },
 ];
 
 interface NotificationItem {
@@ -122,6 +123,7 @@ const NotificationBell: React.FC = () => {
 const Nav: React.FC = () => {
 	const [menuOpen, setMenuOpen] = useState(false);
 	const { t } = useTranslation();
+	const { user } = useAuth();
 
 	return (
 		<nav className="nav-container" role="navigation">
@@ -138,6 +140,11 @@ const Nav: React.FC = () => {
 							{t(`nav.${item.key}`)}
 						</NavLink>
 					))}
+					{user?.isAdmin && (
+						<a href="/admin" className="nav-admin-link">
+							🧠 Admin
+						</a>
+					)}
 				</div>
 				<GlobalSearch />
 				<NotificationBell />
@@ -177,6 +184,12 @@ const Nav: React.FC = () => {
 							<span className="mobile-link-label">{t(`nav.${item.key}`)}</span>
 						</NavLink>
 					))}
+					{user?.isAdmin && (
+						<a href="/admin" className="nav-admin-link nav-mobile-link" onClick={() => setMenuOpen(false)}>
+							<span className="mobile-link-icon">🧠</span>
+							<span className="mobile-link-label">Admin</span>
+						</a>
+					)}
 				</div>
 			)}
 		</nav>

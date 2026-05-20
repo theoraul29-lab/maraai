@@ -5,6 +5,7 @@
 import { llmGenerate, isLLMConfigured } from '../../llm.js';
 import { storeKnowledge } from '../knowledge-base.js';
 import { storage } from '../../storage.js';
+import { webSearch, formatSearchResultsForPrompt } from '../../lib/web-search.js';
 
 interface WebResearchResult {
   query: string;
@@ -21,14 +22,17 @@ export async function researchTopic(query: string, context?: string): Promise<We
     return { query, findings: 'LLM provider not configured', knowledgeIds: [], source: 'none' };
   }
 
-  const prompt = `Ești un agent de research al platformei MaraAI. Caută și raportează cele mai recente informații despre:
+  // Fetch real web results first (Serper → DuckDuckGo fallback)
+  const searchResults = await webSearch(query, 5);
+  const searchContext = formatSearchResultsForPrompt(searchResults);
+  const usedRealSearch = searchResults.length > 0;
+
+  const prompt = `Ești un agent de research al platformei MaraAI. Analizează și raportează despre:
 
 "${query}"
 
-${context ? `Context: ${context}` : ''}
-
-Cerințe:
-1. Prezintă informații **actuale și verificabile**
+${searchContext ? `REZULTATE WEB REALE:\n${searchContext}\n\n` : ''}${context ? `Context: ${context}\n\n` : ''}Cerințe:
+1. Prezintă informații **actuale și verificabile**${usedRealSearch ? ' din rezultatele web de mai sus' : ''}
 2. Include **date concrete** (numere, statistici) unde e posibil
 3. Evidențiază ce e **relevant pentru o platformă AI** cu: trading crypto, creator studio, writers hub, social reels
 4. Semnalează orice **trend emergent** care ar trebui urmărit
@@ -46,27 +50,29 @@ Răspunde în română.`;
 
     const knowledgeIds: number[] = [];
 
-    // Store as web research knowledge
     const id = await storeKnowledge(
       'web_research',
       query,
       text,
       'web',
-      65,
-      { researchedAt: new Date().toISOString(), method: 'llm_grounded' },
+      usedRealSearch ? 80 : 65,
+      {
+        researchedAt: new Date().toISOString(),
+        method: usedRealSearch ? 'real_web_search' : 'llm_grounded',
+        resultsCount: searchResults.length,
+      },
     );
     knowledgeIds.push(id);
 
-    // Log search
     await storage.createSearchHistory({
       query,
-      source: 'llm',
+      source: usedRealSearch ? 'serper_or_ddg' : 'llm',
       resultSummary: text.substring(0, 500),
       knowledgeExtracted: JSON.stringify(knowledgeIds),
       triggeredBy: 'brain_cycle',
     });
 
-    return { query, findings: text, knowledgeIds, source: 'llm_grounded' };
+    return { query, findings: text, knowledgeIds, source: usedRealSearch ? 'real_web_search' : 'llm_grounded' };
   } catch (error) {
     console.error(`[WebResearch] Failed to research "${query}":`, error);
     return { query, findings: 'Research failed', knowledgeIds: [], source: 'error' };
