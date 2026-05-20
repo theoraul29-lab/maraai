@@ -331,28 +331,44 @@ sqlite.exec(`
 
 // --- Audit fix #4: indexes for hot queries -------------------------------
 // Adds covering indexes for the most common WHERE/JOIN columns that were
-// previously doing full table scans on each request. Running these via
-// rawSqlite.exec keeps the migration idempotent (CREATE INDEX IF NOT EXISTS)
-// and avoids touching the Drizzle migration ladder, which different
-// deployments boot from at different points.
-sqlite.exec(`
-  CREATE INDEX IF NOT EXISTS idx_chat_messages_user_id ON chat_messages(user_id);
-  CREATE INDEX IF NOT EXISTS idx_user_posts_user_id ON user_posts(user_id);
-  CREATE INDEX IF NOT EXISTS idx_notifications_user_read ON notifications(user_id, read);
-  CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
-  CREATE INDEX IF NOT EXISTS idx_direct_messages_conversation ON direct_messages(conversation_id);
-  CREATE INDEX IF NOT EXISTS idx_videos_creator_id ON videos(creator_id);
-  CREATE INDEX IF NOT EXISTS idx_post_likes_post_id ON post_likes(post_id);
-  CREATE INDEX IF NOT EXISTS idx_post_comments_post_id ON post_comments(post_id);
-  CREATE INDEX IF NOT EXISTS idx_followers_follower_id ON followers(follower_id);
-  CREATE INDEX IF NOT EXISTS idx_followers_following_id ON followers(following_id);
-  CREATE INDEX IF NOT EXISTS idx_user_missions_user_status ON user_missions(user_id, status);
-  CREATE INDEX IF NOT EXISTS idx_mission_events_user_id ON mission_events(user_id);
-  CREATE INDEX IF NOT EXISTS idx_writer_pages_user_id ON writer_pages(user_id);
-  CREATE INDEX IF NOT EXISTS idx_conversations_users ON conversations(user_a_id, user_b_id);
-  CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user ON push_subscriptions(user_id);
-  CREATE INDEX IF NOT EXISTS idx_content_shares_user ON content_shares(user_id);
-`);
+// previously doing full table scans on each request. We run them as a guarded
+// loop instead of one big sqlite.exec because on a fresh DB the underlying
+// tables may not exist yet — Drizzle creates them only after this module
+// finishes initialising. Missing tables are skipped silently; the next boot
+// (or the first time the module touches the table) will pick them up.
+{
+  const indexDefs: ReadonlyArray<readonly [name: string, table: string, cols: string]> = [
+    ['idx_chat_messages_user_id', 'chat_messages', 'user_id'],
+    ['idx_user_posts_user_id', 'user_posts', 'user_id'],
+    ['idx_notifications_user_read', 'notifications', 'user_id, read'],
+    ['idx_notifications_user_id', 'notifications', 'user_id'],
+    ['idx_direct_messages_conversation', 'direct_messages', 'conversation_id'],
+    ['idx_videos_creator_id', 'videos', 'creator_id'],
+    ['idx_post_likes_post_id', 'post_likes', 'post_id'],
+    ['idx_post_comments_post_id', 'post_comments', 'post_id'],
+    ['idx_followers_follower_id', 'followers', 'follower_id'],
+    ['idx_followers_following_id', 'followers', 'following_id'],
+    ['idx_user_missions_user_status', 'user_missions', 'user_id, status'],
+    ['idx_mission_events_user_id', 'mission_events', 'user_id'],
+    ['idx_writer_pages_user_id', 'writer_pages', 'user_id'],
+    ['idx_conversations_users', 'conversations', 'user_a_id, user_b_id'],
+    ['idx_push_subscriptions_user', 'push_subscriptions', 'user_id'],
+    ['idx_content_shares_user', 'content_shares', 'user_id'],
+  ];
+  const tableExists = sqlite.prepare(
+    "SELECT 1 FROM sqlite_master WHERE type='table' AND name = ?",
+  );
+  for (const [name, table, cols] of indexDefs) {
+    if (!tableExists.get(table)) continue;
+    try {
+      sqlite.exec(`CREATE INDEX IF NOT EXISTS ${name} ON ${table}(${cols});`);
+    } catch (err) {
+      // Most likely an unexpected column rename — log and continue so the
+      // app can boot. The query planner just keeps the existing plan.
+      console.warn(`[db] skipping index ${name} on ${table}:`, err);
+    }
+  }
+}
 
 export const db = drizzle(sqlite, { schema });
 
