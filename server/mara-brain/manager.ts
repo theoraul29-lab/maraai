@@ -11,6 +11,8 @@ import { storage } from '../storage.js';
 import { runBrainCycle, runInitialLearning } from './core.js';
 import { generateMarketingPost } from '../ai.js';
 import { SingletonLock } from '../lib/singleton-lock.js';
+import { cleanupKnowledgeBase } from './knowledge-base.js';
+import { decayAllToxicity } from './memory.js';
 
 export type BrainStatus = {
   enabled: boolean;
@@ -355,6 +357,13 @@ class BrainManagerImpl {
         `Auto brain cycle completed. Learned ${result.knowledgeLearned} new pieces of knowledge.`,
         'mara-brain',
       );
+
+      // Post-cycle housekeeping (non-blocking — failures don't fail the cycle)
+      try { decayAllToxicity(); } catch { /* non-fatal */ }
+      try {
+        const { deleted } = cleanupKnowledgeBase();
+        if (deleted > 0) logger(`KB cleanup removed ${deleted} old entries.`, 'mara-brain');
+      } catch { /* non-fatal */ }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       this._lastError = msg;

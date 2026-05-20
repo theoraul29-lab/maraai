@@ -95,6 +95,14 @@ interface ChatMessage {
   created_at: number;
 }
 
+interface CircuitBreakerStatus {
+  provider: string;
+  state: 'closed' | 'open' | 'half-open';
+  failures: number;
+  lastFailureAt: number | null;
+  openUntil: number | null;
+}
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function StatCard({ icon, label, value, sub, color }: StatCardProps) {
@@ -146,6 +154,43 @@ function fmtUptime(s: number) {
 }
 
 // ─── Tab: Overview ────────────────────────────────────────────────────────────
+
+function CircuitBreakersPanel() {
+  const [breakers, setBreakers] = useState<CircuitBreakerStatus[]>([]);
+
+  useEffect(() => {
+    fetch('/api/admin/dashboard/circuit-breakers', { credentials: 'include' })
+      .then(r => r.json()).then(d => setBreakers(d.breakers ?? [])).catch(() => {});
+  }, []);
+
+  const stateColor = (s: string) =>
+    s === 'closed' ? '#4ade80' : s === 'open' ? '#f87171' : '#f59e0b';
+
+  return (
+    <div className="adb-card">
+      <SectionHeader icon="⚡" title="Circuit Breakers AI" />
+      {breakers.length === 0
+        ? <p className="adb-empty">Niciun provider monitorizat</p>
+        : (
+          <table className="adb-table">
+            <thead>
+              <tr><th>Provider</th><th>Stare</th><th>Failures</th><th>Open până la</th></tr>
+            </thead>
+            <tbody>
+              {breakers.map(b => (
+                <tr key={b.provider}>
+                  <td>{b.provider}</td>
+                  <td style={{ color: stateColor(b.state), fontWeight: 700 }}>{b.state}</td>
+                  <td>{b.failures}</td>
+                  <td>{b.openUntil ? timeAgo(b.openUntil) : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+    </div>
+  );
+}
 
 function OverviewTab({ stats }: { stats: DashboardStats | null }) {
   if (!stats) return <div className="adb-loading">Se încarcă statisticile...</div>;
@@ -206,6 +251,8 @@ function OverviewTab({ stats }: { stats: DashboardStats | null }) {
           <StatCard icon="📝" label="Ultimul log brain" value={stats.brain.lastLog?.message?.slice(0, 40) ?? '—'} sub={stats.brain.lastLog ? timeAgo(stats.brain.lastLog.created_at) : ''} />
         </div>
       </div>
+
+      <CircuitBreakersPanel />
     </div>
   );
 }
@@ -286,16 +333,44 @@ function BrainTab() {
 
 function KnowledgeTab() {
   const [entries, setEntries] = useState<KnowledgeEntry[]>([]);
+  const [cleaning, setCleaning] = useState(false);
+  const [cleanMsg, setCleanMsg] = useState('');
 
-  useEffect(() => {
+  const loadEntries = () => {
     fetch('/api/admin/dashboard/knowledge', { credentials: 'include' })
       .then(r => r.json()).then(d => setEntries(d.entries ?? [])).catch(() => {});
-  }, []);
+  };
+
+  useEffect(() => { loadEntries(); }, []);
+
+  const runCleanup = async () => {
+    setCleaning(true);
+    setCleanMsg('');
+    try {
+      const r = await fetch('/api/admin/dashboard/kb-cleanup', { method: 'POST', credentials: 'include' });
+      const d = await r.json();
+      setCleanMsg(`Cleanup complet: ${d.deleted ?? 0} intrări șterse.`);
+      loadEntries();
+    } catch {
+      setCleanMsg('Eroare la cleanup.');
+    } finally {
+      setCleaning(false);
+    }
+  };
 
   return (
     <div className="adb-knowledge">
       <div className="adb-card">
-        <SectionHeader icon="📚" title="Ce a învățat Mara (ultimele 20)" />
+        <SectionHeader
+          icon="📚"
+          title="Ce a învățat Mara (ultimele 20)"
+          action={
+            <button className="adb-btn adb-btn--danger" onClick={runCleanup} disabled={cleaning}>
+              {cleaning ? 'Se curăță...' : '🗑 Cleanup KB'}
+            </button>
+          }
+        />
+        {cleanMsg && <p className="adb-feedback">{cleanMsg}</p>}
         {entries.length === 0
           ? <p className="adb-empty">Nicio intrare în knowledge base</p>
           : (

@@ -10,6 +10,8 @@ import {
   brainLogs,
 } from '../shared/schema';
 import { db, rawSqlite } from './db';
+import { getAllCircuitStatuses } from './lib/circuit-breaker';
+import { cleanupKnowledgeBase } from './mara-brain/knowledge-base';
 import { desc, eq } from 'drizzle-orm';
 import { csrfProtection } from './auth';
 import * as videoModule from '../backend/src/modules/video.js';
@@ -1366,6 +1368,15 @@ experiments, and learning cycles. If asked about experiments or strategy, be spe
     const adminId = req.user?.uid;
     const messages = sqlAll(`SELECT id, content, sender, created_at FROM chat_messages WHERE user_id='${adminId}' ORDER BY created_at DESC LIMIT 100`);
     res.json({ messages: messages.reverse() });
+  });
+
+  app.get('/api/admin/dashboard/circuit-breakers', requireAdmin, (_req: any, res: any) => {
+    res.json({ breakers: getAllCircuitStatuses() });
+  });
+
+  app.post('/api/admin/dashboard/kb-cleanup', requireAdmin, (_req: any, res: any) => {
+    const result = cleanupKnowledgeBase();
+    res.json(result);
   });
 
   // Mara Missions V3

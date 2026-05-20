@@ -311,6 +311,25 @@ sqlite.exec(`
   CREATE INDEX IF NOT EXISTS idx_mission_shares_user ON mission_shares(user_id);
 `);
 
+// FIX 2: per-user toxicity state persisted across restarts
+// FIX 4: performance indexes for knowledge base queries
+sqlite.exec(`
+  CREATE TABLE IF NOT EXISTS user_toxicity_state (
+    user_id TEXT PRIMARY KEY,
+    level INTEGER NOT NULL DEFAULT 0,
+    warmth_reduction INTEGER NOT NULL DEFAULT 0,
+    consecutive_toxic_messages INTEGER NOT NULL DEFAULT 0,
+    last_escalation TEXT,
+    updated_at INTEGER DEFAULT (unixepoch()) NOT NULL
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_mkb_category ON mara_knowledge_base (category);
+  CREATE INDEX IF NOT EXISTS idx_mkb_source ON mara_knowledge_base (source);
+  CREATE INDEX IF NOT EXISTS idx_mkb_confidence ON mara_knowledge_base (confidence DESC);
+  CREATE INDEX IF NOT EXISTS idx_mkb_updated_at ON mara_knowledge_base (updated_at DESC);
+  CREATE INDEX IF NOT EXISTS idx_mkb_topic ON mara_knowledge_base (topic);
+`);
+
 export const db = drizzle(sqlite, { schema });
 
 // Expose the raw better-sqlite3 handle so startup code (e.g. the

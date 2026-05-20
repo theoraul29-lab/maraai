@@ -20,6 +20,7 @@ import {
 } from './ai-provider.js';
 import { anthropicProvider } from './anthropic-provider.js';
 import { ollamaProvider } from './ollama-provider.js';
+import { circuitIsAvailable, circuitRecordSuccess, circuitRecordFailure } from './circuit-breaker.js';
 
 export class NoProviderAvailableError extends Error {
   constructor() {
@@ -59,23 +60,39 @@ export async function getAIResponse(
 ): Promise<AIResponse> {
   // 1) Try Ollama if we have an explicit base URL configured.
   if (ollamaConfigured()) {
-    try {
-      if (await ollamaProvider.isAvailable()) {
-        logProviderOnce('ollama');
-        return await ollamaProvider.chat(messages, opts);
-      }
-    } catch (err) {
-      // Log and fall through to Anthropic. We don't want Ollama hiccups to
-      // take down the chat entirely if Anthropic is configured.
+    if (!circuitIsAvailable('ollama')) {
       // eslint-disable-next-line no-console
-      console.warn('[AI Router] Ollama failed; falling back to Anthropic:', err);
+      console.warn('[AI Router] Ollama circuit open; skipping to Anthropic.');
+    } else {
+      try {
+        if (await ollamaProvider.isAvailable()) {
+          logProviderOnce('ollama');
+          const result = await ollamaProvider.chat(messages, opts);
+          circuitRecordSuccess('ollama');
+          return result;
+        }
+      } catch (err) {
+        circuitRecordFailure('ollama');
+        // eslint-disable-next-line no-console
+        console.warn('[AI Router] Ollama failed; falling back to Anthropic:', err);
+      }
     }
   }
 
   // 2) Fall back to Anthropic.
   if (anthropicConfigured()) {
-    logProviderOnce('anthropic');
-    return await anthropicProvider.chat(messages, opts);
+    if (!circuitIsAvailable('anthropic')) {
+      throw new NoProviderAvailableError();
+    }
+    try {
+      logProviderOnce('anthropic');
+      const result = await anthropicProvider.chat(messages, opts);
+      circuitRecordSuccess('anthropic');
+      return result;
+    } catch (err) {
+      circuitRecordFailure('anthropic');
+      throw err;
+    }
   }
 
   // 3) Nothing usable.
