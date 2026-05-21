@@ -357,7 +357,14 @@
 
 .adb-log-time  { color: #6b7280; min-width: 140px; }
 .adb-log-phase { color: #a78bfa; min-width: 80px; }
-.adb-log-msg   { color: #d1d5db; flex: 1; word-break: break-word; }
+.adb-log-msg {
+  flex: 1;
+  color: rgba(255,255,255,0.7);
+  white-space: pre-wrap;
+  word-break: break-word;
+  user-select: text;
+  cursor: text;
+}
 
 .adb-trigger-msg {
   padding: 8px 12px;
@@ -909,3 +916,85 @@
 .adb-btn-approve  { background: #60a5fa; color: #000; }
 .adb-btn-reject   { background: #f87171; color: #000; }
 .adb-btn-execute  { background: #a855f7; color: #fff; }
+
+/* ── Copy button ── */
+
+.adb-copy-btn {
+  background: rgba(168,85,247,0.12);
+  border: 1px solid rgba(168,85,247,0.25);
+  color: #c084fc;
+  padding: 4px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-family: inherit;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.adb-copy-btn:hover {
+  background: rgba(168,85,247,0.25);
+}
+
+/* ── Knowledge list (replaces table) ── */
+
+.adb-knowledge-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.adb-knowledge-entry {
+  background: #0f0f16;
+  border: 1px solid #1e1e2e;
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.adb-knowledge-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.adb-knowledge-category {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #a78bfa;
+  background: rgba(167,139,250,0.1);
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.adb-knowledge-topic {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #e5e7eb;
+  flex: 1;
+}
+
+.adb-knowledge-source {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.adb-knowledge-stats {
+  font-size: 0.72rem;
+  color: #4b5563;
+  margin-left: auto;
+}
+
+.adb-knowledge-content {
+  font-size: 0.85rem;
+  color: #d1d5db;
+  line-height: 1.6;
+  background: rgba(255,255,255,0.02);
+  border-radius: 6px;
+  padding: 10px 12px;
+  border-left: 2px solid rgba(167,139,250,0.3);
+}

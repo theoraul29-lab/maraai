@@ -370,8 +370,23 @@ function BrainTab() {
           ? <p className="adb-empty">Nicio reflecție disponibilă</p>
           : reflections.map(r => (
             <div key={r.id} className="adb-reflection">
-              <p>{r.content}</p>
-              <span className="adb-reflection-time">{timeAgo(r.created_at)}</span>
+              <p style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', userSelect: 'text', cursor: 'text' }}>
+                {r.content}
+              </p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
+                <span className="adb-reflection-time">{timeAgo(r.created_at)}</span>
+                <button
+                  className="adb-copy-btn"
+                  onClick={(ev) => {
+                    navigator.clipboard.writeText(r.content);
+                    const btn = ev.currentTarget as HTMLButtonElement;
+                    btn.textContent = '✅ Copiat!';
+                    setTimeout(() => { btn.textContent = '📋 Copiază'; }, 2000);
+                  }}
+                >
+                  📋 Copiază
+                </button>
+              </div>
             </div>
           ))}
       </div>
@@ -424,30 +439,44 @@ function KnowledgeTab() {
         {entries.length === 0
           ? <p className="adb-empty">Nicio intrare în knowledge base</p>
           : (
-            <table className="adb-table adb-table--full">
-              <thead>
-                <tr>
-                  <th>Categorie</th>
-                  <th>Topic</th>
-                  <th>Sursă</th>
-                  <th>Confidence</th>
-                  <th>Acces</th>
-                  <th>Actualizat</th>
-                </tr>
-              </thead>
-              <tbody>
-                {entries.map(e => (
-                  <tr key={e.id}>
-                    <td>{e.category}</td>
-                    <td title={e.content}>{e.topic}</td>
-                    <td>{e.source}</td>
-                    <td>{e.confidence ?? '—'}</td>
-                    <td>{e.access_count}</td>
-                    <td>{timeAgo(e.updated_at)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="adb-knowledge-list">
+              {entries.map(k => (
+                <div key={k.id} className="adb-knowledge-entry">
+                  <div className="adb-knowledge-meta">
+                    <span className="adb-knowledge-category">{k.category}</span>
+                    <span className="adb-knowledge-topic">{k.topic}</span>
+                    <span className="adb-knowledge-source">{k.source}</span>
+                    <span className="adb-knowledge-stats">
+                      conf: {k.confidence ?? '—'} · {k.access_count}x · {timeAgo(k.updated_at)}
+                    </span>
+                  </div>
+                  <div
+                    className="adb-knowledge-content"
+                    style={{
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                      maxHeight: '200px',
+                      overflowY: 'auto',
+                      cursor: 'text',
+                      userSelect: 'text',
+                    }}
+                  >
+                    {k.content}
+                  </div>
+                  <button
+                    className="adb-copy-btn"
+                    onClick={(ev) => {
+                      navigator.clipboard.writeText(`${k.topic}\n\n${k.content}`);
+                      const btn = ev.currentTarget as HTMLButtonElement;
+                      btn.textContent = '✅ Copiat!';
+                      setTimeout(() => { btn.textContent = '📋 Copiază'; }, 2000);
+                    }}
+                  >
+                    📋 Copiază
+                  </button>
+                </div>
+              ))}
+            </div>
           )}
       </div>
     </div>
