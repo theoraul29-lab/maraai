@@ -63,4 +63,5 @@ export {
   type GrowthCycleResult,
   type DropOffStage,
   type GrowthFramework,
+  updateGrowthStrategy,
 } from './agents/growth-engineer.js';

@@ -20,6 +20,7 @@
 
 import { and, asc, desc, eq, gte, isNull, sql } from 'drizzle-orm';
 import { db } from '../../db.js';
+import { rawSqlite } from '../../db.js';
 import {
   users,
   chatMessages,
@@ -398,6 +399,79 @@ export function identifyDropOffPoint(snapshot: FunnelSnapshot): DropOffPoint | n
   };
 }
 
+// === Platform context for smarter proposals ===
+
+interface PlatformContextData {
+  weakPillars: Array<{ pillar: string; starts: number; completions: number; rate: number }>;
+  onboardedNoMissions: number;
+  avgMinutesToFirstMission: number;
+  previousLearnings: Array<{ hypothesis: string; succeeded: number; actual_impact_pct: number; drop_off_stage: string }>;
+}
+
+/**
+ * Gather REAL platform data so the LLM proposal is grounded in observed
+ * behaviour, not just general heuristics. All queries are wrapped in
+ * try/catch so a missing table never blocks the proposal step.
+ */
+function gatherPlatformContext(): PlatformContextData {
+  let weakPillars: PlatformContextData['weakPillars'] = [];
+  let onboardedNoMissions = 0;
+  let avgMinutesToFirstMission = 0;
+  let previousLearnings: PlatformContextData['previousLearnings'] = [];
+
+  try {
+    weakPillars = rawSqlite.prepare(`
+      SELECT m.pillar,
+        COUNT(um.id) as starts,
+        COALESCE(SUM(CASE WHEN um.status = 'completed' THEN 1 ELSE 0 END), 0) as completions,
+        ROUND(COALESCE(SUM(CASE WHEN um.status = 'completed' THEN 1 ELSE 0 END), 0) * 100.0
+          / MAX(COUNT(um.id), 1), 1) as rate
+      FROM missions m
+      LEFT JOIN user_missions um ON m.id = um.mission_id
+      GROUP BY m.pillar
+      ORDER BY rate ASC
+      LIMIT 5
+    `).all() as PlatformContextData['weakPillars'];
+  } catch { /* missions table may not exist */ }
+
+  try {
+    const row = rawSqlite.prepare(`
+      SELECT COUNT(*) as cnt FROM user_personality
+      WHERE onboarding_done = 1
+        AND user_id NOT IN (SELECT DISTINCT user_id FROM user_missions WHERE user_id IS NOT NULL)
+    `).get() as { cnt: number } | undefined;
+    onboardedNoMissions = row?.cnt ?? 0;
+  } catch { /* non-fatal */ }
+
+  try {
+    const row = rawSqlite.prepare(`
+      SELECT ROUND(AVG(
+        CAST(um.started_at AS REAL) - CAST(u.created_at AS REAL)
+      ) / 60.0, 1) as avg_minutes
+      FROM user_missions um
+      JOIN users u ON u.id = um.user_id
+      WHERE um.id IN (
+        SELECT id FROM user_missions
+        GROUP BY user_id
+        HAVING MIN(started_at) = started_at
+      )
+      LIMIT 1
+    `).get() as { avg_minutes: number } | undefined;
+    avgMinutesToFirstMission = row?.avg_minutes ?? 0;
+  } catch { /* non-fatal */ }
+
+  try {
+    previousLearnings = rawSqlite.prepare(`
+      SELECT hypothesis, succeeded, actual_impact_pct, drop_off_stage
+      FROM mara_growth_experiments
+      WHERE status = 'measured' AND learnings IS NOT NULL
+      ORDER BY created_at DESC LIMIT 5
+    `).all() as PlatformContextData['previousLearnings'];
+  } catch { /* non-fatal */ }
+
+  return { weakPillars, onboardedNoMissions, avgMinutesToFirstMission, previousLearnings };
+}
+
 // === Step 3: Propose ONE experiment ===
 
 const FRAMEWORK_LIST: GrowthFramework[] = [
@@ -474,6 +548,23 @@ export async function proposeGrowthExperiment(
     .map((s) => `${s.stage}: ${s.count} (drop-off vs prev: ${(s.dropOffRateFromPrev * 100).toFixed(0)}%)`)
     .join('\n');
 
+  // Real platform data to ground the proposal in observed behaviour
+  const ctx = gatherPlatformContext();
+  const platformBlock = [
+    ctx.weakPillars.length
+      ? `Weakest mission pillars:\n${ctx.weakPillars.map(p => `  ${p.pillar}: ${p.starts} starts, ${p.completions} completions (${p.rate}%)`).join('\n')}`
+      : null,
+    ctx.onboardedNoMissions > 0
+      ? `Users who finished onboarding but never started a mission: ${ctx.onboardedNoMissions}`
+      : null,
+    ctx.avgMinutesToFirstMission > 0
+      ? `Avg time from signup to first mission: ${ctx.avgMinutesToFirstMission} min`
+      : null,
+    ctx.previousLearnings.length
+      ? `Previous experiment outcomes:\n${ctx.previousLearnings.map(e => `  [${e.drop_off_stage}] ${e.hypothesis.slice(0, 80)} → ${e.succeeded ? '✅' : '❌'} (${((e.actual_impact_pct ?? 0) * 100).toFixed(0)}%)`).join('\n')}`
+      : null,
+  ].filter(Boolean).join('\n\n');
+
   const prompt = `You are Mara, the Growth Engineer for hellomara.net. Your job is to propose ONE single experiment that targets the worst drop-off point in the funnel — and ONLY that one. No brainstorming, no lists. Propose the one experiment you would run this week.
 
 FUNNEL (last ${snapshot.windowDays} days):
@@ -484,6 +575,9 @@ WORST DROP-OFF:
 - drop-off rate: ${(dropOff.dropOffRate * 100).toFixed(0)}%
 - users lost this window: ${dropOff.usersAffectedInWindow}
 - context: ${dropOff.contextNote}
+
+REAL PLATFORM DATA:
+${platformBlock || '(no additional platform data available yet)'}
 
 GROWTH KNOWLEDGE (cite the [id] you used):
 ${knowledgeBlock}
@@ -724,9 +818,18 @@ export async function measureExperimentOutcome(
     const currentRate = currentStage.dropOffRateFromPrev;
     const actualImpactPct = baselineRate > 0 ? (baselineRate - currentRate) / baselineRate : 0;
     const succeeded = actualImpactPct >= exp.expectedImpactPct * 0.6 ? 1 : 0; // hit at least 60% of expected
-    const learnings = succeeded
+    let learnings = succeeded
       ? `${exp.framework} hypothesis confirmed on ${exp.dropOffStage}: drop-off ${(baselineRate * 100).toFixed(0)}% → ${(currentRate * 100).toFixed(0)}% (${(actualImpactPct * 100).toFixed(0)}% relative improvement vs ${(exp.expectedImpactPct * 100).toFixed(0)}% expected).`
       : `${exp.framework} hypothesis did NOT meet target on ${exp.dropOffStage}: drop-off ${(baselineRate * 100).toFixed(0)}% → ${(currentRate * 100).toFixed(0)}% (got ${(actualImpactPct * 100).toFixed(0)}% relative improvement vs ${(exp.expectedImpactPct * 100).toFixed(0)}% expected). Re-evaluate assumption.`;
+
+    // Supplement with A/B test results if available
+    try {
+      const { getABTestResults, hasABData } = await import('../ab-testing.js');
+      if (hasABData(String(exp.id))) {
+        const ab = getABTestResults(String(exp.id));
+        learnings += ` | A/B test (${ab.totalUsers} users): control ${ab.control.rate}%, treatment ${ab.treatment.rate}%, ${ab.winner === 'treatment' ? '✅ treatment wins' : ab.winner === 'control' ? '❌ control better' : '⚠️ inconclusive'} (${ab.confidence}% confidence, ${ab.improvement > 0 ? '+' : ''}${ab.improvement}% improvement).`;
+      }
+    } catch { /* ab-testing not yet available — skip */ }
 
     await db
       .update(maraGrowthExperiments)
@@ -1041,6 +1144,64 @@ export async function markImplemented(
     })
     .where(eq(maraGrowthExperiments.id, id));
   return await getExperiment(id);
+}
+
+// === Meta-learning: update growth strategy after measuring experiments ===
+
+/**
+ * After measuring experiments, persist a meta-learning entry into the
+ * knowledge base so future proposal cycles can cite success rates and
+ * learn which funnel stages respond best to which frameworks.
+ * Called from the brain cycle's Phase 4 after runGrowthEngineerCycle().
+ */
+export async function updateGrowthStrategy(): Promise<void> {
+  let measured: Array<{
+    hypothesis: string;
+    succeeded: number;
+    actual_impact_pct: number;
+    learnings: string;
+    drop_off_stage: string;
+  }> = [];
+  try {
+    measured = rawSqlite
+      .prepare(
+        `SELECT hypothesis, succeeded, actual_impact_pct, learnings, drop_off_stage
+         FROM mara_growth_experiments
+         WHERE status = 'measured' AND learnings IS NOT NULL
+         ORDER BY created_at DESC LIMIT 10`,
+      )
+      .all() as typeof measured;
+  } catch {
+    return;
+  }
+
+  if (measured.length === 0) return;
+
+  const successCount = measured.filter((e) => e.succeeded).length;
+  const successRate = ((successCount / measured.length) * 100).toFixed(1);
+  const bestStages = [...new Set(measured.filter((e) => e.succeeded).map((e) => e.drop_off_stage))];
+  const keyLearnings = measured
+    .filter((e) => e.learnings)
+    .map((e) => e.learnings)
+    .join('\n---\n');
+
+  try {
+    await storeKnowledge(
+      'platform_insight',
+      'Growth Engineering Meta-Learning',
+      JSON.stringify({
+        totalMeasured: measured.length,
+        successRate: successRate + '%',
+        successfulStages: bestStages,
+        keyLearnings,
+      }),
+      'self_reflection',
+      75,
+      { updatedAt: new Date().toISOString() },
+    );
+  } catch {
+    /* non-fatal */
+  }
 }
 
 // Silence the unused sql import warning when the file is built in isolation

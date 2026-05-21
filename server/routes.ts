@@ -76,6 +76,8 @@ import {
   getRecentReads,
 } from './mara-brain/index';
 import { learningRateLimiter } from './mara-brain/rate-limiter';
+import { executeApprovedExperiment } from './mara-brain/experiment-executor.js';
+import { getABTestResults, hasABData } from './mara-brain/ab-testing.js';
 import { getObjectiveRow, setObjective } from './mara-core/objective.js';
 import {
   listUnresolvedConflicts,
@@ -906,6 +908,71 @@ export async function registerRoutes(
     }
   });
 
+  // === A/B test results for a specific experiment ===
+  app.get('/api/admin/experiments/:id/ab-results', requireAdmin, (req: any, res: any) => {
+    const id = String(req.params.id);
+    try {
+      const results = getABTestResults(id);
+      const dataExists = hasABData(id);
+      res.json({ results, hasData: dataExists });
+    } catch (err) {
+      console.error('[ab-results] failed:', err);
+      res.status(500).json({ error: 'Failed to get A/B results' });
+    }
+  });
+
+  // === Growth overview: all experiments with A/B stats ===
+  app.get('/api/admin/growth/overview', requireAdmin, (req: any, res: any) => {
+    try {
+      const experiments = rawSqlite.prepare(`
+        SELECT
+          e.id, e.drop_off_stage, e.hypothesis, e.framework, e.ice_score,
+          e.expected_impact_pct, e.status, e.created_at, e.decided_at,
+          e.implemented_at, e.actual_impact_pct, e.succeeded, e.learnings,
+          e.implementation_notes, e.outcome_metrics,
+          (SELECT COUNT(*) FROM ab_tests WHERE experiment_id = CAST(e.id AS TEXT)) as ab_users,
+          (SELECT COUNT(*) FROM ab_tests WHERE experiment_id = CAST(e.id AS TEXT) AND variant = 'treatment') as treatment_users,
+          (SELECT COUNT(*) FROM ab_tests WHERE experiment_id = CAST(e.id AS TEXT) AND converted = 1) as total_conversions
+        FROM mara_growth_experiments e
+        ORDER BY e.created_at DESC
+        LIMIT 20
+      `).all();
+
+      const stats = {
+        total: (experiments as any[]).length,
+        proposed: (experiments as any[]).filter((e: any) => e.status === 'proposed').length,
+        implemented: (experiments as any[]).filter((e: any) => e.status === 'implemented').length,
+        measured: (experiments as any[]).filter((e: any) => e.status === 'measured').length,
+        successRate: (() => {
+          const m = (experiments as any[]).filter((e: any) => e.status === 'measured');
+          return m.length > 0
+            ? Math.round((m.filter((e: any) => e.succeeded).length / m.length) * 100)
+            : 0;
+        })(),
+      };
+
+      res.json({ experiments, stats });
+    } catch (err) {
+      console.error('[growth/overview] failed:', err);
+      res.status(500).json({ error: 'Failed to get growth overview' });
+    }
+  });
+
+  // === Auto-execute an approved experiment (Mara implements) ===
+  app.post('/api/admin/experiments/:id/execute', requireAdmin, async (req: any, res: any) => {
+    const idRaw = Number.parseInt(req.params.id, 10);
+    if (!Number.isFinite(idRaw)) {
+      return res.status(400).json({ error: 'Invalid experiment id' });
+    }
+    try {
+      const result = await executeApprovedExperiment(idRaw);
+      res.json(result);
+    } catch (err) {
+      console.error('[experiments] execute failed:', err);
+      res.status(500).json({ error: 'Failed to execute experiment' });
+    }
+  });
+
   // === Mara Brain status/logs/trigger (admin only) ===
   app.get('/api/admin/brain/status', requireAdmin, (_req: any, res: any) => {
     try {
@@ -1322,7 +1389,22 @@ experiments, and learning cycles. If asked about experiments or strategy, be spe
   });
 
   app.get('/api/admin/dashboard/experiments', requireAdmin, (_req: any, res: any) => {
-    const experiments = sqlAll('SELECT id, name, description, hypothesis, ice_score, status, funnel_stage, created_at, decided_at, implemented_at FROM mara_growth_experiments ORDER BY created_at DESC LIMIT 20');
+    // Use actual column names from the brain schema; alias to match the frontend Experiment interface
+    const experiments = sqlAll(`
+      SELECT id,
+        SUBSTR(hypothesis, 1, 80) as name,
+        code_sketch as description,
+        hypothesis,
+        ice_score,
+        status,
+        drop_off_stage as funnel_stage,
+        created_at,
+        decided_at,
+        implemented_at,
+        implementation_notes
+      FROM mara_growth_experiments
+      ORDER BY created_at DESC LIMIT 20
+    `);
     res.json({ experiments });
   });
 

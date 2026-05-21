@@ -670,3 +670,242 @@
   color: #9ca3af;
   line-height: 1.5;
 }
+
+/* ── Growth tab ── */
+
+.adb-growth {}
+
+.adb-growth-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.adb-exp-card {
+  background: #0f0f16;
+  border: 1px solid #1e1e2e;
+  border-radius: 12px;
+  padding: 18px;
+}
+
+.adb-exp-card--proposed { border-left: 3px solid #fbbf24; }
+.adb-exp-card--approved { border-left: 3px solid #60a5fa; }
+.adb-exp-card--implemented { border-left: 3px solid #a855f7; }
+.adb-exp-card--measured { border-left: 3px solid #4ade80; }
+.adb-exp-card--rejected { border-left: 3px solid #f87171; opacity: 0.6; }
+
+.adb-exp-stage {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6b7280;
+  margin-bottom: 6px;
+}
+
+.adb-exp-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.adb-exp-badge--proposed  { background: rgba(251,191,36,0.15);  color: #fbbf24; }
+.adb-exp-badge--approved  { background: rgba(96,165,250,0.15);  color: #60a5fa; }
+.adb-exp-badge--implemented { background: rgba(168,85,247,0.15); color: #a855f7; }
+.adb-exp-badge--measured  { background: rgba(74,222,128,0.15);  color: #4ade80; }
+.adb-exp-badge--rejected  { background: rgba(248,113,113,0.15); color: #f87171; }
+
+.adb-exp-hypothesis {
+  font-size: 0.88rem;
+  color: #e5e7eb;
+  margin: 8px 0 4px;
+  line-height: 1.5;
+}
+
+.adb-exp-expected {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  margin-bottom: 10px;
+}
+
+.adb-exp-impl {
+  font-size: 0.78rem;
+  color: #6b7280;
+  background: #0a0a12;
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-top: 8px;
+}
+
+/* ── A/B results display ── */
+
+.adb-ab-display {
+  margin-top: 14px;
+  background: #0a0a12;
+  border: 1px solid #1e1e2e;
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.adb-ab-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #9ca3af;
+}
+
+.adb-ab-win {
+  color: #4ade80;
+  font-size: 0.75rem;
+}
+
+.adb-ab-lose {
+  color: #f87171;
+  font-size: 0.75rem;
+}
+
+.adb-ab-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.adb-ab-variant {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+}
+
+.adb-ab-variant-label {
+  width: 70px;
+  flex-shrink: 0;
+  color: #9ca3af;
+  font-weight: 600;
+}
+
+.adb-ab-bar {
+  flex: 1;
+  height: 10px;
+  background: #1e1e2e;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.adb-ab-fill--control {
+  height: 100%;
+  background: #60a5fa;
+  border-radius: 5px;
+  transition: width 0.4s ease;
+}
+
+.adb-ab-fill--treatment {
+  height: 100%;
+  background: #4ade80;
+  border-radius: 5px;
+  transition: width 0.4s ease;
+}
+
+.adb-ab-pct {
+  width: 36px;
+  text-align: right;
+  font-size: 0.78rem;
+  color: #e5e7eb;
+  flex-shrink: 0;
+}
+
+.adb-ab-impact {
+  font-size: 0.78rem;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+
+.adb-ab-no-data {
+  font-size: 0.78rem;
+  color: #4b5563;
+  text-align: center;
+  padding: 8px 0;
+}
+
+.adb-ab-learnings {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #1e1e2e;
+  font-size: 0.78rem;
+  color: #9ca3af;
+  line-height: 1.55;
+}
+
+.adb-ab-learnings strong {
+  color: #e5e7eb;
+  display: block;
+  margin-bottom: 4px;
+}
+
+/* ── Growth stat cards ── */
+
+.adb-growth-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.adb-growth-stat {
+  background: #0f0f16;
+  border: 1px solid #1e1e2e;
+  border-radius: 10px;
+  padding: 14px;
+  text-align: center;
+}
+
+.adb-growth-stat-val {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #e5e7eb;
+  display: block;
+}
+
+.adb-growth-stat-lbl {
+  font-size: 0.72rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 4px;
+}
+
+.adb-exp-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.adb-exp-actions button {
+  padding: 5px 14px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s;
+}
+
+.adb-exp-actions button:hover { opacity: 0.85; }
+
+.adb-exp-actions button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.adb-btn-approve  { background: #60a5fa; color: #000; }
+.adb-btn-reject   { background: #f87171; color: #000; }
+.adb-btn-execute  { background: #a855f7; color: #fff; }

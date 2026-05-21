@@ -58,6 +58,45 @@ interface Experiment {
   created_at: number;
   decided_at: number | null;
   implemented_at: number | null;
+  implementation_notes?: string | null;
+}
+
+interface GrowthExperiment {
+  id: number;
+  drop_off_stage: string;
+  hypothesis: string;
+  framework: string;
+  ice_score: number;
+  expected_impact_pct: number;
+  status: string;
+  created_at: number;
+  decided_at: number | null;
+  implemented_at: number | null;
+  actual_impact_pct: number | null;
+  succeeded: number | null;
+  learnings: string | null;
+  implementation_notes: string | null;
+  outcome_metrics: string | null;
+  ab_users: number;
+  treatment_users: number;
+  total_conversions: number;
+}
+
+interface GrowthStats {
+  total: number;
+  proposed: number;
+  implemented: number;
+  measured: number;
+  successRate: number;
+}
+
+interface ABResults {
+  control: { users: number; conversions: number; rate: number };
+  treatment: { users: number; conversions: number; rate: number };
+  winner: 'control' | 'treatment' | 'inconclusive';
+  confidence: number;
+  improvement: number;
+  totalUsers: number;
 }
 
 interface LibraryBook {
@@ -411,6 +450,227 @@ function KnowledgeTab() {
             </table>
           )}
       </div>
+    </div>
+  );
+}
+
+// ─── A/B Results Display ──────────────────────────────────────────────────────
+
+function ABResultsDisplay({ experimentId, succeeded, actualImpact, learnings }: {
+  experimentId: number;
+  succeeded: number | null;
+  actualImpact: number | null;
+  learnings: string | null;
+}) {
+  const [abData, setAbData] = useState<ABResults | null>(null);
+
+  useEffect(() => {
+    fetch(`/api/admin/experiments/${experimentId}/ab-results`, { credentials: 'include' })
+      .then(r => r.json())
+      .then(d => { if (d.hasData) setAbData(d.results); })
+      .catch(() => {});
+  }, [experimentId]);
+
+  return (
+    <div className="adb-ab-display">
+      <div className="adb-ab-header">
+        <span>A/B Test Results</span>
+        {succeeded !== null && (
+          <span className={succeeded ? 'adb-ab-win' : 'adb-ab-lose'}>
+            {succeeded ? '✅ Treatment wins' : '❌ No improvement'}
+          </span>
+        )}
+        {abData && <span className="adb-ab-confidence">{abData.confidence}% confidence</span>}
+      </div>
+      {abData ? (
+        <>
+          <div className="adb-ab-bars">
+            <div className="adb-ab-variant">
+              <span>Control</span>
+              <div className="adb-ab-bar">
+                <div className="adb-ab-fill adb-ab-fill--control" style={{ width: `${Math.max(abData.control.rate, 2)}%` }} />
+              </div>
+              <span>{abData.control.rate}%</span>
+              <span className="adb-ab-users">({abData.control.users} useri)</span>
+            </div>
+            <div className="adb-ab-variant">
+              <span>Treatment</span>
+              <div className="adb-ab-bar">
+                <div className="adb-ab-fill adb-ab-fill--treatment" style={{ width: `${Math.max(abData.treatment.rate, 2)}%` }} />
+              </div>
+              <span>{abData.treatment.rate}%</span>
+              <span className="adb-ab-users">({abData.treatment.users} useri)</span>
+            </div>
+          </div>
+          <div className="adb-ab-impact">
+            Impact real: <strong>{(actualImpact ?? 0) > 0 ? '+' : ''}{((actualImpact ?? 0) * 100).toFixed(1)}%</strong>
+            {abData.improvement !== 0 && (
+              <> · Conversii: <strong style={{ color: abData.improvement > 0 ? '#4ade80' : '#f87171' }}>
+                {abData.improvement > 0 ? '+' : ''}{abData.improvement}%
+              </strong></>
+            )}
+          </div>
+        </>
+      ) : (
+        <p className="adb-ab-no-data">Niciun utilizator asignat în A/B test încă</p>
+      )}
+      {learnings && (
+        <div className="adb-ab-learnings">
+          <strong>Learnings Mara:</strong>
+          <p>{learnings}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Tab: Growth ──────────────────────────────────────────────────────────────
+
+function GrowthTab() {
+  const [experiments, setExperiments] = useState<GrowthExperiment[]>([]);
+  const [stats, setStats] = useState<GrowthStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [executing, setExecuting] = useState<number | null>(null);
+
+  const loadData = () => {
+    setLoading(true);
+    fetch('/api/admin/growth/overview', { credentials: 'include' })
+      .then(r => r.json())
+      .then(d => {
+        setExperiments(d.experiments ?? []);
+        setStats(d.stats ?? null);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { loadData(); }, []);
+
+  const handleDecision = async (id: number, action: 'approve' | 'reject') => {
+    const endpoint = action === 'approve'
+      ? `/api/admin/mara/experiments/${id}/approve`
+      : `/api/admin/mara/experiments/${id}/reject`;
+    try {
+      await fetch(endpoint, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ decidedBy: 'admin', note: '' }),
+      });
+      loadData();
+    } catch { /* silent */ }
+  };
+
+  const handleExecute = async (id: number) => {
+    setExecuting(id);
+    try {
+      await fetch(`/api/admin/experiments/${id}/execute`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      loadData();
+    } catch { /* silent */ }
+    finally { setExecuting(null); }
+  };
+
+  if (loading) return <div className="adb-loading">Se încarcă datele de growth...</div>;
+
+  return (
+    <div className="adb-growth">
+      {stats && (
+        <div className="adb-stat-grid" style={{ marginBottom: '24px' }}>
+          <StatCard icon="🧪" label="Total experimente" value={stats.total} color="#a855f7" />
+          <StatCard icon="⏳" label="Propuse" value={stats.proposed} color="#fbbf24" />
+          <StatCard icon="🚀" label="Implementate" value={stats.implemented} color="#60a5fa" />
+          <StatCard icon="✅" label="Rată succes" value={`${stats.successRate}%`} color="#4ade80" />
+        </div>
+      )}
+
+      <SectionHeader icon="📈" title="Experimente Growth" action={
+        <button className="adb-btn adb-btn--primary" style={{ fontSize: '0.75rem', padding: '4px 10px' }} onClick={loadData}>
+          ↻ Refresh
+        </button>
+      } />
+
+      {experiments.length === 0 ? (
+        <p className="adb-empty">Niciun experiment disponibil — Mara va propune unul la următorul ciclu</p>
+      ) : (
+        <div className="adb-growth-list">
+          {experiments.map(exp => (
+            <div key={exp.id} className={`adb-exp-card adb-exp-card--${exp.status}`}>
+              <div className="adb-exp-header">
+                <span className="adb-exp-stage">{exp.drop_off_stage}</span>
+                <span className={`adb-exp-badge adb-exp-badge--${exp.status}`}>{exp.status}</span>
+                <span className="adb-exp-ice">ICE: {exp.ice_score?.toFixed(1)}</span>
+                {exp.ab_users > 0 && (
+                  <span className="adb-exp-ab-users">👥 {exp.ab_users} în A/B</span>
+                )}
+              </div>
+
+              <p className="adb-exp-hypothesis">{exp.hypothesis}</p>
+
+              {exp.expected_impact_pct > 0 && (
+                <p className="adb-exp-expected">
+                  🎯 Impact așteptat: <strong>{(exp.expected_impact_pct * 100).toFixed(0)}%</strong>
+                  {exp.framework && <> · Framework: <strong>{exp.framework}</strong></>}
+                </p>
+              )}
+
+              {/* A/B Results if measured */}
+              {exp.status === 'measured' && (
+                <ABResultsDisplay
+                  experimentId={exp.id}
+                  succeeded={exp.succeeded}
+                  actualImpact={exp.actual_impact_pct}
+                  learnings={exp.learnings}
+                />
+              )}
+
+              {/* Implementation notes if available */}
+              {exp.implementation_notes && (() => {
+                try {
+                  const notes = JSON.parse(exp.implementation_notes);
+                  return (
+                    <div className="adb-exp-impl">
+                      <div className="adb-exp-impl-title">🤖 Implementat de Mara:</div>
+                      {notes.actionsPerformed?.map((action: string, i: number) => (
+                        <div key={i} className="adb-exp-impl-action">{action}</div>
+                      ))}
+                      {notes.needsClaudeCode && (
+                        <div className="adb-exp-needs-code">⚡ Necesită Claude Code</div>
+                      )}
+                    </div>
+                  );
+                } catch { return null; }
+              })()}
+
+              {/* Actions */}
+              <div className="adb-exp-actions">
+                {exp.status === 'proposed' && (
+                  <>
+                    <button className="adb-btn adb-btn--success" onClick={() => handleDecision(exp.id, 'approve')}>
+                      ✅ Aprobă — Mara implementează
+                    </button>
+                    <button className="adb-btn adb-btn--danger" onClick={() => handleDecision(exp.id, 'reject')}>
+                      ❌ Respinge
+                    </button>
+                  </>
+                )}
+                {exp.status === 'approved' && (
+                  <button
+                    className="adb-btn adb-btn--primary"
+                    onClick={() => handleExecute(exp.id)}
+                    disabled={executing === exp.id}
+                  >
+                    {executing === exp.id ? '⏳ Se implementează...' : '🚀 Mara implementează'}
+                  </button>
+                )}
+                <span className="adb-exp-meta-time">Creat: {timeAgo(exp.created_at)}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -849,6 +1109,7 @@ function AlertsTab({ onUnreadChange }: { onUnreadChange: (n: number) => void }) 
 const TABS = [
   { id: 'overview', icon: '📊', label: 'Overview' },
   { id: 'brain', icon: '🧠', label: 'Brain' },
+  { id: 'growth', icon: '📈', label: 'Growth' },
   { id: 'alerts', icon: '🔔', label: 'Alerte' },
   { id: 'knowledge', icon: '📚', label: 'Knowledge' },
   { id: 'experiments', icon: '🧪', label: 'Experiments' },
@@ -904,6 +1165,7 @@ export default function AdminDashboard() {
       <div className="adb-content">
         {activeTab === 'overview'     && <OverviewTab stats={stats} />}
         {activeTab === 'brain'        && <BrainTab />}
+        {activeTab === 'growth'       && <GrowthTab />}
         {activeTab === 'alerts'       && <AlertsTab onUnreadChange={setUnreadAlerts} />}
         {activeTab === 'knowledge'    && <KnowledgeTab />}
         {activeTab === 'experiments'  && <ExperimentsTab />}

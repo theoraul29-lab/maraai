@@ -329,6 +329,26 @@ sqlite.exec(`
   );
 `);
 
+// A/B testing table for growth experiments
+sqlite.exec(`
+  CREATE TABLE IF NOT EXISTS ab_tests (
+    id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+    experiment_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    variant TEXT NOT NULL CHECK(variant IN ('control', 'treatment')),
+    assigned_at INTEGER DEFAULT (unixepoch()),
+    converted INTEGER DEFAULT 0,
+    converted_at INTEGER
+  );
+  CREATE INDEX IF NOT EXISTS idx_ab_experiment ON ab_tests(experiment_id);
+  CREATE INDEX IF NOT EXISTS idx_ab_user ON ab_tests(user_id);
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_ab_unique ON ab_tests(experiment_id, user_id);
+`);
+
+// Add implementation_notes and outcome_metrics columns if they don't exist
+try { sqlite.exec(`ALTER TABLE mara_growth_experiments ADD COLUMN implementation_notes TEXT`); } catch { /* already exists */ }
+try { sqlite.exec(`ALTER TABLE mara_growth_experiments ADD COLUMN outcome_metrics TEXT`); } catch { /* already exists */ }
+
 // FIX 2 (from main): per-user toxicity state persisted across restarts.
 // FIX 4 (from main): mara_knowledge_base indexes.
 // We unconditionally create the toxicity table because nothing else creates

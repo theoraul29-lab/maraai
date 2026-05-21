@@ -9,7 +9,7 @@ import { readRelevantFiles, getCodeOverview } from './agents/code-explorer.js';
 import { researchModuleTrends, researchCompetitors, generateResearchAgenda, batchResearch } from './agents/web-research.js';
 import { generateGrowthSuggestions, identifyWeakModules } from './agents/platform-analyzer.js';
 import { runAllModuleAnalyzers } from './agents/module-analyzers.js';
-import { runGrowthEngineerCycle } from './agents/growth-engineer.js';
+import { runGrowthEngineerCycle, updateGrowthStrategy } from './agents/growth-engineer.js';
 import { getKnowledgeStats, storeKnowledge, learnFromText, searchKnowledge } from './knowledge-base.js';
 import { readNextLibraryBook, getLibraryProgress, bootstrapReadBookIds } from './library.js';
 import { getObjective } from '../mara-core/objective.js';
@@ -346,6 +346,13 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
     // In non-revenue modes Phase 4 runs here, at its conventional spot.
     if (!revenueMode) {
       await runGrowthEngineerPhase();
+    }
+
+    // Post-Phase 4: persist meta-learning from measured experiments
+    try {
+      await withTimeout(updateGrowthStrategy(), PHASE_TIMEOUT, 'Phase 4.meta: Growth strategy update');
+    } catch (err) {
+      console.error('[MaraBrain] Growth strategy meta-learning failed:', err);
     }
 
     // === PHASE 4.5: Per-Module Growth Analysis ===
