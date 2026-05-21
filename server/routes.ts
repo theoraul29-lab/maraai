@@ -111,9 +111,10 @@ import { registerLaunchCountdown } from './modules/launch-countdown.js';
 import { registerMissionRoutes } from './missions/routes.js';
 import { registerShareRoutes } from './share/routes.js';
 import multer from 'multer';
+// pdf-parse v1 is CommonJS-only — load via createRequire to avoid ESM default-export issues
 import { createRequire } from 'module';
-const _require = createRequire(import.meta.url);
-const pdfParse: (buf: Buffer) => Promise<{ text: string }> = _require('pdf-parse');
+const _cjsRequire = createRequire(import.meta.url);
+const pdfParse = _cjsRequire('pdf-parse') as (buf: Buffer) => Promise<{ text: string }>;
 import { startFacebook, facebookCallback } from './modules/oauth-facebook.js';
 
 export async function registerRoutes(
