@@ -195,9 +195,9 @@ export async function registerRoutes(
   app.post('/api/admin/orders/:id/confirm', requireAdmin, adminOrdersModule.confirmOrder);
   app.post('/api/admin/orders/:id/reject', requireAdmin, adminOrdersModule.rejectOrder);
 
-  // Orders, premium, and trading endpoints (require auth)
+  // Orders and premium endpoints (require auth)
   app.get('/api/premium/status', requireAuth, ordersModule.getPremiumStatus);
-  app.get('/api/trading/access', requireAuth, ordersModule.getTradingAccess);
+  // app.get('/api/trading/access', requireAuth, ordersModule.getTradingAccess); // Trading disabled
   app.post('/api/premium/order', requireAuth, ordersModule.createPremiumOrder);
 
   // --- Auth endpoints (local email/password + session) ---------------------

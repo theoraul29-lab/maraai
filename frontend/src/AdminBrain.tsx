@@ -69,7 +69,7 @@ type LearningStats = {
   knowledge: { total?: number; byCategory?: Record<string, number> };
 };
 
-const MODULES = ['you', 'reels', 'trading', 'writers', 'creators', 'vip'];
+const MODULES = ['you', 'reels', 'missions', 'writers', 'creators', 'vip'];
 
 function formatDate(iso: string | number | null): string {
   if (!iso) return '—';

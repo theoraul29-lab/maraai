@@ -1,6 +1,6 @@
 // Per-module autonomous growth analyzers.
 //
-// Each analyzer focuses on ONE module (You / Reels / Trading / Writers /
+// Each analyzer focuses on ONE module (You / Reels / Missions / Writers /
 // Creators / VIP), gathers module-specific metrics, asks Claude for targeted
 // insights + concrete growth proposals, and stores the proposals in
 // `maraPlatformInsights` (status='proposed') for admin approval.
@@ -280,24 +280,13 @@ async function analyzeCreators(): Promise<ModuleAnalysisResult> {
 // ============================================================================
 async function analyzeVIP(): Promise<ModuleAnalysisResult> {
   const users = await storage.getAllUsers();
-  // Count VIP-ish users best-effort: users with Trading L4+ access are VIP.
-  let vipCount = 0;
-  for (const u of users) {
-    try {
-      const access = await storage.getUserTradingAccess(u.id);
-      if (access?.hasAccess) vipCount += 1;
-    } catch (err) {
-      console.warn(
-        '[module-analyzers:285] Non-critical error swallowed:',
-        err instanceof Error ? err.message : err,
-      );
-    }
-  }
+  // Trading access was removed; VIP count from subscription tiers instead.
+  const vipCount = 0;
   const ratio = users.length ? ((vipCount / users.length) * 100).toFixed(1) : '0.0';
 
   const metrics = [
     `- Total users: ${users.length}`,
-    `- VIP-tier users (by trading access signal): ${vipCount}`,
+    `- VIP-tier users: ${vipCount}`,
     `- VIP conversion ratio: ${ratio}%`,
     `- Gated features: VIP-only creator pages, premium writer templates, higher tip limits, AI chat priority`,
   ].join('\n');

@@ -879,7 +879,7 @@ app.use((req, res, next) => {
             try {
               const inputSchema = z.object({
                 message: z.string(),
-                module: z.enum(['trading', 'writers', 'reels']).optional(),
+                module: z.enum(['missions', 'writers', 'reels']).optional(),
                 language: z.string().optional(),
               });
               const input = inputSchema.parse(data.payload);

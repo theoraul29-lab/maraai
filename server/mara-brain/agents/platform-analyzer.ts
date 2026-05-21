@@ -84,14 +84,14 @@ ${metrics.recentFeedback.length > 0 ? metrics.recentFeedback.join('\n') : 'Niciu
 ${JSON.stringify(knowledgeStats)}
 
 ## Module Disponibile
-trading, creator, writers, reels, vip, chat, general
+missions, creator, writers, reels, vip, chat, general
 
 Returnează JSON:
 {
   "insights": ["insight1", "insight2", ...],
   "proposals": [
     {
-      "module": "trading|creator|writers|reels|vip|chat|general",
+      "module": "missions|creator|writers|reels|vip|chat|general",
       "title": "titlu propunere",
       "description": "descriere detaliată",
       "priority": "P0|P1|P2|P3",
@@ -177,7 +177,7 @@ export async function identifyWeakModules(): Promise<{ module: string; issue: st
   const weakModules: { module: string; issue: string; suggestion: string }[] = [];
 
   // Check for modules with zero activity
-  const expectedModules = ['trading', 'creator', 'writers', 'reels'];
+  const expectedModules = ['missions', 'creator', 'writers', 'reels'];
   for (const mod of expectedModules) {
     const activity = metrics.moduleActivity[mod] || 0;
     if (activity === 0) {

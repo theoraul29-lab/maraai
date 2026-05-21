@@ -56,7 +56,7 @@ interface UserPost {
   // Cross-module attribution (Phase 2 P2.2). Set when the post originated
   // from Writers Hub / Trading Akademie / a reel — drives the "from X"
   // badge below. Plain user posts leave both null.
-  sourceKind: 'writers' | 'trading' | 'reel' | null;
+  sourceKind: 'writers' | 'missions' | 'reel' | null;
   sourceId: number | null;
   createdAt: string;
   // Server-side counts injected by GET /api/profile/:id/posts (via
@@ -859,9 +859,9 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
                           ✍️ {t('you.sourceWriters', 'From Writers Hub')}
                         </span>
                       )}
-                      {p.sourceKind === 'trading' && (
+                      {p.sourceKind === 'missions' && (
                         <span className="you-fb-post-source-badge">
-                          📊 {t('you.sourceTrading', 'From Trading Akademie')}
+                          🎯 {t('you.sourceMissions', 'From Missions')}
                         </span>
                       )}
                       {p.sourceKind === 'reel' && (

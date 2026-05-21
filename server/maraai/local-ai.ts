@@ -83,10 +83,10 @@ export function tryLocalAI(message: string, language?: string | null): LocalAIRe
   if (HELP.some((r) => r.test(m))) {
     return {
       response: localized(lang, {
-        en: 'I can chat, generate ideas, run trading academy lessons, and curate Reels. In Hybrid or Advanced mode I can also share the load with peer nodes — see the Transparency dashboard for full details.',
-        ro: 'Pot vorbi, genera idei, rula lecții din Trading Academy și curata Reels. În modul Hybrid sau Advanced pot împărți efortul cu nodurile peer — vezi panoul Transparency pentru detalii complete.',
-        es: 'Puedo conversar, generar ideas, dar lecciones de Trading Academy y curar Reels. En modo Hybrid o Advanced también reparto la carga con nodos peer — ve el panel de Transparency para los detalles.',
-        fr: 'Je peux discuter, générer des idées, donner des leçons de Trading Academy et organiser les Reels. En mode Hybrid ou Advanced je partage aussi la charge avec les nœuds peer — vois le tableau Transparency pour les détails.',
+        en: 'I can chat, generate ideas, guide you through Missions and growth programs, and curate Reels. In Hybrid or Advanced mode I can also share the load with peer nodes — see the Transparency dashboard for full details.',
+        ro: 'Pot vorbi, genera idei, te ghida prin Misiuni și programe de creștere, și curata Reels. În modul Hybrid sau Advanced pot împărți efortul cu nodurile peer — vezi panoul Transparency pentru detalii complete.',
+        es: 'Puedo conversar, generar ideas, guiarte por Misiones y programas de crecimiento, y curar Reels. En modo Hybrid o Advanced también reparto la carga con nodos peer — ve el panel de Transparency para los detalles.',
+        fr: 'Je peux discuter, générer des idées, vous guider à travers Missions et programmes de croissance, et organiser les Reels. En mode Hybrid ou Advanced je partage aussi la charge avec les nœuds peer — vois le tableau Transparency pour les détails.',
       }),
       confidence: 0.8,
       detectedMood: 'professor',

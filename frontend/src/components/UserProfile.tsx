@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import ShareButton from './ShareButton';
 import '../styles/UserProfile.css';
@@ -29,6 +30,7 @@ interface UserProfileProps {
 
 const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<UserProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -327,7 +329,12 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
                   >
                     {isFollowing ? t('userProfile.following') : t('userProfile.follow')}
                   </button>
-                  <button className="action-btn message-btn">{t('userProfile.message')}</button>
+                  <button
+                    className="action-btn message-btn"
+                    onClick={() => navigate(`/you?tab=messages&startWith=${profile.id}&startWithName=${encodeURIComponent(profile.name)}`)}
+                  >
+                    {t('userProfile.message')}
+                  </button>
                 </>
               ) : (
                 <button

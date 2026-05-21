@@ -254,7 +254,7 @@ const ReelsComponent: React.FC = () => {
       {activeMode === 'feed' && (
         <div className="reels-feed reels-feed-tiktok">
           <div className="tiktok-tag-bar">
-            {['AI', 'Tech', 'Future', 'Design', 'Music', 'Comedy', 'Trading', 'Tutorial'].map(tag => (
+            {['AI', 'Tech', 'Future', 'Design', 'Music', 'Comedy', 'Tutorial'].map(tag => (
               <button
                 key={tag}
                 className={`tiktok-tag-btn ${filterTag === tag ? 'active' : ''}`}

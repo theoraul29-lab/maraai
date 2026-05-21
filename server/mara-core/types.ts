@@ -342,7 +342,8 @@ export const DEFAULT_OBJECTIVE: ObjectiveFunction = {
     brandSafety: 0.15,
   },
   rationale:
-    'Obiectiv 1M EUR ARR: focus pe conversie utilizatori gratuiti → abonamente plătite, creator studio, și VIP. ' +
+    'Obiectiv 1M EUR ARR: focus pe misiuni și programe de creștere, creator studio, writers, și VIP. ' +
+    'Missions este motorul de engagement principal — gamification + journaling + XP. ' +
     'Retention și revenue ca metrici principale. Orizont 12 luni.',
   goals: [
     { id: 'mrr_10k', label: 'MRR 10.000 EUR', targetValue: 10000, unit: 'EUR/lună', deadline: '2026-09-01' },
@@ -366,8 +367,11 @@ export const DEFAULT_OBJECTIVE: ObjectiveFunction = {
     'Community building și engagement pentru creator platforms',
     'AI companion UX — personalizare și fidelizare utilizatori',
     'Growth hacking pentru startup-uri B2C în România și Europa',
+    'Gamification și habit-building — misiuni zilnice, XP, streak-uri pentru engagement',
+    'Mission-based learning platforms — best practices pentru programe de creștere personală',
+    'Journal și reflecție digitală — cum cresc platformele de wellbeing prin introspection loops',
   ],
-  focusModules: ['creator', 'writers', 'chat', 'vip', 'reels'],
+  focusModules: ['missions', 'creator', 'writers', 'chat', 'vip', 'reels'],
   kpis: {
     mrr: { target: 84000, unit: 'EUR/lună' },
     dau: { target: 1000, unit: 'utilizatori/zi' },

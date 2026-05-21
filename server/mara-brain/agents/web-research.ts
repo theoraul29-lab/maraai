@@ -34,7 +34,7 @@ export async function researchTopic(query: string, context?: string): Promise<We
 ${searchContext ? `REZULTATE WEB REALE:\n${searchContext}\n\n` : ''}${context ? `Context: ${context}\n\n` : ''}Cerințe:
 1. Prezintă informații **actuale și verificabile**${usedRealSearch ? ' din rezultatele web de mai sus' : ''}
 2. Include **date concrete** (numere, statistici) unde e posibil
-3. Evidențiază ce e **relevant pentru o platformă AI** cu: trading crypto, creator studio, writers hub, social reels
+3. Evidențiază ce e **relevant pentru o platformă AI** cu: missions & growth programs, creator studio, writers hub, social reels
 4. Semnalează orice **trend emergent** care ar trebui urmărit
 
 Format:
@@ -84,7 +84,7 @@ Răspunde în română.`;
  */
 export async function researchModuleTrends(module: string): Promise<WebResearchResult> {
   const moduleQueries: Record<string, string> = {
-    trading: 'latest crypto trading trends 2026, Bitcoin analysis, DeFi innovations, AI trading strategies',
+    missions: 'gamification platforms 2026, habit-building apps trends, mission-based learning engagement strategies',
     creator: 'content creation trends 2026, video content best practices, creator economy growth',
     writers: 'creative writing trends 2026, publishing industry changes, AI-assisted writing tools',
     reels: 'short-form video trends 2026, TikTok/Reels algorithm changes, engagement strategies',
@@ -101,7 +101,7 @@ export async function researchModuleTrends(module: string): Promise<WebResearchR
  */
 export async function researchCompetitors(): Promise<WebResearchResult> {
   return researchTopic(
-    'AI-powered social platforms 2026, platforms combining trading + content creation + AI chat, competitor analysis',
+    'AI-powered social platforms 2026, platforms combining missions + content creation + AI chat, competitor analysis',
     'We need to understand what similar platforms offer and identify gaps we can fill',
   );
 }
@@ -155,7 +155,7 @@ export async function generateResearchAgenda(): Promise<string[]> {
   const existingKnowledge = await storage.getAllKnowledge(50);
   const knownTopics = existingKnowledge.map((k) => k.topic).join(', ');
 
-  const prompt = `Ești ai-ul platformei MaraAI (trading crypto, creator studio, writers hub, social reels, VIP).
+  const prompt = `Ești ai-ul platformei MaraAI (missions & growth programs, creator studio, writers hub, social reels, VIP).
 
 Ce știi deja: ${knownTopics || 'nimic încă'}
 
@@ -172,7 +172,7 @@ Returnează doar un JSON array de strings: ["topic1", "topic2", ...]`;
     return jsonMatch ? JSON.parse(jsonMatch[0]) : [];
   } catch {
     return [
-      'Crypto market trends and trading AI 2026',
+      'Gamification and mission-based learning platforms 2026',
       'Content creator monetization strategies',
       'AI chatbot best practices for user retention',
       'Social platform growth hacking strategies',

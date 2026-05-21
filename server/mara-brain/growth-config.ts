@@ -41,9 +41,10 @@ export const POST_LAUNCH_OBJECTIVE = {
     revenueGrowthPct: 20,
     dayThirtyRetentionPct: 40,
   },
-  focusModules: ['you', 'trading', 'creators', 'writers', 'reels', 'membership'],
+  focusModules: ['you', 'missions', 'creators', 'writers', 'reels', 'membership'],
   researchTopics: [
     'user retention strategies',
+    'gamification and mission-based engagement',
     'creator economy monetization',
     'AI platform engagement loops',
     'subscription conversion optimization',
