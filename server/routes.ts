@@ -110,6 +110,10 @@ import {
 import { registerLaunchCountdown } from './modules/launch-countdown.js';
 import { registerMissionRoutes } from './missions/routes.js';
 import { registerShareRoutes } from './share/routes.js';
+import multer from 'multer';
+import { createRequire } from 'module';
+const _require = createRequire(import.meta.url);
+const pdfParse: (buf: Buffer) => Promise<{ text: string }> = _require('pdf-parse');
 import { startFacebook, facebookCallback } from './modules/oauth-facebook.js';
 
 export async function registerRoutes(
@@ -441,31 +445,61 @@ export async function registerRoutes(
     }
   });
 
-  app.post('/api/admin/mara/library/upload', requireAdmin, async (req: any, res: any) => {
-    try {
-      const { title, content, category } = req.body;
-      if (!title || !content) {
-        return res.status(400).json({ error: 'title and content are required' });
-      }
-      if (typeof title !== 'string' || typeof content !== 'string') {
-        return res.status(400).json({ error: 'title and content must be strings' });
-      }
-      if (content.length > 500000) {
-        return res.status(400).json({ error: 'Content too large (max 500KB)' });
-      }
-      const result = await addAndReadCustomBook(title, content, category || 'general');
-      res.json({
-        message: `Mara a citit "${title}" și a extras ${result.totalIdeas} idei`,
-        result: {
-          title: result.title,
-          chunks: result.processedChunks,
-          ideas: result.totalIdeas,
-        },
-      });
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to process uploaded book' });
-    }
+  const libraryUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB
+    fileFilter: (_req, file, cb) => {
+      const ok = /\.(pdf|txt|md)$/i.test(file.originalname);
+      cb(ok ? null : new Error('Doar fișiere .pdf, .txt, .md sunt acceptate.') as any, ok);
+    },
   });
+
+  app.post(
+    '/api/admin/mara/library/upload',
+    requireAdmin,
+    libraryUpload.single('file'),
+    async (req: any, res: any) => {
+      try {
+        const title = (req.body?.title || '').trim();
+        if (!title) return res.status(400).json({ error: 'Titlul este obligatoriu.' });
+
+        let content = '';
+        if (req.file) {
+          const ext = req.file.originalname.split('.').pop()?.toLowerCase();
+          if (ext === 'pdf') {
+            const data = await pdfParse(req.file.buffer);
+            content = data.text;
+          } else {
+            content = req.file.buffer.toString('utf-8');
+          }
+        } else if (typeof req.body?.content === 'string') {
+          // Fallback: plain JSON body (text only, no PDF)
+          content = req.body.content;
+        }
+
+        if (!content.trim()) {
+          return res.status(400).json({ error: 'Fișierul este gol sau nu a putut fi citit.' });
+        }
+        if (content.length > 1_000_000) {
+          content = content.slice(0, 1_000_000); // Truncate at 1M chars; brain will chunk it
+        }
+
+        const category = (req.body?.category || 'general') as any;
+        const result = await addAndReadCustomBook(title, content, category);
+        res.json({
+          message: `Mara a citit "${title}" și a extras ${result.totalIdeas} idei`,
+          result: {
+            title: result.title,
+            chunks: result.processedChunks,
+            ideas: result.totalIdeas,
+          },
+        });
+      } catch (error: any) {
+        console.error('[library/upload]', error);
+        res.status(500).json({ error: error?.message || 'Eroare la procesarea fișierului.' });
+      }
+    },
+  );
 
   // Trigger immediate read of the next unread library book.
   // Used by admin to fast-track ingestion of new high-priority books (e.g.

@@ -819,27 +819,29 @@ function LibraryTab() {
       return;
     }
     setUploading(true);
-    setUploadMsg('');
+    setUploadMsg('Se procesează fișierul...');
     try {
-      const content = await bookFile.text();
+      const fd = new FormData();
+      fd.append('title', bookTitle.trim());
+      fd.append('category', 'general');
+      fd.append('file', bookFile);
       const r = await fetch('/api/admin/mara/library/upload', {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: bookTitle.trim(), content, category: 'general' }),
+        body: fd,
       });
       const d = await r.json();
       if (r.ok) {
-        setUploadMsg('Carte încărcată cu succes!');
+        setUploadMsg(`✓ ${d.message ?? 'Carte încărcată cu succes!'}`);
         setBookTitle('');
         setBookFile(null);
         if (fileRef.current) fileRef.current.value = '';
         loadBooks();
       } else {
-        setUploadMsg(d.message ?? 'Eroare la upload.');
+        setUploadMsg(`Eroare: ${d.error ?? d.message ?? 'Upload eșuat.'}`);
       }
     } catch {
-      setUploadMsg('Eroare la upload.');
+      setUploadMsg('Eroare la upload. Verifică conexiunea.');
     } finally {
       setUploading(false);
     }
