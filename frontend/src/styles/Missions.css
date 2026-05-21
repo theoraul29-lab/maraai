@@ -620,3 +620,676 @@
   outline: none;
   border-color: rgba(168,85,247,.4);
 }
+
+/* ============================================================
+   Mara Missions V4 — Tabs, Programs, Journal, Book, Community
+   ============================================================ */
+
+/* ---- Tab navigation ---- */
+.missions-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 12px 16px 0;
+  border-bottom: 1px solid rgba(148,163,184,.1);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.missions-tabs::-webkit-scrollbar { display: none; }
+
+.missions-tab-btn {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .2s;
+  white-space: nowrap;
+  margin-bottom: -1px;
+}
+.missions-tab-btn:hover { color: #94a3b8; }
+.missions-tab-btn.active {
+  color: #a855f7;
+  border-bottom-color: #a855f7;
+}
+
+/* ---- Programs root ---- */
+.programs-root {
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.programs-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  padding: 0 4px;
+}
+
+.programs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+/* ---- Program card ---- */
+.program-card {
+  background: rgba(15,15,30,.8);
+  border: 1px solid rgba(148,163,184,.12);
+  border-radius: 14px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color .2s, transform .2s;
+}
+.program-card:hover {
+  border-color: rgba(168,85,247,.35);
+  transform: translateY(-2px);
+}
+.program-card--featured {
+  border-color: rgba(168,85,247,.35);
+  background: linear-gradient(135deg, rgba(124,58,237,.07), rgba(15,15,30,.9));
+}
+.program-card--completed {
+  opacity: .6;
+  border-color: rgba(74,222,128,.2);
+}
+
+.program-featured-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: #f59e0b;
+  background: rgba(245,158,11,.1);
+  border: 1px solid rgba(245,158,11,.2);
+  border-radius: 20px;
+  padding: 2px 10px;
+  align-self: flex-start;
+}
+
+.program-card-header { display: flex; flex-direction: column; gap: 4px; }
+.program-card-header h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin: 0;
+}
+
+.program-tagline {
+  font-size: 13px;
+  color: #a855f7;
+  font-style: italic;
+}
+
+.program-description {
+  font-size: 13px;
+  color: #94a3b8;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.program-meta {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.program-enroll-btn {
+  margin-top: auto;
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+  text-align: center;
+}
+.program-enroll-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(168,85,247,.35);
+}
+
+/* ---- Active enrollment ---- */
+.enrollment-active {
+  background: rgba(15,15,30,.9);
+  border: 1px solid rgba(168,85,247,.25);
+  border-radius: 14px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.enrollment-header { display: flex; flex-direction: column; gap: 8px; }
+
+.enrollment-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.enrollment-title-row h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin: 0;
+}
+
+.enrollment-streak {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f59e0b;
+  background: rgba(245,158,11,.1);
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.enrollment-progress-wrap { display: flex; flex-direction: column; gap: 4px; }
+
+.enrollment-bar {
+  height: 6px;
+  background: rgba(168,85,247,.12);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.enrollment-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #7c3aed, #a855f7);
+  border-radius: 3px;
+  transition: width .4s ease;
+}
+
+.enrollment-pct { font-size: 11px; color: #64748b; }
+
+.enrollment-streak-msg {
+  font-size: 13px;
+  color: #4ade80;
+  font-style: italic;
+}
+
+/* ---- Day mission card ---- */
+.day-mission-card {
+  background: rgba(168,85,247,.06);
+  border: 1px solid rgba(168,85,247,.18);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.day-mission-header {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.day-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: #a855f7;
+  background: rgba(168,85,247,.12);
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.ai-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: #ec4899;
+  background: rgba(236,72,153,.1);
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.day-mission-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin: 0;
+}
+
+.day-mission-desc {
+  font-size: 14px;
+  color: #94a3b8;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.day-mission-steps {
+  margin: 0;
+  padding-left: 18px;
+  color: #cbd5e1;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.day-mission-proof-hint,
+.day-mission-intent {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: 13px;
+  color: #94a3b8;
+  background: rgba(255,255,255,.03);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+.day-mission-proof-hint span:first-child,
+.day-mission-intent span:first-child { flex-shrink: 0; }
+
+.day-mission-reflection {
+  font-size: 13px;
+  color: #a78bfa;
+  font-style: italic;
+  margin: 0;
+}
+
+/* ---- Program result (after completing day) ---- */
+.program-result {
+  background: rgba(74,222,128,.06);
+  border: 1px solid rgba(74,222,128,.18);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.program-result-page {
+  font-size: 14px;
+  color: #cbd5e1;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.program-result-xp {
+  font-size: 13px;
+  font-weight: 700;
+  color: #4ade80;
+}
+
+.program-completed {
+  font-size: 15px;
+  font-weight: 700;
+  color: #a855f7;
+  text-align: center;
+  padding: 8px 0;
+}
+
+.day-completed {
+  background: rgba(34,197,94,.07);
+  border: 1px solid rgba(34,197,94,.2);
+  border-radius: 10px;
+  padding: 14px 16px;
+  font-size: 14px;
+  color: #4ade80;
+  text-align: center;
+}
+
+/* ---- Enroll modal ---- */
+.enroll-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 20px;
+}
+
+.enroll-modal {
+  background: #12121f;
+  border: 1px solid rgba(168,85,247,.25);
+  border-radius: 16px;
+  padding: 24px;
+  width: 100%;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.enroll-modal h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin: 0;
+}
+.enroll-modal p {
+  font-size: 14px;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.enroll-modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ---- Journal ---- */
+.journal-root {
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.journal-header { text-align: center; padding: 4px 0 8px; }
+.journal-header h2 { font-size: 20px; font-weight: 700; color: #e2e8f0; margin: 0 0 4px; }
+.journal-header p { font-size: 13px; color: #64748b; margin: 0; }
+
+.journal-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.journal-entry {
+  background: rgba(15,15,30,.8);
+  border: 1px solid rgba(148,163,184,.1);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.journal-entry--milestone {
+  border-color: rgba(245,158,11,.3);
+  background: linear-gradient(135deg, rgba(245,158,11,.05), rgba(15,15,30,.85));
+}
+
+.journal-milestone-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: #f59e0b;
+  background: rgba(245,158,11,.1);
+  border-radius: 20px;
+  padding: 2px 10px;
+  align-self: flex-start;
+}
+
+.journal-entry-header {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.journal-day {
+  font-size: 12px;
+  font-weight: 700;
+  color: #a855f7;
+  background: rgba(168,85,247,.1);
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.journal-program {
+  font-size: 11px;
+  color: #64748b;
+  background: rgba(255,255,255,.04);
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.journal-mood { font-size: 16px; }
+
+.journal-date {
+  font-size: 11px;
+  color: #475569;
+  margin-left: auto;
+}
+
+.journal-page {
+  font-size: 14px;
+  color: #cbd5e1;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.journal-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.journal-tag {
+  font-size: 11px;
+  color: #7c3aed;
+  background: rgba(124,58,237,.12);
+  border-radius: 20px;
+  padding: 2px 8px;
+}
+
+.journal-visibility-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.journal-visibility-row select {
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(148,163,184,.15);
+  border-radius: 8px;
+  color: #94a3b8;
+  font-size: 12px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+.journal-visibility-row select:focus { outline: none; border-color: rgba(168,85,247,.4); }
+
+.journal-visibility-hint {
+  font-size: 11px;
+  color: #475569;
+  font-style: italic;
+}
+
+/* ---- Book ---- */
+.book-root {
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.book-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,.4);
+}
+
+.book-cover {
+  background: linear-gradient(135deg, #1e1040 0%, #2d1b69 50%, #1e1040 100%);
+  border: 1px solid rgba(168,85,247,.3);
+  border-radius: 14px 14px 0 0;
+  padding: 32px 24px;
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  transition: background .2s;
+}
+.book-cover:hover { background: linear-gradient(135deg, #251350 0%, #361f80 50%, #251350 100%); }
+
+.book-cover-spine {
+  width: 6px;
+  align-self: stretch;
+  background: linear-gradient(180deg, #a855f7, #7c3aed);
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.book-cover-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.book-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #f1e8ff;
+  margin: 0;
+  line-height: 1.25;
+  letter-spacing: -.3px;
+}
+
+.book-subtitle {
+  font-size: 14px;
+  font-weight: 400;
+  color: #c4b5fd;
+  margin: 0;
+  font-style: italic;
+}
+
+.book-meta {
+  font-size: 12px;
+  color: #7c6fad;
+  margin: 0;
+}
+
+.book-read-btn {
+  margin-top: 10px;
+  align-self: flex-start;
+  background: rgba(168,85,247,.2);
+  color: #c4b5fd;
+  border: 1px solid rgba(168,85,247,.3);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all .2s;
+}
+.book-read-btn:hover { background: rgba(168,85,247,.35); }
+
+.book-content {
+  background: #0f0f1a;
+  border: 1px solid rgba(168,85,247,.15);
+  border-top: none;
+  border-radius: 0 0 14px 14px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.book-chapter {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.book-chapter-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #a855f7;
+  margin: 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(168,85,247,.15);
+}
+
+.book-chapter-range {
+  font-size: 11px;
+  color: #475569;
+  margin: 0;
+  margin-top: -8px;
+}
+
+.book-page {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+}
+.book-page:last-child { border-bottom: none; }
+
+.book-page-number {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+
+.book-page-content {
+  font-size: 14px;
+  color: #cbd5e1;
+  line-height: 1.75;
+  white-space: pre-wrap;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+/* ---- Community ---- */
+.community-root {
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ============================================================
+   V4 Responsive — Mobile
+   ============================================================ */
+@media (max-width: 640px) {
+  .missions-tab-btn { padding: 7px 12px; font-size: 12px; }
+
+  .programs-root { padding: 14px 12px; gap: 16px; }
+  .programs-grid { grid-template-columns: 1fr; gap: 10px; }
+  .program-card { padding: 14px; }
+  .program-card-header h2 { font-size: 16px; }
+
+  .enrollment-active { padding: 14px; gap: 10px; }
+  .enrollment-title-row h2 { font-size: 16px; }
+  .day-mission-card { padding: 12px; gap: 8px; }
+  .day-mission-title { font-size: 15px; }
+  .day-mission-desc { font-size: 13px; }
+
+  .enroll-modal { padding: 18px; gap: 12px; }
+  .enroll-modal h3 { font-size: 16px; }
+
+  .journal-root { padding: 14px 12px; gap: 12px; }
+  .journal-entry { padding: 12px; gap: 8px; }
+  .journal-page { font-size: 13px; }
+  .journal-visibility-row { flex-direction: column; align-items: flex-start; gap: 6px; }
+
+  .book-root { padding: 14px 12px; gap: 16px; }
+  .book-cover { padding: 20px 16px; }
+  .book-title { font-size: 18px; }
+  .book-content { padding: 16px; gap: 20px; }
+  .book-page-content { font-size: 13px; }
+
+  .community-root { padding: 14px 12px; }
+}
+
+@media (max-width: 380px) {
+  .missions-tab-btn { padding: 6px 10px; font-size: 11px; }
+  .program-enroll-btn { font-size: 13px; padding: 9px 14px; }
+  .book-title { font-size: 16px; }
+}

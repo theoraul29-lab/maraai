@@ -414,6 +414,167 @@ sqlite.exec(`
 }
 
 
+// ─── Missions V4 tables ──────────────────────────────────────────────────────
+
+sqlite.exec(`
+  CREATE TABLE IF NOT EXISTS mission_programs (
+    id TEXT PRIMARY KEY,
+    slug TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    description TEXT NOT NULL,
+    tagline TEXT NOT NULL,
+    duration_days INTEGER NOT NULL,
+    price_cents INTEGER NOT NULL DEFAULT 0,
+    currency TEXT NOT NULL DEFAULT 'EUR',
+    pillar_focus TEXT NOT NULL DEFAULT '[]',
+    difficulty TEXT NOT NULL DEFAULT 'gentle',
+    proof_types TEXT NOT NULL DEFAULT '["text","photo"]',
+    is_active INTEGER NOT NULL DEFAULT 1,
+    is_featured INTEGER NOT NULL DEFAULT 0,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER DEFAULT (unixepoch())
+  );
+
+  CREATE TABLE IF NOT EXISTS user_program_enrollments (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    program_id TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'active',
+    current_day INTEGER NOT NULL DEFAULT 1,
+    streak INTEGER NOT NULL DEFAULT 0,
+    longest_streak INTEGER NOT NULL DEFAULT 0,
+    last_activity_at INTEGER,
+    started_at INTEGER DEFAULT (unixepoch()),
+    completed_at INTEGER,
+    paused_at INTEGER,
+    settings TEXT NOT NULL DEFAULT '{}',
+    UNIQUE(user_id, program_id)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_enrollments_user
+    ON user_program_enrollments(user_id);
+  CREATE INDEX IF NOT EXISTS idx_enrollments_status
+    ON user_program_enrollments(user_id, status);
+
+  CREATE TABLE IF NOT EXISTS program_day_missions (
+    id TEXT PRIMARY KEY,
+    program_id TEXT NOT NULL,
+    day_number INTEGER NOT NULL,
+    mission_id TEXT,
+    custom_title TEXT,
+    custom_description TEXT,
+    custom_proof_prompt TEXT,
+    intent TEXT,
+    is_ai_generated INTEGER DEFAULT 0,
+    UNIQUE(program_id, day_number)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_day_missions_program
+    ON program_day_missions(program_id, day_number);
+
+  CREATE TABLE IF NOT EXISTS journal_entries (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    user_mission_id TEXT,
+    program_enrollment_id TEXT,
+    day_number INTEGER,
+    raw_content TEXT NOT NULL,
+    mara_reflection TEXT,
+    mara_page TEXT,
+    mood TEXT,
+    energy_level INTEGER CHECK(energy_level BETWEEN 1 AND 10),
+    tags TEXT NOT NULL DEFAULT '[]',
+    media_urls TEXT NOT NULL DEFAULT '[]',
+    visibility TEXT NOT NULL DEFAULT 'private'
+      CHECK(visibility IN ('private','community','public')),
+    chapter_number INTEGER,
+    is_milestone INTEGER DEFAULT 0,
+    created_at INTEGER DEFAULT (unixepoch()),
+    updated_at INTEGER DEFAULT (unixepoch())
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_journal_user
+    ON journal_entries(user_id, created_at DESC);
+  CREATE INDEX IF NOT EXISTS idx_journal_enrollment
+    ON journal_entries(program_enrollment_id);
+  CREATE INDEX IF NOT EXISTS idx_journal_visibility
+    ON journal_entries(visibility, created_at DESC);
+
+  CREATE TABLE IF NOT EXISTS user_books (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    program_enrollment_id TEXT,
+    title TEXT NOT NULL,
+    subtitle TEXT,
+    cover_theme TEXT NOT NULL DEFAULT 'violet',
+    chapters TEXT NOT NULL DEFAULT '[]',
+    total_pages INTEGER DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'writing'
+      CHECK(status IN ('writing','completed','published')),
+    pdf_url TEXT,
+    created_at INTEGER DEFAULT (unixepoch()),
+    updated_at INTEGER DEFAULT (unixepoch())
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_books_user
+    ON user_books(user_id);
+
+  CREATE TABLE IF NOT EXISTS mission_proofs (
+    id TEXT PRIMARY KEY,
+    user_mission_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    proof_type TEXT NOT NULL
+      CHECK(proof_type IN ('text','photo','drawing','audio','video','link')),
+    content TEXT,
+    media_url TEXT,
+    media_thumbnail_url TEXT,
+    mara_feedback TEXT,
+    mara_page TEXT,
+    rating INTEGER CHECK(rating BETWEEN 1 AND 5),
+    word_count INTEGER DEFAULT 0,
+    processing_status TEXT DEFAULT 'pending'
+      CHECK(processing_status IN ('pending','processing','done','failed')),
+    created_at INTEGER DEFAULT (unixepoch())
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_proofs_user_mission
+    ON mission_proofs(user_mission_id);
+  CREATE INDEX IF NOT EXISTS idx_proofs_user
+    ON mission_proofs(user_id, created_at DESC);
+
+  CREATE TABLE IF NOT EXISTS mission_generation_queue (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    program_enrollment_id TEXT NOT NULL,
+    day_number INTEGER NOT NULL,
+    context TEXT NOT NULL DEFAULT '{}',
+    status TEXT NOT NULL DEFAULT 'pending'
+      CHECK(status IN ('pending','processing','done','failed')),
+    generated_mission_id TEXT,
+    attempts INTEGER DEFAULT 0,
+    error TEXT,
+    created_at INTEGER DEFAULT (unixepoch()),
+    processed_at INTEGER
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_gen_queue_status
+    ON mission_generation_queue(status, created_at);
+
+  CREATE TABLE IF NOT EXISTS mission_feedback (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    mission_id TEXT NOT NULL,
+    rating INTEGER NOT NULL CHECK(rating IN (-1, 1)),
+    note TEXT,
+    context TEXT DEFAULT '{}',
+    created_at INTEGER DEFAULT (unixepoch()),
+    UNIQUE(user_id, mission_id)
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_mission_feedback_mission
+    ON mission_feedback(mission_id);
+`);
+
 export const db = drizzle(sqlite, { schema });
 
 // Expose the raw better-sqlite3 handle so startup code (e.g. the

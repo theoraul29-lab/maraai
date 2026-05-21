@@ -1,6 +1,8 @@
 import { rawSqlite } from '../db.js';
 
-const MISSIONS = [
+// ─── Misiunile originale (18) ─────────────────────────────────────────────────
+
+const MISSIONS_ORIGINAL = [
   {
     id: 'disc-001', title: 'Trezește-te cu 1 oră mai devreme',
     description: 'Dimineața îți aparține înainte să aparțină lumii. Trezește-te cu o oră mai devreme și folosește acel timp doar pentru tine.',
@@ -155,6 +157,490 @@ const MISSIONS = [
   },
 ];
 
+// ─── Misiunile V4 (32) ────────────────────────────────────────────────────────
+
+const MISSIONS_V4 = [
+  // Morning Ritual (MR-001 → MR-010)
+  {
+    id: 'mr-001', title: 'Prima oră e a ta',
+    description: 'Trezește-te cu 1 oră mai devreme. Fără telefon. Fără știri. Fără social media. Această oră îți aparține înainte să aparțină lumii.',
+    pillar: 'discipline', difficulty: 'medium', xp_reward: 150,
+    proof_type: 'text', proof_prompt: 'Scrie 3 cuvinte despre cum te simți în această oră a ta. Nimic mai mult.',
+    steps: JSON.stringify(['Setează alarma cu 1 oră mai devreme', 'Lasă telefonul pe modul avion până la 9:00', 'Fii prezent în liniștea dimineții', 'Scrie cele 3 cuvinte la finalul orei']),
+    reflection: 'Ce ai descoperit despre tine în liniștea dimineții?', is_daily: 0,
+  },
+  {
+    id: 'mr-002', title: 'Corpul tău vorbește',
+    description: '5 minute de mișcare la trezire. Nu trebuie să fie intensă. Stretching, dans, mers prin casă. Corpul tău știe ce are nevoie.',
+    pillar: 'life', difficulty: 'gentle', xp_reward: 100,
+    proof_type: 'photo', proof_prompt: 'Fotografiază locul unde ai făcut mișcarea. Nu tu — locul. Lumina dimineții.',
+    steps: JSON.stringify(['Imediat după trezire, înainte de orice altceva', 'Pornește o melodie care te face să te miști', '5 minute de mișcare conștientă', 'Fotografiază locul la final']),
+    reflection: 'Ce ți-a spus corpul în aceste 5 minute?', is_daily: 1,
+  },
+  {
+    id: 'mr-003', title: 'Intenția zilei',
+    description: 'Scrie UN singur lucru pe care vrei să-l SIMȚI azi. Nu să faci. Nu să realizezi. Să SIMȚI.',
+    pillar: 'self', difficulty: 'gentle', xp_reward: 80,
+    proof_type: 'text', proof_prompt: 'Scrie UN singur cuvânt sau o propoziție scurtă — intenția ta de azi.',
+    steps: JSON.stringify(['Stai 2 minute în liniște', 'Întreabă-te: ce vreau să SIMT azi?', 'Scrie primul răspuns care vine — nu analiza', 'Citește-l cu voce tare']),
+    reflection: 'Seara — ai simțit asta? De ce da sau de ce nu?', is_daily: 1,
+  },
+  {
+    id: 'mr-004', title: 'Cafeaua în liniște',
+    description: 'Bea prima cafea sau ceai fără telefon, fără știri, fără muzică. 10 minute de prezență completă cu băutura ta.',
+    pillar: 'life', difficulty: 'gentle', xp_reward: 80,
+    proof_type: 'photo', proof_prompt: 'Fotografiază cana ta. Fără filtre. Lumina naturală.',
+    steps: JSON.stringify(['Pregătește băutura preferată', 'Lasă telefonul în altă cameră', 'Stai 10 minute doar cu gândurile tale', 'Fotografiază cana la final']),
+    reflection: 'Ce gânduri au apărut în liniște?', is_daily: 1,
+  },
+  {
+    id: 'mr-005', title: 'Scrisoarea de azi',
+    description: 'Scrie 5 propoziții despre cum vrei să fie ziua de azi — ca și cum deja s-a întâmplat perfect.',
+    pillar: 'self', difficulty: 'gentle', xp_reward: 100,
+    proof_type: 'text', proof_prompt: 'Cele 5 propoziții. La timpul trecut, ca și cum ziua a fost perfectă.',
+    steps: JSON.stringify(['Închide ochii 1 minut', 'Imaginează-ți cea mai bună versiune a zilei', 'Scrie 5 propoziții la trecut: "Azi am simțit..."', 'Citește-le cu voce tare înainte să ieși din casă']),
+    reflection: 'Seara: câte din cele 5 propoziții s-au adeverit?', is_daily: 1,
+  },
+  {
+    id: 'mr-006', title: 'Recunoștința concretă',
+    description: 'Nu "sunt recunoscător pentru familie". Alege UN moment specific de ieri. Un detaliu mic și concret.',
+    pillar: 'acceptance', difficulty: 'gentle', xp_reward: 80,
+    proof_type: 'text', proof_prompt: 'Descrie momentul specific. Unde erai? Ce s-a întâmplat? Cum te-ai simțit exact?',
+    steps: JSON.stringify(['Gândește-te la ziua de ieri', 'Identifică UN moment mic dar real', 'Descrie-l în detaliu — nu generic', 'Simte recunoștința față de acel moment']),
+    reflection: 'De ce ai ales exact acest moment?', is_daily: 1,
+  },
+  {
+    id: 'mr-007', title: 'Respirația',
+    description: 'Tehnica 4-7-8: inspiră 4 secunde, ține 7 secunde, expiră 8 secunde. Repetă de 4 ori.',
+    pillar: 'acceptance', difficulty: 'gentle', xp_reward: 60,
+    proof_type: 'text', proof_prompt: 'Descrie starea ta ÎNAINTE și starea ta DUPĂ.',
+    steps: JSON.stringify(['Stai comod cu spatele drept', 'Inspiră pe nas 4 secunde', 'Ține respirația 7 secunde', 'Expiră pe gură 8 secunde', 'Repetă de 4 ori']),
+    reflection: 'Ce s-a schimbat în corpul și mintea ta?', is_daily: 1,
+  },
+  {
+    id: 'mr-008', title: 'Viziunea de azi',
+    description: 'Închide ochii 2 minute. Imaginează-ți cea mai bună versiune a zilei de azi. Apoi desenează sau scrie ce ai văzut.',
+    pillar: 'creativity', difficulty: 'gentle', xp_reward: 120,
+    proof_type: 'any', proof_prompt: 'Desenează sau scrie viziunea ta. Orice formă. Orice culoare. Nu judeca.',
+    steps: JSON.stringify(['Stai confortabil și închide ochii', 'Lasă mintea să vizualizeze ziua perfectă', 'Observă detaliile — culori, sunete, emoții', 'Deschide ochii și transpune imediat pe hârtie sau text']),
+    reflection: 'Ce element din viziune te-a surprins?', is_daily: 1,
+  },
+  {
+    id: 'mr-009', title: 'Un lucru care m-ar face mândru',
+    description: 'Nu lista de taskuri. UN singur lucru. Dacă faci doar asta azi — ziua e un succes complet.',
+    pillar: 'discipline', difficulty: 'gentle', xp_reward: 100,
+    proof_type: 'text', proof_prompt: 'Dimineața: scrie acel un lucru. Seara: cum te-ai simțit după ce l-ai făcut?',
+    steps: JSON.stringify(['Dimineața: identifică UN singur lucru important', 'Scrie-l vizibil — pe o hârtie lângă tine', 'Fă acel lucru primul, înainte de orice altceva', 'Seara: raportează cum te-ai simțit']),
+    reflection: 'De ce acest lucru contează cu adevărat?', is_daily: 1,
+  },
+  {
+    id: 'mr-010', title: 'Mantra mea de azi',
+    description: 'O singură propoziție care să te ghideze azi. Nu citată. A ta. Din ce simți acum, în acest moment.',
+    pillar: 'self', difficulty: 'gentle', xp_reward: 80,
+    proof_type: 'text', proof_prompt: 'Mantra ta. O propoziție. A ta.',
+    steps: JSON.stringify(['Stai 1 minut cu tine', 'Ce ai nevoie să auzi azi?', 'Scrie propoziția — a ta, nu citată', 'Repetă-o de 3 ori cu voce tare']),
+    reflection: 'Te-a ajutat mantra asta azi?', is_daily: 1,
+  },
+
+  // Inner Work (IW-001 → IW-015)
+  {
+    id: 'iw-001', title: 'Scrisoarea de iertare față de tine',
+    description: 'Cel mai greu lucru pe care nu te-ai iertat. Scrie-ți o scrisoare ca și cum ai scrie unui prieten drag care a greșit.',
+    pillar: 'acceptance', difficulty: 'deep', xp_reward: 500,
+    proof_type: 'text', proof_prompt: 'Scrisoarea ta. Completă sau fragmentată. Mara nu judecă nimic.',
+    steps: JSON.stringify(['Găsește 30 minute de singurătate completă', 'Identifică acel lucru pe care nu te-ai iertat', 'Scrie ca și cum ai scrie unui prieten — cu blândețe', 'Citește-o cu voce tare, singur']),
+    reflection: 'Ce s-a schimbat după ce ai scris-o?', is_daily: 0,
+  },
+  {
+    id: 'iw-002', title: 'Frica ta cea mare',
+    description: 'Scrie sau desenează despre cea mai mare frică a ta. Nu o analiza. Nu o justifica. Doar descrie-o.',
+    pillar: 'acceptance', difficulty: 'deep', xp_reward: 400,
+    proof_type: 'any', proof_prompt: 'Text sau desen — oricare ți se pare mai ușor să exprimi ce simți.',
+    steps: JSON.stringify(['Stai cu frica ta 5 minute fără să fugi', 'Observă unde o simți în corp', 'Descrie-o sau deseneaz-o fără să judeci', 'Dă-i un nume']),
+    reflection: 'Ce s-a întâmplat când ai stat față în față cu ea?', is_daily: 0,
+  },
+  {
+    id: 'iw-003', title: 'Cine te-a rănit cel mai tare?',
+    description: 'Nu pentru a judeca sau răzbuna. Pentru a înțelege și a te elibera. Scrie fără să editezi.',
+    pillar: 'acceptance', difficulty: 'deep', xp_reward: 500,
+    proof_type: 'text', proof_prompt: 'Scrie liber. Nu edita. Nu cenzura. Mara citește cu empatie completă.',
+    steps: JSON.stringify(['Asigură-te că ești singur și în siguranță', 'Scrie fără să ridici stiloul/tastatura', 'Nu edita, nu cenzura, nu judeca', 'La final, respiră adânc de 3 ori']),
+    reflection: 'Ce ai simțit după ce ai scris?', is_daily: 0,
+  },
+  {
+    id: 'iw-004', title: 'Copilul din tine',
+    description: 'Ce i-ai spune copilului de 7 ani care ești? Ce ar vrea el să știe? Ce l-ar face să se simtă în siguranță?',
+    pillar: 'acceptance', difficulty: 'deep', xp_reward: 450,
+    proof_type: 'any', proof_prompt: 'O scrisoare pentru tine cel mic. Sau un desen. Sau amândouă.',
+    steps: JSON.stringify(['Găsește o fotografie cu tine copil dacă ai una', 'Privește-o câteva minute', 'Scrie-i o scrisoare sau desenează pentru el/ea', 'Ce ai fi vrut să auzi atunci?']),
+    reflection: 'Ce a simțit acel copil când a citit scrisoarea ta?', is_daily: 0,
+  },
+  {
+    id: 'iw-005', title: 'Masca ta',
+    description: 'Ce față arăți lumii vs cine ești cu adevărat când nimeni nu te vede? Descrie diferența sincer.',
+    pillar: 'self', difficulty: 'deep', xp_reward: 400,
+    proof_type: 'any', proof_prompt: 'Text sau două desene: masca și fața reală.',
+    steps: JSON.stringify(['Gândește-te la ultima săptămână', 'Cum te-ai prezentat altora?', 'Cine ai fost când erai singur?', 'Descrie sau desenează ambele versiuni']),
+    reflection: 'Cât de mare e diferența? De ce?', is_daily: 0,
+  },
+  {
+    id: 'iw-006', title: 'Vocea din capul tău',
+    description: 'Cum îți vorbești când nimeni nu aude? Cu blândețe sau cu cruzime? Scrie 10 lucruri pe care ți le spui regulat.',
+    pillar: 'self', difficulty: 'medium', xp_reward: 300,
+    proof_type: 'text', proof_prompt: '10 lucruri pe care ți le spui. Sincer. Exact cum sunt.',
+    steps: JSON.stringify(['Fii complet sincer — nimeni altcineva nu citește', 'Scrie primele 10 gânduri recurente despre tine', 'Marchează: blând sau dur?', 'Alege UN gând dur și rescrie-l cu blândețe']),
+    reflection: 'Dacă unui prieten i-ar vorbi cineva așa cum îți vorbești tu ție — cum te-ai simți?', is_daily: 0,
+  },
+  {
+    id: 'iw-007', title: 'Granițele tale',
+    description: 'Unde spui DA când vrei să spui NU? Cu cine? Când? De ce continui să cedezi?',
+    pillar: 'self', difficulty: 'medium', xp_reward: 350,
+    proof_type: 'text', proof_prompt: '3 situații concrete unde ai zis DA când voiai să zici NU.',
+    steps: JSON.stringify(['Gândește-te la ultima lună', 'Identifică 3 situații reale, concrete', 'Pentru fiecare: ce ai spus vs ce voiai să spui', 'Alege una și scrie cum ar fi arătat dacă ziceai NU']),
+    reflection: 'De ce îți este greu să spui NU în acele situații?', is_daily: 0,
+  },
+  {
+    id: 'iw-008', title: 'Relația cu banii',
+    description: 'Nu despre cât ai sau nu ai. Despre CE SIMȚI față de bani. Frică? Rușine? Putere? Indiferență?',
+    pillar: 'self', difficulty: 'medium', xp_reward: 300,
+    proof_type: 'text', proof_prompt: 'Scrie sincer despre relația ta cu banii. Copilărie, familie, credințe.',
+    steps: JSON.stringify(['Gândește-te la prima amintire legată de bani', 'Ce spuneau părinții tăi despre bani?', 'Ce simți acum când te gândești la bani?', 'De unde crezi că vine această emoție?']),
+    reflection: 'Ce credință despre bani vrei să schimbi?', is_daily: 0,
+  },
+  {
+    id: 'iw-009', title: 'Corpul tău — o scrisoare',
+    description: 'Scrie o scrisoare corpului tău. Ce i-ai spune? Ce îți spune el ție? Ce i-ai mulțumi? Ce îi ceri iertare?',
+    pillar: 'acceptance', difficulty: 'deep', xp_reward: 450,
+    proof_type: 'text', proof_prompt: 'Scrisoarea ta pentru corpul tău. Completă, sinceră, din inimă.',
+    steps: JSON.stringify(['Stai câteva minute în liniște', 'Fă un scan mental de la cap la picioare', 'Ce simți în fiecare parte a corpului?', 'Scrie scrisoarea — cu recunoștință și iertare']),
+    reflection: 'Ce ți-a spus corpul tău în această scrisoare?', is_daily: 0,
+  },
+  {
+    id: 'iw-010', title: 'Momentul care te-a schimbat',
+    description: 'Un eveniment care a schimbat tot. Există un înainte și un după. Descrie ambele.',
+    pillar: 'self', difficulty: 'deep', xp_reward: 500,
+    proof_type: 'text', proof_prompt: 'Povestea momentului. Înainte. Evenimentul. După. Cine ești acum din cauza lui.',
+    steps: JSON.stringify(['Identifică acel moment — știi care e', 'Descrie cine erai înainte', 'Descrie ce s-a întâmplat', 'Descrie cine ești acum din cauza lui']),
+    reflection: 'Dacă acel moment nu s-ar fi întâmplat — cine ai fi azi?', is_daily: 0,
+  },
+  {
+    id: 'iw-011', title: 'Ce înseamnă succes pentru TINE?',
+    description: 'Nu pentru părinți. Nu pentru societate. Nu pentru prieteni. Pentru tine. Acum. Real.',
+    pillar: 'self', difficulty: 'medium', xp_reward: 300,
+    proof_type: 'text', proof_prompt: 'Definește succesul tău. Fără filtru social.',
+    steps: JSON.stringify(['Ignoră complet ce cred alții', 'Scrie definiția ta de succes', 'E despre bani? Timp? Relații? Libertate? Creativitate?', 'Trăiești conform acestei definiții acum?']),
+    reflection: 'Cât de departe ești de succesul tău real?', is_daily: 0,
+  },
+  {
+    id: 'iw-012', title: 'Dorul tău cel mare',
+    description: 'Ce îți dore cel mai mult? Nu neapărat un lucru material. Poate fi o stare, o conexiune, o versiune a ta.',
+    pillar: 'self', difficulty: 'deep', xp_reward: 400,
+    proof_type: 'any', proof_prompt: 'Text sau desen — oricare exprimă mai bine acel dor.',
+    steps: JSON.stringify(['Stai 5 minute în liniște completă', 'Ce simți că lipsește cu adevărat?', 'Nu analiza — simte', 'Exprimă acel dor fără cenzură']),
+    reflection: 'De când există acest dor? Ce îl creează?', is_daily: 0,
+  },
+  {
+    id: 'iw-013', title: 'Scrisoarea pentru viitorul tău eu',
+    description: 'Scrie o scrisoare pentru tine cel de peste 5 ani. Ce vrei să știe? Ce speri? Ce îi lași moștenire?',
+    pillar: 'self', difficulty: 'medium', xp_reward: 350,
+    proof_type: 'text', proof_prompt: 'Dragul meu eu de peste 5 ani...',
+    steps: JSON.stringify(['Imaginează-ți că ești tu în 5 ani', 'Scrie-i o scrisoare sinceră', 'Spune-i ce speri, ce te temi, ce vrei pentru el/ea', 'Sigilează-o în aplicație']),
+    reflection: 'Ce te-a surprins în ceea ce ai scris?', is_daily: 0,
+  },
+  {
+    id: 'iw-014', title: 'Recunoștința față de adversitate',
+    description: 'Cel mai greu moment din viața ta. Nu cel mai ușor — cel mai GREU. Ce te-a învățat?',
+    pillar: 'acceptance', difficulty: 'deep', xp_reward: 500,
+    proof_type: 'text', proof_prompt: 'Momentul. Ce te-a învățat. Cine ești datorită lui.',
+    steps: JSON.stringify(['Identifică cel mai greu moment — știi care e', 'Scrie ce s-a întâmplat fără să dramatizezi', 'Identifică 3 lucruri pe care le-ai câștigat din acel moment', 'Mulțumește-i acelui moment']),
+    reflection: 'Dacă acel moment nu s-ar fi întâmplat — ce nu ai fi știut?', is_daily: 0,
+  },
+  {
+    id: 'iw-015', title: 'Cine ești cu adevărat?',
+    description: 'Nu ce faci. Nu ce ai. Nu ce rol joci. Cine ești? Această întrebare nu are un răspuns greșit.',
+    pillar: 'self', difficulty: 'deep', xp_reward: 600,
+    proof_type: 'any', proof_prompt: 'Text, desen, colaj foto — orice exprimă cine ești cu adevărat.',
+    steps: JSON.stringify(['Stai 10 minute în liniște completă', 'Pune-ți întrebarea: cine sunt?', 'Nu căuta răspunsul "corect" — nu există', 'Exprimă ce simți, nu ce gândești']),
+    reflection: 'Cum s-a schimbat răspunsul față de acum 1 an?', is_daily: 0,
+  },
+
+  // Creative Expression (CE-001 → CE-015)
+  {
+    id: 'ce-001', title: 'Fotografiază ziua ta',
+    description: 'O singură fotografie care să reprezinte cum te simți azi. Nu perfectă. Nu filtrată. Autentică.',
+    pillar: 'creativity', difficulty: 'gentle', xp_reward: 100,
+    proof_type: 'photo', proof_prompt: 'Fotografia ta de azi. Poate fi orice.',
+    steps: JSON.stringify(['Nu te grăbi — caută momentul potrivit', 'Fotografiază fără filtru și fără editare', 'Poate fi un obiect, un loc, o lumină, o umbră', 'Să reprezinte cum te simți — nu cum arăți']),
+    reflection: 'De ce această imagine reprezintă ziua ta?', is_daily: 1,
+  },
+  {
+    id: 'ce-002', title: 'Desenează frica ta',
+    description: 'Nu trebuie să fii artist. Orice formă, orice culoare. Dă-i fricii tale o formă vizuală.',
+    pillar: 'creativity', difficulty: 'medium', xp_reward: 250,
+    proof_type: 'photo', proof_prompt: 'Fotografia desenului tău. Oricât de "neprofesionist" ar fi.',
+    steps: JSON.stringify(['Ia o foaie albă și instrumente de desenat', 'Nu planifica — lasă mâna să meargă', 'Desenează cum arată frica ta', 'Dă-i un titlu']),
+    reflection: 'Cum arată frica ta? Ce te-a surprins?', is_daily: 0,
+  },
+  {
+    id: 'ce-003', title: 'Scrie o scrisoare unui străin',
+    description: 'Cineva pe care nu îl cunoști dar simți că are nevoie de aceste cuvinte. Poate că e cineva care trece prin ce ai trecut tu.',
+    pillar: 'helping', difficulty: 'medium', xp_reward: 300,
+    proof_type: 'text', proof_prompt: 'Scrisoarea completă. Poate fi publicată anonim în comunitate.',
+    steps: JSON.stringify(['Gândește-te la un moment greu din viața ta', 'Ce ai fi vrut să auzi atunci?', 'Scrie pentru acel om necunoscut', 'Poți alege dacă o publici anonim sau o păstrezi']),
+    reflection: 'Scriind pentru altcineva — ce ai descoperit despre tine?', is_daily: 0,
+  },
+  {
+    id: 'ce-004', title: 'Colajul visului tău',
+    description: 'Caută 5 imagini din jurul tău — nu din reviste — care reprezintă viața ta ideală. Fotografiază-le împreună.',
+    pillar: 'creativity', difficulty: 'gentle', xp_reward: 200,
+    proof_type: 'photo', proof_prompt: 'Fotografia colajului tău. Sau 5 fotografii separate.',
+    steps: JSON.stringify(['Caută în casa ta sau în jur', 'Găsește 5 obiecte sau imagini care reprezintă visul tău', 'Aranjează-le și fotografiază', 'Scrie 2 cuvinte pentru fiecare']),
+    reflection: 'Ce ai descoperit că contează cu adevărat?', is_daily: 0,
+  },
+  {
+    id: 'ce-005', title: 'Muzica momentului tău',
+    description: 'O melodie care reprezintă exact ce simți acum. Nu ce îți place — ce SIMȚI. De ce această melodie?',
+    pillar: 'creativity', difficulty: 'gentle', xp_reward: 150,
+    proof_type: 'text', proof_prompt: 'Titlul melodiei și de ce reprezintă exact ce simți acum.',
+    steps: JSON.stringify(['Stai 2 minute în liniște', 'Ce melodie vine în minte spontan?', 'Ascult-o o dată complet', 'Scrie de ce această melodie reprezintă azi']),
+    reflection: 'Ce spune alegerea ta muzicală despre starea ta?', is_daily: 0,
+  },
+  {
+    id: 'ce-006', title: 'Scrie un poem de 4 versuri',
+    description: 'Nu trebuie să rimeze. Nu trebuie să fie perfect. 4 versuri despre azi, despre tine, despre ce simți.',
+    pillar: 'creativity', difficulty: 'gentle', xp_reward: 200,
+    proof_type: 'text', proof_prompt: 'Poemul tău. 4 versuri. Al tău.',
+    steps: JSON.stringify(['Nu gândi — scrie primul lucru care vine', 'Nu edita după ce ai scris', 'Nu judeca dacă "e bun" sau nu', 'Citește-l cu voce tare']),
+    reflection: 'Ce te-a surprins în propriul poem?', is_daily: 0,
+  },
+  {
+    id: 'ce-007', title: 'Fotografiază frumusețea obișnuită',
+    description: 'Ieși 30 de minute fără destinație. Fotografiază 5 lucruri obișnuite care au ceva special.',
+    pillar: 'creativity', difficulty: 'gentle', xp_reward: 150,
+    proof_type: 'photo', proof_prompt: 'Cele mai bune 1-3 fotografii din plimbare.',
+    steps: JSON.stringify(['Ieși fără destinație și fără grabă', 'Privește ca și cum ai vedea totul prima dată', 'Fotografiază ce îți atrage atenția', 'Nu filtre, nu editare']),
+    reflection: 'Ce ai văzut azi ce de obicei trece nevăzut?', is_daily: 0,
+  },
+  {
+    id: 'ce-008', title: 'Scrie începutul cărții tale',
+    description: 'Prima pagină a cărții despre viața ta. Nu biografia — cartea. Primul paragraf. Oriunde vrei să înceapă.',
+    pillar: 'creativity', difficulty: 'medium', xp_reward: 350,
+    proof_type: 'text', proof_prompt: 'Primul paragraf. Poți scrie în orice persoană, din orice moment al vieții.',
+    steps: JSON.stringify(['Nu planifica — scrie primul lucru care vine', 'Poate începe de oriunde — copilărie, ieri, acum', 'Scrie fără să editezi prima dată', 'Citește-l și decide dacă vrei să păstrezi sau rescrii']),
+    reflection: 'De ce ai ales să înceapă de acolo?', is_daily: 0,
+  },
+  {
+    id: 'ce-009', title: 'Desenează unde vrei să fii',
+    description: 'Vizualizare prin artă. Locul, oamenii, cum arată viața ta ideală. Nu perfect — real.',
+    pillar: 'creativity', difficulty: 'gentle', xp_reward: 200,
+    proof_type: 'photo', proof_prompt: 'Fotografia desenului sau colajului tău.',
+    steps: JSON.stringify(['Ia o foaie mare dacă ai', 'Desenează sau lipește imagini', 'Include: locul, oamenii, activitățile, emoțiile', 'Nu judeca — exprimă']),
+    reflection: 'Ce element din desen e cel mai important?', is_daily: 0,
+  },
+  {
+    id: 'ce-010', title: 'Scrisoarea pe care nu ai trimis-o',
+    description: 'Cuiva din trecut sau prezent. Tot ce ai vrut să spui și nu ai spus. Acum poți.',
+    pillar: 'acceptance', difficulty: 'deep', xp_reward: 450,
+    proof_type: 'text', proof_prompt: 'Scrisoarea completă. User decide: trimite, păstrează sau șterge.',
+    steps: JSON.stringify(['Identifică persoana și ce ai vrut să spui', 'Scrie fără să te gândești dacă vei trimite', 'La final ai 3 opțiuni: trimite, păstrează privat, șterge', 'Oricare alegi — e decizia ta']),
+    reflection: 'Ce s-a schimbat după ce ai scris-o?', is_daily: 0,
+  },
+  {
+    id: 'ce-011', title: 'Fotografiază mâinile tale',
+    description: 'Ce povestesc mâinile tale? Ce au construit? Ce au distrus? Ce au vindecat? Ce au creat?',
+    pillar: 'creativity', difficulty: 'gentle', xp_reward: 150,
+    proof_type: 'photo', proof_prompt: 'Fotografia mâinilor tale + câteva cuvinte despre povestea lor.',
+    steps: JSON.stringify(['Privește-ți mâinile câteva minute', 'Gândește-te la tot ce au făcut', 'Fotografiază-le în lumina naturală', 'Scrie 3 propoziții despre povestea lor']),
+    reflection: 'Ce ai descoperit despre tine privind mâinile tale?', is_daily: 0,
+  },
+  {
+    id: 'ce-012', title: 'Redesenează-ți ziua proastă',
+    description: 'Ia cea mai proastă zi recentă. Desenează sau scrie cum ar fi arătat dacă ar fi mers bine.',
+    pillar: 'creativity', difficulty: 'medium', xp_reward: 250,
+    proof_type: 'any', proof_prompt: 'Ziua redesenată — text sau desen.',
+    steps: JSON.stringify(['Gândește-te la o zi proastă recentă', 'Descrie ce s-a întâmplat rău', 'Rescrie sau redesenează cum ar fi putut fi', 'Ce ar fi trebuit să fie diferit?']),
+    reflection: 'Ce poți controla de fapt dintr-o zi proastă?', is_daily: 0,
+  },
+  {
+    id: 'ce-013', title: 'Manifestul tău',
+    description: '5 lucruri în care crezi cu toată ființa. Principiile după care trăiești sau vrei să trăiești.',
+    pillar: 'self', difficulty: 'medium', xp_reward: 400,
+    proof_type: 'text', proof_prompt: 'Manifestul tău. 5 principii. Ale tale.',
+    steps: JSON.stringify(['Nu te gândi prea mult — scrie ce vine', 'Ce e non-negociabil pentru tine?', 'Cum vrei să trăiești?', 'Ce vrei să reprezinți?']),
+    reflection: 'Trăiești conform acestui manifest acum?', is_daily: 0,
+  },
+  {
+    id: 'ce-014', title: 'Spune-o cu voce tare',
+    description: 'Spune cu voce tare ceva ce nu ai mai spus niciodată. Nu trebuie să o înregistrezi — trebuie să o SPUI.',
+    pillar: 'self', difficulty: 'deep', xp_reward: 400,
+    proof_type: 'text', proof_prompt: 'Nu ce ai spus — ci cum te-ai simțit când ai spus-o. Și dacă lumea s-a schimbat.',
+    steps: JSON.stringify(['Identifică acel lucru nespus', 'Găsește un loc privat', 'Spune-o cu voce tare — de 3 ori', 'Stai câteva minute cu ce simți după']),
+    reflection: 'De ce nu ai spus-o până acum?', is_daily: 0,
+  },
+  {
+    id: 'ce-015', title: 'Creează ceva cu mâinile tale',
+    description: 'Orice — lut, hârtie, lemn, mâncare, țesătură. Ceva care nu exista înainte să îl faci tu.',
+    pillar: 'creativity', difficulty: 'gentle', xp_reward: 300,
+    proof_type: 'photo', proof_prompt: 'Fotografia creației tale. Povestea ei în 2 propoziții.',
+    steps: JSON.stringify(['Alege un material din casă', 'Nu planifica — lasă mâinile să meargă', 'Fă ceva — orice', 'Fotografiază înainte de a judeca rezultatul']),
+    reflection: 'Ce ai simțit în timp ce creai?', is_daily: 0,
+  },
+
+  // Life Change (LC-001 → LC-010)
+  {
+    id: 'lc-001', title: 'CV-ul vieții tale adevărate',
+    description: 'Nu joburile. Momentele care te-au definit. 5 experiențe care au contat cu adevărat în formarea ta.',
+    pillar: 'self', difficulty: 'medium', xp_reward: 350,
+    proof_type: 'text', proof_prompt: 'Cele 5 experiențe definitorii. Nu locuri de muncă — momente de viață.',
+    steps: JSON.stringify(['Gândește-te la experiențele care te-au schimbat', 'Alege 5 — nu neapărat pozitive', 'Descrie ce ai câștigat din fiecare', 'Aceasta e experiența ta reală']),
+    reflection: 'Ce pattern observi în aceste 5 experiențe?', is_daily: 0,
+  },
+  {
+    id: 'lc-002', title: 'Ce ar face versiunea curajoasă a ta?',
+    description: 'O decizie pe care o amâni. Ce ar face versiunea ta fără frică, fără scuze, fără "dar"?',
+    pillar: 'discipline', difficulty: 'medium', xp_reward: 300,
+    proof_type: 'text', proof_prompt: 'Decizia amânată. Ce ar face versiunea curajoasă. Primul pas mic pe care îl poți face mâine.',
+    steps: JSON.stringify(['Identifică decizia amânată — știi care e', 'Scrie: ce ar face versiunea ta fără frică?', 'Identifică cel mai mic pas posibil', 'Angajează-te față de Mara să îl faci mâine']),
+    reflection: 'Ce te ține cu adevărat pe loc?', is_daily: 0,
+  },
+  {
+    id: 'lc-003', title: 'O zi din viața ta ideală',
+    description: 'Descrie în detaliu o zi perfectă din viitorul tău. De la trezire până la culcare. Concret și specific.',
+    pillar: 'self', difficulty: 'medium', xp_reward: 300,
+    proof_type: 'text', proof_prompt: 'Ziua ta ideală. Oră cu oră. Concret.',
+    steps: JSON.stringify(['Scrie de la 06:00 la 23:00', 'Fii specific — nu "mă trezesc fericit"', 'Include: unde ești, cu cine, ce faci, cum te simți', 'Nu cenzura nimic din ce îți dorești']),
+    reflection: 'Ce element din această zi poți începe să construiești acum?', is_daily: 0,
+  },
+  {
+    id: 'lc-004', title: 'Skill-ul care te sperie',
+    description: 'Ce skill ai evitat să înveți? De ce te sperie? Poate fi orice — coding, pictură, dans, vorbitul în public.',
+    pillar: 'hobby', difficulty: 'medium', xp_reward: 300,
+    proof_type: 'text', proof_prompt: 'Skill-ul. De ce te sperie. Un prim pas mic pe care îl poți face azi.',
+    steps: JSON.stringify(['Identifică acel skill la care te gândești dar nu începi', 'Scrie de ce te sperie cu adevărat', 'Găsește cel mai mic pas posibil', 'Fă acel pas — chiar azi, chiar acum']),
+    reflection: 'Ce s-ar schimba în viața ta dacă ai stăpâni acel skill?', is_daily: 0,
+  },
+  {
+    id: 'lc-005', title: 'Conversația dificilă',
+    description: 'O conversație pe care o eviți de mult. Cu cine? Despre ce? Mara te pregătește pentru ea.',
+    pillar: 'helping', difficulty: 'deep', xp_reward: 450,
+    proof_type: 'text', proof_prompt: 'Cu cine. Despre ce. Ce vrei să spui exact. Ce te temi că se va întâmpla.',
+    steps: JSON.stringify(['Identifică conversația evitată', 'Scrie exact ce vrei să spui', 'Scrie ce te temi că va spune celălalt', 'Fă joc de rol cu Mara înainte']),
+    reflection: 'Ce s-ar schimba dacă ai purta această conversație?', is_daily: 0,
+  },
+  {
+    id: 'lc-006', title: 'Banii și visul tău',
+    description: 'Cât costă viața ta ideală? Calculează real. Lunar. Anual. Fără să te sperii.',
+    pillar: 'self', difficulty: 'medium', xp_reward: 350,
+    proof_type: 'text', proof_prompt: 'Calculul real. Viața ideală. Cât costă lunar și anual.',
+    steps: JSON.stringify(['Ia viața ideală pe care ai descris-o', 'Estimează costul lunar real', 'Calculează gap-ul față de venitul actual', 'Identifică 3 modalități de a reduce gap-ul']),
+    reflection: 'E mai mult sau mai puțin decât credeai?', is_daily: 0,
+  },
+  {
+    id: 'lc-007', title: 'Schimbarea de carieră',
+    description: 'Dacă mâine ai putea face altceva — ce ar fi? Mara te ajută să explorezi posibilitatea reală.',
+    pillar: 'self', difficulty: 'deep', xp_reward: 500,
+    proof_type: 'text', proof_prompt: 'Ce ai face. De ce nu o faci acum. Ce ar trebui să se schimbe.',
+    steps: JSON.stringify(['Scrie: dacă nu ar exista riscuri, ce ai face?', 'Cercetează real acea carieră — 30 minute', 'Scrie ce ai câștigat și ce ai pierde', 'Identifică UN pas mic spre ea']),
+    reflection: 'Ce te ține în locul actual mai mult — siguranța sau frica?', is_daily: 0,
+  },
+  {
+    id: 'lc-008', title: 'Relația ta cu timpul',
+    description: 'Trackează o zi întreagă — exact ce ai făcut oră cu oră. Sincer. Fără să înfrumusețezi.',
+    pillar: 'discipline', difficulty: 'medium', xp_reward: 300,
+    proof_type: 'text', proof_prompt: 'Jurnalul de timp al zilei. Oră cu oră. Sincer.',
+    steps: JSON.stringify(['De dimineață: setează un reminder la fiecare 2 ore', 'Notează exact ce ai făcut', 'La final: calculează % timp pe activități', 'Identifică cel mai mare "time killer"']),
+    reflection: 'Ce ți-a arătat această zi despre prioritățile tale reale?', is_daily: 0,
+  },
+  {
+    id: 'lc-009', title: 'Cere ajutor',
+    description: 'Sună sau scrie cuiva și cere ajutor cu ceva real. Nu metaforic. Ceva concret pe care nu poți să îl faci singur.',
+    pillar: 'helping', difficulty: 'medium', xp_reward: 400,
+    proof_type: 'text', proof_prompt: 'Cu cine ai vorbit. Ce ai cerut. Cum te-ai simțit când ai cerut. Ce s-a întâmplat după.',
+    steps: JSON.stringify(['Identifică ceva cu care ai nevoie de ajutor real', 'Alege o persoană care poate ajuta', 'Cere direct — fără scuze excesive', 'Raportează sincer ce s-a întâmplat']),
+    reflection: 'De ce ți-a fost greu sau ușor să ceri?', is_daily: 0,
+  },
+  {
+    id: 'lc-010', title: 'Primul pas',
+    description: 'Acel lucru pe care îl amâni de luni sau ani. Azi faci PRIMUL PAS. Oricât de mic. Imposibil de mai mic.',
+    pillar: 'discipline', difficulty: 'medium', xp_reward: 500,
+    proof_type: 'text', proof_prompt: 'Ce lucru. Ce pas ai făcut exact. Cât de mic a fost. Cum te-ai simțit după.',
+    steps: JSON.stringify(['Identifică lucrul amânat — știi care e', 'Identifică cel mai mic pas posibil', 'Fă-l acum — în timp ce citești asta', 'Raportează exact ce ai făcut']),
+    reflection: 'Cum te-ai simțit după primul pas?', is_daily: 0,
+  },
+];
+
+// ─── Cele 5 programe ─────────────────────────────────────────────────────────
+
+const PROGRAMS = [
+  {
+    id: 'prog-morning-ritual',
+    slug: 'morning-ritual',
+    name: 'Morning Ritual',
+    tagline: 'Transformă dimineața. Transformă viața.',
+    description: 'Un program de 30 de zile care te ajută să construiești o rutină de dimineață care îți aparține complet. Fiecare zi începe cu o misiune scurtă, autentică, concretă.',
+    duration_days: 30,
+    price_cents: 0,
+    pillar_focus: JSON.stringify(['discipline', 'self', 'life']),
+    difficulty: 'gentle',
+    is_featured: 1,
+    sort_order: 1,
+  },
+  {
+    id: 'prog-inner-work',
+    slug: 'inner-work',
+    name: 'Inner Work',
+    tagline: 'Mergi înăuntru. Găsește-te.',
+    description: 'Un program de 90 de zile de explorare profundă. Misiuni care ating cele mai sensibile și mai importante aspecte ale vieții tale interioare. Pentru cei curajosi.',
+    duration_days: 90,
+    price_cents: 0,
+    pillar_focus: JSON.stringify(['acceptance', 'self']),
+    difficulty: 'deep',
+    is_featured: 1,
+    sort_order: 2,
+  },
+  {
+    id: 'prog-creative-expression',
+    slug: 'creative-expression',
+    name: 'Creative Expression',
+    tagline: 'Exprimă-te. Arta ta e adevărul tău.',
+    description: 'Un program de 45 de zile pentru cei care vor să se exprime autentic — prin scris, desen, fotografie, muzică. Nu trebuie să fii artist. Trebuie să fii tu.',
+    duration_days: 45,
+    price_cents: 0,
+    pillar_focus: JSON.stringify(['creativity', 'self']),
+    difficulty: 'gentle',
+    is_featured: 0,
+    sort_order: 3,
+  },
+  {
+    id: 'prog-story-of-you',
+    slug: 'story-of-you',
+    name: 'Story of You',
+    tagline: 'Scrie-ți povestea. Devii autorul vieții tale.',
+    description: 'Un program de 60 de zile în care construiești prima ta carte — cartea vieții tale. Fiecare misiune completată devine o pagină. La final primești cartea ta.',
+    duration_days: 60,
+    price_cents: 0,
+    pillar_focus: JSON.stringify(['creativity', 'self', 'acceptance']),
+    difficulty: 'medium',
+    is_featured: 1,
+    sort_order: 4,
+  },
+  {
+    id: 'prog-legacy-builder',
+    slug: 'legacy-builder',
+    name: 'Legacy Builder',
+    tagline: 'Construiește viața pe care o meriți.',
+    description: 'Un program de 120 de zile pentru schimbare reală de viață. Carieră, bani, relații, scop. Misiuni concrete, dificile, transformatoare. Numai pentru cei hotărâți.',
+    duration_days: 120,
+    price_cents: 0,
+    pillar_focus: JSON.stringify(['discipline', 'self', 'helping', 'hobby']),
+    difficulty: 'medium',
+    is_featured: 0,
+    sort_order: 5,
+  },
+];
+
+// ─── Seed functions ───────────────────────────────────────────────────────────
+
 const insertMission = rawSqlite.prepare(`
   INSERT OR IGNORE INTO missions (
     id, title, description, pillar, difficulty, xp_reward,
@@ -165,10 +651,23 @@ const insertMission = rawSqlite.prepare(`
   )
 `);
 
+const insertProgram = rawSqlite.prepare(`
+  INSERT OR IGNORE INTO mission_programs (
+    id, slug, name, description, tagline, duration_days,
+    price_cents, pillar_focus, difficulty, is_featured, sort_order
+  ) VALUES (
+    @id, @slug, @name, @description, @tagline, @duration_days,
+    @price_cents, @pillar_focus, @difficulty, @is_featured, @sort_order
+  )
+`);
+
 export function seedMissions(): void {
   console.log('[missions] Seeding missions...');
-  const insert = rawSqlite.transaction(() => {
-    for (const m of MISSIONS) {
+
+  const allMissions = [...MISSIONS_ORIGINAL, ...MISSIONS_V4];
+
+  const insertAll = rawSqlite.transaction(() => {
+    for (const m of allMissions) {
       insertMission.run({
         id: m.id,
         title: m.title,
@@ -183,7 +682,11 @@ export function seedMissions(): void {
         is_daily: m.is_daily,
       });
     }
+    for (const p of PROGRAMS) {
+      insertProgram.run(p);
+    }
   });
-  insert();
-  console.log(`[missions] ✅ ${MISSIONS.length} misiuni seed-uite`);
+
+  insertAll();
+  console.log(`[missions] ✅ ${allMissions.length} misiuni + ${PROGRAMS.length} programe seed-uite`);
 }
