@@ -21,8 +21,6 @@ import { fileURLToPath } from 'url';
 import { UPLOADS_DIR } from '../backend/src/modules/reels.js';
 import { IMAGE_UPLOADS_DIR } from '../backend/src/modules/uploads.js';
 import { seedPlans } from './billing/seed.js';
-// DEZACTIVAT: înlocuit de Mara Missions
-// import { seedTradingAcademy } from './trading/seed.js';
 import { seedDefaultObjective } from './mara-core/objective.js';
 import { seedMissions } from './missions/seed.js';
 import {
@@ -567,14 +565,6 @@ app.use((req, res, next) => {
     console.error('[billing] seed failed:', err);
     throw err;
   }
-
-  // DEZACTIVAT: înlocuit de Mara Missions
-  // try {
-  //   await seedTradingAcademy();
-  //   console.log('[trading] academy catalogue seeded');
-  // } catch (err) {
-  //   console.error('[trading] seed failed (continuing):', err);
-  // }
 
   // Mara Missions V3 — seed mission catalogue
   try {

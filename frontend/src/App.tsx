@@ -64,8 +64,6 @@ function App() {
               <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/missions" element={<Missions />} />
-                {/* DEZACTIVAT: înlocuit de Mara Missions */}
-                {/* <Route path="/trading-academy" element={<TradingAcademy onClose={() => navigate('/')} />} /> */}
                 <Route path="/membership" element={<VIP onClose={() => navigate('/')} />} />
                 <Route path="/creator-panel" element={<Creators onClose={() => navigate('/')} />} />
                 <Route path="/you" element={<You />} />
