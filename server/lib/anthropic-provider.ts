@@ -1,9 +1,11 @@
 /**
- * Anthropic provider — paid fallback when Ollama isn't reachable.
+ * Anthropic provider — two separate clients:
  *
- * Wraps the existing Anthropic SDK calls into the shared `AIProvider`
- * interface. Reuses the same env vars as the legacy `server/llm.ts` so any
- * existing deployment keeps working unchanged.
+ *   anthropicProvider      — chat cu userii   (ANTHROPIC_API_KEY)
+ *   anthropicBrainProvider — brain autonom    (ANTHROPIC_BRAIN_API_KEY, fallback la ANTHROPIC_API_KEY)
+ *
+ * Dacă ANTHROPIC_BRAIN_API_KEY nu e setat, brain-ul foloseşte acelaşi key ca
+ * chat-ul — compatibil cu deployment-urile existente fără nicio schimbare.
  */
 
 import Anthropic from '@anthropic-ai/sdk';
@@ -134,6 +136,61 @@ class AnthropicProvider implements AIProvider {
 }
 
 export const anthropicProvider: AIProvider = new AnthropicProvider();
+
+// ─── Brain provider (ANTHROPIC_BRAIN_API_KEY) ────────────────────────────────
+
+let brainClientInstance: Anthropic | null = null;
+let brainClientKey: string | null = null;
+
+function getBrainClient(): Anthropic {
+  const apiKey = process.env.ANTHROPIC_BRAIN_API_KEY || process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    throw new Error('No Anthropic key for brain. Set ANTHROPIC_BRAIN_API_KEY or ANTHROPIC_API_KEY.');
+  }
+  if (!brainClientInstance || brainClientKey !== apiKey) {
+    brainClientInstance = new Anthropic({ apiKey, timeout: getTimeoutMs() });
+    brainClientKey = apiKey;
+  }
+  return brainClientInstance;
+}
+
+class AnthropicBrainProvider implements AIProvider {
+  readonly name = 'anthropic' as const;
+
+  async isAvailable(): Promise<boolean> {
+    return !!(process.env.ANTHROPIC_BRAIN_API_KEY || process.env.ANTHROPIC_API_KEY);
+  }
+
+  async chat(messages: AIMessage[], opts: AIChatOptions = {}): Promise<AIResponse> {
+    const client = getBrainClient();
+    const model = process.env.ANTHROPIC_BRAIN_MODEL || getModel();
+    const { system, turns } = splitSystemAndMessages(messages, opts.systemPrompt);
+
+    if (turns.length === 0) {
+      throw new Error('Anthropic brain chat requires at least one user or assistant message.');
+    }
+
+    const res = await client.messages.create({
+      model,
+      max_tokens: getMaxTokens(),
+      ...(typeof opts.temperature === 'number' ? { temperature: opts.temperature } : {}),
+      ...(system ? { system } : {}),
+      messages: turns,
+    });
+
+    const text = res.content
+      .filter((block): block is Anthropic.TextBlock => block.type === 'text')
+      .map((block) => block.text)
+      .join('')
+      .trim();
+
+    return { text, provider: 'anthropic', model };
+  }
+}
+
+export const anthropicBrainProvider: AIProvider = new AnthropicBrainProvider();
+
+// ─── Health checks ───────────────────────────────────────────────────────────
 
 /**
  * Lightweight readiness probe. Mirrors the legacy `checkAnthropicHealth` so

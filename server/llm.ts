@@ -41,6 +41,7 @@ import {
 } from './lib/anthropic-provider.js';
 import {
   getAIResponse,
+  getBrainAIResponse,
   getProvidersHealth,
   type ProviderHealth,
 } from './lib/provider-router.js';
@@ -116,7 +117,7 @@ export function getActiveProvider(): LLMProvider {
  * "catching my breath" message.
  */
 export function isLLMConfigured(): boolean {
-  return !!process.env.OLLAMA_BASE_URL || !!process.env.ANTHROPIC_API_KEY;
+  return !!(process.env.OLLAMA_BASE_URL || process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_BRAIN_API_KEY);
 }
 
 /**
@@ -143,12 +144,14 @@ export async function llmChat(
   opts: LLMCallOpts | number = {},
 ): Promise<string> {
   const { temperature, source } = normaliseOpts(opts, 0.95);
-  const exec = async () => (await getAIResponse(messages, { temperature })).text;
 
   if (source === 'user_chat') {
-    return exec();
+    // Chat cu userii → ANTHROPIC_API_KEY (cu fallback Ollama dacă e configurat)
+    return (await getAIResponse(messages, { temperature })).text;
   }
 
+  // Brain autonom → ANTHROPIC_BRAIN_API_KEY (fallback la ANTHROPIC_API_KEY)
+  const exec = async () => (await getBrainAIResponse(messages, { temperature })).text;
   const result = await guardedLLMCall(source, exec);
   if (result === null) {
     throw new LLMRateLimitedError(source);

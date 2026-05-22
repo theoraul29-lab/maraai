@@ -18,7 +18,7 @@ import {
   type AIProviderName,
   type AIResponse,
 } from './ai-provider.js';
-import { anthropicProvider } from './anthropic-provider.js';
+import { anthropicProvider, anthropicBrainProvider } from './anthropic-provider.js';
 import { ollamaProvider } from './ollama-provider.js';
 import { circuitIsAvailable, circuitRecordSuccess, circuitRecordFailure } from './circuit-breaker.js';
 
@@ -131,6 +131,28 @@ function describeAnthropic(): ProviderHealth {
   const configured = anthropicConfigured();
   const model = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6';
   return { provider: 'anthropic', configured, ok: configured, model };
+}
+
+/**
+ * Brain-only route — folosit de llm.ts când source !== 'user_chat'.
+ * Foloseşte ANTHROPIC_BRAIN_API_KEY (fallback la ANTHROPIC_API_KEY).
+ * Nu trece prin Ollama — brain-ul rulează exclusiv pe Claude.
+ */
+export async function getBrainAIResponse(
+  messages: AIMessage[],
+  opts: AIChatOptions = {},
+): Promise<AIResponse> {
+  if (!circuitIsAvailable('anthropic')) {
+    throw new NoProviderAvailableError();
+  }
+  try {
+    const result = await anthropicBrainProvider.chat(messages, opts);
+    circuitRecordSuccess('anthropic');
+    return result;
+  } catch (err) {
+    circuitRecordFailure('anthropic');
+    throw err;
+  }
 }
 
 /**
