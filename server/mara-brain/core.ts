@@ -365,7 +365,7 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
     }
 
     // === PHASE 4.5: Per-Module Growth Analysis ===
-    // Each of the 6 modules (You / Reels / Trading / Writers / Creators / VIP)
+    // Each of the 6 modules (You / Reels / Missions / Writers / Creators / VIP)
     // gets its own analyzer that proposes concrete growth levers. Proposals land
     // in `maraPlatformInsights` (status='proposed') for admin approval — no
     // autonomous code changes. Gated by MARA_LEARNING_ENABLED so it can be

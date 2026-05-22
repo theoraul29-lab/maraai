@@ -69,6 +69,19 @@ type LearningStats = {
   knowledge: { total?: number; byCategory?: Record<string, number> };
 };
 
+type ExecutiveStatus = {
+  state: {
+    lastUpdated: number;
+    funnelSummary: string | null;
+    activeExperiments: string[];
+    recentOutcomes: string[];
+    topUserTopics: string[];
+    currentPriority: string;
+    focusModules: string[];
+  };
+  signalCount: number;
+};
+
 const MODULES = ['you', 'reels', 'missions', 'writers', 'creators', 'vip'];
 
 function formatDate(iso: string | number | null): string {
@@ -107,7 +120,8 @@ export default function AdminBrain() {
   const [forbidden, setForbidden] = useState(false);
   const [triggerMsg, setTriggerMsg] = useState<string | null>(null);
   const [triggering, setTriggering] = useState(false);
-  const [tab, setTab] = useState<'cycles' | 'learning'>('cycles');
+  const [tab, setTab] = useState<'cycles' | 'learning' | 'executive'>('cycles');
+  const [executive, setExecutive] = useState<ExecutiveStatus | null>(null);
 
   // Learning tab state
   const [insights, setInsights] = useState<Insight[]>([]);
@@ -181,7 +195,8 @@ export default function AdminBrain() {
 
   useEffect(() => {
     if (tab === 'learning') void loadLearning();
-  }, [tab, loadLearning]);
+    if (tab === 'executive') void loadExecutive();
+  }, [tab, loadLearning, loadExecutive]);
 
   const trigger = useCallback(async () => {
     setTriggering(true);
@@ -222,6 +237,15 @@ export default function AdminBrain() {
       alert(err instanceof Error ? err.message : String(err));
     }
   }, [loadLearning]);
+
+  const loadExecutive = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/mara/executive', { credentials: 'include' });
+      if (res.ok) setExecutive(await res.json());
+    } catch (err) {
+      console.error('[AdminBrain] loadExecutive failed:', err);
+    }
+  }, []);
 
   const addToQueue = useCallback(async () => {
     const topic = newTopic.trim();
@@ -296,7 +320,7 @@ export default function AdminBrain() {
       </header>
 
       <nav style={{ display: 'flex', gap: 8, marginBottom: 16, borderBottom: '1px solid #ddd' }}>
-        {(['cycles', 'learning'] as const).map((t) => (
+        {(['cycles', 'learning', 'executive'] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -388,6 +412,78 @@ export default function AdminBrain() {
             ))}
           </section>
         </>
+      )}
+
+      {tab === 'executive' && (
+        <section style={{ border: '1px solid #ddd', borderRadius: 8, padding: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <h2 style={{ margin: 0 }}>ExecutiveReasoning — CognitiveState</h2>
+            <button
+              onClick={() => void loadExecutive()}
+              style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid #ccc', cursor: 'pointer' }}
+            >
+              Refresh
+            </button>
+          </div>
+          {!executive && <p>Loading…</p>}
+          {executive && (
+            <>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 16 }}>
+                <div>
+                  <strong>Last updated:</strong>{' '}
+                  {executive.state.lastUpdated ? formatDate(executive.state.lastUpdated) : '—'}
+                </div>
+                <div><strong>Signal ring size:</strong> {executive.signalCount} / 50</div>
+                <div><strong>Priority:</strong> {executive.state.currentPriority || '—'}</div>
+                <div>
+                  <strong>Focus modules:</strong>{' '}
+                  {executive.state.focusModules.length ? executive.state.focusModules.join(', ') : '—'}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 16 }}>
+                <strong>Funnel summary:</strong>
+                <div style={{ marginTop: 4, padding: '8px 12px', background: '#f7f7f7', borderRadius: 6, fontSize: 13 }}>
+                  {executive.state.funnelSummary || '— not yet computed —'}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 16 }}>
+                <strong>Top user topics (signal ring):</strong>
+                <div style={{ marginTop: 4, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {executive.state.topUserTopics.length === 0 && <span style={{ color: '#999' }}>none yet</span>}
+                  {executive.state.topUserTopics.map((t) => (
+                    <span key={t} style={{ padding: '2px 10px', background: '#e8f0fe', borderRadius: 12, fontSize: 13 }}>{t}</span>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 16 }}>
+                <strong>Active experiments ({executive.state.activeExperiments.length}):</strong>
+                {executive.state.activeExperiments.length === 0 && (
+                  <p style={{ color: '#999', marginTop: 4 }}>none</p>
+                )}
+                <ul style={{ marginTop: 4, paddingLeft: 20 }}>
+                  {executive.state.activeExperiments.map((e, i) => (
+                    <li key={i} style={{ fontSize: 13, marginBottom: 4 }}>{e}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <strong>Recent outcomes ({executive.state.recentOutcomes.length}):</strong>
+                {executive.state.recentOutcomes.length === 0 && (
+                  <p style={{ color: '#999', marginTop: 4 }}>none</p>
+                )}
+                {executive.state.recentOutcomes.map((o, i) => (
+                  <div key={i} style={{ marginTop: 6, padding: '8px 12px', background: '#f0fdf4', borderRadius: 6, fontSize: 13 }}>
+                    {o}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </section>
       )}
 
       {tab === 'learning' && (

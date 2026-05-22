@@ -249,7 +249,7 @@ function extractConversationTopics(message: string, module?: string): string[] {
   if (module) topics.push(module);
 
   const topicKeywords: Record<string, string[]> = {
-    trading: ['btc', 'eth', 'bitcoin', 'ethereum', 'crypto', 'trading', 'chart', 'signal', 'market', 'price', 'defi', 'token'],
+    missions: ['misiune', 'mission', 'task', 'provocare', 'challenge', 'xp', 'pillar', 'jurnal', 'journal', 'program', 'streak'],
     writing: ['write', 'book', 'story', 'manuscript', 'article', 'poetry', 'essay', 'scrie', 'carte', 'poveste'],
     content: ['video', 'creator', 'content', 'reel', 'post', 'upload', 'publish', 'viral', 'engagement'],
     business: ['monetize', 'revenue', 'growth', 'strategy', 'premium', 'vip', 'subscribe', 'bani', 'profit', 'afacere'],
