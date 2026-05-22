@@ -474,27 +474,28 @@ export async function registerRoutes(
             content = req.file.buffer.toString('utf-8');
           }
         } else if (typeof req.body?.content === 'string') {
-          // Fallback: plain JSON body (text only, no PDF)
           content = req.body.content;
         }
 
-        if (!content.trim()) {
+        const trimmed = content.trim();
+        if (!trimmed) {
           return res.status(400).json({ error: 'Fișierul este gol sau nu a putut fi citit.' });
         }
-        if (content.length > 1_000_000) {
-          content = content.slice(0, 1_000_000); // Truncate at 1M chars; brain will chunk it
-        }
-
+        const finalContent = trimmed.length > 1_000_000 ? trimmed.slice(0, 1_000_000) : trimmed;
         const category = (req.body?.category || 'general') as any;
-        const result = await addAndReadCustomBook(title, content, category);
+        const chunkCount = Math.ceil(finalContent.length / 2000);
+
+        // Return immediately — processing a whole book takes minutes (3s/chunk × N chunks).
+        // The brain processes it in the background; check the Knowledge tab when done.
         res.json({
-          message: `Mara a citit "${title}" și a extras ${result.totalIdeas} idei`,
-          result: {
-            title: result.title,
-            chunks: result.processedChunks,
-            ideas: result.totalIdeas,
-          },
+          message: `Carte primită (${finalContent.length.toLocaleString()} caractere, ~${chunkCount} secțiuni). Mara procesează în background — verifică tab-ul Knowledge în câteva minute.`,
+          result: { title, chunks: chunkCount, ideas: null },
         });
+
+        // Fire-and-forget: don't block the response
+        addAndReadCustomBook(title, finalContent, category)
+          .then(r => console.log(`[library/upload] ✅ "${title}": ${r.totalIdeas} idei extrase din ${r.processedChunks}/${r.totalChunks} chunk-uri`))
+          .catch(err => console.error(`[library/upload] ❌ "${title}" processing failed:`, err));
       } catch (error: any) {
         console.error('[library/upload]', error);
         res.status(500).json({ error: error?.message || 'Eroare la procesarea fișierului.' });

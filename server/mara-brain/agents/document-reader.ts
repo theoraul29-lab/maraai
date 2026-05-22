@@ -4,8 +4,8 @@
 import { learnFromText, type ExtractedIdea, storeKnowledge } from '../knowledge-base.js';
 import { storage } from '../../storage.js';
 
-const CHUNK_SIZE = 2000; // characters per chunk (balanced for Gemini context)
-const DELAY_BETWEEN_CHUNKS_MS = 3000; // rate limit
+const CHUNK_SIZE = 4000; // characters per chunk — larger = fewer chunks = faster book processing
+const DELAY_BETWEEN_CHUNKS_MS = 1000; // 1s between chunks (was 3s — safe for Anthropic rate limits)
 
 export interface DocumentReadResult {
   title: string;

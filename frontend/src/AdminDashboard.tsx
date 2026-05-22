@@ -874,7 +874,15 @@ function LibraryTab() {
       </div>
 
       <div className="adb-card">
-        <SectionHeader icon="📚" title="Biblioteca Mara" />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <SectionHeader icon="📚" title="Biblioteca Mara" />
+          <button className="adb-btn adb-btn--ghost" onClick={loadBooks} style={{ fontSize: '0.8rem', padding: '4px 12px' }}>
+            ↻ Reîncarcă
+          </button>
+        </div>
+        <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.45)', marginBottom: 10 }}>
+          Procesarea se face în background — apasă Reîncarcă după câteva minute pentru a vedea ideile extrase.
+        </p>
         {books.length === 0
           ? <p className="adb-empty">Nicio carte în bibliotecă</p>
           : (
