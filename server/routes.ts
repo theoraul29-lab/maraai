@@ -832,6 +832,16 @@ export async function registerRoutes(
     }
   });
 
+  // ExecutiveReasoning — shared cognitive state across all three brains
+  app.get('/api/admin/mara/executive', requireAdmin, (_req: any, res: any) => {
+    try {
+      const { executive } = require('./mara-core/executive.js');
+      res.json(executive.getStatus());
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // === Mara Growth Engineer experiments (admin only) ===
   //
   // Each brain cycle proposes ONE experiment via the Growth Engineer loop and

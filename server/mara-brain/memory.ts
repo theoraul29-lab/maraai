@@ -6,6 +6,7 @@ import { getKnowledgeContext, searchKnowledge } from './knowledge-base.js';
 import { buildPersonalityPrompt, detectEmotion, detectToxicity, getToxicityLevel, type ToxicityState } from './personality.js';
 import { getPlatformContext } from './platform-context.js';
 import { rawSqlite } from '../db.js';
+import { executive } from '../mara-core/executive.js';
 
 export interface UserMemoryContext {
   userId: string;
@@ -162,6 +163,10 @@ export function buildSystemInstruction(context: UserMemoryContext, language?: st
     parts.push(`\n# CUNOȘTINȚE RELEVANTE\n${context.knowledgeContext}`);
   }
 
+  // Strategic context from ExecutiveReasoning (funnel state, active experiments)
+  const executiveCtx = executive.getContextForConversation();
+  if (executiveCtx) parts.push(executiveCtx);
+
   return parts.join('\n');
 }
 
@@ -193,6 +198,9 @@ export async function recordLearningFromChat(
   maraResponse: string,
   module?: string,
 ): Promise<void> {
+  // Feed signal into ExecutiveReasoning ring buffer (synchronous, never throws)
+  executive.recordSignal(userId, userMessage, module);
+
   try {
     const topics = extractConversationTopics(userMessage, module);
     if (topics.length === 0) return;

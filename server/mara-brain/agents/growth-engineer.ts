@@ -32,6 +32,7 @@ import { searchKnowledge, storeKnowledge } from '../knowledge-base.js';
 import { llmGenerate, isLLMConfigured } from '../../llm.js';
 import { getObjective } from '../../mara-core/objective.js';
 import type { ObjectiveFunction, ObjectiveWeights } from '../../mara-core/types.js';
+import { executive } from '../../mara-core/executive.js';
 
 // === Types ===
 export type DropOffStage =
@@ -861,6 +862,10 @@ export async function measureExperimentOutcome(
         succeeded: !!succeeded,
       },
     );
+
+    // Propagate outcome to ExecutiveReasoning immediately so the conversational
+    // brain sees the result before the next tick() refreshes the full state.
+    executive.recordExperimentOutcome(exp.id, !!succeeded, learnings);
 
     results.push({
       experimentId: exp.id,

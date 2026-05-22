@@ -14,6 +14,7 @@ import { getKnowledgeStats, storeKnowledge, learnFromText, searchKnowledge } fro
 import { readNextLibraryBook, getLibraryProgress, bootstrapReadBookIds } from './library.js';
 import { getObjective } from '../mara-core/objective.js';
 import { DEFAULT_OBJECTIVE, type ObjectiveFunction } from '../mara-core/types.js';
+import { executive } from '../mara-core/executive.js';
 
 /** Wrap a promise with a timeout (ms). Rejects with an error if it takes too long. */
 function withTimeout<T>(promise: Promise<T>, ms: number, label = 'operation'): Promise<T> {
@@ -71,6 +72,14 @@ export async function runBrainCycle(): Promise<BrainCycleResult> {
 
 async function _runBrainCycleInner(): Promise<BrainCycleResult> {
   console.log('[MaraBrain] 🧠 Autonomous brain cycle starting...');
+
+  // Refresh shared CognitiveState so all phases this cycle see the same
+  // strategic snapshot. Failures are swallowed — the brain cycle must run.
+  try {
+    await executive.tick();
+  } catch (err) {
+    console.warn('[MaraBrain] executive.tick() failed (non-fatal):', err);
+  }
 
   const startTime = Date.now();
   const research: string[] = [];
