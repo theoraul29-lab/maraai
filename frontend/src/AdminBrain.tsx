@@ -193,6 +193,15 @@ export default function AdminBrain() {
     return () => clearInterval(poll);
   }, [load]);
 
+  const loadExecutive = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/mara/executive', { credentials: 'include' });
+      if (res.ok) setExecutive(await res.json());
+    } catch (err) {
+      console.error('[AdminBrain] loadExecutive failed:', err);
+    }
+  }, []);
+
   useEffect(() => {
     if (tab === 'learning') void loadLearning();
     if (tab === 'executive') void loadExecutive();
@@ -237,15 +246,6 @@ export default function AdminBrain() {
       alert(err instanceof Error ? err.message : String(err));
     }
   }, [loadLearning]);
-
-  const loadExecutive = useCallback(async () => {
-    try {
-      const res = await fetch('/api/admin/mara/executive', { credentials: 'include' });
-      if (res.ok) setExecutive(await res.json());
-    } catch (err) {
-      console.error('[AdminBrain] loadExecutive failed:', err);
-    }
-  }, []);
 
   const addToQueue = useCallback(async () => {
     const topic = newTopic.trim();
