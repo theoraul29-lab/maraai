@@ -30,3 +30,27 @@ export async function setUserLanguage(req: Request, res: Response) {
     res.status(500).json({ message: 'Failed to set language preference' });
   }
 }
+
+export async function getUserTheme(req: Request, res: Response) {
+  try {
+    const userId = (req.user as any)?.uid;
+    const prefs = await deps.storage.getUserPreferences(userId);
+    res.json({ theme: prefs?.theme || 'dark' });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to get theme preference' });
+  }
+}
+
+export async function setUserTheme(req: Request, res: Response) {
+  try {
+    const userId = (req.user as any)?.uid;
+    const { theme } = req.body;
+    if (!theme || !['dark', 'light'].includes(theme)) {
+      return res.status(400).json({ message: 'Theme must be "dark" or "light"' });
+    }
+    await deps.storage.updateUserTheme(userId, theme);
+    res.json({ theme });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to set theme preference' });
+  }
+}

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from './contexts/AuthContext';
 import { LanguageSelector } from './components/LanguageSelector';
 import { GlobalSearch } from './components/GlobalSearch';
+import { SettingsModal } from './components/SettingsModal';
 import axios from 'axios';
 import './styles/Nav.css';
 import './styles/GlobalSearch.css';
@@ -123,8 +124,9 @@ const NotificationBell: React.FC = () => {
 const Nav: React.FC = () => {
 	const [menuOpen, setMenuOpen] = useState(false);
 	const [paymentsActive, setPaymentsActive] = useState(true);
+	const [settingsOpen, setSettingsOpen] = useState(false);
 	const { t } = useTranslation();
-	const { user } = useAuth();
+	const { user, isAuthenticated } = useAuth();
 
 	useEffect(() => {
 		fetch(`${API_URL}/api/config/features`)
@@ -134,6 +136,7 @@ const Nav: React.FC = () => {
 	}, []);
 
 	return (
+	<>
 		<nav className="nav-container" role="navigation">
 			{/* Desktop Nav */}
 			<div className="nav-desktop">
@@ -160,6 +163,15 @@ const Nav: React.FC = () => {
 				<GlobalSearch />
 				<NotificationBell />
 				<LanguageSelector compact />
+				{isAuthenticated && (
+					<button
+						className="nav-settings-btn"
+						onClick={() => setSettingsOpen(true)}
+						aria-label="Setări"
+					>
+						⚙️
+					</button>
+				)}
 			</div>
 
 			{/* Mobile Nav */}
@@ -168,6 +180,15 @@ const Nav: React.FC = () => {
 				<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
 					<NotificationBell />
 					<LanguageSelector compact />
+					{isAuthenticated && (
+						<button
+							className="nav-settings-btn"
+							onClick={() => setSettingsOpen(true)}
+							aria-label="Setări"
+						>
+							⚙️
+						</button>
+					)}
 					<button
 						className="hamburger-btn"
 						onClick={() => setMenuOpen(!menuOpen)}
@@ -207,7 +228,13 @@ const Nav: React.FC = () => {
 				</div>
 			)}
 		</nav>
+
+		{settingsOpen && (
+			<SettingsModal onClose={() => setSettingsOpen(false)} />
+		)}
+	</>
 	);
+
 };
 
 export default Nav;

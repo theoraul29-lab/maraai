@@ -99,6 +99,7 @@ export const userPreferences = pgTable('user_preferences', {
   preferences: text('preferences').default('{}').notNull(),
   personality: text('personality').default('friendly'),
   language: text('language').default('en'),
+  theme: text('theme').default('dark'),
   updatedAt: integer('updated_at', { mode: 'timestamp' })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),

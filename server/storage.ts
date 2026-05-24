@@ -141,7 +141,7 @@ export interface IStorage {
 
   getUserPreferences(
     userId: string,
-  ): Promise<{ personality?: string; language?: string } | null>;
+  ): Promise<{ personality?: string; language?: string; theme?: string } | null>;
   updateUserPreferences(
     userId: string,
     prefs: Record<string, unknown>,
@@ -152,6 +152,7 @@ export interface IStorage {
   getTotalLikeCount(): Promise<number>;
   clearOldMessages(hoursOld: number): Promise<void>;
   updateUserLanguage(userId: string, language: string): Promise<void>;
+  updateUserTheme(userId: string, theme: string): Promise<void>;
 
   createPremiumOrder(order: InsertPremiumOrder): Promise<PremiumOrder>;
   getPremiumOrders(userId?: string): Promise<PremiumOrder[]>;
@@ -596,6 +597,7 @@ export class DatabaseStorage implements IStorage {
     return {
       personality: prefs.personality || undefined,
       language: prefs.language || undefined,
+      theme: (prefs as any).theme || undefined,
     };
   }
 
@@ -735,6 +737,21 @@ export class DatabaseStorage implements IStorage {
         .where(eq(userPreferences.userId, userId));
     } else {
       await db.insert(userPreferences).values({ userId, language });
+    }
+  }
+
+  async updateUserTheme(userId: string, theme: string): Promise<void> {
+    const existing = await db
+      .select()
+      .from(userPreferences)
+      .where(eq(userPreferences.userId, userId));
+    if (existing.length > 0) {
+      await db
+        .update(userPreferences)
+        .set({ theme: theme as any, updatedAt: new Date() })
+        .where(eq(userPreferences.userId, userId));
+    } else {
+      await db.insert(userPreferences).values({ userId, theme: theme as any });
     }
   }
 

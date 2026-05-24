@@ -452,6 +452,8 @@ export async function registerRoutes(
   // User preferences endpoints (require auth)
   app.get('/api/user/language', requireAuth, userPrefsModule.getUserLanguage);
   app.post('/api/user/language', requireAuth, userPrefsModule.setUserLanguage);
+  app.get('/api/user/theme', requireAuth, userPrefsModule.getUserTheme);
+  app.post('/api/user/theme', requireAuth, userPrefsModule.setUserTheme);
 
   // === Mara Brain Library & Knowledge endpoints (admin only) ===
   app.get('/api/admin/mara/library', requireAdmin, async (_req: any, res: any) => {

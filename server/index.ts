@@ -144,6 +144,10 @@ function runMigrations() {
     ['trial_ends_at', 'integer'],
   ]);
 
+  ensureColumns('user_preferences', [
+    ["theme", "text NOT NULL DEFAULT 'dark'"],
+  ]);
+
   // user_posts: source_kind / source_id were added by migration
   // 0009_user_posts_source_kind. Same self-heal pattern — applied
   // separately from createTable below because the table itself is created

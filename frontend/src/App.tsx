@@ -29,6 +29,7 @@ const AdminWaitlist = lazy(() => import('./AdminWaitlist'));
 const AdminMaraChat = lazy(() => import('./AdminMaraChat'));
 import { OnboardingFlow } from './maraai/OnboardingFlow';
 import { TransparencyDashboard } from './maraai/TransparencyDashboard';
+import { ThemeProvider } from './contexts/ThemeContext';
 import NotFound from './NotFound';
 
 /**
@@ -83,6 +84,7 @@ function App() {
   return (
     <ErrorBoundary level="page">
       <AuthProvider>
+        <ThemeProvider>
         <div className="App">
           {!isHomePage && <Nav />}
           <OnboardingGuard />
@@ -118,6 +120,7 @@ function App() {
             <MaraChatWidget />
           </ErrorBoundary>
         </div>
+        </ThemeProvider>
       </AuthProvider>
     </ErrorBoundary>
   );
