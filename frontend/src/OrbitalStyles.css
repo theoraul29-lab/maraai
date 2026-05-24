@@ -448,6 +448,20 @@
   --hologram-color: rgba(139, 92, 246, 0.5);
 }
 
+/* Missions — yin-yang black & red */
+.orb[data-module="missions"] {
+  border-color: #ef4444;
+  background:
+    conic-gradient(from 135deg, #0d0d0d 0deg 180deg, rgba(239, 68, 68, 0.55) 180deg 360deg),
+    radial-gradient(circle at 65% 35%, rgba(239, 68, 68, 0.25), transparent 60%);
+  color: #fca5a5;
+  --hologram-color: rgba(239, 68, 68, 0.55);
+  box-shadow:
+    0 0 18px rgba(239, 68, 68, 0.4),
+    0 0 40px rgba(239, 68, 68, 0.15),
+    inset 0 0 18px rgba(0, 0, 0, 0.6);
+}
+
 /* ===== HOVER STATE ===== */
 
 .orb:hover {
