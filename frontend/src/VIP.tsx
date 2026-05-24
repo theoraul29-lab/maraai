@@ -21,7 +21,7 @@ interface Order {
 
 export const VIP: React.FC<Props> = ({ onClose }) => {
   const { t, i18n } = useTranslation();
-  const [status, setStatus] = useState<'checking' | 'active' | 'inactive'>('checking');
+  const [status, setStatus] = useState<'checking' | 'active' | 'inactive' | 'locked'>('checking');
   const [view, setView] = useState<'plans' | 'payment' | 'orders'>('plans');
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('monthly');
   const [paymentMethod, setPaymentMethod] = useState<'bank' | 'paypal'>('bank');
@@ -45,8 +45,12 @@ export const VIP: React.FC<Props> = ({ onClose }) => {
         setStatus(res.data.isPremium ? 'active' : 'inactive');
         if (res.data.expiresAt) setExpiresAt(res.data.expiresAt);
         if (Array.isArray(res.data.orders)) setOrders(res.data.orders);
-      } catch {
-        setStatus('inactive');
+      } catch (err: any) {
+        if (err?.response?.status === 503) {
+          setStatus('locked');
+        } else {
+          setStatus('inactive');
+        }
       }
     };
     checkSubscription();
@@ -109,6 +113,17 @@ export const VIP: React.FC<Props> = ({ onClose }) => {
       <div className="vip-content">
         {status === 'checking' && (
           <div className="vip-checking"><div className="vip-spinner"></div></div>
+        )}
+
+        {status === 'locked' && (
+          <div className="vip-locked-overlay">
+            <div className="vip-locked-icon">🔒</div>
+            <h2 className="vip-locked-title">VIP disponibil după lansarea oficială</h2>
+            <p className="vip-locked-desc">
+              Sistemul de abonamente se activează automat la lansare sau când comunitatea atinge 100 de membri activi.
+            </p>
+            <button className="vip-action-btn secondary" onClick={onClose}>Înapoi</button>
+          </div>
         )}
 
         {error && (

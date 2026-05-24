@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect, useRef } from 'react';
 import { Route, Routes, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -31,6 +31,32 @@ import { OnboardingFlow } from './maraai/OnboardingFlow';
 import { TransparencyDashboard } from './maraai/TransparencyDashboard';
 import NotFound from './NotFound';
 
+/**
+ * Redirectează userii noi la /onboarding dacă nu au completat flow-ul.
+ * Se verifică o singură dată după autentificare (nu la fiecare navigare).
+ * Admin-ii și userii care sunt deja pe /onboarding sunt exceptați.
+ */
+function OnboardingGuard() {
+  const { isAuthenticated, loading, user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const checked = useRef(false);
+
+  useEffect(() => {
+    if (loading || !isAuthenticated || checked.current) return;
+    if (user?.isAdmin) return;
+    if (location.pathname === '/onboarding') return;
+
+    checked.current = true;
+    fetch('/api/user/onboarding-status', { credentials: 'include' })
+      .then(r => r.json())
+      .then(data => { if (!data.done) navigate('/onboarding', { replace: true }); })
+      .catch(() => {});
+  }, [isAuthenticated, loading, user, navigate, location.pathname]);
+
+  return null;
+}
+
 function AdminGuard({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, user, loading } = useAuth();
 
@@ -59,6 +85,7 @@ function App() {
       <AuthProvider>
         <div className="App">
           {!isHomePage && <Nav />}
+          <OnboardingGuard />
           <ErrorBoundary level="section">
             <Suspense fallback={null}>
               <Routes>

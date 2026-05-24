@@ -30,7 +30,7 @@ import type { ConsentView, MaraMode } from './types';
 import { localSet, NAMESPACES } from './localStore';
 import './OnboardingFlow.css';
 
-type Step = 'welcome' | 'auth' | 'consent' | 'mode' | 'activate' | 'done';
+type Step = 'welcome' | 'guide' | 'auth' | 'consent' | 'mode' | 'activate' | 'done';
 
 type ConsentFormState = {
   p2pEnabled: boolean;
@@ -209,7 +209,7 @@ export function OnboardingFlow({ onClose, initialStep = 'welcome' }: OnboardingF
       <div className="maraai-onboarding-card">
         <header className="maraai-onboarding-header">
           <span className="maraai-onboarding-step">
-            {t('onboarding.stepLabel', { current: stepIndex(step), total: 5 })}
+            {t('onboarding.stepLabel', { current: stepIndex(step), total: stepTotal() })}
           </span>
           <h1>MaraAI</h1>
           <p className="maraai-onboarding-subtitle">{t('onboarding.welcomeSubtitle')}</p>
@@ -218,7 +218,11 @@ export function OnboardingFlow({ onClose, initialStep = 'welcome' }: OnboardingF
         {error ? <div className="maraai-onboarding-error">{error}</div> : null}
 
         {step === 'welcome' ? (
-          <WelcomeStep onContinue={() => setStep(auth.isAuthenticated ? 'mode' : 'auth')} />
+          <WelcomeStep onContinue={() => setStep('guide')} />
+        ) : null}
+
+        {step === 'guide' ? (
+          <GuideStep onContinue={() => setStep(auth.isAuthenticated ? 'mode' : 'auth')} />
         ) : null}
 
         {step === 'auth' ? (
@@ -271,8 +275,10 @@ export function OnboardingFlow({ onClose, initialStep = 'welcome' }: OnboardingF
 }
 
 function stepIndex(step: Step): number {
-  return { welcome: 1, auth: 2, mode: 3, consent: 4, activate: 5, done: 5 }[step];
+  return { welcome: 1, guide: 2, auth: 3, mode: 4, consent: 5, activate: 6, done: 6 }[step];
 }
+
+function stepTotal(): number { return 6; }
 
 function WelcomeStep({ onContinue }: { onContinue: () => void }) {
   const { t } = useTranslation();
@@ -288,6 +294,104 @@ function WelcomeStep({ onContinue }: { onContinue: () => void }) {
       <button className="maraai-onboarding-cta" onClick={onContinue}>
         {t('onboarding.continueBtn')}
       </button>
+    </section>
+  );
+}
+
+const GUIDE_SECTIONS = [
+  {
+    icon: '🤖',
+    name: 'MARA',
+    path: '/',
+    desc: 'Chat AI principal — pune întrebări, primești răspunsuri inteligente și personalizate.',
+  },
+  {
+    icon: '🎬',
+    name: 'REELS',
+    path: '/reels',
+    desc: 'Conținut video scurt — urmărește reels de la creatori și publică propriile tale videoclipuri.',
+  },
+  {
+    icon: '👤',
+    name: 'YOU',
+    path: '/you',
+    desc: 'Profilul tău — activitate, misiuni completate, mesaje directe și setări personale.',
+  },
+  {
+    icon: '✍️',
+    name: 'WRITERS',
+    path: '/writers-hub',
+    desc: 'Secțiunea scriitori — publică articole, cumpără conținut premium, construiește o audiență.',
+  },
+  {
+    icon: '✨',
+    name: 'CREATORS',
+    path: '/creator-panel',
+    desc: 'Secțiunea creatori — gestionează videoclipuri, urmăritori și monetizare.',
+  },
+  {
+    icon: '👑',
+    name: 'VIP',
+    path: '/membership',
+    desc: 'Beneficii premium — acces la funcții avansate. Disponibil după lansarea oficială.',
+    locked: true,
+  },
+  {
+    icon: '🎯',
+    name: 'MISSIONS',
+    path: '/missions',
+    desc: 'Misiuni și XP — completează provocări zilnice, câștigă experiență și urcă în clasament.',
+  },
+];
+
+function GuideStep({ onContinue }: { onContinue: () => void }) {
+  const [slide, setSlide] = useState(0);
+  const current = GUIDE_SECTIONS[slide];
+  const isLast = slide === GUIDE_SECTIONS.length - 1;
+
+  return (
+    <section className="maraai-onboarding-section">
+      <h2>Descoperă platforma</h2>
+      <p className="maraai-onboarding-helper">
+        {slide + 1} / {GUIDE_SECTIONS.length}
+      </p>
+
+      <div className="maraai-guide-card">
+        <div className="maraai-guide-icon">{current.icon}</div>
+        <div className="maraai-guide-name">
+          {current.name}
+          {current.locked && <span className="maraai-guide-lock"> 🔒</span>}
+        </div>
+        <p className="maraai-guide-desc">{current.desc}</p>
+      </div>
+
+      <div className="maraai-guide-dots">
+        {GUIDE_SECTIONS.map((_, i) => (
+          <button
+            key={i}
+            className={`maraai-guide-dot${i === slide ? ' is-active' : ''}`}
+            onClick={() => setSlide(i)}
+            aria-label={`Slide ${i + 1}`}
+          />
+        ))}
+      </div>
+
+      <div className="maraai-guide-nav">
+        {slide > 0 && (
+          <button className="maraai-onboarding-cta maraai-onboarding-cta--secondary" onClick={() => setSlide(s => s - 1)}>
+            ← Înapoi
+          </button>
+        )}
+        {isLast ? (
+          <button className="maraai-onboarding-cta" onClick={onContinue}>
+            Continuă →
+          </button>
+        ) : (
+          <button className="maraai-onboarding-cta" onClick={() => setSlide(s => s + 1)}>
+            Următor →
+          </button>
+        )}
+      </div>
     </section>
   );
 }

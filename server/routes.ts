@@ -197,9 +197,38 @@ export async function registerRoutes(
   app.post('/api/admin/orders/:id/confirm', requireAdmin, adminOrdersModule.confirmOrder);
   app.post('/api/admin/orders/:id/reject', requireAdmin, adminOrdersModule.rejectOrder);
 
-  // Orders and premium endpoints (require auth)
-  app.get('/api/premium/status', requireAuth, ordersModule.getPremiumStatus);
-  app.post('/api/premium/order', requireAuth, ordersModule.createPremiumOrder);
+  // ─── Flag public: frontend verifică dacă sistemul de plăți e activ ─────────
+  app.get('/api/config/features', (_req: any, res: any) => {
+    res.json({ paymentsActive: process.env.PAYMENT_SYSTEM_ACTIVE === 'true' });
+  });
+
+  // ─── Middleware: blochează /api/premium/* când plățile sunt inactive ────────
+  const requirePaymentsActive = (_req: any, res: any, next: any) => {
+    if (process.env.PAYMENT_SYSTEM_ACTIVE !== 'true') {
+      return res.status(503).json({
+        error: 'payments_inactive',
+        message: 'VIP se activează în curând după lansarea oficială.',
+      });
+    }
+    return next();
+  };
+
+  // Orders and premium endpoints (require auth + plăți active)
+  app.get('/api/premium/status', requireAuth, requirePaymentsActive, ordersModule.getPremiumStatus);
+  app.post('/api/premium/order', requireAuth, requirePaymentsActive, ordersModule.createPremiumOrder);
+
+  // ─── Onboarding status: verifică dacă userul a completat onboarding-ul ─────
+  app.get('/api/user/onboarding-status', requireAuth, (req: any, res: any) => {
+    try {
+      const userId = req.user?.uid;
+      const row = rawSqlite
+        .prepare('SELECT onboarding_done FROM user_personality WHERE user_id = ?')
+        .get(userId) as { onboarding_done: number } | undefined;
+      res.json({ done: row ? row.onboarding_done === 1 : false });
+    } catch {
+      res.json({ done: false });
+    }
+  });
 
   // --- Auth endpoints (local email/password + session) ---------------------
   // The handlers themselves live in server/modules/auth-api.ts and are

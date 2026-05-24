@@ -122,8 +122,16 @@ const NotificationBell: React.FC = () => {
 
 const Nav: React.FC = () => {
 	const [menuOpen, setMenuOpen] = useState(false);
+	const [paymentsActive, setPaymentsActive] = useState(true);
 	const { t } = useTranslation();
 	const { user } = useAuth();
+
+	useEffect(() => {
+		fetch(`${API_URL}/api/config/features`)
+			.then(r => r.json())
+			.then(data => setPaymentsActive(!!data.paymentsActive))
+			.catch(() => {});
+	}, []);
 
 	return (
 		<nav className="nav-container" role="navigation">
@@ -138,6 +146,9 @@ const Nav: React.FC = () => {
 							className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
 						>
 							{t(`nav.${item.key}`)}
+							{item.key === 'vip' && !paymentsActive && (
+								<span className="nav-lock" title="Disponibil după lansare">🔒</span>
+							)}
 						</NavLink>
 					))}
 					{user?.isAdmin && (
@@ -181,7 +192,10 @@ const Nav: React.FC = () => {
 							onClick={() => setMenuOpen(false)}
 						>
 							<span className="mobile-link-icon">{item.icon}</span>
-							<span className="mobile-link-label">{t(`nav.${item.key}`)}</span>
+							<span className="mobile-link-label">
+								{t(`nav.${item.key}`)}
+								{item.key === 'vip' && !paymentsActive && ' 🔒'}
+							</span>
 						</NavLink>
 					))}
 					{user?.isAdmin && (

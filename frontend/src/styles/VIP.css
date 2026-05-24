@@ -1,5 +1,31 @@
 /* ===== VIP PREMIUM - MOBILE FIRST ===== */
 
+/* Locked state — când PAYMENT_SYSTEM_ACTIVE=false */
+.vip-locked-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 40px 24px;
+  text-align: center;
+  gap: 16px;
+}
+.vip-locked-icon { font-size: 64px; }
+.vip-locked-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+.vip-locked-desc {
+  font-size: 14px;
+  color: rgba(255,255,255,0.55);
+  max-width: 340px;
+  line-height: 1.6;
+  margin: 0;
+}
+
 .vip-container {
   position: fixed;
   top: 0;

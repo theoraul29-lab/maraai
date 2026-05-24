@@ -115,6 +115,67 @@ export function isLaunched(now: Date = new Date()): boolean {
   return now.getTime() >= LAUNCH_DATE.getTime();
 }
 
+/**
+ * Returnează numărul de useri activi în ultimele 24h.
+ * Citește user_xp.last_activity_at (Unix timestamp în secunde).
+ */
+function countActiveUsers(): number {
+  try {
+    const cutoff = Math.floor(Date.now() / 1000) - 24 * 60 * 60;
+    const row = rawSqlite
+      .prepare('SELECT COUNT(DISTINCT user_id) AS c FROM user_xp WHERE last_activity_at >= ?')
+      .get(cutoff) as { c: number } | undefined;
+    return row?.c ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Verifică la fiecare oră dacă sistemul de plăți trebuie activat automat.
+ * Condiții (oricare dintre ele):
+ *   1. Data de lansare a trecut (isLaunched() === true)
+ *   2. Numărul de useri activi în 24h >= ACTIVE_USERS_THRESHOLD
+ *
+ * Setează process.env.PAYMENT_SYSTEM_ACTIVE = 'true' și loghează motivul.
+ * Odată activat, intervalul se oprește (nu mai e nevoie să verifice).
+ */
+export function startPaymentActivationChecker(): void {
+  if (process.env.PAYMENT_SYSTEM_ACTIVE === 'true') {
+    console.log('[payments] sistem deja activ — checker nu pornește');
+    return;
+  }
+
+  const threshold = Number(process.env.ACTIVE_USERS_THRESHOLD ?? 100);
+
+  const check = () => {
+    if (process.env.PAYMENT_SYSTEM_ACTIVE === 'true') return;
+
+    const launched = isLaunched();
+    const activeUsers = countActiveUsers();
+
+    if (launched) {
+      process.env.PAYMENT_SYSTEM_ACTIVE = 'true';
+      console.log(`[payments] ✅ Activat automat — data de lansare atinsă (${LAUNCH_DATE.toISOString()})`);
+      clearInterval(interval);
+      return;
+    }
+
+    if (activeUsers >= threshold) {
+      process.env.PAYMENT_SYSTEM_ACTIVE = 'true';
+      console.log(`[payments] ✅ Activat automat — ${activeUsers} useri activi >= threshold ${threshold}`);
+      clearInterval(interval);
+      return;
+    }
+
+    console.log(`[payments] ⏳ Inactiv — lansat=${launched}, useri activi=${activeUsers}/${threshold}`);
+  };
+
+  // Verificare imediată la boot, apoi la fiecare oră
+  check();
+  const interval = setInterval(check, 60 * 60 * 1000);
+}
+
 // SHA-256 hash of the client IP so we can rate-limit and dedupe without
 // keeping the raw address (GDPR).
 function hashIp(ip: string | undefined | null): string | null {

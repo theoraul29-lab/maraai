@@ -1,3 +1,59 @@
+/* ─── Guide Step ─────────────────────────────────────────────────────────── */
+.maraai-guide-card {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px;
+  padding: 28px 24px;
+  text-align: center;
+  margin: 16px 0;
+}
+.maraai-guide-icon { font-size: 48px; margin-bottom: 12px; }
+.maraai-guide-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: #2ECC71;
+  margin-bottom: 10px;
+  letter-spacing: 1px;
+}
+.maraai-guide-lock { opacity: 0.6; }
+.maraai-guide-desc {
+  font-size: 14px;
+  color: rgba(255,255,255,0.65);
+  line-height: 1.6;
+  margin: 0;
+}
+.maraai-guide-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin: 12px 0;
+}
+.maraai-guide-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,0.2);
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.2s;
+}
+.maraai-guide-dot.is-active { background: #2ECC71; }
+.maraai-guide-nav {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 8px;
+}
+.maraai-onboarding-cta--secondary {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.7);
+}
+.maraai-onboarding-cta--secondary:hover {
+  background: rgba(255,255,255,0.05);
+}
+
 .maraai-onboarding-overlay {
   position: fixed;
   inset: 0;

@@ -32,6 +32,7 @@ import {
   unregisterComputePeer,
 } from './maraai/p2p-compute.js';
 import { awardActivationBonus } from './maraai/credits.js';
+import { startPaymentActivationChecker } from './modules/launch-countdown.js';
 dotenv.config();
 
 // Process-level safety net for *runtime* bugs in request handlers.
@@ -626,6 +627,9 @@ app.use((req, res, next) => {
   );
 
   await registerRoutes(httpServer, app);
+
+  // Verifică la fiecare oră dacă sistemul de plăți trebuie activat automat.
+  startPaymentActivationChecker();
 
   // --- START P2P WEBSOCKET INTEGRATION ---
   const wss = new WebSocketServer({
