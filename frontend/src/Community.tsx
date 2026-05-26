@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { useTranslation } from 'react-i18next';
 import { useAuth } from './contexts/AuthContext';
 import './styles/Community.css';
 
@@ -76,7 +75,6 @@ function timeAgo(ts: number | string): string {
 }
 
 export default function Community() {
-  const { t } = useTranslation();
   const { user } = useAuth();
   const [tab, setTab] = useState<Tab>('all');
   const [feed, setFeed] = useState<FeedItem[]>([]);

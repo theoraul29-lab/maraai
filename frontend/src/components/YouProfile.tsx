@@ -88,7 +88,7 @@ interface YouProfileProps {
 }
 
 const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
-  const { user, logout, refreshUser } = useAuth();
+  const { user, refreshUser } = useAuth();
   const { t } = useTranslation();
 
   const [profile, setProfile] = useState<ProfilePayload | null>(null);
