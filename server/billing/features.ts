@@ -40,10 +40,6 @@ export const FEATURE_KEYS = [
   'writers.publish_public',
   'writers.publish_vip',
   'writers.publish_paid',
-  // trading academy
-  'trading.level_1_fundamentals',
-  'trading.all_levels',
-  'trading.live_sessions',
   // profile
   'profile.public',
   // creator tools

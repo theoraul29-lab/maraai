@@ -222,6 +222,14 @@ const ReelsComponent: React.FC = () => {
     }
   };
 
+  const handleDeleteReel = async (reelId: number) => {
+    if (!window.confirm('Stergi acest reel?')) return;
+    try {
+      await axios.delete(`${API_URL}/api/creator/videos/${reelId}`, { withCredentials: true });
+      setMyReels(prev => prev.filter(r => r.id !== reelId));
+    } catch { /* silent */ }
+  };
+
   const formatNumber = (n: number) => {
     if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
     if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
@@ -369,6 +377,7 @@ const ReelsComponent: React.FC = () => {
                       <span>❤️ {formatNumber(reel.likes)}</span>
                     </div>
                     <small>{new Date(reel.createdAt).toLocaleDateString(i18n.language)}</small>
+                    <button className="myreel-delete-btn" onClick={() => handleDeleteReel(reel.id)}>🗑️</button>
                   </div>
                 </div>
               ))}

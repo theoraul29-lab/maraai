@@ -1,28 +1,5 @@
 /* Module-Specific Designs */
 
-/* TRADING ACADEMY - Orange/Red theme */
-.module-trading {
-  background: linear-gradient(135deg, #1a0f0a 0%, #2d1810 50%, #1f0f0a 100%);
-  --module-primary: #f97316;
-  --module-secondary: #ef4444;
-  --module-accent: #fbbf24;
-}
-
-.module-trading .module-header {
-  border-bottom: 3px solid #f97316;
-  background: linear-gradient(90deg, rgba(249, 115, 22, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
-}
-
-.module-trading .btn-primary {
-  background: linear-gradient(135deg, #f97316 0%, #ef4444 100%);
-  box-shadow: 0 8px 24px rgba(249, 115, 22, 0.4);
-}
-
-.module-trading .btn-primary:hover {
-  box-shadow: 0 12px 32px rgba(249, 115, 22, 0.6);
-  transform: translateY(-2px);
-}
-
 /* WRITERS HUB - Green/Emerald theme */
 .module-writers {
   background: linear-gradient(135deg, #0a1f1a 0%, #0f2f25 50%, #0a1a15 100%);

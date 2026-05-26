@@ -352,3 +352,96 @@
   font-size: 0.7rem;
   color: #555;
 }
+
+/* ===== MESSENGER BUTTON + PANEL ===== */
+
+.nav-messenger-btn {
+  position: relative;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 8px;
+  min-width: 36px;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+.nav-messenger-btn:hover { background: rgba(168, 85, 247, 0.15); }
+
+.nav-messenger-badge {
+  position: absolute;
+  top: -2px;
+  right: -4px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 10px;
+  min-width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  line-height: 1;
+}
+
+.nav-messenger-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1500;
+}
+
+.nav-messenger-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 580px;
+  max-width: 100vw;
+  height: 100vh;
+  background: #0f0f23;
+  border-left: 1px solid rgba(168, 85, 247, 0.2);
+  z-index: 1501;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -8px 0 40px rgba(0, 0, 0, 0.6);
+  animation: panel-slide-in 0.25s ease;
+}
+
+@keyframes panel-slide-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.nav-messenger-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(168, 85, 247, 0.2);
+  font-weight: 700;
+  color: #c77dff;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.nav-messenger-close {
+  background: none;
+  border: none;
+  color: #c77dff;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+.nav-messenger-close:hover { background: rgba(168, 85, 247, 0.15); }
+
+@media (max-width: 600px) {
+  .nav-messenger-panel { width: 100vw; }
+}

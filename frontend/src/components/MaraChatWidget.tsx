@@ -1,8 +1,43 @@
 import { useState, useRef, useEffect } from 'react';
+import DOMPurify from 'dompurify';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { AuthModal } from './AuthModal';
 import './MaraChatWidget.css';
+
+// Converts Mara's plain-text/markdown responses to sanitized HTML.
+// Build the raw HTML first, then run it through DOMPurify so even
+// pathological model output can't inject scripts or event handlers.
+function renderMarkdown(text: string): string {
+  const raw = text
+    // Code blocks (```) before inline code to avoid double-processing
+    .replace(/```[\w]*\n?([\s\S]*?)```/g, (_, code) =>
+      `<pre class="mara-code-block"><code>${code.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>`)
+    // Inline code
+    .replace(/`([^`\n]+)`/g, (_, code) =>
+      `<code class="mara-code-inline">${code.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code>`)
+    // Bold
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    // Italic
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    // Numbered lists
+    .replace(/(?:^|\n)\d+\. (.+)/g, '\n<li>$1</li>')
+    // Unordered lists
+    .replace(/(?:^|\n)[•\-] (.+)/g, '\n<li>$1</li>')
+    // Wrap consecutive <li> blocks in <ul>
+    .replace(/(<li>[\s\S]+?<\/li>)(?!\s*<li>)/g, '<ul>$1</ul>')
+    // Double newline → paragraph break
+    .replace(/\n\n+/g, '</p><p>')
+    // Single newline → <br>
+    .replace(/\n/g, '<br>')
+    .replace(/^/, '<p>')
+    .replace(/$/, '</p>');
+
+  return DOMPurify.sanitize(raw, {
+    ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'pre', 'code'],
+    ALLOWED_ATTR: ['class'],
+  });
+}
 
 interface ChatMessage {
   id: string;
@@ -145,6 +180,11 @@ export function MaraChatWidget() {
     }
   };
 
+  const clearConversation = () => {
+    setMessages([]);
+    setCurrentMood('neutral');
+  };
+
   const getMoodEmoji = (mood: string) => {
     const emojis: Record<string, string> = {
       happy: '😊',
@@ -216,12 +256,14 @@ export function MaraChatWidget() {
               <span className="mara-mood-emoji">{getMoodEmoji(currentMood)}</span>
               <h3>Mara AI</h3>
             </div>
-            <button
-              className="mara-close-btn"
-              onClick={() => setIsOpen(false)}
-            >
-              ✕
-            </button>
+            <div className="mara-header-actions">
+              {messages.length > 0 && (
+                <button className="mara-clear-btn" onClick={clearConversation} title="Clear conversation">
+                  🗑️
+                </button>
+              )}
+              <button className="mara-close-btn" onClick={() => setIsOpen(false)}>✕</button>
+            </div>
           </div>
 
           <div className="mara-chat-messages">
@@ -270,8 +312,18 @@ export function MaraChatWidget() {
                   {msg.sender === 'mara' && (
                     <span className="mara-emoji">{getMoodEmoji(msg.mood || 'neutral')}</span>
                   )}
-                  <p>{msg.content}</p>
+                  {msg.sender === 'mara' ? (
+                    <div
+                      className="mara-message-body"
+                      dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.content) }}
+                    />
+                  ) : (
+                    <p>{msg.content}</p>
+                  )}
                 </div>
+                <span className="mara-msg-time">
+                  {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
               </div>
             ))}
 

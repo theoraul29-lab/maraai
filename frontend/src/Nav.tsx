@@ -5,6 +5,7 @@ import { useAuth } from './contexts/AuthContext';
 import { LanguageSelector } from './components/LanguageSelector';
 import { GlobalSearch } from './components/GlobalSearch';
 import { SettingsModal } from './components/SettingsModal';
+import MessengerPanel from './components/MessengerPanel';
 import axios from 'axios';
 import './styles/Nav.css';
 import './styles/GlobalSearch.css';
@@ -15,6 +16,7 @@ const linkKeys = [
 	{ to: '/', key: 'home', icon: '🏠' },
 	{ to: '/reels', key: 'reels', icon: '🎬' },
 	{ to: '/missions', key: 'missions', icon: '🎯' },
+	{ to: '/community', key: 'community', icon: '🌐' },
 	{ to: '/membership', key: 'vip', icon: '👑' },
 	{ to: '/creator-panel', key: 'creator', icon: '✨' },
 	{ to: '/writers-hub', key: 'writers', icon: '✍️' },
@@ -125,6 +127,8 @@ const Nav: React.FC = () => {
 	const [menuOpen, setMenuOpen] = useState(false);
 	const [paymentsActive, setPaymentsActive] = useState(true);
 	const [settingsOpen, setSettingsOpen] = useState(false);
+	const [messengerOpen, setMessengerOpen] = useState(false);
+	const [messengerUnread, setMessengerUnread] = useState(0);
 	const { t } = useTranslation();
 	const { user, isAuthenticated } = useAuth();
 
@@ -162,6 +166,18 @@ const Nav: React.FC = () => {
 				</div>
 				<GlobalSearch />
 				<NotificationBell />
+				{isAuthenticated && (
+					<button
+						className="nav-messenger-btn"
+						onClick={() => setMessengerOpen(o => !o)}
+						aria-label="Mesaje"
+					>
+						💬
+						{messengerUnread > 0 && (
+							<span className="nav-messenger-badge">{messengerUnread > 99 ? '99+' : messengerUnread}</span>
+						)}
+					</button>
+				)}
 				<LanguageSelector compact />
 				{isAuthenticated && (
 					<button
@@ -179,6 +195,18 @@ const Nav: React.FC = () => {
 				<div className="nav-brand">{t('nav.brandMobile')}</div>
 				<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
 					<NotificationBell />
+					{isAuthenticated && (
+						<button
+							className="nav-messenger-btn"
+							onClick={() => setMessengerOpen(o => !o)}
+							aria-label="Mesaje"
+						>
+							💬
+							{messengerUnread > 0 && (
+								<span className="nav-messenger-badge">{messengerUnread > 99 ? '99+' : messengerUnread}</span>
+							)}
+						</button>
+					)}
 					<LanguageSelector compact />
 					{isAuthenticated && (
 						<button
@@ -231,6 +259,21 @@ const Nav: React.FC = () => {
 
 		{settingsOpen && (
 			<SettingsModal onClose={() => setSettingsOpen(false)} />
+		)}
+
+		{messengerOpen && isAuthenticated && (
+			<>
+				<div className="nav-messenger-backdrop" onClick={() => setMessengerOpen(false)} />
+				<div className="nav-messenger-panel">
+					<div className="nav-messenger-panel-header">
+						<span>💬 Mesaje</span>
+						<button className="nav-messenger-close" onClick={() => setMessengerOpen(false)}>✕</button>
+					</div>
+					<MessengerPanel
+						onUnreadCountChange={setMessengerUnread}
+					/>
+				</div>
+			</>
 		)}
 	</>
 	);

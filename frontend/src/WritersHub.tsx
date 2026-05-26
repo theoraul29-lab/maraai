@@ -162,6 +162,12 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
   const [readingBody, setReadingBody] = useState<string>('');
   const [readingError, setReadingError] = useState<string | null>(null);
 
+  // Library search
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Reading progress (0-100)
+  const [readProgress, setReadProgress] = useState(0);
+
   // Per-session like tracker — prevents spam-clicks from pushing multiple
   // +1's into the DB (backend does unconditional `likes + 1` on each POST,
   // so the guard has to live client-side until we have a real toggle API).
@@ -210,14 +216,16 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
 
   const featured = useMemo(() => library.slice(0, 3), [library]);
   const byCategory = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
     const map = new Map<typeof CATEGORIES[number], ApiArticle[]>();
     for (const c of CATEGORIES) map.set(c, []);
     for (const a of library) {
+      if (q && !a.title.toLowerCase().includes(q) && !(a.penName || '').toLowerCase().includes(q)) continue;
       const cat = normalizeCategory(a.category);
       map.get(cat)!.push(a);
     }
     return map;
-  }, [library]);
+  }, [library, searchQuery]);
 
   const resetComposer = () => {
     setTitle(''); setContent(''); setCoverUrl('');
@@ -372,6 +380,30 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
       await axios.post(`${API_URL}/api/writers/${workId}/like`, {}, { withCredentials: true });
     } catch { /* optimistic — counter stays incremented locally */ }
   };
+
+  const deleteArticle = async (workId: number) => {
+    if (!window.confirm('Stergi acest articol? Actiunea este ireversibila.')) return;
+    try {
+      await axios.delete(`${API_URL}/api/writers/${workId}`, { withCredentials: true });
+      setLibrary((prev) => prev.filter((w) => w.id !== workId));
+      if (readingWork?.id === workId) setView('library');
+    } catch { /* silent */ }
+  };
+
+  // Track reading scroll progress via the scrollable `.writers-content` container.
+  useEffect(() => {
+    if (view !== 'read') { setReadProgress(0); return; }
+    const container = document.querySelector('.writers-content') as HTMLElement | null;
+    if (!container) return;
+    setReadProgress(0);
+    const onScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      const scrollable = scrollHeight - clientHeight;
+      setReadProgress(scrollable > 0 ? Math.round((scrollTop / scrollable) * 100) : 100);
+    };
+    container.addEventListener('scroll', onScroll, { passive: true });
+    return () => container.removeEventListener('scroll', onScroll);
+  }, [view, readingBody]);
 
   const askMaraAI = async () => {
     if (!maraPrompt.trim()) return;
@@ -663,7 +695,15 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
         {/* LIBRARY */}
         {view === 'library' && (
           <div className="writers-library">
-            <h2 className="writers-section-title">{t('writers.libraryTitle')}</h2>
+            <div className="writers-library-header">
+              <h2 className="writers-section-title">{t('writers.libraryTitle')}</h2>
+              <input
+                className="writers-search-input"
+                placeholder="🔍 Caută titlu sau autor…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
             {loading && <p className="writers-dim">{t('writers.loadingLibrary')}</p>}
             {!loading && library.length === 0 && (
               <p className="writers-dim">{t('writers.emptyLibrary')}</p>
@@ -721,6 +761,15 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
                               {shareBusyId === w.id ? '…' : '📣 ' + t('writers.shareOnYou', 'Share on You')}
                             </button>
                           )}
+                          {user && w.userId === user.id && (
+                            <button
+                              className="writers-delete-btn"
+                              onClick={() => deleteArticle(w.id)}
+                              title="Șterge articol"
+                            >
+                              🗑️
+                            </button>
+                          )}
                         </div>
                       </article>
                     ))}
@@ -762,6 +811,7 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
         {/* READ */}
         {view === 'read' && readingWork && (
           <div className="writers-reading-mode">
+            <div className="writers-read-progress-bar" style={{ width: `${readProgress}%` }} />
             <button onClick={() => setView('library')} className="writers-back-btn">
               ← {t('writers.closeReading')}
             </button>

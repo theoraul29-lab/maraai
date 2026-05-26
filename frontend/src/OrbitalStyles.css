@@ -420,12 +420,6 @@
   --hologram-color: rgba(6, 182, 212, 0.5);
 }
 
-.orb[data-module="trading"] {
-  border-color: #22c55e;
-  background: radial-gradient(circle at 35% 35%, rgba(34, 197, 94, 0.35), rgba(34, 197, 94, 0.08));
-  color: #dcfce7;
-  --hologram-color: rgba(34, 197, 94, 0.5);
-}
 
 .orb[data-module="vip"] {
   border-color: #ec4899;

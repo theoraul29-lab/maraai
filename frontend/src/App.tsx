@@ -23,6 +23,7 @@ import HomePage from './HomePage';
 // Admin pages are gated behind AdminGuard and never reached by 99% of
 // visitors. Loading them eagerly bloated the initial bundle by ~110 kB; lazy
 // chunks isolate that cost to the admins who actually visit /admin/*.
+const Community = lazy(() => import('./Community'));
 const AdminBrain = lazy(() => import('./AdminBrain'));
 const AdminExperiments = lazy(() => import('./AdminExperiments'));
 const AdminWaitlist = lazy(() => import('./AdminWaitlist'));
@@ -98,6 +99,7 @@ function App() {
                 <Route path="/you" element={<You />} />
                 <Route path="/reels" element={<Reels />} />
                 <Route path="/writers-hub" element={<WritersHub onClose={() => navigate('/')} />} />
+                <Route path="/community" element={<Community />} />
                 <Route path="/pricing" element={<Pricing />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/reset-password/confirmation" element={<ResetPasswordConfirmation />} />

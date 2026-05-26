@@ -881,3 +881,60 @@
   margin-bottom: 12px;
   background-color: #12121c;
 }
+
+/* ===== LIBRARY SEARCH ===== */
+.writers-library-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.writers-library-header .writers-section-title {
+  margin: 0;
+}
+.writers-search-input {
+  flex: 1;
+  min-width: 180px;
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 8px;
+  padding: 8px 14px;
+  color: #fff;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.writers-search-input:focus {
+  border-color: rgba(139, 92, 246, 0.7);
+  background: rgba(139, 92, 246, 0.13);
+}
+.writers-search-input::placeholder { color: #666; }
+
+/* ===== DELETE ARTICLE BUTTON ===== */
+.writers-delete-btn {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #ef4444;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.writers-delete-btn:hover {
+  background: rgba(239, 68, 68, 0.22);
+  border-color: rgba(239, 68, 68, 0.6);
+}
+
+/* ===== READING PROGRESS BAR ===== */
+.writers-read-progress-bar {
+  position: sticky;
+  top: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #8b5cf6, #c77dff);
+  transition: width 0.15s ease;
+  z-index: 10;
+  border-radius: 0 2px 2px 0;
+}

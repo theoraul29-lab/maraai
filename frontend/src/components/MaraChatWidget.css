@@ -195,7 +195,8 @@
 /* Chat Messages */
 .mara-message {
   display: flex;
-  gap: 8px;
+  align-items: flex-end;
+  gap: 6px;
   animation: fadeIn 0.3s ease;
 }
 
@@ -492,6 +493,70 @@
 }
 
 /* ===== ACCESSIBILITY ===== */
+
+/* ===== HEADER ACTIONS (clear + close) ===== */
+.mara-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mara-clear-btn {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  opacity: 0.6;
+  transition: opacity 0.2s, background 0.2s;
+}
+.mara-clear-btn:hover {
+  opacity: 1;
+  background: rgba(239, 68, 68, 0.15);
+}
+
+/* ===== MESSAGE BODY (markdown) ===== */
+.mara-message-body {
+  font-size: 14px;
+  line-height: 1.55;
+  color: inherit;
+}
+.mara-message-body p { margin: 0 0 6px; }
+.mara-message-body p:last-child { margin-bottom: 0; }
+.mara-message-body ul { margin: 4px 0; padding-left: 18px; }
+.mara-message-body li { margin-bottom: 2px; }
+.mara-message-body strong { color: #e0aaff; }
+.mara-message-body em { color: #d8b4fe; }
+.mara-code-inline {
+  background: rgba(139, 92, 246, 0.25);
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-size: 12px;
+  font-family: 'Courier New', monospace;
+  color: #c4b5fd;
+}
+.mara-code-block {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-family: 'Courier New', monospace;
+  color: #c4b5fd;
+  overflow-x: auto;
+  margin: 6px 0;
+}
+
+/* ===== TIMESTAMP ===== */
+.mara-msg-time {
+  font-size: 10px;
+  color: rgba(255,255,255,0.3);
+  align-self: flex-end;
+  white-space: nowrap;
+  margin-left: 4px;
+  flex-shrink: 0;
+}
+.mara-message.user .mara-msg-time { margin-left: 0; margin-right: 4px; order: -1; }
 
 .mara-chat-button:focus-visible,
 .mara-close-btn:focus-visible,

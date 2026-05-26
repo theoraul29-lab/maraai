@@ -3,7 +3,6 @@ import type { UserTier } from '../contexts/AuthContext';
 export interface FeatureAccess {
   you: boolean;
   reels: boolean;
-  trading: boolean;
   writers: boolean;
   creators: boolean;
   chat: boolean;
@@ -16,7 +15,6 @@ export const getFeatureAccess = (tier: UserTier): FeatureAccess => {
   const baseAccess: FeatureAccess = {
     you: false,
     reels: false,
-    trading: false,
     writers: false,
     creators: false,
     chat: false,
@@ -41,8 +39,7 @@ export const getFeatureAccess = (tier: UserTier): FeatureAccess => {
       return {
         you: true,
         reels: true,
-        trading: true,
-        writers: true,
+            writers: true,
         creators: true,
         chat: true,
         advanced_editing: true,
@@ -55,8 +52,7 @@ export const getFeatureAccess = (tier: UserTier): FeatureAccess => {
       return {
         you: true,
         reels: true,
-        trading: true,
-        writers: true,
+            writers: true,
         creators: true,
         chat: true,
         advanced_editing: true,
@@ -69,8 +65,7 @@ export const getFeatureAccess = (tier: UserTier): FeatureAccess => {
       return {
         you: true,
         reels: true,
-        trading: true,
-        writers: true,
+            writers: true,
         creators: true,
         chat: true,
         advanced_editing: true,

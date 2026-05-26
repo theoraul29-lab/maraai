@@ -173,9 +173,7 @@ export const VIP: React.FC<Props> = ({ onClose }) => {
                 <span>{t('vip.vipLabel')}</span>
               </div>
               <div className="vip-compare-row"><span>{t('vip.chatWithMara')}</span><span>{t('vip.chatLimit')}</span><span>{t('vip.unlimited')}</span></div>
-              <div className="vip-compare-row"><span>{t('vip.tradingSignals')}</span><span>❌</span><span>{t('vip.realtime')}</span></div>
-              <div className="vip-compare-row"><span>{t('vip.tradingStrategies')}</span><span>5</span><span>50+</span></div>
-              <div className="vip-compare-row"><span>{t('vip.aiWriterTips')}</span><span>❌</span><span>✅</span></div>
+<div className="vip-compare-row"><span>{t('vip.aiWriterTips')}</span><span>❌</span><span>✅</span></div>
               <div className="vip-compare-row"><span>{t('vip.reelsUpload')}</span><span>{t('vip.reelsLimit')}</span><span>{t('vip.unlimited')}</span></div>
               <div className="vip-compare-row"><span>{t('vip.aiVoice')}</span><span>❌</span><span>✅ {t('vip.voices')}</span></div>
               <div className="vip-compare-row"><span>{t('vip.ads')}</span><span>{t('vip.adsYes')}</span><span>{t('vip.adsNo')}</span></div>

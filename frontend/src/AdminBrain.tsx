@@ -4,6 +4,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from './contexts/AuthContext';
+import './AdminBrain.css';
 
 type BrainStatus = {
   enabled: boolean;
@@ -104,13 +105,6 @@ function renderSection(raw: string | undefined, items: string[] | undefined): st
   return '—';
 }
 
-function priorityColor(p: string): string {
-  if (p === 'P0') return '#c00';
-  if (p === 'P1') return '#d97706';
-  if (p === 'P2') return '#2563eb';
-  return '#555';
-}
-
 export default function AdminBrain() {
   const { isAuthenticated } = useAuth();
   const [status, setStatus] = useState<BrainStatus | null>(null);
@@ -179,9 +173,7 @@ export default function AdminBrain() {
         const payload = await queueRes.json();
         setQueue(Array.isArray(payload?.queue) ? payload.queue : []);
       }
-      if (statsRes.ok) {
-        setLearningStats(await statsRes.json());
-      }
+      if (statsRes.ok) setLearningStats(await statsRes.json());
     } catch (err) {
       console.error('[AdminBrain] loadLearning failed:', err);
     }
@@ -249,10 +241,7 @@ export default function AdminBrain() {
 
   const addToQueue = useCallback(async () => {
     const topic = newTopic.trim();
-    if (!topic) {
-      setQueueMsg('Topic is required');
-      return;
-    }
+    if (!topic) { setQueueMsg('Topic is required'); return; }
     setQueueMsg(null);
     try {
       const res = await fetch('/api/admin/learning/queue', {
@@ -262,10 +251,7 @@ export default function AdminBrain() {
         body: JSON.stringify({ topic, reason: newReason, priority: 'medium' }),
       });
       const payload = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setQueueMsg(`Failed: ${payload?.error || res.status}`);
-        return;
-      }
+      if (!res.ok) { setQueueMsg(`Failed: ${payload?.error || res.status}`); return; }
       setQueueMsg(`Added: ${topic}`);
       setNewTopic('');
       setNewReason('');
@@ -277,208 +263,151 @@ export default function AdminBrain() {
 
   if (!isAuthenticated) {
     return (
-      <div style={{ padding: 24, fontFamily: 'sans-serif' }}>
+      <div className="ab-root">
         <h1>Admin · Mara Brain</h1>
-        <p style={{ color: '#c00' }}>
-          You must be signed in to access this page.{' '}
-          <a href="/" style={{ color: '#00c' }}>Go to home</a>
-        </p>
+        <p className="ab-error">You must be signed in. <a href="/">Go to home</a></p>
       </div>
     );
   }
 
   if (forbidden) {
     return (
-      <div style={{ padding: 24, fontFamily: 'sans-serif' }}>
+      <div className="ab-root">
         <h1>Admin · Mara Brain</h1>
-        <p style={{ color: '#c00' }}>
-          403 — admin access required. Set your session user id in
-          <code> ADMIN_USER_IDS</code> env var on the server.
+        <p className="ab-error">
+          403 — admin access required. Set your session user id in{' '}
+          <code>ADMIN_USER_IDS</code> env var on the server.
         </p>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: 24, fontFamily: 'sans-serif', maxWidth: 1100, margin: '0 auto' }}>
-      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <h1 style={{ margin: 0 }}>Mara Brain · Admin</h1>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <a
-            href="/admin/experiments"
-            style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid #ccc', textDecoration: 'none', color: '#333' }}
-          >
-            Growth experiments →
-          </a>
+    <div className="ab-root">
+      <header className="ab-header">
+        <h1>Mara Brain · Admin</h1>
+        <div className="ab-header-actions">
+          <a href="/admin/experiments" className="ab-btn">Growth experiments →</a>
           <button
+            className="ab-btn"
             onClick={() => void (tab === 'learning' ? loadLearning() : load())}
-            style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid #ccc', cursor: 'pointer' }}
           >
             Refresh
           </button>
         </div>
       </header>
 
-      <nav style={{ display: 'flex', gap: 8, marginBottom: 16, borderBottom: '1px solid #ddd' }}>
+      <nav className="ab-nav">
         {(['cycles', 'learning', 'executive'] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            style={{
-              padding: '8px 16px',
-              border: 'none',
-              borderBottom: tab === t ? '2px solid #000' : '2px solid transparent',
-              background: 'transparent',
-              cursor: 'pointer',
-              fontWeight: tab === t ? 600 : 400,
-              textTransform: 'capitalize',
-            }}
-          >
+          <button key={t} className={`ab-tab ${tab === t ? 'active' : ''}`} onClick={() => setTab(t)}>
             {t}
           </button>
         ))}
       </nav>
 
-      {loading && <p>Loading…</p>}
-      {error && <p style={{ color: '#c00' }}>Error: {error}</p>}
+      {loading && <p className="ab-msg">Loading…</p>}
+      {error && <p className="ab-msg ab-error">Error: {error}</p>}
 
+      {/* ── CYCLES TAB ──────────────────────────────────────────────── */}
       {tab === 'cycles' && status && (
         <>
-          <section style={{ border: '1px solid #ddd', borderRadius: 8, padding: 16, marginBottom: 24 }}>
-            <h2 style={{ marginTop: 0 }}>Status</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
-              <div><strong>Enabled:</strong> {status.enabled ? 'yes' : 'no'}</div>
-              <div><strong>Running now:</strong> {status.running ? 'yes' : 'idle'}</div>
-              <div><strong>Last run:</strong> {formatDate(status.lastRunAt)}</div>
-              <div><strong>Last duration:</strong> {formatDuration(status.lastDurationMs)}</div>
-              <div><strong>Last knowledge learned:</strong> {status.lastKnowledgeLearned ?? '—'}</div>
-              <div><strong>Next run:</strong> {formatDate(status.nextRunAt)}</div>
-              <div><strong>Cycle interval:</strong> {formatDuration(status.cycleIntervalMs)}</div>
-              <div><strong>Self-post interval:</strong> {formatDuration(status.selfPostIntervalMs)}</div>
-              <div style={{ gridColumn: '1 / -1' }}>
-                <strong>Last error:</strong> {status.lastError ? <code style={{ color: '#c00' }}>{status.lastError}</code> : '—'}
+          <section className="ab-card">
+            <h2>Status</h2>
+            <div className="ab-status-grid">
+              <div className="ab-status-item"><strong>Enabled:</strong> {status.enabled ? 'yes' : 'no'}</div>
+              <div className="ab-status-item"><strong>Running now:</strong> {status.running ? 'yes' : 'idle'}</div>
+              <div className="ab-status-item"><strong>Last run:</strong> {formatDate(status.lastRunAt)}</div>
+              <div className="ab-status-item"><strong>Last duration:</strong> {formatDuration(status.lastDurationMs)}</div>
+              <div className="ab-status-item"><strong>Knowledge learned:</strong> {status.lastKnowledgeLearned ?? '—'}</div>
+              <div className="ab-status-item"><strong>Next run:</strong> {formatDate(status.nextRunAt)}</div>
+              <div className="ab-status-item"><strong>Cycle interval:</strong> {formatDuration(status.cycleIntervalMs)}</div>
+              <div className="ab-status-item"><strong>Self-post interval:</strong> {formatDuration(status.selfPostIntervalMs)}</div>
+              <div className="ab-status-item" style={{ gridColumn: '1 / -1' }}>
+                <strong>Last error:</strong>{' '}
+                {status.lastError ? <code className="ab-error">{status.lastError}</code> : '—'}
               </div>
             </div>
-
-            <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div className="ab-trigger-row">
               <button
+                className="ab-btn ab-btn-primary"
                 onClick={() => void trigger()}
                 disabled={triggering || !status.enabled || status.running}
-                style={{
-                  padding: '8px 16px', borderRadius: 6, border: '1px solid #333',
-                  background: triggering ? '#aaa' : '#000', color: '#fff',
-                  cursor: triggering ? 'not-allowed' : 'pointer',
-                }}
               >
                 {triggering ? 'Triggering…' : 'Run cycle now'}
               </button>
-              {triggerMsg && <span style={{ color: '#333' }}>{triggerMsg}</span>}
+              {triggerMsg && <span className="ab-trigger-msg">{triggerMsg}</span>}
             </div>
           </section>
 
-          <section>
+          <section className="ab-card">
             <h2>Recent cycles ({logs.length})</h2>
-            {logs.length === 0 && <p>No brain logs yet. The first cycle runs ~30s after server boot.</p>}
+            {logs.length === 0 && <p className="ab-msg">No brain logs yet. The first cycle runs ~30s after server boot.</p>}
             {logs.map((log) => (
-              <div key={log.id} style={{ border: '1px solid #eee', borderRadius: 8, padding: 12, marginBottom: 12 }}>
-                <div style={{ fontWeight: 600, marginBottom: 8 }}>
-                  Cycle #{log.id} · {formatDate(log.createdAt)}
-                </div>
-                <details>
-                  <summary>Research</summary>
-                  <pre style={{ whiteSpace: 'pre-wrap', background: '#f7f7f7', padding: 8 }}>
-                    {renderSection(log.research, log.researchItems)}
-                  </pre>
-                </details>
-                <details>
-                  <summary>Product ideas</summary>
-                  <pre style={{ whiteSpace: 'pre-wrap', background: '#f7f7f7', padding: 8 }}>
-                    {renderSection(log.productIdeas, log.productIdeasItems)}
-                  </pre>
-                </details>
-                <details>
-                  <summary>Dev tasks</summary>
-                  <pre style={{ whiteSpace: 'pre-wrap', background: '#f7f7f7', padding: 8 }}>
-                    {renderSection(log.devTasks, log.devTasksItems)}
-                  </pre>
-                </details>
-                <details>
-                  <summary>Growth ideas</summary>
-                  <pre style={{ whiteSpace: 'pre-wrap', background: '#f7f7f7', padding: 8 }}>
-                    {renderSection(log.growthIdeas, log.growthIdeasItems)}
-                  </pre>
-                </details>
+              <div key={log.id} className="ab-log-card">
+                <div className="ab-log-title">Cycle #{log.id} · {formatDate(log.createdAt)}</div>
+                {(['Research', 'Product ideas', 'Dev tasks', 'Growth ideas'] as const).map((label, i) => {
+                  const keys = [
+                    [log.research, log.researchItems],
+                    [log.productIdeas, log.productIdeasItems],
+                    [log.devTasks, log.devTasksItems],
+                    [log.growthIdeas, log.growthIdeasItems],
+                  ][i] as [string, string[] | undefined];
+                  return (
+                    <details key={label} className="ab-log-details">
+                      <summary>{label}</summary>
+                      <pre className="ab-log-pre">{renderSection(keys[0], keys[1])}</pre>
+                    </details>
+                  );
+                })}
               </div>
             ))}
           </section>
         </>
       )}
 
+      {/* ── EXECUTIVE TAB ───────────────────────────────────────────── */}
       {tab === 'executive' && (
-        <section style={{ border: '1px solid #ddd', borderRadius: 8, padding: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <section className="ab-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <h2 style={{ margin: 0 }}>ExecutiveReasoning — CognitiveState</h2>
-            <button
-              onClick={() => void loadExecutive()}
-              style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid #ccc', cursor: 'pointer' }}
-            >
-              Refresh
-            </button>
+            <button className="ab-btn" onClick={() => void loadExecutive()}>Refresh</button>
           </div>
-          {!executive && <p>Loading…</p>}
+          {!executive && <p className="ab-msg">Loading…</p>}
           {executive && (
             <>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 16 }}>
-                <div>
-                  <strong>Last updated:</strong>{' '}
-                  {executive.state.lastUpdated ? formatDate(executive.state.lastUpdated) : '—'}
-                </div>
+              <div className="ab-exec-grid">
+                <div><strong>Last updated:</strong> {executive.state.lastUpdated ? formatDate(executive.state.lastUpdated) : '—'}</div>
                 <div><strong>Signal ring size:</strong> {executive.signalCount} / 50</div>
                 <div><strong>Priority:</strong> {executive.state.currentPriority || '—'}</div>
-                <div>
-                  <strong>Focus modules:</strong>{' '}
-                  {executive.state.focusModules.length ? executive.state.focusModules.join(', ') : '—'}
-                </div>
+                <div><strong>Focus modules:</strong> {executive.state.focusModules.length ? executive.state.focusModules.join(', ') : '—'}</div>
               </div>
 
-              <div style={{ marginBottom: 16 }}>
+              <div style={{ marginBottom: 14 }}>
                 <strong>Funnel summary:</strong>
-                <div style={{ marginTop: 4, padding: '8px 12px', background: '#f7f7f7', borderRadius: 6, fontSize: 13 }}>
-                  {executive.state.funnelSummary || '— not yet computed —'}
-                </div>
+                <div className="ab-exec-funnel">{executive.state.funnelSummary || '— not yet computed —'}</div>
               </div>
 
-              <div style={{ marginBottom: 16 }}>
+              <div style={{ marginBottom: 14 }}>
                 <strong>Top user topics (signal ring):</strong>
-                <div style={{ marginTop: 4, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  {executive.state.topUserTopics.length === 0 && <span style={{ color: '#999' }}>none yet</span>}
-                  {executive.state.topUserTopics.map((t) => (
-                    <span key={t} style={{ padding: '2px 10px', background: '#e8f0fe', borderRadius: 12, fontSize: 13 }}>{t}</span>
-                  ))}
+                <div className="ab-exec-chips">
+                  {executive.state.topUserTopics.length === 0 && <span className="ab-msg">none yet</span>}
+                  {executive.state.topUserTopics.map((t) => <span key={t} className="ab-exec-chip">{t}</span>)}
                 </div>
               </div>
 
-              <div style={{ marginBottom: 16 }}>
+              <div style={{ marginBottom: 14 }}>
                 <strong>Active experiments ({executive.state.activeExperiments.length}):</strong>
-                {executive.state.activeExperiments.length === 0 && (
-                  <p style={{ color: '#999', marginTop: 4 }}>none</p>
-                )}
-                <ul style={{ marginTop: 4, paddingLeft: 20 }}>
-                  {executive.state.activeExperiments.map((e, i) => (
-                    <li key={i} style={{ fontSize: 13, marginBottom: 4 }}>{e}</li>
-                  ))}
+                {executive.state.activeExperiments.length === 0 && <p className="ab-msg">none</p>}
+                <ul style={{ marginTop: 6, paddingLeft: 20 }}>
+                  {executive.state.activeExperiments.map((e, i) => <li key={i} style={{ fontSize: 13, color: '#ccc', marginBottom: 4 }}>{e}</li>)}
                 </ul>
               </div>
 
               <div>
                 <strong>Recent outcomes ({executive.state.recentOutcomes.length}):</strong>
-                {executive.state.recentOutcomes.length === 0 && (
-                  <p style={{ color: '#999', marginTop: 4 }}>none</p>
-                )}
+                {executive.state.recentOutcomes.length === 0 && <p className="ab-msg">none</p>}
                 {executive.state.recentOutcomes.map((o, i) => (
-                  <div key={i} style={{ marginTop: 6, padding: '8px 12px', background: '#f0fdf4', borderRadius: 6, fontSize: 13 }}>
-                    {o}
-                  </div>
+                  <div key={i} className="ab-exec-outcome">{o}</div>
                 ))}
               </div>
             </>
@@ -486,49 +415,45 @@ export default function AdminBrain() {
         </section>
       )}
 
+      {/* ── LEARNING TAB ────────────────────────────────────────────── */}
       {tab === 'learning' && (
         <>
           {learningStats && (
-            <section style={{ border: '1px solid #ddd', borderRadius: 8, padding: 16, marginBottom: 24 }}>
-              <h2 style={{ marginTop: 0 }}>Learning overview</h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 12 }}>
-                <div>
-                  <strong>LLM calls (24h):</strong>{' '}
-                  {learningStats.rateLimiter.callsLast24h} / {learningStats.rateLimiter.maxPerDay}
-                </div>
-                <div><strong>Remaining today:</strong> {learningStats.rateLimiter.remaining}</div>
-                <div>
+            <section className="ab-card">
+              <h2>Learning overview</h2>
+              <div className="ab-stats-grid">
+                <div className="ab-stat"><strong>LLM calls (24h):</strong> {learningStats.rateLimiter.callsLast24h} / {learningStats.rateLimiter.maxPerDay}</div>
+                <div className="ab-stat"><strong>Remaining today:</strong> {learningStats.rateLimiter.remaining}</div>
+                <div className="ab-stat">
                   <strong>Circuit:</strong>{' '}
-                  {learningStats.rateLimiter.circuitOpen ? (
-                    <span style={{ color: '#c00' }}>open (paused)</span>
-                  ) : (
-                    <span>closed</span>
-                  )}
+                  {learningStats.rateLimiter.circuitOpen
+                    ? <span className="ab-circuit-open">open (paused)</span>
+                    : <span className="ab-circuit-closed">closed</span>}
                 </div>
-                <div><strong>Queue pending:</strong> {learningStats.queuePending}</div>
+                <div className="ab-stat"><strong>Queue pending:</strong> {learningStats.queuePending}</div>
               </div>
               <div>
                 <strong>Per-module proposals:</strong>
-                <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 8 }}>
+                <table className="ab-table" style={{ marginTop: 10 }}>
                   <thead>
-                    <tr style={{ background: '#f7f7f7' }}>
-                      <th style={{ textAlign: 'left', padding: 6 }}>Module</th>
-                      <th style={{ padding: 6 }}>Proposed</th>
-                      <th style={{ padding: 6 }}>Approved</th>
-                      <th style={{ padding: 6 }}>Rejected</th>
-                      <th style={{ padding: 6 }}>Completed</th>
+                    <tr>
+                      <th>Module</th>
+                      <th>Proposed</th>
+                      <th>Approved</th>
+                      <th>Rejected</th>
+                      <th>Completed</th>
                     </tr>
                   </thead>
                   <tbody>
                     {MODULES.map((m) => {
                       const b = learningStats.byModule[m] || { proposed: 0, approved: 0, rejected: 0, completed: 0 };
                       return (
-                        <tr key={m} style={{ borderTop: '1px solid #eee' }}>
-                          <td style={{ padding: 6, textTransform: 'capitalize' }}>{m}</td>
-                          <td style={{ padding: 6, textAlign: 'center' }}>{b.proposed}</td>
-                          <td style={{ padding: 6, textAlign: 'center' }}>{b.approved}</td>
-                          <td style={{ padding: 6, textAlign: 'center' }}>{b.rejected}</td>
-                          <td style={{ padding: 6, textAlign: 'center' }}>{b.completed}</td>
+                        <tr key={m}>
+                          <td style={{ textTransform: 'capitalize', color: '#e0e0e0' }}>{m}</td>
+                          <td>{b.proposed}</td>
+                          <td>{b.approved}</td>
+                          <td>{b.rejected}</td>
+                          <td>{b.completed}</td>
                         </tr>
                       );
                     })}
@@ -538,16 +463,14 @@ export default function AdminBrain() {
             </section>
           )}
 
-          <section style={{ border: '1px solid #ddd', borderRadius: 8, padding: 16, marginBottom: 24 }}>
-            <h2 style={{ marginTop: 0 }}>Growth proposals</h2>
-            <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+          <section className="ab-card">
+            <h2>Growth proposals</h2>
+            <div className="ab-filters">
               <label>
                 Module:{' '}
                 <select value={moduleFilter} onChange={(e) => setModuleFilter(e.target.value)}>
                   <option value="">All</option>
-                  {MODULES.map((m) => (
-                    <option key={m} value={m}>{m}</option>
-                  ))}
+                  {MODULES.map((m) => <option key={m} value={m}>{m}</option>)}
                 </select>
               </label>
               <label>
@@ -563,83 +486,55 @@ export default function AdminBrain() {
               </label>
             </div>
 
-            {insights.length === 0 && <p>No proposals match the current filters.</p>}
+            {insights.length === 0 && <p className="ab-msg">No proposals match the current filters.</p>}
             {insights.map((ins) => (
-              <div key={ins.id} style={{ border: '1px solid #eee', borderRadius: 8, padding: 12, marginBottom: 10 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600 }}>
-                      <span style={{ color: priorityColor(ins.priority), marginRight: 6 }}>{ins.priority}</span>
-                      [{ins.module}] {ins.title}
-                    </div>
-                    <div style={{ fontSize: 13, color: '#555', marginTop: 4 }}>
-                      impact: {ins.estimatedImpact} · {ins.insightType} · source: {ins.source} · status:{' '}
-                      <strong>{ins.status}</strong> · {formatDate(ins.createdAt)}
-                    </div>
-                    <p style={{ marginTop: 8, marginBottom: 0, whiteSpace: 'pre-wrap' }}>{ins.description}</p>
+              <div key={ins.id} className="ab-insight-card">
+                <div className="ab-insight-body">
+                  <div className="ab-insight-title">
+                    <span className={`ab-priority ab-priority-${ins.priority}`}>{ins.priority}</span>
+                    [{ins.module}] {ins.title}
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 130 }}>
-                    <button
-                      disabled={ins.status === 'approved'}
-                      onClick={() => void updateInsight(ins.id, 'approved')}
-                      style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid #0a7', background: '#fff', cursor: 'pointer' }}
-                    >
-                      Approve
-                    </button>
-                    <button
-                      disabled={ins.status === 'rejected'}
-                      onClick={() => void updateInsight(ins.id, 'rejected')}
-                      style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid #c00', background: '#fff', cursor: 'pointer' }}
-                    >
-                      Reject
-                    </button>
-                    <button
-                      disabled={ins.status === 'completed'}
-                      onClick={() => void updateInsight(ins.id, 'completed')}
-                      style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid #999', background: '#fff', cursor: 'pointer' }}
-                    >
-                      Mark done
-                    </button>
+                  <div className="ab-insight-meta">
+                    impact: {ins.estimatedImpact} · {ins.insightType} · source: {ins.source} · status: <strong>{ins.status}</strong> · {formatDate(ins.createdAt)}
                   </div>
+                  <p className="ab-insight-desc">{ins.description}</p>
+                </div>
+                <div className="ab-insight-actions">
+                  <button disabled={ins.status === 'approved'} onClick={() => void updateInsight(ins.id, 'approved')} className="ab-btn ab-btn-approve">Approve</button>
+                  <button disabled={ins.status === 'rejected'} onClick={() => void updateInsight(ins.id, 'rejected')} className="ab-btn ab-btn-reject">Reject</button>
+                  <button disabled={ins.status === 'completed'} onClick={() => void updateInsight(ins.id, 'completed')} className="ab-btn ab-btn-done">Mark done</button>
                 </div>
               </div>
             ))}
           </section>
 
-          <section style={{ border: '1px solid #ddd', borderRadius: 8, padding: 16 }}>
-            <h2 style={{ marginTop: 0 }}>Reading / research queue ({queue.length} pending)</h2>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+          <section className="ab-card">
+            <h2>Reading / research queue ({queue.length} pending)</h2>
+            <div className="ab-queue-row">
               <input
+                className="ab-input"
                 type="text"
                 placeholder="Topic (e.g. 'Hormozi $100M Offers')"
                 value={newTopic}
                 onChange={(e) => setNewTopic(e.target.value)}
-                style={{ flex: 1, minWidth: 240, padding: '6px 10px', border: '1px solid #ccc', borderRadius: 6 }}
               />
               <input
+                className="ab-input"
                 type="text"
                 placeholder="Why Mara should learn this"
                 value={newReason}
                 onChange={(e) => setNewReason(e.target.value)}
-                style={{ flex: 2, minWidth: 240, padding: '6px 10px', border: '1px solid #ccc', borderRadius: 6 }}
               />
-              <button
-                onClick={() => void addToQueue()}
-                style={{ padding: '6px 14px', borderRadius: 6, border: '1px solid #333', background: '#000', color: '#fff', cursor: 'pointer' }}
-              >
-                Add to queue
-              </button>
+              <button onClick={() => void addToQueue()} className="ab-btn ab-btn-primary">Add to queue</button>
             </div>
-            {queueMsg && <p style={{ color: '#555', fontSize: 13 }}>{queueMsg}</p>}
+            {queueMsg && <p className="ab-msg">{queueMsg}</p>}
 
-            {queue.length === 0 && <p>Queue is empty.</p>}
+            {queue.length === 0 && <p className="ab-msg">Queue is empty.</p>}
             {queue.map((item) => (
-              <div key={item.id} style={{ borderTop: '1px solid #eee', padding: '8px 0' }}>
-                <div style={{ fontWeight: 600 }}>{item.topic}</div>
-                <div style={{ fontSize: 13, color: '#555' }}>
-                  priority: {item.priority} · source: {item.source} · {formatDate(item.createdAt)}
-                </div>
-                {item.reason && <div style={{ fontSize: 13, marginTop: 4 }}>{item.reason}</div>}
+              <div key={item.id} className="ab-queue-item">
+                <div className="ab-queue-item-title">{item.topic}</div>
+                <div className="ab-queue-item-meta">priority: {item.priority} · source: {item.source} · {formatDate(item.createdAt)}</div>
+                {item.reason && <div className="ab-queue-item-reason">{item.reason}</div>}
               </div>
             ))}
           </section>
