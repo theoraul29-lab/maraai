@@ -31,7 +31,7 @@
 .missions-page--onboarding {
   padding: 0;
 }
-.missions-page--onboarding .mara-tree-container {
+.missions-page--onboarding .mara-lightning-container {
   max-height: 260px;
 }
 .missions-onboarding {
@@ -161,82 +161,245 @@
   position: relative;
 }
 
-/* ── Mara Tree ───────────────────────────────────────────── */
-.mara-tree-container {
+/* ── Mara Lightning ──────────────────────────────────────── */
+.mara-lightning-container {
   width: 100%;
   height: 280px;
   flex-shrink: 0;
   position: relative;
   overflow: hidden;
-  background: radial-gradient(ellipse at 50% 100%, rgba(50,20,100,0.45) 0%, transparent 70%);
+  background: radial-gradient(ellipse at 50% 45%, rgba(60,20,120,0.35) 0%, transparent 72%);
 }
 
-.mara-tree-svg {
+.mara-lightning-svg {
   width: 100%;
   height: 100%;
-  transform-origin: 50% 95%;
-  animation: mara-sway 9s ease-in-out infinite;
 }
 
-@keyframes mara-sway {
-  0%, 100% { transform: rotate(-0.4deg); }
-  50% { transform: rotate(0.4deg); }
+/* Stars */
+.mara-star { animation: star-twinkle 3s ease-in-out infinite; opacity: 0.4; }
+.mara-star-1 { animation-duration: 2.4s; animation-delay: 0s; }
+.mara-star-2 { animation-duration: 3.1s; animation-delay: 0.7s; }
+.mara-star-3 { animation-duration: 2.8s; animation-delay: 1.4s; }
+.mara-star-4 { animation-duration: 3.6s; animation-delay: 0.3s; }
+@keyframes star-twinkle {
+  0%, 100% { opacity: 0.25; }
+  50%       { opacity: 0.75; }
 }
 
-/* Canopy pulse */
-.mara-canopy-front {
-  animation: canopy-breathe 5s ease-in-out infinite;
-}
-.mara-tree-container--thinking .mara-canopy-front {
-  animation: canopy-breathe 1.4s ease-in-out infinite;
-}
-@keyframes canopy-breathe {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.82; }
+/* Halo rings */
+.mara-halo { animation: halo-rotate 18s linear infinite; transform-origin: 150px 190px; }
+.mara-halo-1 { animation-duration: 22s; }
+.mara-halo-2 { animation-duration: 16s; animation-direction: reverse; }
+.mara-halo-3 { animation-duration: 12s; }
+@keyframes halo-rotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
 
-/* Particles */
-.mara-particle {
-  animation: spark-rise 2s ease-in infinite;
+/* Lightning bolts — base: slow, faint flicker */
+.mara-bolt {
+  fill: none;
+  stroke: #b0a0ff;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
   opacity: 0;
 }
-@keyframes spark-rise {
-  0%   { transform: translateY(0) scale(1); opacity: 0.9; }
-  40%  { opacity: 1; }
-  80%  { transform: translateY(-90px) scale(1.3); opacity: 0.5; }
-  100% { transform: translateY(-130px) scale(0); opacity: 0; }
+.mara-bolt-glow {
+  stroke: #a78bfa;
+  stroke-width: 4;
+  opacity: 0;
 }
 
-/* Eyes */
-.mara-eye {
-  animation: eye-glow 4s ease-in-out infinite;
+/* Individual bolt timings — idle */
+.mara-bolt-1       { animation: bolt-flash 2.6s ease-in-out infinite;        animation-delay: 0.0s; }
+.mara-bolt-1.mara-bolt-glow { animation: bolt-flash-glow 2.6s ease-in-out infinite; animation-delay: 0.0s; }
+.mara-bolt-2       { animation: bolt-flash 3.2s ease-in-out infinite;        animation-delay: 0.4s; }
+.mara-bolt-2.mara-bolt-glow { animation: bolt-flash-glow 3.2s ease-in-out infinite; animation-delay: 0.4s; }
+.mara-bolt-3       { animation: bolt-flash 2.9s ease-in-out infinite;        animation-delay: 0.9s; }
+.mara-bolt-3.mara-bolt-glow { animation: bolt-flash-glow 2.9s ease-in-out infinite; animation-delay: 0.9s; }
+.mara-bolt-4       { animation: bolt-flash 3.5s ease-in-out infinite;        animation-delay: 1.3s; }
+.mara-bolt-4.mara-bolt-glow { animation: bolt-flash-glow 3.5s ease-in-out infinite; animation-delay: 1.3s; }
+.mara-bolt-5       { animation: bolt-flash 2.4s ease-in-out infinite;        animation-delay: 0.6s; }
+.mara-bolt-5.mara-bolt-glow { animation: bolt-flash-glow 2.4s ease-in-out infinite; animation-delay: 0.6s; }
+.mara-bolt-6       { animation: bolt-flash 3.1s ease-in-out infinite;        animation-delay: 1.8s; }
+.mara-bolt-6.mara-bolt-glow { animation: bolt-flash-glow 3.1s ease-in-out infinite; animation-delay: 1.8s; }
+.mara-bolt-7       { animation: bolt-flash 2.7s ease-in-out infinite;        animation-delay: 1.1s; }
+.mara-bolt-7.mara-bolt-glow { animation: bolt-flash-glow 2.7s ease-in-out infinite; animation-delay: 1.1s; }
+.mara-bolt-8       { animation: bolt-flash 3.4s ease-in-out infinite;        animation-delay: 0.2s; }
+.mara-bolt-8.mara-bolt-glow { animation: bolt-flash-glow 3.4s ease-in-out infinite; animation-delay: 0.2s; }
+
+/* Extra thinking bolts — hidden at idle */
+.mara-bolt-think { opacity: 0; animation: none; }
+
+@keyframes bolt-flash {
+  0%   { opacity: 0; }
+  8%   { opacity: 0.55; }
+  12%  { opacity: 0.1; }
+  16%  { opacity: 0.6; }
+  22%  { opacity: 0; }
+  100% { opacity: 0; }
 }
-.mara-tree-container--thinking .mara-eye {
-  animation: eye-glow 1.2s ease-in-out infinite;
+@keyframes bolt-flash-glow {
+  0%   { opacity: 0; }
+  8%   { opacity: 0.25; }
+  12%  { opacity: 0.05; }
+  16%  { opacity: 0.28; }
+  22%  { opacity: 0; }
+  100% { opacity: 0; }
 }
-@keyframes eye-glow {
+
+/* THINKING STATE — intense, rapid */
+.mara-lightning-container--thinking .mara-bolt-1 { animation-duration: 0.55s !important; }
+.mara-lightning-container--thinking .mara-bolt-2 { animation-duration: 0.40s !important; }
+.mara-lightning-container--thinking .mara-bolt-3 { animation-duration: 0.65s !important; }
+.mara-lightning-container--thinking .mara-bolt-4 { animation-duration: 0.45s !important; }
+.mara-lightning-container--thinking .mara-bolt-5 { animation-duration: 0.50s !important; }
+.mara-lightning-container--thinking .mara-bolt-6 { animation-duration: 0.38s !important; }
+.mara-lightning-container--thinking .mara-bolt-7 { animation-duration: 0.60s !important; }
+.mara-lightning-container--thinking .mara-bolt-8 { animation-duration: 0.42s !important; }
+
+.mara-lightning-container--thinking .mara-bolt {
+  stroke: #e0d4ff;
+  stroke-width: 2;
+}
+.mara-lightning-container--thinking .mara-bolt-glow {
+  stroke: #c4b5fd;
+  stroke-width: 6;
+}
+.mara-lightning-container--thinking .mara-bolt-think {
+  opacity: 0;
+  animation: bolt-flash-intense 0.35s ease-in-out infinite;
+}
+.mara-lightning-container--thinking .mara-bolt-t1 { animation-delay: 0.05s; }
+.mara-lightning-container--thinking .mara-bolt-t2 { animation-delay: 0.12s; }
+.mara-lightning-container--thinking .mara-bolt-t3 { animation-delay: 0.20s; }
+
+@keyframes bolt-flash-intense {
+  0%   { opacity: 0; }
+  15%  { opacity: 0.85; }
+  25%  { opacity: 0.2; }
+  35%  { opacity: 0.9; }
+  50%  { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+/* Orb */
+.mara-orb-halo  { animation: orb-breathe 3s ease-in-out infinite; }
+.mara-orb-core  { animation: orb-core-pulse 2.5s ease-in-out infinite; }
+.mara-orb-spark { animation: orb-spark 1.8s ease-in-out infinite; }
+.mara-orb-pulse { animation: orb-ring-expand 2s ease-out infinite; opacity: 0; }
+
+.mara-lightning-container--thinking .mara-orb-halo  { animation-duration: 0.6s; }
+.mara-lightning-container--thinking .mara-orb-core  { animation-duration: 0.4s; }
+.mara-lightning-container--thinking .mara-orb-spark { animation-duration: 0.3s; }
+.mara-lightning-container--thinking .mara-orb-pulse { animation-duration: 0.7s; }
+
+@keyframes orb-breathe {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50%       { opacity: 0.9; transform: scale(1.08); }
+}
+@keyframes orb-core-pulse {
   0%, 100% { opacity: 0.85; }
-  50% { opacity: 1; filter: drop-shadow(0 0 5px #c77dff); }
+  50%       { opacity: 1; filter: drop-shadow(0 0 8px rgba(167,139,250,0.9)); }
+}
+@keyframes orb-spark {
+  0%, 100% { opacity: 0.8; transform: scale(0.9); }
+  50%       { opacity: 1; transform: scale(1.15); }
+}
+@keyframes orb-ring-expand {
+  0%   { opacity: 0.5; transform: scale(0.9); }
+  80%  { opacity: 0; transform: scale(2.2); }
+  100% { opacity: 0; transform: scale(2.4); }
 }
 
-/* Fireflies */
-.mara-firefly { animation: ff 3s ease-in-out infinite; }
-.mara-ff1 { animation-delay: 0s; animation-duration: 2.8s; }
-.mara-ff2 { animation-delay: 1s; animation-duration: 3.5s; }
-.mara-ff3 { animation-delay: 1.8s; animation-duration: 2.5s; }
-.mara-ff4 { animation-delay: 0.6s; animation-duration: 4s; }
-@keyframes ff {
-  0%, 100% { opacity: 0.3; transform: translate(0, 0); }
-  50% { opacity: 0.9; transform: translate(2px, -3px); }
+/* Motto strip */
+.mara-motto {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 10px;
+  padding: 6px 12px 0;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: rgba(167,139,250,0.55);
+  text-transform: uppercase;
+  flex-shrink: 0;
 }
+.mara-motto span { white-space: nowrap; }
 
-/* Mist */
-.mara-mist {
-  animation: mist-pulse 6s ease-in-out infinite;
+/* Transformation Journey */
+.transformation-journey {
+  padding: 10px 14px 6px;
+  flex-shrink: 0;
 }
-@keyframes mist-pulse {
-  0%, 100% { opacity: 0.8; }
-  50% { opacity: 1; }
+.tj-milestones {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+  position: relative;
+}
+.tj-track {
+  height: 3px;
+  background: rgba(167,139,250,0.15);
+  border-radius: 2px;
+  margin-bottom: 6px;
+  overflow: hidden;
+}
+.tj-track-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #7c3aed, #c77dff);
+  border-radius: 2px;
+  transition: width 0.7s ease;
+}
+.tj-node {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  transition: transform 0.2s;
+  cursor: default;
+}
+.tj-node--done    { background: rgba(124,58,237,0.3); border: 1px solid rgba(167,139,250,0.5); }
+.tj-node--active  { background: rgba(124,58,237,0.6); border: 2px solid #c77dff; transform: scale(1.2); box-shadow: 0 0 10px rgba(167,139,250,0.5); }
+.tj-node--future  { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.3); font-size: 10px; }
+.tj-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+}
+.tj-current { font-weight: 700; }
+.tj-next    { color: rgba(167,139,250,0.5); font-size: 10px; }
+
+/* Milestone banners in mission grid */
+.mc-milestone-banner {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin: 4px 0 2px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--m-color) 15%, transparent), transparent);
+  border-left: 3px solid var(--m-color);
+  border-radius: 0 8px 8px 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--m-color);
+  letter-spacing: 0.04em;
+}
+.mc-milestone-days {
+  font-size: 10px;
+  font-weight: 500;
+  opacity: 0.7;
+  margin-left: auto;
 }
 
 /* ── Chat area ───────────────────────────────────────────── */
@@ -1068,7 +1231,7 @@
     border-right: none;
     border-bottom: 1px solid rgba(168,85,247,0.12);
   }
-  .mara-tree-container { height: 220px; }
+  .mara-lightning-container { height: 220px; }
   .missions-panel-right {
     overflow: visible;
     padding: 12px;

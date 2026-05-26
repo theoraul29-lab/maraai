@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from './contexts/AuthContext';
@@ -141,160 +141,186 @@ function apiFetchJson<T>(path: string, opts: RequestInit = {}): Promise<T> {
   });
 }
 
-// ── Mara Tree ───────────────────────────────────────────────────────────────
-function MaraTree({ isThinking }: { isThinking: boolean }) {
-  const particles = Array.from({ length: 14 }, (_, i) => ({
-    id: i,
-    cx: 142 + Math.sin(i * 1.1) * 6,
-    cy: 370 - i * 17,
-    r: 1.2 + (i % 4) * 0.35,
-    delay: i * 0.16,
-  }));
+// ── Transformation milestones ────────────────────────────────────────────────
+const TRANSFORMATION_MILESTONES = [
+  { days: 1,    label: 'New Mindset',  icon: '🧠', color: '#a78bfa' },
+  { days: 21,   label: 'New Habit',    icon: '🔁', color: '#60a5fa' },
+  { days: 90,   label: 'New Skills',   icon: '⚡', color: '#34d399' },
+  { days: 180,  label: 'New Body',     icon: '💪', color: '#f59e0b' },
+  { days: 365,  label: 'New Life',     icon: '🌅', color: '#f472b6' },
+  { days: 1095, label: 'New You',      icon: '✨', color: '#c77dff' },
+];
 
+function getActiveTier(completed: number) {
+  let tier = 0;
+  for (let i = 0; i < TRANSFORMATION_MILESTONES.length; i++) {
+    if (completed >= TRANSFORMATION_MILESTONES[i].days) tier = i;
+    else break;
+  }
+  return tier;
+}
+
+// ── Mara Lightning ───────────────────────────────────────────────────────────
+function MaraLightning({ isThinking }: { isThinking: boolean }) {
   return (
-    <div className={`mara-tree-container${isThinking ? ' mara-tree-container--thinking' : ''}`}>
-      <svg viewBox="0 0 300 420" className="mara-tree-svg" xmlns="http://www.w3.org/2000/svg">
+    <div className={`mara-lightning-container${isThinking ? ' mara-lightning-container--thinking' : ''}`}>
+      <svg viewBox="0 0 300 420" className="mara-lightning-svg" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <linearGradient id="trunk-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#2a1005" />
-            <stop offset="35%" stopColor="#6b3612" />
-            <stop offset="65%" stopColor="#8b4a1a" />
-            <stop offset="100%" stopColor="#2a1005" />
-          </linearGradient>
-          <radialGradient id="canopy-deep" cx="50%" cy="65%" r="50%">
-            <stop offset="0%" stopColor="#0d3318" />
-            <stop offset="100%" stopColor="#040d08" />
+          <radialGradient id="orb-core" cx="50%" cy="50%" r="50%">
+            <stop offset="0%"   stopColor="#ffffff" stopOpacity="0.95" />
+            <stop offset="30%"  stopColor="#c4b5fd" stopOpacity="0.85" />
+            <stop offset="70%"  stopColor="#7c3aed" stopOpacity="0.6" />
+            <stop offset="100%" stopColor="#4c1d95" stopOpacity="0" />
           </radialGradient>
-          <radialGradient id="canopy-mid" cx="50%" cy="60%" r="50%">
-            <stop offset="0%" stopColor="#145c30" />
-            <stop offset="100%" stopColor="#072612" />
+          <radialGradient id="orb-halo" cx="50%" cy="50%" r="50%">
+            <stop offset="0%"   stopColor="#a78bfa" stopOpacity="0.4" />
+            <stop offset="100%" stopColor="#7c3aed" stopOpacity="0" />
           </radialGradient>
-          <radialGradient id="canopy-bright" cx="50%" cy="55%" r="50%">
-            <stop offset="0%" stopColor="#1e7a40" />
-            <stop offset="60%" stopColor="#0d4520" />
-            <stop offset="100%" stopColor="#051a0d" />
-          </radialGradient>
-          <radialGradient id="mist-grad" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="rgba(120,80,220,0.35)" />
-            <stop offset="80%" stopColor="rgba(80,50,180,0.08)" />
-            <stop offset="100%" stopColor="rgba(60,30,150,0)" />
-          </radialGradient>
-          <filter id="soft-glow" x="-25%" y="-25%" width="150%" height="150%">
-            <feGaussianBlur stdDeviation="6" result="blur" />
+          <filter id="bolt-glow" x="-40%" y="-40%" width="180%" height="180%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
             <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
           </filter>
-          <filter id="spark-glow">
-            <feGaussianBlur stdDeviation="2.5" result="blur" />
+          <filter id="orb-glow" x="-60%" y="-60%" width="220%" height="220%">
+            <feGaussianBlur stdDeviation="12" result="blur" />
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+          <filter id="intense-glow" x="-80%" y="-80%" width="260%" height="260%">
+            <feGaussianBlur stdDeviation="18" result="blur" />
             <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
           </filter>
         </defs>
 
-        {/* Roots */}
-        <path d="M 130,408 C 118,390 102,382 82,386" stroke="url(#trunk-grad)" strokeWidth="9" fill="none" strokeLinecap="round" />
-        <path d="M 137,412 C 128,400 114,396 98,400" stroke="url(#trunk-grad)" strokeWidth="6" fill="none" strokeLinecap="round" />
-        <path d="M 160,408 C 172,390 188,382 208,386" stroke="url(#trunk-grad)" strokeWidth="9" fill="none" strokeLinecap="round" />
-        <path d="M 153,412 C 162,400 176,396 192,400" stroke="url(#trunk-grad)" strokeWidth="6" fill="none" strokeLinecap="round" />
-
-        {/* Main trunk */}
-        <path
-          d="M 127,410 C 124,378 122,348 128,318 C 132,292 140,272 143,248 C 145,224 143,200 145,174"
-          stroke="url(#trunk-grad)" strokeWidth="24" fill="none" strokeLinecap="round"
-          className="mara-trunk"
-        />
-        {/* Trunk highlight */}
-        <path
-          d="M 135,405 C 133,373 132,344 137,314 C 141,290 148,271 150,248 C 151,225 150,202 151,176"
-          stroke="rgba(150,90,40,0.35)" strokeWidth="7" fill="none" strokeLinecap="round"
-        />
-
-        {/* Left branch main */}
-        <path d="M 141,252 C 128,234 108,220 88,210 C 70,200 54,195 38,188"
-          stroke="url(#trunk-grad)" strokeWidth="13" fill="none" strokeLinecap="round" />
-        {/* Left sub-branch */}
-        <path d="M 84,212 C 72,196 58,184 44,172"
-          stroke="url(#trunk-grad)" strokeWidth="8" fill="none" strokeLinecap="round" />
-        {/* Left upper branch */}
-        <path d="M 144,212 C 126,194 105,182 84,170"
-          stroke="url(#trunk-grad)" strokeWidth="10" fill="none" strokeLinecap="round" />
-
-        {/* Right branch main */}
-        <path d="M 145,238 C 160,218 180,206 200,196 C 218,187 236,182 254,175"
-          stroke="url(#trunk-grad)" strokeWidth="13" fill="none" strokeLinecap="round" />
-        {/* Right sub-branch */}
-        <path d="M 204,198 C 218,182 232,172 248,160"
-          stroke="url(#trunk-grad)" strokeWidth="8" fill="none" strokeLinecap="round" />
-        {/* Right upper branch */}
-        <path d="M 146,200 C 164,182 184,170 204,160"
-          stroke="url(#trunk-grad)" strokeWidth="10" fill="none" strokeLinecap="round" />
-
-        {/* Canopy back layer */}
-        <ellipse cx="150" cy="130" rx="122" ry="95" fill="url(#canopy-deep)" className="mara-canopy-back" />
-        <ellipse cx="75" cy="168" rx="58" ry="50" fill="url(#canopy-deep)" />
-        <ellipse cx="225" cy="162" rx="60" ry="52" fill="url(#canopy-deep)" />
-
-        {/* Canopy mid layer */}
-        <ellipse cx="150" cy="112" rx="104" ry="82" fill="url(#canopy-mid)" className="mara-canopy-mid" />
-        <ellipse cx="70" cy="155" rx="48" ry="42" fill="url(#canopy-mid)" />
-        <ellipse cx="230" cy="150" rx="50" ry="44" fill="url(#canopy-mid)" />
-
-        {/* Canopy front layer (glowing) */}
-        <ellipse cx="150" cy="98" rx="84" ry="70" fill="url(#canopy-bright)" className="mara-canopy-front" filter="url(#soft-glow)" />
-        <ellipse cx="88" cy="142" rx="40" ry="34" fill="url(#canopy-bright)" className="mara-canopy-front" />
-        <ellipse cx="212" cy="136" rx="42" ry="36" fill="url(#canopy-bright)" className="mara-canopy-front" />
-
-        {/* Fireflies */}
-        <circle cx="120" cy="78" r="1.5" fill="rgba(200,255,160,0.7)" className="mara-firefly mara-ff1" />
-        <circle cx="178" cy="72" r="1.2" fill="rgba(200,255,160,0.6)" className="mara-firefly mara-ff2" />
-        <circle cx="100" cy="112" r="1" fill="rgba(200,255,160,0.5)" className="mara-firefly mara-ff3" />
-        <circle cx="200" cy="104" r="1.3" fill="rgba(200,255,160,0.6)" className="mara-firefly mara-ff4" />
-
-        {/* Mist base */}
-        <ellipse cx="150" cy="408" rx="130" ry="28" fill="url(#mist-grad)" className="mara-mist" />
-        <ellipse cx="150" cy="412" rx="100" ry="18" fill="rgba(100,60,200,0.13)" />
-
-        {/* Thinking particles */}
-        {isThinking && particles.map((p) => (
-          <circle
-            key={p.id}
-            cx={p.cx} cy={p.cy} r={p.r}
-            fill="#c77dff"
-            filter="url(#spark-glow)"
-            className="mara-particle"
-            style={{ animationDelay: `${p.delay}s` }}
-          />
+        {/* Deep space background dots */}
+        {[
+          [42,30],[80,18],[200,25],[258,40],[20,90],[278,75],[15,160],
+          [285,150],[22,240],[275,220],[50,340],[260,320],[140,12],[160,400],
+        ].map(([x,y],i) => (
+          <circle key={i} cx={x} cy={y} r={0.8 + (i % 3) * 0.4}
+            fill="rgba(200,180,255,0.4)" className={`mara-star mara-star-${(i % 4) + 1}`} />
         ))}
 
-        {/* Eyes */}
-        <ellipse cx="138" cy="94" rx="5.5" ry="5.5" fill="rgba(4,8,14,0.85)" />
-        <ellipse cx="162" cy="94" rx="5.5" ry="5.5" fill="rgba(4,8,14,0.85)" />
-        <circle cx="139" cy="93" r="3" fill="#c77dff" className="mara-eye" />
-        <circle cx="163" cy="93" r="3" fill="#c77dff" className="mara-eye" />
-        <circle cx="140" cy="92" r="1.2" fill="rgba(255,255,255,0.9)" />
-        <circle cx="164" cy="92" r="1.2" fill="rgba(255,255,255,0.9)" />
+        {/* Halo rings */}
+        <circle cx="150" cy="190" r="88" fill="none" stroke="rgba(139,92,246,0.12)" strokeWidth="1" className="mara-halo mara-halo-1" />
+        <circle cx="150" cy="190" r="66" fill="none" stroke="rgba(167,139,250,0.18)" strokeWidth="1" className="mara-halo mara-halo-2" />
+        <circle cx="150" cy="190" r="44" fill="none" stroke="rgba(196,181,253,0.22)" strokeWidth="1" className="mara-halo mara-halo-3" />
+
+        {/* === LIGHTNING BOLTS === */}
+        {/* Each bolt: glow layer + sharp layer */}
+
+        {/* Bolt 1 — UP */}
+        <polyline className="mara-bolt mara-bolt-1 mara-bolt-glow" filter="url(#bolt-glow)"
+          points="150,190 146,152 157,132 149,106 158,78 150,54" />
+        <polyline className="mara-bolt mara-bolt-1"
+          points="150,190 146,152 157,132 149,106 158,78 150,54" />
+
+        {/* Bolt 2 — UPPER-RIGHT */}
+        <polyline className="mara-bolt mara-bolt-2 mara-bolt-glow" filter="url(#bolt-glow)"
+          points="150,190 172,165 192,155 214,132 238,112" />
+        <polyline className="mara-bolt mara-bolt-2"
+          points="150,190 172,165 192,155 214,132 238,112" />
+
+        {/* Bolt 3 — RIGHT */}
+        <polyline className="mara-bolt mara-bolt-3 mara-bolt-glow" filter="url(#bolt-glow)"
+          points="150,190 186,182 212,192 244,183 272,190" />
+        <polyline className="mara-bolt mara-bolt-3"
+          points="150,190 186,182 212,192 244,183 272,190" />
+
+        {/* Bolt 4 — LOWER-RIGHT */}
+        <polyline className="mara-bolt mara-bolt-4 mara-bolt-glow" filter="url(#bolt-glow)"
+          points="150,190 170,214 196,232 220,258 246,276" />
+        <polyline className="mara-bolt mara-bolt-4"
+          points="150,190 170,214 196,232 220,258 246,276" />
+
+        {/* Bolt 5 — DOWN */}
+        <polyline className="mara-bolt mara-bolt-5 mara-bolt-glow" filter="url(#bolt-glow)"
+          points="150,190 155,224 144,254 152,284 147,314 153,344" />
+        <polyline className="mara-bolt mara-bolt-5"
+          points="150,190 155,224 144,254 152,284 147,314 153,344" />
+
+        {/* Bolt 6 — LOWER-LEFT */}
+        <polyline className="mara-bolt mara-bolt-6 mara-bolt-glow" filter="url(#bolt-glow)"
+          points="150,190 128,213 105,228 82,253 58,270" />
+        <polyline className="mara-bolt mara-bolt-6"
+          points="150,190 128,213 105,228 82,253 58,270" />
+
+        {/* Bolt 7 — LEFT */}
+        <polyline className="mara-bolt mara-bolt-7 mara-bolt-glow" filter="url(#bolt-glow)"
+          points="150,190 114,183 90,192 60,182 32,188" />
+        <polyline className="mara-bolt mara-bolt-7"
+          points="150,190 114,183 90,192 60,182 32,188" />
+
+        {/* Bolt 8 — UPPER-LEFT */}
+        <polyline className="mara-bolt mara-bolt-8 mara-bolt-glow" filter="url(#bolt-glow)"
+          points="150,190 128,163 109,148 86,124 62,100" />
+        <polyline className="mara-bolt mara-bolt-8"
+          points="150,190 128,163 109,148 86,124 62,100" />
+
+        {/* Extra thinking bolts (only visible when thinking) */}
+        <polyline className="mara-bolt mara-bolt-think mara-bolt-t1 mara-bolt-glow" filter="url(#bolt-glow)"
+          points="150,190 158,145 168,118 162,88" />
+        <polyline className="mara-bolt mara-bolt-think mara-bolt-t1"
+          points="150,190 158,145 168,118 162,88" />
+        <polyline className="mara-bolt mara-bolt-think mara-bolt-t2 mara-bolt-glow" filter="url(#bolt-glow)"
+          points="150,190 182,198 218,188 252,196" />
+        <polyline className="mara-bolt mara-bolt-think mara-bolt-t2"
+          points="150,190 182,198 218,188 252,196" />
+        <polyline className="mara-bolt mara-bolt-think mara-bolt-t3 mara-bolt-glow" filter="url(#bolt-glow)"
+          points="150,190 120,198 88,188 56,194" />
+        <polyline className="mara-bolt mara-bolt-think mara-bolt-t3"
+          points="150,190 120,198 88,188 56,194" />
+
+        {/* Orb halo (outer glow) */}
+        <circle cx="150" cy="190" r="34" fill="url(#orb-halo)" filter="url(#orb-glow)" className="mara-orb-halo" />
+
+        {/* Orb core */}
+        <circle cx="150" cy="190" r="18" fill="url(#orb-core)" className="mara-orb-core" />
+
+        {/* Orb inner spark */}
+        <circle cx="150" cy="190" r="7" fill="rgba(255,255,255,0.95)" className="mara-orb-spark" />
+
+        {/* Intense pulse when thinking */}
+        <circle cx="150" cy="190" r="28" fill="none"
+          stroke="rgba(167,139,250,0.6)" strokeWidth="2"
+          className="mara-orb-pulse" filter="url(#intense-glow)" />
       </svg>
     </div>
   );
 }
 
-// ── 365-day progress ring ───────────────────────────────────────────────────
-function ProgressRing({ completed }: { completed: number }) {
-  const r = 32;
-  const circ = 2 * Math.PI * r;
-  const offset = circ * (1 - Math.min(completed / 365, 1));
+// ── Transformation Journey ───────────────────────────────────────────────────
+function TransformationJourney({ completed }: { completed: number }) {
+  const activeTier = getActiveTier(completed);
+  const next = TRANSFORMATION_MILESTONES[activeTier + 1];
+  const current = TRANSFORMATION_MILESTONES[activeTier];
+  const prev = activeTier > 0 ? TRANSFORMATION_MILESTONES[activeTier - 1] : null;
+  const progress = next
+    ? Math.min(1, (completed - current.days) / (next.days - current.days))
+    : 1;
+
   return (
-    <div className="progress-ring">
-      <svg width="84" height="84" viewBox="0 0 84 84">
-        <circle cx="42" cy="42" r={r} fill="none" stroke="rgba(168,85,247,0.15)" strokeWidth="7" />
-        <circle cx="42" cy="42" r={r} fill="none"
-          stroke="#a855f7" strokeWidth="7"
-          strokeDasharray={circ} strokeDashoffset={offset}
-          strokeLinecap="round" transform="rotate(-90 42 42)"
-          style={{ transition: 'stroke-dashoffset 0.6s ease' }}
-        />
-        <text x="42" y="39" textAnchor="middle" fill="#e2e8f0" fontSize="13" fontWeight="700">{completed}</text>
-        <text x="42" y="52" textAnchor="middle" fill="rgba(148,163,184,0.7)" fontSize="9">/ 365</text>
-      </svg>
-      <div className="progress-ring-label">📚 Carte</div>
+    <div className="transformation-journey">
+      <div className="tj-milestones">
+        {TRANSFORMATION_MILESTONES.map((m, i) => (
+          <div
+            key={m.days}
+            className={`tj-node ${i < activeTier ? 'tj-node--done' : i === activeTier ? 'tj-node--active' : 'tj-node--future'}`}
+            title={`${m.label} — ${m.days} zile`}
+          >
+            <span className="tj-node-icon">{i <= activeTier ? m.icon : '○'}</span>
+          </div>
+        ))}
+      </div>
+      <div className="tj-track">
+        <div className="tj-track-fill" style={{ width: `${((activeTier + progress) / (TRANSFORMATION_MILESTONES.length - 1)) * 100}%` }} />
+      </div>
+      <div className="tj-label">
+        <span className="tj-current" style={{ color: current.color }}>
+          {current.icon} {current.label}
+        </span>
+        {next && (
+          <span className="tj-next">→ {next.label} ({next.days - completed} zile)</span>
+        )}
+      </div>
     </div>
   );
 }
@@ -657,7 +683,7 @@ export default function Missions() {
     ];
     return (
       <div className="missions-page missions-page--onboarding">
-        <MaraTree isThinking={loading} />
+        <MaraLightning isThinking={loading} />
         <div className="missions-onboarding">
           <div className="missions-onboarding-header">
             <h1>{t('missions.onboardingTitle')}</h1>
@@ -739,9 +765,17 @@ export default function Missions() {
       {activeTab === 'missions' && (
         <div className="missions-split">
 
-          {/* LEFT PANEL: Mara tree + chat */}
+          {/* LEFT PANEL: Mara lightning + chat */}
           <div className="missions-panel-left">
-            <MaraTree isThinking={chatPhase === 'reviewing' || (loading && chatPhase === 'idle') || generating} />
+            <MaraLightning isThinking={chatPhase === 'reviewing' || (loading && chatPhase === 'idle') || generating} />
+            <div className="mara-motto">
+              <span>1 zi · mindset</span>
+              <span>21 zile · habit</span>
+              <span>90 zile · skills</span>
+              <span>180 zile · body</span>
+              <span>365 zile · viață</span>
+              <span>1095 zile · tu</span>
+            </div>
 
             <div className="mara-chat-area">
               {error && (
@@ -897,7 +931,7 @@ export default function Missions() {
                   {statsDetailed?.completed ?? 0} completate · primele 10 gratuite
                 </p>
               </div>
-              <ProgressRing completed={statsDetailed?.completed ?? 0} />
+              <TransformationJourney completed={statsDetailed?.completed ?? 0} />
             </div>
 
             {/* Pillar filters */}
@@ -949,16 +983,28 @@ export default function Missions() {
                 </div>
               ) : (
                 <div className="mc-grid">
-                  {orderedMissions.map((m, idx) => (
-                    <MissionCardNew
-                      key={m.id} mission={m} index={idx}
-                      isLocked={isMissionLocked(idx)}
-                      isFree={idx < 10}
-                      isActive={m.user_status === 'active'}
-                      onSelect={handleCardSelect}
-                      isSelected={activeMission?.id === m.id}
-                    />
-                  ))}
+                  {orderedMissions.map((m, idx) => {
+                    const milestone = TRANSFORMATION_MILESTONES.find(t => t.days === idx + 1);
+                    return (
+                      <React.Fragment key={m.id}>
+                        {milestone && (
+                          <div className="mc-milestone-banner" style={{ '--m-color': milestone.color } as React.CSSProperties}>
+                            <span>{milestone.icon}</span>
+                            <span>{milestone.label}</span>
+                            <span className="mc-milestone-days">{milestone.days} {milestone.days === 1 ? 'zi' : 'zile'}</span>
+                          </div>
+                        )}
+                        <MissionCardNew
+                          mission={m} index={idx}
+                          isLocked={isMissionLocked(idx)}
+                          isFree={idx < 10}
+                          isActive={m.user_status === 'active'}
+                          onSelect={handleCardSelect}
+                          isSelected={activeMission?.id === m.id}
+                        />
+                      </React.Fragment>
+                    );
+                  })}
                 </div>
               )}
             </div>
