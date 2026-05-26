@@ -33,6 +33,7 @@ function resolveDbPath(): string {
     return url;
   }
   if (process.env.DATABASE_PATH) return process.env.DATABASE_PATH;
+  if (process.env.DATABASE_FILE) return process.env.DATABASE_FILE;
   // Production default: /data (chown'd to `nodejs` in Dockerfile; attach a
   // Railway Volume here for persistence across deploys). Falls back to the
   // repo-local sqlite file when /data does not exist (dev / local scripts).
