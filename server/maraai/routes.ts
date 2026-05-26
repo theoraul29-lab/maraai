@@ -21,8 +21,16 @@ import {
   deleteNode,
   heartbeat,
   listMyNodes,
+  listOnlineNodes,
   registerNode,
 } from './p2p.js';
+import {
+  createTask,
+  ensureExampleTasks,
+  getAdminStats,
+  getNextTask,
+  submitTaskResult,
+} from './p2p-tasks.js';
 import { route as routeAi } from './ai-router.js';
 import { eventBusStatus, KAFKA_TOPICS } from './kafka.js';
 import { requestOtp, verifyOtp } from './otp.js';
@@ -184,6 +192,107 @@ export function registerMaraAIRoutes(
     await activateKillSwitch(req.user!.uid);
     const consent = await getConsent(req.user!.uid);
     res.json({ consent });
+  });
+
+  // ── Background browser compute endpoints ──────────────────────────────
+
+  const getTaskNodeSchema = z
+    .object({ nodeId: z.string().min(3).max(100) })
+    .strict();
+
+  const submitResultSchema = z
+    .object({
+      taskId: z.string().min(1).max(200),
+      nodeId: z.string().min(3).max(100),
+      result: z.record(z.any()),
+    })
+    .strict();
+
+  const goOfflineSchema = z
+    .object({ nodeId: z.string().min(3).max(100) })
+    .strict();
+
+  const createTaskSchema = z
+    .object({
+      type: z.enum(['maraAnalysis', 'missionGeneration', 'contentProcessing', 'knowledgeBase']),
+      payload: z.record(z.any()).optional(),
+    })
+    .strict();
+
+  /** GET /api/p2p/get-task — browser node polls for available work. */
+  app.get('/api/p2p/get-task', requireAuth, async (req: AuthedReq, res: Response) => {
+    const parsed = getTaskNodeSchema.safeParse({ nodeId: req.query.nodeId });
+    if (!parsed.success) return res.status(400).json({ message: 'nodeId required.' });
+    try {
+      await ensureExampleTasks();
+      const task = await getNextTask(parsed.data.nodeId, req.user!.uid);
+      if (!task) return res.json({ task: null });
+      res.json({ task });
+    } catch (err: any) {
+      res.status(500).json({ message: err?.message ?? 'Failed to get task.' });
+    }
+  });
+
+  /** POST /api/p2p/submit-result — browser node submits computed result + earns XP/credits. */
+  app.post('/api/p2p/submit-result', requireAuth, async (req: AuthedReq, res: Response) => {
+    const parsed = submitResultSchema.safeParse(req.body ?? {});
+    if (!parsed.success) return res.status(400).json({ message: 'Invalid result.', errors: parsed.error.flatten() });
+    try {
+      const out = await submitTaskResult({
+        taskId: parsed.data.taskId,
+        nodeId: parsed.data.nodeId,
+        userId: req.user!.uid,
+        result: parsed.data.result,
+      });
+      res.json(out);
+    } catch (err: any) {
+      res.status(500).json({ message: err?.message ?? 'Submit failed.' });
+    }
+  });
+
+  /** POST /api/p2p/go-offline — browser node signals it's going offline (user returned). */
+  app.post('/api/p2p/go-offline', requireAuth, async (req: AuthedReq, res: Response) => {
+    const parsed = goOfflineSchema.safeParse(req.body ?? {});
+    if (!parsed.success) return res.status(400).json({ message: 'nodeId required.' });
+    try {
+      await heartbeat({
+        userId: req.user!.uid,
+        nodeId: parsed.data.nodeId,
+        successCount: 0,
+        failureCount: 0,
+      });
+      // Mark the node offline in p2p_nodes.
+      const { markOffline } = await import('./p2p.js');
+      await markOffline(parsed.data.nodeId);
+      res.json({ offline: true });
+    } catch {
+      res.json({ offline: true }); // best-effort
+    }
+  });
+
+  /** POST /api/p2p/tasks — admin: manually enqueue a task. */
+  app.post('/api/p2p/tasks', requireAuth, async (req: AuthedReq, res: Response) => {
+    const adminEmails = (process.env.ADMIN_EMAILS ?? '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
+    const caller = (await db.select().from(users).where(eq(users.id, req.user!.uid)).limit(1))[0];
+    if (!caller?.email || !adminEmails.includes(caller.email.toLowerCase())) {
+      return res.status(403).json({ message: 'Admin only.' });
+    }
+    const parsed = createTaskSchema.safeParse(req.body ?? {});
+    if (!parsed.success) return res.status(400).json({ message: 'Invalid task.', errors: parsed.error.flatten() });
+    const task = await createTask({ type: parsed.data.type, payload: parsed.data.payload ?? {} });
+    res.json({ task });
+  });
+
+  /** GET /api/p2p/admin/stats — admin dashboard: active nodes, tasks today, API savings. */
+  app.get('/api/p2p/admin/stats', requireAuth, async (req: AuthedReq, res: Response) => {
+    const adminEmails = (process.env.ADMIN_EMAILS ?? '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean);
+    const caller = (await db.select().from(users).where(eq(users.id, req.user!.uid)).limit(1))[0];
+    if (!caller?.email || !adminEmails.includes(caller.email.toLowerCase())) {
+      return res.status(403).json({ message: 'Admin only.' });
+    }
+    const onlineCount = listOnlineNodes().length;
+    const stats = await getAdminStats(onlineCount);
+    res.json({ stats });
   });
 
   // --- Mara Credits ---

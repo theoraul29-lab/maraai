@@ -38,6 +38,8 @@ export const CREDIT_REASONS = {
   SIGNUP_BONUS_MOBILE: 'signup_bonus_mobile',
   /** Successfully completed an LLM job for another user via Ollama. */
   P2P_COMPUTE_JOB: 'p2p_compute_job',
+  /** Completed a background browser compute task (idle contribution). */
+  P2P_BROWSER_TASK: 'p2p_browser_task',
   /** Seeded N MB of P2P video bandwidth (rounded down to nearest 100 MB). */
   P2P_VIDEO_SEED: 'p2p_video_seed',
   /** Manual award by an admin (e.g. compensation, contest, refund). */
@@ -52,8 +54,10 @@ export type CreditReason = (typeof CREDIT_REASONS)[keyof typeof CREDIT_REASONS];
 export const CREDIT_AMOUNTS = {
   signupBonusDesktop: 50,
   signupBonusMobile: 20,
-  /** Per successfully completed P2P compute job. */
+  /** Per successfully completed P2P compute job (Ollama). */
   p2pComputeJob: 10,
+  /** Per completed background browser task. */
+  p2pBrowserTask: 1,
   /** Per 100 MB of seeded video bandwidth. */
   p2pVideoSeedPer100Mb: 1,
 } as const;

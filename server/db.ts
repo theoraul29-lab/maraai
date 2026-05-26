@@ -574,6 +574,27 @@ sqlite.exec(`
 
   CREATE INDEX IF NOT EXISTS idx_mission_feedback_mission
     ON mission_feedback(mission_id);
+
+  -- P2P Background Compute: tasks dispatched to idle browser nodes.
+  -- Browser nodes poll GET /api/p2p/get-task, run lightweight JS computation,
+  -- POST result to /api/p2p/submit-result, and earn XP + credits.
+  CREATE TABLE IF NOT EXISTS p2p_tasks (
+    id TEXT PRIMARY KEY,
+    type TEXT NOT NULL CHECK(type IN ('maraAnalysis','missionGeneration','contentProcessing','knowledgeBase')),
+    payload TEXT NOT NULL DEFAULT '{}',
+    status TEXT NOT NULL DEFAULT 'pending'
+      CHECK(status IN ('pending','assigned','completed','failed')),
+    assigned_node TEXT,
+    assigned_user_id TEXT,
+    assigned_at INTEGER,
+    result TEXT,
+    created_at INTEGER DEFAULT (unixepoch()) NOT NULL,
+    completed_at INTEGER
+  );
+  CREATE INDEX IF NOT EXISTS idx_p2p_tasks_status
+    ON p2p_tasks(status, created_at);
+  CREATE INDEX IF NOT EXISTS idx_p2p_tasks_node
+    ON p2p_tasks(assigned_node);
 `);
 
 export const db = drizzle(sqlite, { schema });

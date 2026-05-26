@@ -1,0 +1,108 @@
+/* P2P Contributing Badge — fixed bottom-right indicator */
+
+.p2p-badge {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px 7px 10px;
+  background: rgba(10, 8, 24, 0.85);
+  border: 1px solid rgba(144, 85, 255, 0.35);
+  border-radius: 20px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 8px rgba(144, 85, 255, 0.2);
+  cursor: default;
+  user-select: none;
+  animation: badge-slide-in 0.3s ease-out both;
+}
+
+@keyframes badge-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Green pulse dot */
+.p2p-badge-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6);
+  animation: p2p-pulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes p2p-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6); }
+  50%  { box-shadow: 0 0 0 5px rgba(34, 197, 94, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+.p2p-badge-text {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(220, 210, 255, 0.9);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.p2p-badge-xp {
+  font-size: 10px;
+  font-weight: 700;
+  color: #a78bfa;
+  background: rgba(144, 85, 255, 0.15);
+  border: 1px solid rgba(144, 85, 255, 0.3);
+  border-radius: 10px;
+  padding: 1px 6px;
+  white-space: nowrap;
+}
+
+/* Reward toast — slides up from bottom-right */
+.p2p-reward-toast {
+  position: fixed;
+  bottom: 72px;
+  right: 20px;
+  z-index: 9001;
+  padding: 10px 16px;
+  background: rgba(10, 8, 24, 0.92);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  border-radius: 12px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.55), 0 0 12px rgba(34, 197, 94, 0.15);
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(220, 255, 220, 0.95);
+  white-space: nowrap;
+  animation: toast-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both,
+             toast-out 0.25s ease-in 4.75s both;
+  pointer-events: none;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes toast-out {
+  to {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+}

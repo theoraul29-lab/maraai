@@ -141,6 +141,40 @@ export const emailOtpCodes = sqliteTable(
   (table) => [index('idx_email_otp_email_time').on(table.email, table.createdAt)],
 );
 
+/** Background compute tasks dispatched to idle browser nodes. */
+export const p2pTasks = sqliteTable(
+  'p2p_tasks',
+  {
+    id: text('id').primaryKey(),
+    /** 'maraAnalysis' | 'missionGeneration' | 'contentProcessing' | 'knowledgeBase' */
+    type: text('type').notNull(),
+    /** JSON payload the browser node needs to compute the result. */
+    payload: text('payload').notNull(),
+    /** 'pending' | 'assigned' | 'completed' | 'failed' */
+    status: text('status').default('pending').notNull(),
+    /** p2p_nodes.node_id that accepted this task. */
+    assignedNode: text('assigned_node'),
+    /** userId of the node owner (for credit/XP award). */
+    assignedUserId: text('assigned_user_id'),
+    assignedAt: integer('assigned_at', { mode: 'timestamp' }),
+    /** JSON result submitted by the node. */
+    result: text('result'),
+    createdAt: integer('created_at', { mode: 'timestamp' })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    completedAt: integer('completed_at', { mode: 'timestamp' }),
+  },
+  (table) => [
+    index('idx_p2p_tasks_status').on(table.status, table.createdAt),
+    index('idx_p2p_tasks_node').on(table.assignedNode),
+  ],
+);
+
+export type P2PTask = typeof p2pTasks.$inferSelect;
+export type NewP2PTask = typeof p2pTasks.$inferInsert;
+export type P2PTaskType = 'maraAnalysis' | 'missionGeneration' | 'contentProcessing' | 'knowledgeBase';
+export type P2PTaskStatus = 'pending' | 'assigned' | 'completed' | 'failed';
+
 export type ConsentRecord = typeof consentRecords.$inferSelect;
 export type NewConsentRecord = typeof consentRecords.$inferInsert;
 export type P2PNode = typeof p2pNodes.$inferSelect;

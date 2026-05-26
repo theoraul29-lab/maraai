@@ -7,6 +7,7 @@ import './App.css';
 // Importuri Componente corecte
 import Nav from './Nav';
 import { MaraChatWidget } from './components/MaraChatWidget';
+import P2PContributingBadge from './components/P2PContributingBadge';
 
 // Heavy route modules are lazy-loaded to reduce initial bundle size.
 const AdminDashboard = lazy(() => import('./AdminDashboard'));
@@ -77,6 +78,12 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function AuthedP2PBadge() {
+  const { isAuthenticated, loading } = useAuth();
+  if (loading || !isAuthenticated) return null;
+  return <P2PContributingBadge />;
+}
+
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -120,6 +127,10 @@ function App() {
           {/* Mara Chat Widget - appears on all pages */}
           <ErrorBoundary level="component">
             <MaraChatWidget />
+          </ErrorBoundary>
+          {/* P2P background compute badge — visible only when actively contributing */}
+          <ErrorBoundary level="component">
+            <AuthedP2PBadge />
           </ErrorBoundary>
         </div>
         </ThemeProvider>
