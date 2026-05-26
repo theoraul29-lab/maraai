@@ -42,6 +42,13 @@ import {
   getBalance,
   getHistory,
 } from './credits.js';
+import {
+  getOrCreateReferralCode,
+  applyReferralCode,
+  getTopReferrers,
+} from './viral-loop.js';
+import { getGrowthGateStatus, isViralLoopActive, isGrowthDashboardActive } from './growth-gate.js';
+import { rawSqlite } from '../db.js';
 
 type AuthedReq = Request & { user?: { uid: string } };
 
@@ -430,5 +437,126 @@ export function registerMaraAIRoutes(
   // --- Internal event bus status (no user data, fine to expose to authed users) ---
   app.get('/api/maraai/bus/status', requireAuth, async (_req: Request, res: Response) => {
     res.json({ ...eventBusStatus(), topics: Object.values(KAFKA_TOPICS) });
+  });
+
+  // ── Growth: Viral Referral Loop (gated >= 70 users) ──────────────────────
+
+  // GET /api/growth/referral — get or create user's referral code + stats
+  app.get('/api/growth/referral', requireAuth, async (req: AuthedReq, res: Response) => {
+    const gate = getGrowthGateStatus();
+    if (!gate.viralLoop) return res.json({ active: false, ...gate });
+    const userId = req.user!.uid;
+    const result = getOrCreateReferralCode(userId);
+    return res.json({ active: true, ...result });
+  });
+
+  // POST /api/growth/referral/apply — apply a referral code (called at signup)
+  app.post('/api/growth/referral/apply', requireAuth, async (req: AuthedReq, res: Response) => {
+    if (!isViralLoopActive()) return res.json({ ok: false, message: 'Feature not yet active.' });
+    const { code } = req.body as { code?: string };
+    if (!code || typeof code !== 'string') {
+      return res.status(400).json({ ok: false, message: 'Cod lipsă.' });
+    }
+    const userId = req.user!.uid;
+    const result = await applyReferralCode(userId, code);
+    return res.json(result);
+  });
+
+  // ── Growth: Dashboard (admin, gated >= 70 users) ─────────────────────────
+
+  // GET /api/growth/dashboard — full growth data for admin dashboard
+  app.get('/api/growth/dashboard', requireAuth, async (req: AuthedReq, res: Response) => {
+    const adminEmails = (process.env.ADMIN_EMAILS ?? '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+    const adminIds = (process.env.ADMIN_USER_IDS ?? '').split(',').map(s => s.trim()).filter(Boolean);
+    const callerId = req.user!.uid;
+    const [callerRow] = await db.select({ email: users.email }).from(users).where(eq(users.id, callerId)).limit(1);
+    const isAdmin = adminIds.includes(callerId) || (!!callerRow?.email && adminEmails.includes(callerRow.email.toLowerCase()));
+    if (!isAdmin) return res.status(403).json({ message: 'Forbidden.' });
+
+    const gate = getGrowthGateStatus();
+    if (!gate.growthDashboard) {
+      return res.json({ gateActive: false, userCount: gate.userCount, threshold: gate.threshold });
+    }
+
+    const now = Math.floor(Date.now() / 1000);
+    const day7 = now - 7 * 86400;
+    const day14 = now - 14 * 86400;
+
+    // Current funnel (last 7 days)
+    const signupNow   = (rawSqlite.prepare('SELECT COUNT(*) as c FROM users WHERE created_at > ?').get(day7) as { c: number }).c;
+    const signupPrev  = (rawSqlite.prepare('SELECT COUNT(*) as c FROM users WHERE created_at > ? AND created_at <= ?').get(day14, day7) as { c: number }).c;
+    const activatedNow = (rawSqlite.prepare(`
+      SELECT COUNT(DISTINCT u.id) as c FROM users u
+      JOIN user_missions um ON um.user_id = u.id
+      WHERE u.created_at > ? AND um.started_at < u.created_at + 86400
+    `).get(day7) as { c: number }).c;
+    const activatedPrev = (rawSqlite.prepare(`
+      SELECT COUNT(DISTINCT u.id) as c FROM users u
+      JOIN user_missions um ON um.user_id = u.id
+      WHERE u.created_at > ? AND u.created_at <= ? AND um.started_at < u.created_at + 86400
+    `).get(day14, day7) as { c: number }).c;
+    const engagedNow  = (rawSqlite.prepare('SELECT COUNT(DISTINCT user_id) as c FROM chat_messages WHERE created_at > ? AND sender = ?').get(day7, 'user') as { c: number }).c;
+    const engagedPrev = (rawSqlite.prepare('SELECT COUNT(DISTINCT user_id) as c FROM chat_messages WHERE created_at > ? AND created_at <= ? AND sender = ?').get(day14, day7, 'user') as { c: number }).c;
+
+    function makeStage(stage: string, count: number, total: number, prevCount: number, prevTotal: number) {
+      return {
+        stage,
+        count,
+        dropOffRate: total > 0 ? (total - count) / total : 0,
+        prevDropOffRate: prevTotal > 0 ? (prevTotal - prevCount) / prevTotal : 0,
+      };
+    }
+
+    const currentFunnel = [
+      makeStage('signup', signupNow, signupNow, signupPrev, signupPrev),
+      makeStage('activation', activatedNow, signupNow, activatedPrev, signupPrev),
+      makeStage('engagement', engagedNow, signupNow, engagedPrev, signupPrev),
+    ];
+    const previousFunnel = [
+      makeStage('signup', signupPrev, signupPrev, 0, 0),
+      makeStage('activation', activatedPrev, signupPrev, 0, 0),
+      makeStage('engagement', engagedPrev, signupPrev, 0, 0),
+    ];
+
+    // Cohorts: last 6 weeks
+    const cohorts: Array<{ week: string; signups: number; day7: number; day30: number }> = [];
+    for (let w = 5; w >= 0; w--) {
+      const wStart = now - (w + 1) * 7 * 86400;
+      const wEnd   = now - w * 7 * 86400;
+      const sRow   = rawSqlite.prepare('SELECT COUNT(*) as c FROM users WHERE created_at >= ? AND created_at < ?').get(wStart, wEnd) as { c: number };
+      const d7Row  = rawSqlite.prepare(`
+        SELECT COUNT(DISTINCT u.id) as c FROM users u
+        JOIN chat_messages cm ON cm.user_id = u.id AND cm.sender = 'user'
+        WHERE u.created_at >= ? AND u.created_at < ? AND cm.created_at >= u.created_at + 6*86400
+      `).get(wStart, wEnd) as { c: number };
+      const d30Row = rawSqlite.prepare(`
+        SELECT COUNT(DISTINCT u.id) as c FROM users u
+        JOIN chat_messages cm ON cm.user_id = u.id AND cm.sender = 'user'
+        WHERE u.created_at >= ? AND u.created_at < ? AND cm.created_at >= u.created_at + 29*86400
+      `).get(wStart, wEnd) as { c: number };
+      const weekLabel = new Date(wStart * 1000).toISOString().slice(0, 10);
+      cohorts.push({ week: weekLabel, signups: sRow.c, day7: d7Row.c, day30: d30Row.c });
+    }
+
+    // Qualitative signals fired today (approximated via activity log)
+    const todayStart = now - 86400;
+    const signalRows = rawSqlite.prepare(`
+      SELECT event_type as type, COUNT(*) as count
+      FROM activity_log
+      WHERE event_type LIKE 'investigator.%' AND created_at > ?
+      GROUP BY event_type
+    `).all(todayStart) as Array<{ type: string; count: number }>;
+
+    const topReferrers = isViralLoopActive() ? getTopReferrers(10) : [];
+
+    return res.json({
+      gateActive: true,
+      userCount: gate.userCount,
+      threshold: gate.threshold,
+      funnel: { current: currentFunnel, previous: previousFunnel },
+      cohorts,
+      qualitativeSignals: signalRows,
+      topReferrers,
+    });
   });
 }

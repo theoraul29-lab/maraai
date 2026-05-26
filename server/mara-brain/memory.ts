@@ -7,6 +7,7 @@ import { buildPersonalityPrompt, detectEmotion, detectToxicity, getToxicityLevel
 import { getPlatformContext } from './platform-context.js';
 import { rawSqlite } from '../db.js';
 import { executive } from '../mara-core/executive.js';
+import { getInvestigatorContext } from '../maraai/qualitative-signals.js';
 
 export interface UserMemoryContext {
   userId: string;
@@ -17,6 +18,7 @@ export interface UserMemoryContext {
   toxicityState: ToxicityState;
   knowledgeContext: string;
   personalityPrompt: string;
+  investigatorContext: string;
 }
 
 function getDefaultToxicityState(): ToxicityState {
@@ -126,6 +128,10 @@ export async function buildUserContext(
   //    block — toxicity & emotion still tracked but not surfaced in the prompt.
   const personalityPrompt = buildPersonalityPrompt(newToxicityState, emotionalProfile, isAdmin);
 
+  // 8. Investigator signals — mission abandonment, returning user, not activated.
+  //    Skipped for admin sessions (not relevant for internal testing).
+  const investigatorContext = isAdmin ? '' : getInvestigatorContext(userId);
+
   return {
     userId,
     isAdmin,
@@ -135,6 +141,7 @@ export async function buildUserContext(
     toxicityState: newToxicityState,
     knowledgeContext,
     personalityPrompt,
+    investigatorContext,
   };
 }
 
@@ -166,6 +173,9 @@ export function buildSystemInstruction(context: UserMemoryContext, language?: st
   // Strategic context from ExecutiveReasoning (funnel state, active experiments)
   const executiveCtx = executive.getContextForConversation();
   if (executiveCtx) parts.push(executiveCtx);
+
+  // Qualitative investigator signals (mission abandoned, returning user, not activated)
+  if (context.investigatorContext) parts.push(context.investigatorContext);
 
   return parts.join('\n');
 }

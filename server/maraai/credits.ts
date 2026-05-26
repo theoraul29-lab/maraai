@@ -46,6 +46,8 @@ export const CREDIT_REASONS = {
   ADMIN_GRANT: 'admin_grant',
   /** Spent credits unlocking a premium feature. */
   SPEND_PREMIUM: 'spend_premium',
+  /** Referred a new user who signed up via referral link. */
+  REFERRAL: 'referral',
 } as const;
 
 export type CreditReason = (typeof CREDIT_REASONS)[keyof typeof CREDIT_REASONS];
@@ -60,6 +62,8 @@ export const CREDIT_AMOUNTS = {
   p2pBrowserTask: 1,
   /** Per 100 MB of seeded video bandwidth. */
   p2pVideoSeedPer100Mb: 1,
+  /** Earned by referrer when invited user signs up. */
+  referral: 2,
 } as const;
 
 export type AwardInput = {

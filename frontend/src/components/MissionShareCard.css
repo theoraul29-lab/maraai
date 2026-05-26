@@ -1,0 +1,144 @@
+.msc-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9500;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: msc-fade-in 0.25s ease both;
+}
+
+@keyframes msc-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.msc-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  animation: msc-pop-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes msc-pop-in {
+  from { opacity: 0; transform: scale(0.88) translateY(20px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* The visual card — designed to look great as a screenshot */
+.msc-card {
+  width: 320px;
+  height: 320px;
+  border-radius: 24px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255,255,255,0.06);
+}
+
+.msc-card-bg {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at 60% 30%,
+    color-mix(in srgb, var(--pillar-color) 40%, transparent),
+    #0a0818 70%
+  );
+}
+
+.msc-card-content {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 28px;
+  text-align: center;
+}
+
+.msc-emoji {
+  font-size: 48px;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.msc-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(200, 180, 255, 0.7);
+}
+
+.msc-mission-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.25;
+}
+
+.msc-xp {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--pillar-color);
+  text-shadow: 0 0 20px color-mix(in srgb, var(--pillar-color) 60%, transparent);
+}
+
+.msc-brand {
+  position: absolute;
+  bottom: 16px;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 0.06em;
+}
+
+/* Actions */
+.msc-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 320px;
+}
+
+.msc-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s;
+}
+
+.msc-btn:active { opacity: 0.75; }
+
+.msc-btn--share {
+  background: linear-gradient(135deg, #7b2ff7, #c77dff);
+  color: #fff;
+}
+
+.msc-btn--close {
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(200, 180, 240, 0.8);
+  border: 1px solid rgba(144, 85, 255, 0.2);
+}
+
+.msc-referral {
+  font-size: 12px;
+  color: rgba(200, 180, 240, 0.7);
+  text-align: center;
+}
+
+.msc-referral strong {
+  color: #c77dff;
+  font-size: 14px;
+  letter-spacing: 0.06em;
+}

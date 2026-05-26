@@ -595,6 +595,25 @@ sqlite.exec(`
     ON p2p_tasks(status, created_at);
   CREATE INDEX IF NOT EXISTS idx_p2p_tasks_node
     ON p2p_tasks(assigned_node);
+
+  -- Viral referral loop (active >= 70 users).
+  -- Each user gets one unique referral code; referrals table tracks attribution.
+  CREATE TABLE IF NOT EXISTS referral_codes (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL UNIQUE,
+    code TEXT NOT NULL UNIQUE,
+    created_at INTEGER DEFAULT (unixepoch())
+  );
+
+  CREATE TABLE IF NOT EXISTS referrals (
+    id TEXT PRIMARY KEY,
+    referrer_id TEXT NOT NULL,
+    referred_user_id TEXT NOT NULL UNIQUE,
+    code TEXT NOT NULL,
+    xp_awarded INTEGER DEFAULT 0,
+    created_at INTEGER DEFAULT (unixepoch())
+  );
+  CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON referrals(referrer_id);
 `);
 
 export const db = drizzle(sqlite, { schema });

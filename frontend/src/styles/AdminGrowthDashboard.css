@@ -1,0 +1,239 @@
+.agd-root {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 32px 20px 60px;
+  color: #e2d9f3;
+  font-family: inherit;
+}
+
+.agd-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #c77dff;
+  margin: 0 0 28px;
+}
+
+.agd-card {
+  background: rgba(18, 12, 40, 0.85);
+  border: 1px solid rgba(144, 85, 255, 0.2);
+  border-radius: 14px;
+  padding: 22px 24px;
+  margin-bottom: 20px;
+  backdrop-filter: blur(10px);
+}
+
+.agd-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #d4b3ff;
+  margin: 0 0 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.agd-badge {
+  font-size: 11px;
+  font-weight: 500;
+  background: rgba(144, 85, 255, 0.2);
+  border: 1px solid rgba(144, 85, 255, 0.35);
+  border-radius: 8px;
+  padding: 2px 8px;
+  color: #b39ddb;
+}
+
+.agd-hint {
+  font-size: 11px;
+  color: rgba(180, 160, 220, 0.5);
+  margin: 10px 0 0;
+}
+
+/* Funnel */
+.agd-funnel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.agd-funnel-row {
+  display: grid;
+  grid-template-columns: 140px 1fr 80px;
+  align-items: center;
+  gap: 12px;
+}
+
+.agd-funnel-label {
+  font-size: 12px;
+  color: rgba(200, 180, 240, 0.8);
+  white-space: nowrap;
+}
+
+.agd-funnel-bar-wrap {
+  position: relative;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.agd-funnel-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #7b2ff7, #c77dff);
+  transition: width 0.6s ease;
+}
+
+.agd-funnel-bar--prev {
+  background: rgba(144, 85, 255, 0.25);
+  z-index: 0;
+}
+
+.agd-funnel-bar:not(.agd-funnel-bar--prev) {
+  z-index: 1;
+}
+
+.agd-funnel-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.agd-funnel-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e2d9f3;
+}
+
+.agd-funnel-delta {
+  font-size: 10px;
+  font-weight: 600;
+}
+.agd-funnel-delta.pos { color: #4ade80; }
+.agd-funnel-delta.neg { color: #f87171; }
+
+/* Table */
+.agd-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.agd-table th {
+  text-align: left;
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(180, 160, 220, 0.7);
+  border-bottom: 1px solid rgba(144, 85, 255, 0.15);
+}
+
+.agd-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: #ddd;
+}
+
+.agd-table td.good { color: #4ade80; font-weight: 600; }
+.agd-table td.ok   { color: #fbbf24; }
+.agd-table td.bad  { color: #f87171; }
+.agd-mono { font-family: monospace; font-size: 12px; }
+
+/* Signals */
+.agd-signals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.agd-signal-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(144, 85, 255, 0.12);
+  border: 1px solid rgba(144, 85, 255, 0.25);
+  border-radius: 10px;
+  padding: 6px 12px;
+}
+
+.agd-signal-type {
+  font-size: 12px;
+  color: #c4a8ff;
+}
+
+.agd-signal-count {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(144, 85, 255, 0.3);
+  border-radius: 6px;
+  padding: 1px 7px;
+}
+
+.agd-empty {
+  color: rgba(180, 160, 220, 0.5);
+  font-size: 13px;
+  font-style: italic;
+}
+
+/* Gate screen */
+.agd-gate {
+  max-width: 480px;
+  margin: 80px auto;
+  text-align: center;
+  color: #e2d9f3;
+  padding: 0 20px;
+}
+
+.agd-gate-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.agd-gate h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #c77dff;
+  margin: 0 0 12px;
+}
+
+.agd-gate p {
+  font-size: 14px;
+  color: rgba(200, 180, 240, 0.8);
+  margin: 0 0 8px;
+}
+
+.agd-gate-sub {
+  margin-bottom: 20px !important;
+}
+
+.agd-gate-bar-wrap {
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.agd-gate-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #7b2ff7, #c77dff);
+  border-radius: 4px;
+  transition: width 0.6s ease;
+}
+
+.agd-gate-pct {
+  font-size: 12px;
+  color: rgba(180, 160, 220, 0.5);
+}
+
+.agd-loading,
+.agd-error {
+  padding: 60px;
+  text-align: center;
+  color: rgba(200, 180, 240, 0.6);
+  font-size: 14px;
+}

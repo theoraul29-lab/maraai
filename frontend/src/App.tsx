@@ -26,6 +26,7 @@ import HomePage from './HomePage';
 // chunks isolate that cost to the admins who actually visit /admin/*.
 const Community = lazy(() => import('./Community'));
 const AdminBrain = lazy(() => import('./AdminBrain'));
+const AdminGrowthDashboard = lazy(() => import('./AdminGrowthDashboard'));
 const AdminExperiments = lazy(() => import('./AdminExperiments'));
 const AdminWaitlist = lazy(() => import('./AdminWaitlist'));
 const AdminMaraChat = lazy(() => import('./AdminMaraChat'));
@@ -115,6 +116,7 @@ function App() {
                 <Route path="/admin/experiments" element={<AdminGuard><AdminExperiments /></AdminGuard>} />
                 <Route path="/admin/waitlist" element={<AdminGuard><AdminWaitlist /></AdminGuard>} />
                 <Route path="/admin/mara" element={<AdminGuard><AdminMaraChat /></AdminGuard>} />
+                <Route path="/admin/growth" element={<AdminGuard><AdminGrowthDashboard /></AdminGuard>} />
                 <Route
                   path="/onboarding"
                   element={<OnboardingFlow onClose={() => navigate('/')} />}

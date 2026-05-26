@@ -1,5 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import './styles/AdminDashboard.css';
+
+const AdminGrowthDashboard = lazy(() => import('./AdminGrowthDashboard'));
 
 // ─── Interfaces ──────────────────────────────────────────────────────────────
 
@@ -1155,6 +1157,7 @@ const TABS = [
   { id: 'library', icon: '📖', label: 'Library' },
   { id: 'chat', icon: '💬', label: 'Chat Mara' },
   { id: 'ailogs', icon: '⚡', label: 'AI Logs' },
+  { id: 'growth-dash', icon: '🌱', label: 'Growth Dash' },
 ];
 
 export default function AdminDashboard() {
@@ -1211,6 +1214,11 @@ export default function AdminDashboard() {
         {activeTab === 'library'      && <LibraryTab />}
         {activeTab === 'chat'         && <ChatTab />}
         {activeTab === 'ailogs'       && <AiLogsTab />}
+        {activeTab === 'growth-dash'  && (
+          <Suspense fallback={null}>
+            <AdminGrowthDashboard />
+          </Suspense>
+        )}
       </div>
     </div>
   );
