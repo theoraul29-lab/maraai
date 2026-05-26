@@ -112,8 +112,9 @@ interface Book {
   status: string;
 }
 
-type View = 'list' | 'detail' | 'proof' | 'done' | 'onboarding' | 'daily';
+type View = 'list' | 'onboarding';
 type Tab = 'missions' | 'programs' | 'journal' | 'book' | 'community' | 'leaderboard';
+type ChatPhase = 'idle' | 'preview' | 'active' | 'reviewing' | 'done' | 'locked';
 
 interface LeaderboardEntry {
   rank: number;
@@ -140,14 +141,213 @@ function apiFetchJson<T>(path: string, opts: RequestInit = {}): Promise<T> {
   });
 }
 
+// ── Mara Tree ───────────────────────────────────────────────────────────────
+function MaraTree({ isThinking }: { isThinking: boolean }) {
+  const particles = Array.from({ length: 14 }, (_, i) => ({
+    id: i,
+    cx: 142 + Math.sin(i * 1.1) * 6,
+    cy: 370 - i * 17,
+    r: 1.2 + (i % 4) * 0.35,
+    delay: i * 0.16,
+  }));
+
+  return (
+    <div className={`mara-tree-container${isThinking ? ' mara-tree-container--thinking' : ''}`}>
+      <svg viewBox="0 0 300 420" className="mara-tree-svg" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="trunk-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#2a1005" />
+            <stop offset="35%" stopColor="#6b3612" />
+            <stop offset="65%" stopColor="#8b4a1a" />
+            <stop offset="100%" stopColor="#2a1005" />
+          </linearGradient>
+          <radialGradient id="canopy-deep" cx="50%" cy="65%" r="50%">
+            <stop offset="0%" stopColor="#0d3318" />
+            <stop offset="100%" stopColor="#040d08" />
+          </radialGradient>
+          <radialGradient id="canopy-mid" cx="50%" cy="60%" r="50%">
+            <stop offset="0%" stopColor="#145c30" />
+            <stop offset="100%" stopColor="#072612" />
+          </radialGradient>
+          <radialGradient id="canopy-bright" cx="50%" cy="55%" r="50%">
+            <stop offset="0%" stopColor="#1e7a40" />
+            <stop offset="60%" stopColor="#0d4520" />
+            <stop offset="100%" stopColor="#051a0d" />
+          </radialGradient>
+          <radialGradient id="mist-grad" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="rgba(120,80,220,0.35)" />
+            <stop offset="80%" stopColor="rgba(80,50,180,0.08)" />
+            <stop offset="100%" stopColor="rgba(60,30,150,0)" />
+          </radialGradient>
+          <filter id="soft-glow" x="-25%" y="-25%" width="150%" height="150%">
+            <feGaussianBlur stdDeviation="6" result="blur" />
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+          <filter id="spark-glow">
+            <feGaussianBlur stdDeviation="2.5" result="blur" />
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+        </defs>
+
+        {/* Roots */}
+        <path d="M 130,408 C 118,390 102,382 82,386" stroke="url(#trunk-grad)" strokeWidth="9" fill="none" strokeLinecap="round" />
+        <path d="M 137,412 C 128,400 114,396 98,400" stroke="url(#trunk-grad)" strokeWidth="6" fill="none" strokeLinecap="round" />
+        <path d="M 160,408 C 172,390 188,382 208,386" stroke="url(#trunk-grad)" strokeWidth="9" fill="none" strokeLinecap="round" />
+        <path d="M 153,412 C 162,400 176,396 192,400" stroke="url(#trunk-grad)" strokeWidth="6" fill="none" strokeLinecap="round" />
+
+        {/* Main trunk */}
+        <path
+          d="M 127,410 C 124,378 122,348 128,318 C 132,292 140,272 143,248 C 145,224 143,200 145,174"
+          stroke="url(#trunk-grad)" strokeWidth="24" fill="none" strokeLinecap="round"
+          className="mara-trunk"
+        />
+        {/* Trunk highlight */}
+        <path
+          d="M 135,405 C 133,373 132,344 137,314 C 141,290 148,271 150,248 C 151,225 150,202 151,176"
+          stroke="rgba(150,90,40,0.35)" strokeWidth="7" fill="none" strokeLinecap="round"
+        />
+
+        {/* Left branch main */}
+        <path d="M 141,252 C 128,234 108,220 88,210 C 70,200 54,195 38,188"
+          stroke="url(#trunk-grad)" strokeWidth="13" fill="none" strokeLinecap="round" />
+        {/* Left sub-branch */}
+        <path d="M 84,212 C 72,196 58,184 44,172"
+          stroke="url(#trunk-grad)" strokeWidth="8" fill="none" strokeLinecap="round" />
+        {/* Left upper branch */}
+        <path d="M 144,212 C 126,194 105,182 84,170"
+          stroke="url(#trunk-grad)" strokeWidth="10" fill="none" strokeLinecap="round" />
+
+        {/* Right branch main */}
+        <path d="M 145,238 C 160,218 180,206 200,196 C 218,187 236,182 254,175"
+          stroke="url(#trunk-grad)" strokeWidth="13" fill="none" strokeLinecap="round" />
+        {/* Right sub-branch */}
+        <path d="M 204,198 C 218,182 232,172 248,160"
+          stroke="url(#trunk-grad)" strokeWidth="8" fill="none" strokeLinecap="round" />
+        {/* Right upper branch */}
+        <path d="M 146,200 C 164,182 184,170 204,160"
+          stroke="url(#trunk-grad)" strokeWidth="10" fill="none" strokeLinecap="round" />
+
+        {/* Canopy back layer */}
+        <ellipse cx="150" cy="130" rx="122" ry="95" fill="url(#canopy-deep)" className="mara-canopy-back" />
+        <ellipse cx="75" cy="168" rx="58" ry="50" fill="url(#canopy-deep)" />
+        <ellipse cx="225" cy="162" rx="60" ry="52" fill="url(#canopy-deep)" />
+
+        {/* Canopy mid layer */}
+        <ellipse cx="150" cy="112" rx="104" ry="82" fill="url(#canopy-mid)" className="mara-canopy-mid" />
+        <ellipse cx="70" cy="155" rx="48" ry="42" fill="url(#canopy-mid)" />
+        <ellipse cx="230" cy="150" rx="50" ry="44" fill="url(#canopy-mid)" />
+
+        {/* Canopy front layer (glowing) */}
+        <ellipse cx="150" cy="98" rx="84" ry="70" fill="url(#canopy-bright)" className="mara-canopy-front" filter="url(#soft-glow)" />
+        <ellipse cx="88" cy="142" rx="40" ry="34" fill="url(#canopy-bright)" className="mara-canopy-front" />
+        <ellipse cx="212" cy="136" rx="42" ry="36" fill="url(#canopy-bright)" className="mara-canopy-front" />
+
+        {/* Fireflies */}
+        <circle cx="120" cy="78" r="1.5" fill="rgba(200,255,160,0.7)" className="mara-firefly mara-ff1" />
+        <circle cx="178" cy="72" r="1.2" fill="rgba(200,255,160,0.6)" className="mara-firefly mara-ff2" />
+        <circle cx="100" cy="112" r="1" fill="rgba(200,255,160,0.5)" className="mara-firefly mara-ff3" />
+        <circle cx="200" cy="104" r="1.3" fill="rgba(200,255,160,0.6)" className="mara-firefly mara-ff4" />
+
+        {/* Mist base */}
+        <ellipse cx="150" cy="408" rx="130" ry="28" fill="url(#mist-grad)" className="mara-mist" />
+        <ellipse cx="150" cy="412" rx="100" ry="18" fill="rgba(100,60,200,0.13)" />
+
+        {/* Thinking particles */}
+        {isThinking && particles.map((p) => (
+          <circle
+            key={p.id}
+            cx={p.cx} cy={p.cy} r={p.r}
+            fill="#c77dff"
+            filter="url(#spark-glow)"
+            className="mara-particle"
+            style={{ animationDelay: `${p.delay}s` }}
+          />
+        ))}
+
+        {/* Eyes */}
+        <ellipse cx="138" cy="94" rx="5.5" ry="5.5" fill="rgba(4,8,14,0.85)" />
+        <ellipse cx="162" cy="94" rx="5.5" ry="5.5" fill="rgba(4,8,14,0.85)" />
+        <circle cx="139" cy="93" r="3" fill="#c77dff" className="mara-eye" />
+        <circle cx="163" cy="93" r="3" fill="#c77dff" className="mara-eye" />
+        <circle cx="140" cy="92" r="1.2" fill="rgba(255,255,255,0.9)" />
+        <circle cx="164" cy="92" r="1.2" fill="rgba(255,255,255,0.9)" />
+      </svg>
+    </div>
+  );
+}
+
+// ── 365-day progress ring ───────────────────────────────────────────────────
+function ProgressRing({ completed }: { completed: number }) {
+  const r = 32;
+  const circ = 2 * Math.PI * r;
+  const offset = circ * (1 - Math.min(completed / 365, 1));
+  return (
+    <div className="progress-ring">
+      <svg width="84" height="84" viewBox="0 0 84 84">
+        <circle cx="42" cy="42" r={r} fill="none" stroke="rgba(168,85,247,0.15)" strokeWidth="7" />
+        <circle cx="42" cy="42" r={r} fill="none"
+          stroke="#a855f7" strokeWidth="7"
+          strokeDasharray={circ} strokeDashoffset={offset}
+          strokeLinecap="round" transform="rotate(-90 42 42)"
+          style={{ transition: 'stroke-dashoffset 0.6s ease' }}
+        />
+        <text x="42" y="39" textAnchor="middle" fill="#e2e8f0" fontSize="13" fontWeight="700">{completed}</text>
+        <text x="42" y="52" textAnchor="middle" fill="rgba(148,163,184,0.7)" fontSize="9">/ 365</text>
+      </svg>
+      <div className="progress-ring-label">📚 Carte</div>
+    </div>
+  );
+}
+
+// ── Mission card (collection) ───────────────────────────────────────────────
+function MissionCardNew({
+  mission, index, isLocked, isFree, isActive, onSelect, isSelected,
+}: {
+  mission: Mission;
+  index: number;
+  isLocked: boolean;
+  isFree: boolean;
+  isActive: boolean;
+  onSelect: (m: Mission, locked: boolean) => void;
+  isSelected: boolean;
+}) {
+  const pillarMeta = PILLAR_META[mission.pillar] ?? { icon: '🎯', color: '#a855f7' };
+  const isCompleted = mission.user_status === 'completed';
+
+  return (
+    <button
+      className={[
+        'mc-card',
+        isCompleted ? 'mc-card--done' : '',
+        isActive ? 'mc-card--active' : '',
+        isLocked ? 'mc-card--locked' : '',
+        isSelected ? 'mc-card--selected' : '',
+      ].filter(Boolean).join(' ')}
+      onClick={() => onSelect(mission, isLocked)}
+      style={{ '--pillar': pillarMeta.color } as React.CSSProperties}
+    >
+      {index >= 0 && <div className="mc-num">#{index + 1}</div>}
+      {isFree && index >= 0 && index < 10 && !isCompleted && <div className="mc-free">FREE</div>}
+      <div className="mc-icon">
+        {isLocked ? '🔒' : pillarMeta.icon}
+      </div>
+      <div className="mc-title">{isLocked ? '???' : mission.title}</div>
+      {isCompleted && <div className="mc-done-check">✓</div>}
+      {isActive && <div className="mc-active-ring" />}
+    </button>
+  );
+}
+
+// ── Main component ──────────────────────────────────────────────────────────
 export default function Missions() {
   const { t, i18n } = useTranslation();
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  // ── existing state ─────────────────────────────────────────────────────────
   const [view, setView] = useState<View>('list');
   const [activeTab, setActiveTab] = useState<Tab>('missions');
+  const [chatPhase, setChatPhase] = useState<ChatPhase>('idle');
+
   const [missions, setMissions] = useState<Mission[]>([]);
   const [dailyMissions, setDailyMissions] = useState<Mission[]>([]);
   const [activeMission, setActiveMission] = useState<Mission | null>(null);
@@ -165,7 +365,6 @@ export default function Missions() {
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
 
-  // ── programs state ─────────────────────────────────────────────────────────
   const [programs, setPrograms] = useState<Program[]>([]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [dayMissions, setDayMissions] = useState<Record<string, DayMissionData>>({});
@@ -176,25 +375,18 @@ export default function Missions() {
   const [programResult, setProgramResult] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // ── journal state ──────────────────────────────────────────────────────────
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
   const [journalTotal, setJournalTotal] = useState(0);
-
-  // ── book state ─────────────────────────────────────────────────────────────
   const [books, setBooks] = useState<Book[]>([]);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
-
-  // ── community state ────────────────────────────────────────────────────────
   const [communityFeed, setCommunityFeed] = useState<any[]>([]);
-
-  // ── leaderboard state ──────────────────────────────────────────────────────
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
   const [statsDetailed, setStatsDetailed] = useState<{
     completed: number; byPillar: Array<{ pillar: string; cnt: number }>;
   } | null>(null);
 
-  // ── data loaders ───────────────────────────────────────────────────────────
+  // ── data loaders ──────────────────────────────────────────────────────────
   const loadMissions = useCallback(async () => {
     if (!isAuthenticated) return;
     setLoading(true);
@@ -302,25 +494,36 @@ export default function Missions() {
     if (activeTab === 'leaderboard') loadLeaderboard();
   }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── missions handlers ──────────────────────────────────────────────────────
+  // ── handlers ──────────────────────────────────────────────────────────────
+  const handleCardSelect = (mission: Mission, isLocked: boolean) => {
+    setError('');
+    if (isLocked) {
+      setActiveMission(null);
+      setChatPhase('locked');
+      return;
+    }
+    setActiveMission(mission);
+    if (mission.user_status === 'active') {
+      setChatPhase('active');
+    } else {
+      setChatPhase('preview');
+    }
+  };
+
   const handleStartMission = async (mission: Mission) => {
     if (!isAuthenticated) { navigate('/'); return; }
+    setLoading(true);
     try {
       await apiFetchJson(`/api/missions/${mission.id}/start`, { method: 'POST', body: '{}' });
       setActiveMission(mission);
-      setView('detail');
+      setChatPhase('active');
     } catch { setError(t('missions.errorStart')); }
-  };
-
-  const handleOpenDetail = (mission: Mission) => {
-    setActiveMission(mission);
-    if (mission.user_status === 'active') setView('proof');
-    else setView('detail');
+    finally { setLoading(false); }
   };
 
   const handleSubmitProof = async () => {
     if (!activeMission || !proofText.trim()) { setError(t('missions.errorProofRequired')); return; }
-    setLoading(true);
+    setChatPhase('reviewing');
     try {
       const result = await apiFetchJson<{
         success: boolean; maraFeedback: string; message: string; leveledUp: boolean;
@@ -330,12 +533,13 @@ export default function Missions() {
       });
       if (result.success) {
         setCompletionResult(result);
-        setView('done');
+        setChatPhase('done');
         setProofText('');
         setReflectionText('');
+        loadMissions();
+        loadStatsDetailed();
       }
-    } catch { setError(t('missions.errorProof')); }
-    finally { setLoading(false); }
+    } catch { setError(t('missions.errorProof')); setChatPhase('active'); }
   };
 
   const handleGenerateMission = async () => {
@@ -362,16 +566,12 @@ export default function Missions() {
     finally { setLoading(false); }
   };
 
-  // ── programs handlers ──────────────────────────────────────────────────────
   async function confirmEnroll() {
     if (!enrollingSlug) return;
     try {
       const r = await apiFetchJson<{ success: boolean; enrollmentId?: string; message?: string }>(
         `/api/programs/${enrollingSlug}/enroll`,
-        {
-          method: 'POST',
-          body: JSON.stringify({ ...enrollSettings, language: i18n.language }),
-        },
+        { method: 'POST', body: JSON.stringify({ ...enrollSettings, language: i18n.language }) },
       );
       if (r.success) {
         setEnrollingSlug(null);
@@ -387,10 +587,7 @@ export default function Missions() {
     try {
       const r = await apiFetchJson<any>(
         `/api/programs/enrollment/${enrollmentId}/complete`,
-        {
-          method: 'POST',
-          body: JSON.stringify({ type: 'text', content: proofContent, language: i18n.language }),
-        },
+        { method: 'POST', body: JSON.stringify({ type: 'text', content: proofContent, language: i18n.language }) },
       );
       if (r.success) {
         setProgramResult(r);
@@ -413,26 +610,45 @@ export default function Missions() {
     loadJournal();
   }
 
-  // ── XP bar ─────────────────────────────────────────────────────────────────
-  const xpToNextLevel = 1000;
-  const xpProgress = (userXp.xp % xpToNextLevel) / xpToNextLevel * 100;
+  // ── sequential unlock logic ───────────────────────────────────────────────
+  const orderedMissions = [...missions].sort((a, b) => {
+    const rank = (s?: string | null) => s === 'completed' ? 0 : s === 'active' ? 1 : 2;
+    return rank(a.user_status) - rank(b.user_status);
+  });
 
+  const isMissionLocked = (idx: number) => {
+    if (idx === 0) return false;
+    return orderedMissions[idx - 1]?.user_status !== 'completed';
+  };
+
+  const xpProgress = (userXp.xp % 1000) / 1000 * 100;
+
+  const TABS: { key: Tab; label: string }[] = [
+    { key: 'missions',    label: t('missions.tabMissions', '🎯 Misiuni') },
+    { key: 'programs',    label: '📋 Programe' },
+    { key: 'journal',     label: '📖 Jurnal' },
+    { key: 'book',        label: '📚 Carte' },
+    { key: 'community',   label: t('missions.tabCommunity', '👥 Comunitate') },
+    { key: 'leaderboard', label: '🏆 Top' },
+  ];
+
+  // ── auth wall ─────────────────────────────────────────────────────────────
   if (!isAuthenticated) {
     return (
       <div className="missions-page">
         <div className="missions-auth-wall">
-          <div className="missions-auth-icon">🎯</div>
+          <div className="missions-auth-icon">🌳</div>
           <h2>Mara Missions</h2>
           <p>{t('missions.authWall')}</p>
-          <button className="missions-btn-primary" onClick={() => navigate('/')}>{t('missions.loginBtn')}</button>
+          <button className="mara-cta-btn" onClick={() => navigate('/')}>{t('missions.loginBtn')}</button>
         </div>
       </div>
     );
   }
 
-  // ── ONBOARDING ─────────────────────────────────────────────────────────────
+  // ── onboarding ────────────────────────────────────────────────────────────
   if (view === 'onboarding') {
-    const onboardingQuestions = [
+    const questions = [
       { key: 'whatYouLove',     q: t('missions.q1') },
       { key: 'wantToChange',    q: t('missions.q2') },
       { key: 'currentHobbies', q: t('missions.q3') },
@@ -440,16 +656,16 @@ export default function Missions() {
       { key: 'biggestFear',     q: t('missions.q5') },
     ];
     return (
-      <div className="missions-page">
+      <div className="missions-page missions-page--onboarding">
+        <MaraTree isThinking={loading} />
         <div className="missions-onboarding">
           <div className="missions-onboarding-header">
-            <div className="missions-mara-avatar">🌟</div>
             <h1>{t('missions.onboardingTitle')}</h1>
             <p>{t('missions.onboardingSubtitle')}</p>
           </div>
           {error && <div className="missions-error">{error}</div>}
           <div className="missions-onboarding-form">
-            {onboardingQuestions.map(({ key, q }) => (
+            {questions.map(({ key, q }) => (
               <div key={key} className="missions-onboarding-field">
                 <label>{q}</label>
                 <textarea
@@ -460,159 +676,20 @@ export default function Missions() {
                 />
               </div>
             ))}
-            <button className="missions-btn-primary missions-btn-full" onClick={handleOnboardingSubmit} disabled={loading}>
+            <button className="mara-cta-btn mara-cta-btn--full" onClick={handleOnboardingSubmit} disabled={loading}>
               {loading ? t('missions.saving') : t('missions.continue')}
             </button>
-            <button className="missions-btn-ghost" onClick={() => setView('list')}>{t('missions.skip')}</button>
+            <button className="mara-btn-ghost" onClick={() => setView('list')}>{t('missions.skip')}</button>
           </div>
         </div>
       </div>
     );
   }
 
-  // ── COMPLETION ─────────────────────────────────────────────────────────────
-  if (view === 'done' && completionResult) {
-    return (
-      <div className="missions-page">
-        <div className="missions-completion">
-          <div className="missions-completion-top">
-            <div className="missions-completion-icon">{completionResult.leveledUp ? '🎉' : '✅'}</div>
-            <h2>{completionResult.leveledUp ? t('missions.levelUp') : t('missions.missionCompleted')}</h2>
-            <div className="missions-xp-gained">{completionResult.message}</div>
-          </div>
-          <div className="missions-mara-feedback">
-            <div className="missions-mara-label">{t('missions.maraLabel')}</div>
-            <p>{completionResult.maraFeedback}</p>
-          </div>
-          <div className="missions-completion-actions">
-            <button className="missions-btn-primary" onClick={() => { setView('list'); setCompletionResult(null); }}>
-              {t('missions.backToMissions')}
-            </button>
-            {activeMission && (
-              <ShareButton
-                sourceModule="mission"
-                sourceId={activeMission.id}
-                title={activeMission.title}
-                caption={completionResult.maraFeedback ?? undefined}
-                compact={false}
-              />
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ── PROOF ──────────────────────────────────────────────────────────────────
-  if (view === 'proof' && activeMission) {
-    const steps: string[] = (() => { try { return JSON.parse(activeMission.steps); } catch { return []; } })();
-    const pillarMeta = PILLAR_META[activeMission.pillar] ?? { icon: '🎯', color: '#a855f7' };
-    return (
-      <div className="missions-page">
-        <div className="missions-proof-view">
-          <button className="missions-back-btn" onClick={() => setView('list')}>{t('missions.backToMissions')}</button>
-          <div className="missions-proof-header">
-            <span className="missions-pillar-badge" style={{ color: pillarMeta.color }}>
-              {pillarMeta.icon} {t(`missions.pillar.${activeMission.pillar}`, activeMission.pillar)}
-            </span>
-            <h2>{activeMission.title}</h2>
-          </div>
-          {steps.length > 0 && (
-            <div className="missions-steps">
-              <h4>{t('missions.stepsTitle')}</h4>
-              <ol>{steps.map((step, i) => <li key={i}>{step}</li>)}</ol>
-            </div>
-          )}
-          <div className="missions-proof-form">
-            <label className="missions-proof-label">{activeMission.proof_prompt}</label>
-            <textarea value={proofText} onChange={(e) => setProofText(e.target.value)}
-              placeholder={t('missions.proofPlaceholder')} rows={5} className="missions-proof-textarea" />
-            {activeMission.reflection && (
-              <>
-                <label className="missions-proof-label missions-reflection-label">
-                  {t('missions.reflectLabel')}{activeMission.reflection}
-                </label>
-                <textarea value={reflectionText} onChange={(e) => setReflectionText(e.target.value)}
-                  placeholder={t('missions.reflectionPlaceholder')} rows={3} className="missions-proof-textarea" />
-              </>
-            )}
-            {error && <div className="missions-error">{error}</div>}
-            <button className="missions-btn-primary missions-btn-full" onClick={handleSubmitProof}
-              disabled={loading || !proofText.trim()}>
-              {loading ? t('missions.analyzing') : t('missions.submitProof', { xp: activeMission.xp_reward })}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ── DETAIL ─────────────────────────────────────────────────────────────────
-  if (view === 'detail' && activeMission) {
-    const steps: string[] = (() => { try { return JSON.parse(activeMission.steps); } catch { return []; } })();
-    const pillarMeta = PILLAR_META[activeMission.pillar] ?? { icon: '🎯', color: '#a855f7' };
-    const diffMeta = DIFFICULTY_META[activeMission.difficulty] ?? { color: '#a855f7' };
-    return (
-      <div className="missions-page">
-        <div className="missions-detail-view">
-          <button className="missions-back-btn" onClick={() => setView('list')}>{t('missions.backToMissions')}</button>
-          <div className="missions-detail-header">
-            <span className="missions-pillar-badge" style={{ color: pillarMeta.color }}>
-              {pillarMeta.icon} {t(`missions.pillar.${activeMission.pillar}`, activeMission.pillar)}
-            </span>
-            <span className="missions-difficulty-badge" style={{ color: diffMeta.color }}>
-              {t(`missions.difficulty.${activeMission.difficulty}`, activeMission.difficulty)}
-            </span>
-          </div>
-          <h2 className="missions-detail-title">{activeMission.title}</h2>
-          <p className="missions-detail-desc">{activeMission.description}</p>
-          {steps.length > 0 && (
-            <div className="missions-steps">
-              <h4>{t('missions.howToTitle')}</h4>
-              <ol>{steps.map((step, i) => <li key={i}>{step}</li>)}</ol>
-            </div>
-          )}
-          {activeMission.reflection && (
-            <div className="missions-reflection-preview">
-              <span>{t('missions.reflectLabel')}</span>{activeMission.reflection}
-            </div>
-          )}
-          <div className="missions-detail-xp"><span>+{activeMission.xp_reward} XP</span></div>
-          {activeMission.user_status === 'completed' ? (
-            <div className="missions-completed-badge">{t('missions.completedBadge')}</div>
-          ) : (
-            <button className="missions-btn-primary missions-btn-full"
-              onClick={() => handleStartMission(activeMission)} disabled={loading}>
-              {t('missions.accept')}
-            </button>
-          )}
-          {activeMission.mara_feedback && (
-            <div className="missions-mara-feedback">
-              <div className="missions-mara-label">{t('missions.maraSaid')}</div>
-              <p>{activeMission.mara_feedback}</p>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // ── MAIN LIST ──────────────────────────────────────────────────────────────
-  const completedMissions = missions.filter((m) => m.user_status === 'completed');
-  const activeMissions = missions.filter((m) => m.user_status === 'active');
-  const availableMissions = missions.filter((m) => !m.user_status || (m.user_status !== 'active' && m.user_status !== 'completed'));
-
-  const TABS: { key: Tab; label: string }[] = [
-    { key: 'missions',    label: t('missions.tabMissions', '🎯 Misiuni') },
-    { key: 'programs',    label: '📋 Programe' },
-    { key: 'journal',     label: '📖 Jurnal' },
-    { key: 'book',        label: '📚 Cartea mea' },
-    { key: 'community',   label: t('missions.tabCommunity', '👥 Comunitate') },
-    { key: 'leaderboard', label: '🏆 Top' },
-  ];
-
+  // ── main layout ───────────────────────────────────────────────────────────
   return (
     <div className="missions-page">
+
       {/* Enroll modal */}
       {enrollingSlug && (
         <div className="enroll-modal-overlay" onClick={() => setEnrollingSlug(null)}>
@@ -620,151 +697,284 @@ export default function Missions() {
             <h3>Personalizează programul</h3>
             <p>Spune-i Marei cu ce vrei să lucrezi:</p>
             <textarea
-              className="missions-proof-textarea"
+              className="mara-proof-input"
               placeholder="Ex: vreau să mă trezesc mai devreme, să fac sport, să scriu zilnic..."
               value={enrollSettings.habitDescription}
               onChange={(e) => setEnrollSettings((prev) => ({ ...prev, habitDescription: e.target.value }))}
               rows={3}
             />
             <div className="enroll-modal-actions">
-              <button className="missions-btn-primary" onClick={confirmEnroll}>🌱 Începe programul</button>
-              <button className="missions-btn-ghost" onClick={() => setEnrollingSlug(null)}>Anulează</button>
+              <button className="mara-cta-btn" onClick={confirmEnroll}>🌱 Începe programul</button>
+              <button className="mara-btn-ghost" onClick={() => setEnrollingSlug(null)}>Anulează</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Header */}
-      <div className="missions-header">
-        <button className="missions-back-btn" onClick={() => navigate('/')}>{t('missions.backHome')}</button>
-        <div className="missions-header-center">
-          <h1 className="missions-title">{t('missions.title')}</h1>
-          <p className="missions-subtitle">{t('missions.subtitle')}</p>
-        </div>
-        <div className="missions-xp-bar-wrap">
-          <div className="missions-xp-info">
-            <span className="missions-level-badge">Lvl {userXp.level}</span>
-            <span>{userXp.xp % 1000} / 1000 XP</span>
-          </div>
+      {/* Compact header */}
+      <div className="missions-header-v4">
+        <button className="missions-back-btn" onClick={() => navigate('/')}>← Acasă</button>
+        <div className="missions-xp-strip">
+          <span className="missions-level-badge">Lvl {userXp.level}</span>
           <div className="missions-xp-bar">
             <div className="missions-xp-fill" style={{ width: `${xpProgress}%` }} />
           </div>
-        </div>
-        <div className="missions-stats-strip">
-          <div className="missions-stat-pill">
-            <span className="missions-stat-icon">🏆</span>
-            <span>{userXp.xp} XP total</span>
-          </div>
-          {userXp.streak > 0 && (
-            <div className="missions-stat-pill missions-stat-pill--fire">
-              <span className="missions-stat-icon">🔥</span>
-              <span>{userXp.streak} {userXp.streak === 1 ? 'zi' : 'zile'}</span>
-            </div>
-          )}
-          {statsDetailed && (
-            <div className="missions-stat-pill">
-              <span className="missions-stat-icon">✅</span>
-              <span>{statsDetailed.completed} completate</span>
-            </div>
-          )}
+          <span className="missions-xp-num">{userXp.xp} XP</span>
+          {userXp.streak > 0 && <span className="missions-streak-badge">🔥 {userXp.streak}</span>}
         </div>
       </div>
 
-      {error && <div className="missions-error" onClick={() => setError('')}>{error} ×</div>}
-
-      {/* Tab navigation */}
+      {/* Tab bar */}
       <div className="missions-tabs">
         {TABS.map((tab) => (
-          <button
-            key={tab.key}
+          <button key={tab.key}
             className={`missions-tab-btn ${activeTab === tab.key ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab.key)}
-          >
+            onClick={() => setActiveTab(tab.key)}>
             {tab.label}
           </button>
         ))}
       </div>
 
-      {/* ── TAB: MISIUNI ──────────────────────────────────────────────────── */}
+      {/* ── MISSIONS TAB ──────────────────────────────────────────────────── */}
       {activeTab === 'missions' && (
-        <>
-          <div className="missions-filters">
-            <button
-              className={`missions-filter-btn ${selectedPillar === 'all' ? 'active' : ''}`}
-              onClick={() => setSelectedPillar('all')}
-            >
-              {t('missions.filterAll')}
-            </button>
-            {Object.entries(PILLAR_META).map(([key, meta]) => (
-              <button
-                key={key}
-                className={`missions-filter-btn ${selectedPillar === key ? 'active' : ''}`}
-                style={selectedPillar === key ? { borderColor: meta.color, color: meta.color } : {}}
-                onClick={() => setSelectedPillar(key)}
-              >
-                {meta.icon} {t(`missions.pillar.${key}`, key)}
-              </button>
-            ))}
+        <div className="missions-split">
+
+          {/* LEFT PANEL: Mara tree + chat */}
+          <div className="missions-panel-left">
+            <MaraTree isThinking={chatPhase === 'reviewing' || (loading && chatPhase === 'idle') || generating} />
+
+            <div className="mara-chat-area">
+              {error && (
+                <div className="missions-error" onClick={() => setError('')}>{error} ×</div>
+              )}
+
+              {/* IDLE */}
+              {chatPhase === 'idle' && (
+                <div className="mara-bubble mara-bubble--mara">
+                  <p className="mara-greeting">Bună! Sunt Mara 🌳</p>
+                  <p>Alege o misiune din dreapta. Primele 10 sunt gratuite — fiecare misiune se deschide după ce o termini pe cea anterioară.</p>
+                  {dailyMissions.length > 0 && (
+                    <button className="mara-cta-btn" onClick={() => handleCardSelect(dailyMissions[0], false)}>
+                      ⚡ Misiunea zilei →
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* LOCKED */}
+              {chatPhase === 'locked' && (
+                <div className="mara-bubble mara-bubble--mara">
+                  <p>🔒 Trebuie să completezi misiunea anterioară mai întâi!</p>
+                  <p style={{ opacity: 0.7, fontSize: '0.88rem' }}>Fiecare misiune deschide calea spre următoarea. Continuă!</p>
+                  <button className="mara-cta-btn mara-cta-btn--secondary" onClick={() => setChatPhase('idle')}>
+                    ← Înapoi
+                  </button>
+                </div>
+              )}
+
+              {/* PREVIEW */}
+              {chatPhase === 'preview' && activeMission && (
+                <div className="mara-bubble mara-bubble--mara">
+                  <div className="mara-mission-header">
+                    <span className="mara-pillar-icon">{PILLAR_META[activeMission.pillar]?.icon ?? '🎯'}</span>
+                    <span className="mara-difficulty" style={{ color: DIFFICULTY_META[activeMission.difficulty]?.color }}>
+                      {t(`missions.difficulty.${activeMission.difficulty}`, activeMission.difficulty)}
+                    </span>
+                  </div>
+                  <h3 className="mara-mission-title">{activeMission.title}</h3>
+                  <p className="mara-mission-desc">{activeMission.description}</p>
+                  {(() => {
+                    try {
+                      const steps = JSON.parse(activeMission.steps) as string[];
+                      return steps.length > 0 ? (
+                        <ol className="mara-steps">
+                          {steps.map((s, i) => <li key={i}>{s}</li>)}
+                        </ol>
+                      ) : null;
+                    } catch { return null; }
+                  })()}
+                  <div className="mara-xp-badge">+{activeMission.xp_reward} XP</div>
+                  {activeMission.user_status === 'completed' ? (
+                    <div className="mara-completed-note">
+                      <span>✅ Misiune completată!</span>
+                      {activeMission.mara_feedback && (
+                        <p className="mara-feedback-quote">"{activeMission.mara_feedback}"</p>
+                      )}
+                    </div>
+                  ) : (
+                    <button className="mara-cta-btn" onClick={() => handleStartMission(activeMission)} disabled={loading}>
+                      {loading ? '⏳ Se pornește...' : '⚡ Acceptă misiunea'}
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* ACTIVE */}
+              {chatPhase === 'active' && activeMission && (
+                <div className="mara-active-area">
+                  <div className="mara-bubble mara-bubble--mara">
+                    <div className="mara-mission-header">
+                      <span className="mara-pillar-icon">{PILLAR_META[activeMission.pillar]?.icon ?? '🎯'}</span>
+                      <span className="mara-active-label">În desfășurare</span>
+                    </div>
+                    <h3 className="mara-mission-title">{activeMission.title}</h3>
+                    <p className="mara-proof-prompt">{activeMission.proof_prompt}</p>
+                  </div>
+                  <div className="mara-bubble mara-bubble--input">
+                    <textarea
+                      className="mara-proof-input"
+                      value={proofText}
+                      onChange={(e) => setProofText(e.target.value)}
+                      placeholder="Scrie ce ai făcut, ce ai simțit, ce ai realizat..."
+                      rows={5}
+                    />
+                    {activeMission.reflection && (
+                      <textarea
+                        className="mara-proof-input"
+                        value={reflectionText}
+                        onChange={(e) => setReflectionText(e.target.value)}
+                        placeholder={`Reflecție: ${activeMission.reflection}`}
+                        rows={2}
+                        style={{ marginTop: '8px' }}
+                      />
+                    )}
+                    <div className="mara-input-actions">
+                      <button className="mara-cta-btn" onClick={handleSubmitProof} disabled={!proofText.trim()}>
+                        📤 Trimite (+{activeMission.xp_reward} XP)
+                      </button>
+                      <button className="mara-btn-ghost" onClick={() => setChatPhase('preview')}>
+                        ← Înapoi
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* REVIEWING */}
+              {chatPhase === 'reviewing' && (
+                <div className="mara-bubble mara-bubble--mara">
+                  <div className="mara-thinking">
+                    <span /><span /><span />
+                  </div>
+                  <p style={{ opacity: 0.7, marginTop: '8px' }}>Mara analizează răspunsul tău...</p>
+                </div>
+              )}
+
+              {/* DONE */}
+              {chatPhase === 'done' && completionResult && (
+                <div className="mara-done-area">
+                  <div className="mara-bubble mara-bubble--mara mara-bubble--celebration">
+                    <div className="mara-done-icon">{completionResult.leveledUp ? '🎉' : '✅'}</div>
+                    <p className="mara-done-message">{completionResult.message}</p>
+                    <p className="mara-done-feedback">"{completionResult.maraFeedback}"</p>
+                  </div>
+                  <div className="mara-done-actions">
+                    {activeMission && (
+                      <ShareButton
+                        sourceModule="mission"
+                        sourceId={activeMission.id}
+                        title={activeMission.title}
+                        caption={completionResult.maraFeedback ?? undefined}
+                        compact={false}
+                      />
+                    )}
+                    <button className="mara-cta-btn mara-cta-btn--secondary"
+                      onClick={() => { setChatPhase('idle'); setActiveMission(null); setCompletionResult(null); }}>
+                      Misiune nouă →
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
-          {dailyMissions.length > 0 && (
-            <section className="missions-section">
-              <h3 className="missions-section-title">{t('missions.dailyTitle')}</h3>
-              <div className="missions-grid">
-                {dailyMissions.map((m) => <MissionCard key={m.id} mission={m} onOpen={handleOpenDetail} isDaily />)}
+          {/* RIGHT PANEL: mission cards */}
+          <div className="missions-panel-right">
+            <div className="missions-panel-right-header">
+              <div>
+                <h3 className="missions-panel-right-title">Misiunile tale</h3>
+                <p className="missions-panel-right-sub">
+                  {statsDetailed?.completed ?? 0} completate · primele 10 gratuite
+                </p>
               </div>
-            </section>
-          )}
-
-          {activeMissions.length > 0 && (
-            <section className="missions-section">
-              <h3 className="missions-section-title">{t('missions.activeTitle')}</h3>
-              <div className="missions-grid">
-                {activeMissions.map((m) => <MissionCard key={m.id} mission={m} onOpen={handleOpenDetail} />)}
-              </div>
-            </section>
-          )}
-
-          <section className="missions-section">
-            <div className="missions-section-header">
-              <h3 className="missions-section-title">{t('missions.availableTitle')}</h3>
-              <button className="missions-btn-generate" onClick={handleGenerateMission} disabled={generating}>
-                {generating ? t('missions.generating') : t('missions.generate')}
-              </button>
+              <ProgressRing completed={statsDetailed?.completed ?? 0} />
             </div>
-            {loading ? (
-              <div className="missions-loading"><div className="missions-spinner" /><p>{t('missions.loadingMissions')}</p></div>
-            ) : availableMissions.length === 0 ? (
-              <div className="missions-empty">
-                <p>{t('missions.allDone')}</p>
-                <button className="missions-btn-primary" onClick={handleGenerateMission} disabled={generating}>
-                  {generating ? t('missions.generating') : t('missions.requestNew')}
+
+            {/* Pillar filters */}
+            <div className="mc-filters">
+              <button
+                className={`mc-filter-btn ${selectedPillar === 'all' ? 'active' : ''}`}
+                onClick={() => setSelectedPillar('all')}
+              >
+                Toate
+              </button>
+              {Object.entries(PILLAR_META).map(([key, meta]) => (
+                <button
+                  key={key}
+                  className={`mc-filter-btn ${selectedPillar === key ? 'active' : ''}`}
+                  style={selectedPillar === key ? { borderColor: meta.color, color: meta.color } : {}}
+                  onClick={() => setSelectedPillar(key)}
+                >
+                  {meta.icon}
                 </button>
-              </div>
-            ) : (
-              <div className="missions-grid">
-                {availableMissions.map((m) => <MissionCard key={m.id} mission={m} onOpen={handleOpenDetail} />)}
+              ))}
+            </div>
+
+            {/* Daily missions row */}
+            {dailyMissions.length > 0 && (
+              <div className="mc-section">
+                <div className="mc-section-label">⚡ Misiunile zilei</div>
+                <div className="mc-grid mc-grid--daily">
+                  {dailyMissions.map((m) => (
+                    <MissionCardNew
+                      key={m.id} mission={m} index={-1}
+                      isLocked={false} isFree={true}
+                      isActive={m.user_status === 'active'}
+                      onSelect={handleCardSelect}
+                      isSelected={activeMission?.id === m.id}
+                    />
+                  ))}
+                </div>
               </div>
             )}
-          </section>
 
-          {completedMissions.length > 0 && (
-            <section className="missions-section missions-section-completed">
-              <h3 className="missions-section-title">
-                {t('missions.completedSection', { count: completedMissions.length })}
-              </h3>
-              <div className="missions-grid">
-                {completedMissions.map((m) => <MissionCard key={m.id} mission={m} onOpen={handleOpenDetail} />)}
-              </div>
-            </section>
-          )}
-        </>
+            {/* Missions collection */}
+            <div className="mc-section">
+              <div className="mc-section-label">🎯 Colecția ({orderedMissions.length})</div>
+              {loading ? (
+                <div className="missions-loading"><div className="missions-spinner" /></div>
+              ) : orderedMissions.length === 0 ? (
+                <div className="missions-empty">
+                  <p>Nicio misiune disponibilă.</p>
+                </div>
+              ) : (
+                <div className="mc-grid">
+                  {orderedMissions.map((m, idx) => (
+                    <MissionCardNew
+                      key={m.id} mission={m} index={idx}
+                      isLocked={isMissionLocked(idx)}
+                      isFree={idx < 10}
+                      isActive={m.user_status === 'active'}
+                      onSelect={handleCardSelect}
+                      isSelected={activeMission?.id === m.id}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="mc-generate">
+              <button className="mara-cta-btn mara-cta-btn--secondary" onClick={handleGenerateMission} disabled={generating}>
+                {generating ? '⏳ Generez...' : '✨ Misiune nouă de la Mara'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
-      {/* ── TAB: PROGRAME ─────────────────────────────────────────────────── */}
+      {/* ── PROGRAMS TAB ─────────────────────────────────────────────────── */}
       {activeTab === 'programs' && (
         <div className="programs-root">
-          {/* Active enrollments */}
           {enrollments.filter((e) => e.status === 'active').map((enrollment) => {
             const dm = dayMissions[enrollment.id];
             const pct = Math.round((enrollment.current_day / enrollment.duration_days) * 100);
@@ -785,7 +995,6 @@ export default function Missions() {
                   </div>
                   {dm?.streakMessage && <div className="enrollment-streak-msg">{dm.streakMessage}</div>}
                 </div>
-
                 {dm && !dm.isCompleted && dm.mission && (
                   <div className="day-mission-card">
                     <div className="day-mission-header">
@@ -810,7 +1019,7 @@ export default function Missions() {
                       </div>
                     )}
                     <textarea
-                      className="missions-proof-textarea"
+                      className="mara-proof-input"
                       placeholder="Scrie experiența ta de azi..."
                       value={completingEnrollment === enrollment.id ? programProofText : ''}
                       onChange={(e) => {
@@ -824,13 +1033,12 @@ export default function Missions() {
                       <p className="day-mission-reflection">💭 {dm.mission.reflection}</p>
                     )}
                     <button
-                      className="missions-btn-primary missions-btn-full"
+                      className="mara-cta-btn mara-cta-btn--full"
                       disabled={submitting || !programProofText.trim() || completingEnrollment !== enrollment.id}
                       onClick={() => handleCompleteDay(enrollment.id, programProofText)}
                     >
                       {submitting ? '⏳ Mara scrie jurnalul...' : `✓ Completează ziua ${dm.currentDay}`}
                     </button>
-
                     {programResult && completingEnrollment === enrollment.id && (
                       <div className="program-result">
                         <div className="program-result-page">{programResult.maraJournalPage}</div>
@@ -840,14 +1048,13 @@ export default function Missions() {
                         </div>
                         {programResult.programCompleted && (
                           <div className="program-completed">
-                            🎉 Felicitări! Cartea ta e gata în tab-ul "Cartea mea"!
+                            🎉 Felicitări! Cartea ta e gata în tab-ul "Carte"!
                           </div>
                         )}
                       </div>
                     )}
                   </div>
                 )}
-
                 {dm?.isCompleted && (
                   <div className="day-completed">
                     ✅ Misiunea de azi completată! Revino mâine pentru ziua {enrollment.current_day + 1}.
@@ -857,7 +1064,6 @@ export default function Missions() {
             );
           })}
 
-          {/* Available programs */}
           <div className="programs-section-title">
             {enrollments.filter((e) => e.status === 'active').length > 0
               ? '📚 Alte programe disponibile'
@@ -886,7 +1092,6 @@ export default function Missions() {
               ))}
           </div>
 
-          {/* Completed enrollments */}
           {enrollments.filter((e) => e.status === 'completed').length > 0 && (
             <>
               <div className="programs-section-title" style={{ marginTop: '32px' }}>🏆 Programe completate</div>
@@ -905,14 +1110,13 @@ export default function Missions() {
         </div>
       )}
 
-      {/* ── TAB: JURNAL ───────────────────────────────────────────────────── */}
+      {/* ── JOURNAL TAB ───────────────────────────────────────────────────── */}
       {activeTab === 'journal' && (
         <div className="journal-root">
           <div className="journal-header">
             <h2>📖 Jurnalul tău</h2>
             <p>{journalTotal} {journalTotal === 1 ? 'pagină scrisă' : 'pagini scrise'} de Mara pentru tine</p>
           </div>
-
           {journalEntries.length === 0 ? (
             <div className="missions-empty">
               <p>🌱 Jurnalul tău e gol.</p>
@@ -945,20 +1149,14 @@ export default function Missions() {
                     } catch { return null; }
                   })()}
                   <div className="journal-visibility-row">
-                    <select
-                      value={entry.visibility}
-                      onChange={(e) => updateVisibility(entry.id, e.target.value)}
-                    >
+                    <select value={entry.visibility} onChange={(e) => updateVisibility(entry.id, e.target.value)}>
                       <option value="private">🔒 Privat</option>
                       <option value="community">👥 Comunitate</option>
                       <option value="public">🌍 Public</option>
                     </select>
                     <span className="journal-visibility-hint">
-                      {entry.visibility === 'private'
-                        ? 'Doar tu poți vedea'
-                        : entry.visibility === 'community'
-                        ? 'Vizibil în comunitate'
-                        : 'Public'}
+                      {entry.visibility === 'private' ? 'Doar tu poți vedea'
+                        : entry.visibility === 'community' ? 'Vizibil în comunitate' : 'Public'}
                     </span>
                   </div>
                 </div>
@@ -968,32 +1166,27 @@ export default function Missions() {
         </div>
       )}
 
-      {/* ── TAB: CARTEA MEA ───────────────────────────────────────────────── */}
+      {/* ── BOOK TAB ──────────────────────────────────────────────────────── */}
       {activeTab === 'book' && (
         <div className="book-root">
           <div className="journal-header">
             <h2>📚 Cartea ta</h2>
-            <p>Generată automat când completezi un program</p>
+            <p>Generată automat când completezi un program · 365 zile de misiuni zilnice = cartea ta fizică</p>
           </div>
-
           {books.length === 0 ? (
             <div className="missions-empty">
               <p>📖 Cartea ta nu e gata încă.</p>
               <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.4)', marginTop: '8px' }}>
                 Completează un program și Mara va genera cartea vieții tale.
               </p>
-              <button className="missions-btn-primary" style={{ marginTop: '16px' }}
-                onClick={() => setActiveTab('programs')}>
+              <button className="mara-cta-btn" style={{ marginTop: '16px' }} onClick={() => setActiveTab('programs')}>
                 Vezi programele →
               </button>
             </div>
           ) : (
             books.map((book) => (
               <div key={book.id} className="book-card">
-                <div
-                  className="book-cover"
-                  onClick={() => setSelectedBook(selectedBook?.id === book.id ? null : book)}
-                >
+                <div className="book-cover" onClick={() => setSelectedBook(selectedBook?.id === book.id ? null : book)}>
                   <div className="book-cover-spine" />
                   <div className="book-cover-content">
                     <h1 className="book-title">{book.title}</h1>
@@ -1004,7 +1197,6 @@ export default function Missions() {
                     </button>
                   </div>
                 </div>
-
                 {selectedBook?.id === book.id && (
                   <div className="book-content">
                     {(() => {
@@ -1032,7 +1224,7 @@ export default function Missions() {
         </div>
       )}
 
-      {/* ── TAB: LEADERBOARD ──────────────────────────────────────────────── */}
+      {/* ── LEADERBOARD TAB ───────────────────────────────────────────────── */}
       {activeTab === 'leaderboard' && (
         <div className="leaderboard-root">
           <div className="journal-header">
@@ -1071,7 +1263,7 @@ export default function Missions() {
         </div>
       )}
 
-      {/* ── TAB: COMUNITATE ───────────────────────────────────────────────── */}
+      {/* ── COMMUNITY TAB ─────────────────────────────────────────────────── */}
       {activeTab === 'community' && (
         <div className="community-root">
           <div className="journal-header">
@@ -1105,43 +1297,5 @@ export default function Missions() {
         </div>
       )}
     </div>
-  );
-}
-
-function MissionCard({
-  mission, onOpen, isDaily = false,
-}: { mission: Mission; onOpen: (m: Mission) => void; isDaily?: boolean }) {
-  const { t } = useTranslation();
-  const pillarMeta = PILLAR_META[mission.pillar] ?? { icon: '🎯', color: '#a855f7' };
-  const diffMeta = DIFFICULTY_META[mission.difficulty] ?? { color: '#a855f7' };
-  const isCompleted = mission.user_status === 'completed';
-  const isActive = mission.user_status === 'active';
-
-  return (
-    <button
-      className={`missions-card ${isCompleted ? 'missions-card--done' : ''} ${isActive ? 'missions-card--active' : ''} ${isDaily ? 'missions-card--daily' : ''}`}
-      onClick={() => onOpen(mission)}
-      style={{ '--pillar-color': pillarMeta.color } as React.CSSProperties}
-    >
-      <div className="missions-card-top">
-        <span className="missions-card-icon">{pillarMeta.icon}</span>
-        <div className="missions-card-badges">
-          <span className="missions-card-diff" style={{ color: diffMeta.color }}>
-            {t(`missions.difficulty.${mission.difficulty}`, mission.difficulty)}
-          </span>
-          {isCompleted && <span className="missions-card-done">✅</span>}
-          {isActive && <span className="missions-card-active-badge">▶</span>}
-          {isDaily && <span className="missions-card-daily-badge">⚡</span>}
-        </div>
-      </div>
-      <h4 className="missions-card-title">{mission.title}</h4>
-      <p className="missions-card-desc">{mission.description}</p>
-      <div className="missions-card-footer">
-        <span className="missions-card-pillar" style={{ color: pillarMeta.color }}>
-          {t(`missions.pillar.${mission.pillar}`, mission.pillar)}
-        </span>
-        <span className="missions-card-xp">+{mission.xp_reward} XP</span>
-      </div>
-    </button>
   );
 }
