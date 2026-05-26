@@ -293,7 +293,7 @@ function TransformationJourney({ completed }: { completed: number }) {
   const activeTier = getActiveTier(completed);
   const next = TRANSFORMATION_MILESTONES[activeTier + 1];
   const current = TRANSFORMATION_MILESTONES[activeTier];
-  const prev = activeTier > 0 ? TRANSFORMATION_MILESTONES[activeTier - 1] : null;
+  const _prev = activeTier > 0 ? TRANSFORMATION_MILESTONES[activeTier - 1] : null; void _prev;
   const progress = next
     ? Math.min(1, (completed - current.days) / (next.days - current.days))
     : 1;

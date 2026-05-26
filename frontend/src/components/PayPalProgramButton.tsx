@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePayPalSDK } from '../hooks/usePayPalSDK';
 
 const API = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:5000');
@@ -13,7 +13,7 @@ interface Props {
   disabled?: boolean;
 }
 
-export default function PayPalProgramButton({ programId, programName, priceCents, onSuccess, onError, disabled }: Props) {
+export default function PayPalProgramButton({ programId, programName: _programName, priceCents, onSuccess, onError, disabled }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<'idle' | 'rendering' | 'ready' | 'paying' | 'error'>('idle');
   const [errMsg, setErrMsg] = useState('');
@@ -82,7 +82,6 @@ export default function PayPalProgramButton({ programId, programName, priceCents
         programId={programId}
         priceCents={priceCents}
         disabled={disabled}
-        onSuccess={onSuccess}
         onError={onError}
       />
     );
@@ -105,7 +104,7 @@ export default function PayPalProgramButton({ programId, programName, priceCents
   );
 }
 
-function FallbackButton({ programId, priceCents, disabled, onSuccess, onError }: Omit<Props, 'programName'>) {
+function FallbackButton({ programId, priceCents, disabled, onError }: Omit<Props, 'programName' | 'onSuccess'>) {
   const [loading, setLoading] = useState(false);
 
   const handleClick = async () => {
