@@ -1,5 +1,43 @@
 import { rawSqlite } from '../db.js';
 import { llmGenerate, isLLMConfigured } from '../llm.js';
+import { PROGRAM_CATALOGUE } from '../billing/plans.js';
+
+// ─── PROGRAM ACCESS ───────────────────────────────────────────────────────────
+
+/**
+ * Check if a user can access a specific day of a program.
+ * - new_mindset: always free (1 day)
+ * - new_habit: days 1-10 free, 11-21 require purchase
+ * - all others: require purchase for any day
+ */
+export function hasAccessToDay(userId: string, programSlug: string, day: number): boolean {
+  const programId = slugToProgramId(programSlug);
+  const def = PROGRAM_CATALOGUE.find((p) => p.id === programId);
+  if (!def) return false;
+  if (def.priceCents === 0) return true; // fully free
+  if (day <= def.freeDays) return true;  // within free tier
+  // Check purchase
+  const purchase = rawSqlite
+    .prepare(
+      "SELECT id FROM program_purchases WHERE user_id = ? AND program_id = ? AND status = 'completed' LIMIT 1",
+    )
+    .get(userId, programId) as { id: string } | undefined;
+  return !!purchase;
+}
+
+export function hasPurchasedProgram(userId: string, programId: string): boolean {
+  const purchase = rawSqlite
+    .prepare(
+      "SELECT id FROM program_purchases WHERE user_id = ? AND program_id = ? AND status = 'completed' LIMIT 1",
+    )
+    .get(userId, programId) as { id: string } | undefined;
+  return !!purchase;
+}
+
+function slugToProgramId(slug: string): string {
+  // Slugs like 'new-mindset' map to program IDs like 'new_mindset'
+  return slug.replace(/-/g, '_');
+}
 
 // ─── ENROLLMENT ───────────────────────────────────────────────────────────────
 

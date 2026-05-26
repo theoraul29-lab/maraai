@@ -133,3 +133,75 @@ export const PLAN_CATALOGUE: readonly PlanDefinition[] = [
 
 /** Creator revenue share (creator keeps 70%, platform keeps 30%). */
 export const CREATOR_REVENUE_SHARE = 0.7;
+
+// ─── Program catalogue (one-time purchases) ───────────────────────────────────
+
+export type ProgramId =
+  | 'new_mindset'
+  | 'new_habit'
+  | 'new_skills'
+  | 'new_body'
+  | 'new_life'
+  | 'new_you';
+
+export interface ProgramDefinition {
+  id: ProgramId;
+  name: string;
+  durationDays: number;
+  /** Cents in EUR. 0 = fully free. */
+  priceCents: number;
+  /** Days accessible without purchase. 0 = none (must purchase first). */
+  freeDays: number;
+  currency: 'EUR';
+}
+
+export const PROGRAM_CATALOGUE: readonly ProgramDefinition[] = [
+  {
+    id: 'new_mindset',
+    name: 'New Mindset',
+    durationDays: 1,
+    priceCents: 0,
+    freeDays: 1,
+    currency: 'EUR',
+  },
+  {
+    id: 'new_habit',
+    name: 'New Habit',
+    durationDays: 21,
+    priceCents: 600,   // €6.00
+    freeDays: 10,
+    currency: 'EUR',
+  },
+  {
+    id: 'new_skills',
+    name: 'New Skills',
+    durationDays: 90,
+    priceCents: 6000,  // €60.00
+    freeDays: 0,
+    currency: 'EUR',
+  },
+  {
+    id: 'new_body',
+    name: 'New Body',
+    durationDays: 180,
+    priceCents: 16000, // €160.00
+    freeDays: 0,
+    currency: 'EUR',
+  },
+  {
+    id: 'new_life',
+    name: 'New Life',
+    durationDays: 365,
+    priceCents: 36000, // €360.00
+    freeDays: 0,
+    currency: 'EUR',
+  },
+  {
+    id: 'new_you',
+    name: 'New You',
+    durationDays: 1095,
+    priceCents: 62000, // €620.00
+    freeDays: 0,
+    currency: 'EUR',
+  },
+] as const;

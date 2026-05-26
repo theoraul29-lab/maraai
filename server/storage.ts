@@ -1,4 +1,4 @@
-import { db } from "./db";
+import { db } from "./db.js";
 import {
   videos,
   videoComments,
@@ -84,9 +84,9 @@ import {
   type TradingLessonProgress,
   type TradingCertificate,
   type PostComment,
-} from "../shared/schema";
+} from "../shared/schema.js";
 import { eq, desc, asc, and, sql, lt, gte, like, or, count, inArray } from "drizzle-orm";
-import type { User } from "../shared/models/auth";
+import type { User } from "../shared/models/auth.js";
 
 export interface IStorage {
   getVideos(topic?: string): Promise<Video[]>;
@@ -597,7 +597,7 @@ export class DatabaseStorage implements IStorage {
     return {
       personality: prefs.personality || undefined,
       language: prefs.language || undefined,
-      theme: (prefs as any).theme || undefined,
+      ...(('theme' in prefs && prefs.theme) ? { theme: (prefs as any).theme as string } : {}),
     };
   }
 
@@ -1588,7 +1588,7 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .delete(collections)
       .where(and(eq(collections.id, id), eq(collections.userId, userId)));
-    if (result.rowCount && result.rowCount > 0) {
+    if (result.changes && result.changes > 0) {
       await db
         .delete(collectionVideos)
         .where(eq(collectionVideos.collectionId, id));
@@ -1672,7 +1672,7 @@ export class DatabaseStorage implements IStorage {
     query: string,
   ): Promise<{ videos: Video[]; users: User[]; pages: any[] }> {
     const { hasCyrillic, transliterate, detectCyrillicLang } =
-      await import("./cyrillic");
+      await import("./cyrillic.js");
     const pattern = `%${query}%`;
     const patterns = [pattern];
     if (hasCyrillic(query)) {

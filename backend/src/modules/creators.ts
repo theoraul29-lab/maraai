@@ -30,8 +30,8 @@
  */
 
 import type { Request, Response } from 'express';
-import type { IStorage } from '../../../server/storage';
-import { hasFeature, type FeatureKey } from '../../../server/billing/features';
+import type { IStorage } from '../../../server/storage.js';
+import { hasFeature, type FeatureKey } from '../../../server/billing/features.js';
 
 let deps: {
   storage: IStorage;

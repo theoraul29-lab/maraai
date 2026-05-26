@@ -79,7 +79,7 @@ function isAdminUser(id: string, email: string | null | undefined): boolean {
   return adminEmails.includes(email?.toLowerCase() ?? '') || adminIds.includes(id);
 }
 
-function toPayload(u: { id: string; email: string | null; displayName: string | null; firstName: string | null; bio: string | null; profileImageUrl: string | null; createdAt: Date | null | number | undefined; tier?: string | null; trialStartTime?: number | null; trialEndsAt?: number | null }): AuthUserPayload {
+function toPayload(u: { id: string; email: string | null; displayName: string | null; firstName: string | null; bio: string | null; profileImageUrl: string | null; createdAt: Date | null | number | undefined; tier?: string | null; trialStartTime?: number | null; trialEndsAt?: number | null; preferredLanguage?: string | null }): AuthUserPayload {
   const displayName = u.displayName || u.firstName || (u.email ? u.email.split('@')[0] : 'User');
   const createdAtMs = u.createdAt instanceof Date
     ? u.createdAt.getTime()

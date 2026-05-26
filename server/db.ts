@@ -614,6 +614,24 @@ sqlite.exec(`
     created_at INTEGER DEFAULT (unixepoch())
   );
   CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON referrals(referrer_id);
+
+  -- Program purchases (one-time payments per program).
+  CREATE TABLE IF NOT EXISTS program_purchases (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    program_id TEXT NOT NULL,
+    amount_cents INTEGER NOT NULL,
+    currency TEXT NOT NULL DEFAULT 'EUR',
+    paypal_order_id TEXT,
+    status TEXT NOT NULL DEFAULT 'pending'
+      CHECK(status IN ('pending','completed','refunded')),
+    created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+    completed_at INTEGER
+  );
+  CREATE INDEX IF NOT EXISTS idx_program_purchases_user
+    ON program_purchases(user_id, program_id, status);
+  CREATE INDEX IF NOT EXISTS idx_program_purchases_order
+    ON program_purchases(paypal_order_id);
 `);
 
 export const db = drizzle(sqlite, { schema });

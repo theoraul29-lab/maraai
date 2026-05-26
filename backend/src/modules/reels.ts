@@ -23,7 +23,7 @@ import path from 'path';
 import { randomBytes } from 'crypto';
 import type { Request, Response } from 'express';
 import multer from 'multer';
-import type { IStorage } from '../../../server/storage';
+import type { IStorage } from '../../../server/storage.js';
 import { notifyReelComment, notifyReelLike } from '../../../server/notifications/producer.js';
 
 let deps: {

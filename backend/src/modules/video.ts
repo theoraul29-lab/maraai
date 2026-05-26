@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
-import type { IStorage } from '../../../server/storage';
-import { insertVideoSchema } from '../../../shared/schema';
+import type { IStorage } from '../../../server/storage.js';
+import { insertVideoSchema } from '../../../shared/schema.js';
 import { eq, sql } from 'drizzle-orm';
 import { notifyReelLike } from '../../../server/notifications/producer.js';
 import { rawSqlite } from '../../../server/db.js';

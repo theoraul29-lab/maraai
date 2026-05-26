@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import type { IStorage } from '../../../server/storage';
+import type { IStorage } from '../../../server/storage.js';
 
 let deps: { storage: IStorage };
 

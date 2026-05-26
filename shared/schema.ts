@@ -11,9 +11,9 @@ import {
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
-export * from './models/auth.ts';
-export * from './models/billing.ts';
-export * from './models/maraai-platform.ts';
+export * from './models/auth.js';
+export * from './models/billing.js';
+export * from './models/maraai-platform.js';
 
 // === VIDEOS ===
 export const videos = pgTable('videos', {

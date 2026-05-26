@@ -1,10 +1,10 @@
 import type { Request, Response } from 'express';
-import { storage } from '../../../server/storage';
+import { storage } from '../../../server/storage.js';
 // Hybrid AI router (local → central → P2P). The legacy `getMaraResponse`
 // wrapper is still used inside the router itself for the central path, so
 // behaviour for centralized users is identical.
-import { route as routeAi } from '../../../server/maraai/ai-router';
-import { checkRateLimit } from '../../../server/rateLimit';
+import { route as routeAi } from '../../../server/maraai/ai-router.js';
+import { checkRateLimit } from '../../../server/rateLimit.js';
 
 export async function getChatHistory(req: Request, res: Response) {
   try {

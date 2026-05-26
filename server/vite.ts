@@ -22,7 +22,7 @@ const viteLogger = createLogger();
 export async function setupVite(server: Server, app: Express) {
   let viteConfig;
   try {
-    viteConfig = (await import("../vite.config.js")).default;
+    viteConfig = ((await import("../vite.config.js")) as any).default;
   } catch {
     viteConfig = {};
   }

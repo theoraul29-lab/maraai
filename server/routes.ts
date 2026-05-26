@@ -1,15 +1,15 @@
-﻿import type { Express } from 'express';
+﻿import type { Express, Response } from 'express';
 import type { Server } from 'http';
-import { storage } from './storage';
-import { api } from '../shared/routes';
+import { storage } from './storage.js';
+import { api } from '../shared/routes.js';
 import { z } from 'zod';
 import {
   creatorPostRequestSchema,
   likes as likesTable,
-} from '../shared/schema';
-import { db, rawSqlite } from './db';
-import { getAllCircuitStatuses } from './lib/circuit-breaker';
-import { cleanupKnowledgeBase } from './mara-brain/knowledge-base';
+} from '../shared/schema.js';
+import { db, rawSqlite } from './db.js';
+import { getAllCircuitStatuses } from './lib/circuit-breaker.js';
+import { cleanupKnowledgeBase } from './mara-brain/knowledge-base.js';
 import {
   getAllAlerts,
   getUnreadAlerts,
@@ -17,9 +17,9 @@ import {
   markAlertRead,
   markAllAlertsRead,
   analyzePlatformAndAlert,
-} from './mara-brain/alerts';
+} from './mara-brain/alerts.js';
 import { desc, eq } from 'drizzle-orm';
-import { csrfProtection } from './auth';
+import { csrfProtection } from './auth.js';
 import * as videoModule from '../backend/src/modules/video.js';
 import * as reelsModule from '../backend/src/modules/reels.js';
 import * as uploadsModule from '../backend/src/modules/uploads.js';
@@ -50,9 +50,9 @@ import {
   analyzeFeedbackPatterns,
   generateImprovementIdeas,
   generateMarketingPost,
-} from './ai';
-import { getAIHealth, llmChat } from './llm';
-import type { LLMMessage } from './llm';
+} from './ai.js';
+import { getAIHealth, llmChat } from './llm.js';
+import type { LLMMessage } from './llm.js';
 import {
   getLibraryProgress,
   addAndReadCustomBook,
@@ -73,8 +73,8 @@ import {
   searchIndexedFiles,
   getCodeOverview,
   getRecentReads,
-} from './mara-brain/index';
-import { learningRateLimiter } from './mara-brain/rate-limiter';
+} from './mara-brain/index.js';
+import { learningRateLimiter } from './mara-brain/rate-limiter.js';
 import { executeApprovedExperiment } from './mara-brain/experiment-executor.js';
 import { getABTestResults, hasABData } from './mara-brain/ab-testing.js';
 import { getObjectiveRow, setObjective } from './mara-core/objective.js';
@@ -177,7 +177,7 @@ export async function registerRoutes(
     playful: 'shimmer',
     confident: 'alloy',
   });
-  sttModule.injectDeps({});
+  sttModule.injectDeps({ importAudioClient: () => Promise.resolve(null) });
   userPrefsModule.injectDeps({ storage });
   adminModule.injectDeps({ storage });
   profileModule.injectDeps({ storage });

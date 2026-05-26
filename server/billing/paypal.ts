@@ -35,6 +35,33 @@ export function isPayPalConfigured(): boolean {
   return !!(process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_CLIENT_SECRET);
 }
 
+export async function checkPayPalConnection(): Promise<{
+  configured: boolean;
+  sandbox: boolean;
+  tokenOk: boolean;
+  webhookIdSet: boolean;
+  plans: Record<string, boolean>;
+  error?: string;
+}> {
+  const configured = isPayPalConfigured();
+  const sandbox = process.env.PAYPAL_SANDBOX === 'true';
+  const webhookIdSet = !!process.env.PAYPAL_WEBHOOK_ID;
+  const planIds = ['pro_monthly', 'pro_yearly', 'vip_monthly', 'vip_yearly', 'creator_monthly', 'creator_yearly'];
+  const plans: Record<string, boolean> = {};
+  for (const id of planIds) {
+    plans[id] = !!process.env[`PAYPAL_PLAN_${id.toUpperCase()}`];
+  }
+  if (!configured) {
+    return { configured, sandbox, tokenOk: false, webhookIdSet, plans };
+  }
+  try {
+    await getAccessToken();
+    return { configured, sandbox, tokenOk: true, webhookIdSet, plans };
+  } catch (err) {
+    return { configured, sandbox, tokenOk: false, webhookIdSet, plans, error: String(err) };
+  }
+}
+
 async function getAccessToken(): Promise<string> {
   if (_token && _token.expires_at > Date.now() + 30_000) {
     return _token.access_token;
@@ -358,6 +385,76 @@ function parseCustomId(resource: PayPalSubscriptionResource): { userId: string; 
   if (!userId || !planId) return null;
   if (!PLAN_CATALOGUE.find((p) => p.id === planId)) return null;
   return { userId, planId };
+}
+
+// ─── One-time Orders API (program purchases) ──────────────────────────────────
+
+export async function createPayPalOrder(params: {
+  userId: string;
+  userEmail: string | null;
+  programId: string;
+  programName: string;
+  amountCents: number;
+}): Promise<{ orderId: string; approvalUrl: string }> {
+  const origin = getOrigin();
+  const amountStr = (params.amountCents / 100).toFixed(2);
+  const idemBucket = Math.floor(Date.now() / 60_000);
+  const idempotencyKey = `paypal:order:${params.userId}:${params.programId}:${idemBucket}`;
+
+  const body = {
+    intent: 'CAPTURE',
+    purchase_units: [
+      {
+        custom_id: `${params.userId}:${params.programId}`,
+        description: `Mara — ${params.programName}`,
+        amount: { currency_code: 'EUR', value: amountStr },
+      },
+    ],
+    payment_source: {
+      paypal: {
+        experience_context: {
+          brand_name: 'Mara',
+          user_action: 'PAY_NOW',
+          return_url: `${origin}/api/billing/program/capture`,
+          cancel_url: `${origin}/missions?payment=cancelled`,
+        },
+      },
+    },
+  };
+
+  const res = await paypalFetch('/v2/checkout/orders', {
+    method: 'POST',
+    body: JSON.stringify(body),
+    idempotencyKey,
+  });
+  if (!res.ok) {
+    throw new Error(`PayPal createOrder failed: ${res.status} ${await res.text()}`);
+  }
+  const json = (await res.json()) as {
+    id: string;
+    links?: Array<{ href: string; rel: string }>;
+  };
+  const approve = json.links?.find((l) => l.rel === 'payer-action' || l.rel === 'approve');
+  if (!approve?.href) throw new Error('PayPal returned no approval link');
+  return { orderId: json.id, approvalUrl: approve.href };
+}
+
+export async function capturePayPalOrder(
+  orderId: string,
+): Promise<{ status: string; customId: string | null }> {
+  const res = await paypalFetch(`/v2/checkout/orders/${encodeURIComponent(orderId)}/capture`, {
+    method: 'POST',
+    body: '{}',
+  });
+  if (!res.ok) {
+    throw new Error(`PayPal captureOrder failed: ${res.status} ${await res.text()}`);
+  }
+  const json = (await res.json()) as {
+    status: string;
+    purchase_units?: Array<{ custom_id?: string }>;
+  };
+  const customId = json.purchase_units?.[0]?.custom_id ?? null;
+  return { status: json.status, customId };
 }
 
 export async function handlePayPalEvent(event: PayPalEvent): Promise<void> {
