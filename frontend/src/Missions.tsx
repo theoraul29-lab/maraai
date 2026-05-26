@@ -113,7 +113,18 @@ interface Book {
 }
 
 type View = 'list' | 'detail' | 'proof' | 'done' | 'onboarding' | 'daily';
-type Tab = 'missions' | 'programs' | 'journal' | 'book' | 'community';
+type Tab = 'missions' | 'programs' | 'journal' | 'book' | 'community' | 'leaderboard';
+
+interface LeaderboardEntry {
+  rank: number;
+  userId: string;
+  displayName: string;
+  profileImageUrl: string | null;
+  xp: number;
+  level: number;
+  streak: number;
+  missionsCompleted: number;
+}
 
 function apiFetch(path: string, opts: RequestInit = {}) {
   return fetch(`${API}${path}`, { credentials: 'include', ...opts });
@@ -175,6 +186,13 @@ export default function Missions() {
 
   // ── community state ────────────────────────────────────────────────────────
   const [communityFeed, setCommunityFeed] = useState<any[]>([]);
+
+  // ── leaderboard state ──────────────────────────────────────────────────────
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+  const [statsDetailed, setStatsDetailed] = useState<{
+    completed: number; byPillar: Array<{ pillar: string; cnt: number }>;
+  } | null>(null);
 
   // ── data loaders ───────────────────────────────────────────────────────────
   const loadMissions = useCallback(async () => {
@@ -245,6 +263,24 @@ export default function Missions() {
     } catch {}
   }
 
+  async function loadLeaderboard() {
+    setLeaderboardLoading(true);
+    try {
+      const r = await apiFetchJson<{ leaderboard: LeaderboardEntry[] }>('/api/missions/leaderboard');
+      setLeaderboard(r.leaderboard ?? []);
+    } catch {} finally { setLeaderboardLoading(false); }
+  }
+
+  async function loadStatsDetailed() {
+    if (!isAuthenticated) return;
+    try {
+      const r = await apiFetchJson<{
+        completed: number; byPillar: Array<{ pillar: string; cnt: number }>;
+      }>('/api/missions/stats');
+      setStatsDetailed(r);
+    } catch {}
+  }
+
   useEffect(() => {
     if (!isAuthenticated) return;
     apiFetchJson<{ done: boolean }>('/api/missions/onboarding')
@@ -255,11 +291,16 @@ export default function Missions() {
     loadJournal();
     loadBooks();
     loadCommunity();
+    loadStatsDetailed();
   }, [isAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (view === 'list') loadMissions();
   }, [selectedPillar, view, loadMissions]);
+
+  useEffect(() => {
+    if (activeTab === 'leaderboard') loadLeaderboard();
+  }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── missions handlers ──────────────────────────────────────────────────────
   const handleStartMission = async (mission: Mission) => {
@@ -562,11 +603,12 @@ export default function Missions() {
   const availableMissions = missions.filter((m) => !m.user_status || (m.user_status !== 'active' && m.user_status !== 'completed'));
 
   const TABS: { key: Tab; label: string }[] = [
-    { key: 'missions',  label: t('missions.tabMissions', '🎯 Misiuni') },
-    { key: 'programs',  label: '📋 Programe' },
-    { key: 'journal',   label: '📖 Jurnal' },
-    { key: 'book',      label: '📚 Cartea mea' },
-    { key: 'community', label: t('missions.tabCommunity', '👥 Comunitate') },
+    { key: 'missions',    label: t('missions.tabMissions', '🎯 Misiuni') },
+    { key: 'programs',    label: '📋 Programe' },
+    { key: 'journal',     label: '📖 Jurnal' },
+    { key: 'book',        label: '📚 Cartea mea' },
+    { key: 'community',   label: t('missions.tabCommunity', '👥 Comunitate') },
+    { key: 'leaderboard', label: '🏆 Top' },
   ];
 
   return (
@@ -601,14 +643,29 @@ export default function Missions() {
         </div>
         <div className="missions-xp-bar-wrap">
           <div className="missions-xp-info">
-            <span>{t('missions.levelLabel', { level: userXp.level })}</span>
-            <span>{userXp.xp} XP</span>
+            <span className="missions-level-badge">Lvl {userXp.level}</span>
+            <span>{userXp.xp % 1000} / 1000 XP</span>
           </div>
           <div className="missions-xp-bar">
             <div className="missions-xp-fill" style={{ width: `${xpProgress}%` }} />
           </div>
+        </div>
+        <div className="missions-stats-strip">
+          <div className="missions-stat-pill">
+            <span className="missions-stat-icon">🏆</span>
+            <span>{userXp.xp} XP total</span>
+          </div>
           {userXp.streak > 0 && (
-            <div className="missions-streak">{t('missions.streakLabel', { count: userXp.streak })}</div>
+            <div className="missions-stat-pill missions-stat-pill--fire">
+              <span className="missions-stat-icon">🔥</span>
+              <span>{userXp.streak} {userXp.streak === 1 ? 'zi' : 'zile'}</span>
+            </div>
+          )}
+          {statsDetailed && (
+            <div className="missions-stat-pill">
+              <span className="missions-stat-icon">✅</span>
+              <span>{statsDetailed.completed} completate</span>
+            </div>
           )}
         </div>
       </div>
@@ -971,6 +1028,45 @@ export default function Missions() {
                 )}
               </div>
             ))
+          )}
+        </div>
+      )}
+
+      {/* ── TAB: LEADERBOARD ──────────────────────────────────────────────── */}
+      {activeTab === 'leaderboard' && (
+        <div className="leaderboard-root">
+          <div className="journal-header">
+            <h2>🏆 Top utilizatori</h2>
+            <p>Clasamentul după XP acumulat</p>
+          </div>
+          {leaderboardLoading ? (
+            <div className="missions-loading"><div className="missions-spinner" /></div>
+          ) : leaderboard.length === 0 ? (
+            <div className="missions-empty"><p>Nicio activitate înregistrată încă.</p></div>
+          ) : (
+            <div className="leaderboard-list">
+              {leaderboard.map((entry) => (
+                <div key={entry.userId} className={`leaderboard-row ${entry.rank <= 3 ? `leaderboard-row--top${entry.rank}` : ''}`}>
+                  <div className="leaderboard-rank">
+                    {entry.rank === 1 ? '🥇' : entry.rank === 2 ? '🥈' : entry.rank === 3 ? '🥉' : `#${entry.rank}`}
+                  </div>
+                  <div className="leaderboard-avatar">
+                    {entry.profileImageUrl
+                      ? <img src={entry.profileImageUrl} alt="" />
+                      : <div className="leaderboard-avatar-fallback">{(entry.displayName || '?')[0].toUpperCase()}</div>
+                    }
+                  </div>
+                  <div className="leaderboard-info">
+                    <div className="leaderboard-name">{entry.displayName}</div>
+                    <div className="leaderboard-meta">
+                      Lvl {entry.level} · {entry.missionsCompleted} misiuni
+                      {entry.streak > 0 && ` · 🔥 ${entry.streak}z`}
+                    </div>
+                  </div>
+                  <div className="leaderboard-xp">{entry.xp.toLocaleString()} XP</div>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       )}

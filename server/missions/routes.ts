@@ -144,6 +144,41 @@ export function registerMissionRoutes(app: Express, requireAuth: any) {
     res.json({ xp, completed, byPillar });
   });
 
+  app.get('/api/missions/leaderboard', (_req: any, res: any) => {
+    const rows = rawSqlite
+      .prepare(
+        `SELECT ux.user_id, ux.xp, ux.level, ux.streak,
+                COALESCE(u.display_name, u.first_name, u.name, 'Anonymous') as display_name,
+                u.profile_image_url
+         FROM user_xp ux
+         LEFT JOIN users u ON u.id = ux.user_id
+         ORDER BY ux.xp DESC
+         LIMIT 20`,
+      )
+      .all() as Array<{
+        user_id: string; xp: number; level: number; streak: number;
+        display_name: string; profile_image_url: string | null;
+      }>;
+    const completed_counts = rawSqlite
+      .prepare(
+        `SELECT user_id, COUNT(*) as cnt FROM user_missions
+         WHERE status = 'completed' GROUP BY user_id`,
+      )
+      .all() as Array<{ user_id: string; cnt: number }>;
+    const countMap = new Map(completed_counts.map(r => [r.user_id, r.cnt]));
+    const leaderboard = rows.map((r, i) => ({
+      rank: i + 1,
+      userId: r.user_id,
+      displayName: r.display_name,
+      profileImageUrl: r.profile_image_url,
+      xp: r.xp,
+      level: r.level,
+      streak: r.streak,
+      missionsCompleted: countMap.get(r.user_id) ?? 0,
+    }));
+    res.json({ leaderboard });
+  });
+
   app.post('/api/missions/feedback', requireAuth, (req: any, res: any) => {
     const userId = getUserId(req);
     const { missionId, rating, note } = req.body;

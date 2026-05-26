@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
-import { LanguageSelector } from './LanguageSelector';
 import Messenger from './Messenger';
 import '../styles/YouProfile.css';
 
@@ -95,7 +94,11 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
   const [profile, setProfile] = useState<ProfilePayload | null>(null);
   const [posts, setPosts] = useState<UserPost[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'timeline' | 'about' | 'friends' | 'photos' | 'videos' | 'settings'>('timeline');
+  const [activeTab, setActiveTab] = useState<'timeline' | 'about' | 'friends' | 'photos' | 'videos' | 'stats'>('timeline');
+  const [missionStats, setMissionStats] = useState<{
+    xp: number; level: number; streak: number;
+    completed: number; byPillar: Array<{ pillar: string; cnt: number }>;
+  } | null>(null);
 
   // Composer state
   const [postContent, setPostContent] = useState('');
@@ -239,6 +242,20 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
       fetchPosts(profile.user.id);
     }
   }, [profile?.user.id, fetchPosts]);
+
+  useEffect(() => {
+    axios.get<{ xp: { xp: number; level: number; streak: number }; completed: number; byPillar: any[] }>(
+      `${API_URL}/api/missions/stats`, { withCredentials: true }
+    ).then(r => {
+      setMissionStats({
+        xp: r.data.xp.xp,
+        level: r.data.xp.level,
+        streak: r.data.xp.streak,
+        completed: r.data.completed,
+        byPillar: r.data.byPillar ?? [],
+      });
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (activeTab === 'friends' && profile?.user.id) {
@@ -610,6 +627,25 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
             <span><strong>{profile?.followerCount ?? 0}</strong> {t('you.followersLabel', 'followers')}</span>
             <span><strong>{profile?.followingCount ?? 0}</strong> {t('you.following', 'following')}</span>
           </div>
+          {missionStats && (
+            <div className="you-fb-xp-row">
+              <span className="you-fb-xp-badge">Lvl {missionStats.level}</span>
+              <div className="you-fb-xp-bar-wrap">
+                <div className="you-fb-xp-bar">
+                  <div className="you-fb-xp-fill" style={{ width: `${(missionStats.xp % 1000) / 10}%` }} />
+                </div>
+              </div>
+              <span className="you-fb-xp-val">{missionStats.xp} XP</span>
+              {missionStats.streak > 0 && (
+                <span className="you-fb-streak">🔥 {missionStats.streak}z</span>
+              )}
+            </div>
+          )}
+          {user?.tier && user.tier !== 'free' && (
+            <div className={`you-fb-tier-badge you-fb-tier-${user.tier}`}>
+              {user.tier === 'vip' ? '👑 VIP' : user.tier === 'premium' ? '💎 Premium' : '⚡ Trial'}
+            </div>
+          )}
         </div>
         <div className="you-fb-actions">
           {profile?.isSelf && (
@@ -641,7 +677,7 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
 
       {/* --- Tab bar ---------------------------------------------------- */}
       <div className="you-fb-tabs">
-        {(['timeline', 'about', 'friends', 'photos', 'videos', 'settings'] as const).map(tab => (
+        {(['timeline', 'about', 'friends', 'photos', 'videos', 'stats'] as const).map(tab => (
           <button
             key={tab}
             className={`you-fb-tab ${activeTab === tab ? 'active' : ''}`}
@@ -652,7 +688,7 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
             {tab === 'friends' && t('you.friends', 'Friends')}
             {tab === 'photos' && t('you.photos', 'Photos')}
             {tab === 'videos' && t('you.videos', 'Videos')}
-            {tab === 'settings' && t('you.settingsTab', 'Settings')}
+            {tab === 'stats' && '📊 Stats'}
           </button>
         ))}
       </div>
@@ -1054,23 +1090,66 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
         <VideosTab profileId={profile.user.id} />
       )}
 
-      {/* --- Settings tab ---------------------------------------------- */}
-      {activeTab === 'settings' && (
-        <div className="you-fb-settings">
-          <label className="you-fb-field">
-            <span>{t('you.emailLabel', 'Email')}</span>
-            <input type="email" value={profile?.user.email || user?.email || ''} disabled />
-          </label>
-          <label className="you-fb-field">
-            <span>{t('you.language', 'Language')}</span>
-            <LanguageSelector />
-          </label>
-          <button className="you-fb-btn you-fb-btn-primary" onClick={openEdit}>
-            ✏️ {t('you.editProfile', 'Edit profile')}
-          </button>
-          <button className="you-fb-btn you-fb-btn-danger" onClick={logout}>
-            {t('you.logout', 'Logout')}
-          </button>
+      {/* --- Stats tab -------------------------------------------------- */}
+      {activeTab === 'stats' && (
+        <div className="you-fb-stats">
+          {missionStats ? (
+            <>
+              <div className="you-fb-stats-grid">
+                <div className="you-fb-stat-card">
+                  <div className="you-fb-stat-value">{missionStats.level}</div>
+                  <div className="you-fb-stat-label">Nivel</div>
+                </div>
+                <div className="you-fb-stat-card">
+                  <div className="you-fb-stat-value">{missionStats.xp.toLocaleString()}</div>
+                  <div className="you-fb-stat-label">XP Total</div>
+                </div>
+                <div className="you-fb-stat-card">
+                  <div className="you-fb-stat-value">{missionStats.completed}</div>
+                  <div className="you-fb-stat-label">Misiuni completate</div>
+                </div>
+                <div className="you-fb-stat-card">
+                  <div className="you-fb-stat-value">{missionStats.streak > 0 ? `🔥 ${missionStats.streak}` : '—'}</div>
+                  <div className="you-fb-stat-label">Streak (zile)</div>
+                </div>
+              </div>
+              {missionStats.byPillar.length > 0 && (
+                <>
+                  <h3 className="you-fb-stats-section-title">Misiuni pe piloni</h3>
+                  <div className="you-fb-pillar-bars">
+                    {missionStats.byPillar.map((p) => {
+                      const meta: Record<string, { icon: string; color: string }> = {
+                        discipline: { icon: '🎯', color: '#a855f7' },
+                        creativity: { icon: '🎨', color: '#ec4899' },
+                        life:        { icon: '🌱', color: '#22c55e' },
+                        acceptance:  { icon: '🤍', color: '#06b6d4' },
+                        helping:     { icon: '🤝', color: '#f59e0b' },
+                        self:        { icon: '🔍', color: '#8b5cf6' },
+                        hobby:       { icon: '🎭', color: '#ef4444' },
+                      };
+                      const m = meta[p.pillar] ?? { icon: '🎯', color: '#a855f7' };
+                      const max = Math.max(...missionStats.byPillar.map(x => x.cnt));
+                      return (
+                        <div key={p.pillar} className="you-fb-pillar-row">
+                          <span className="you-fb-pillar-icon">{m.icon}</span>
+                          <span className="you-fb-pillar-name">{p.pillar}</span>
+                          <div className="you-fb-pillar-bar-wrap">
+                            <div
+                              className="you-fb-pillar-bar-fill"
+                              style={{ width: `${(p.cnt / max) * 100}%`, background: m.color }}
+                            />
+                          </div>
+                          <span className="you-fb-pillar-count">{p.cnt}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </>
+          ) : (
+            <p className="you-fb-muted">Completează prima misiune pentru a vedea statistici.</p>
+          )}
         </div>
       )}
 

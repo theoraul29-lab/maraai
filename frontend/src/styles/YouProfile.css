@@ -1,5 +1,96 @@
 /* YOU PROFILE - HOLOGRAPHIC DESIGN */
 
+/* ── XP row in identity ──────────────────────────────────────── */
+.you-fb-xp-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.you-fb-xp-badge {
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+.you-fb-xp-bar-wrap { flex: 1; min-width: 80px; max-width: 160px; }
+.you-fb-xp-bar {
+  height: 5px;
+  background: rgba(168,85,247,.15);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.you-fb-xp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #7c3aed, #a855f7);
+  border-radius: 3px;
+  transition: width .4s ease;
+}
+.you-fb-xp-val { font-size: 12px; color: #94a3b8; }
+.you-fb-streak { font-size: 12px; color: #f59e0b; }
+
+/* ── Tier badge ──────────────────────────────────────────────── */
+.you-fb-tier-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  margin-top: 6px;
+  letter-spacing: 0.04em;
+}
+.you-fb-tier-vip     { background: rgba(250,204,21,.15); color: #fde68a; border: 1px solid rgba(250,204,21,.3); }
+.you-fb-tier-premium { background: rgba(99,102,241,.15); color: #a5b4fc; border: 1px solid rgba(99,102,241,.3); }
+.you-fb-tier-trial   { background: rgba(34,197,94,.1);  color: #86efac; border: 1px solid rgba(34,197,94,.25); }
+
+/* ── Stats tab ───────────────────────────────────────────────── */
+.you-fb-stats { padding: 16px; max-width: 600px; }
+.you-fb-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.you-fb-stat-card {
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+}
+.you-fb-stat-value {
+  font-size: 28px;
+  font-weight: 800;
+  color: #a855f7;
+  margin-bottom: 4px;
+}
+.you-fb-stat-label { font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; }
+.you-fb-stats-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+  margin: 0 0 12px;
+}
+.you-fb-pillar-bars { display: flex; flex-direction: column; gap: 10px; }
+.you-fb-pillar-row { display: flex; align-items: center; gap: 10px; }
+.you-fb-pillar-icon { font-size: 16px; width: 20px; text-align: center; }
+.you-fb-pillar-name { font-size: 13px; color: #c4b5fd; width: 80px; }
+.you-fb-pillar-bar-wrap {
+  flex: 1;
+  height: 8px;
+  background: rgba(255,255,255,.06);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.you-fb-pillar-bar-fill { height: 100%; border-radius: 4px; transition: width .5s ease; }
+.you-fb-pillar-count { font-size: 12px; color: #64748b; width: 24px; text-align: right; }
+
 .you-profile-container {
   width: 100%;
   max-width: 1200px;

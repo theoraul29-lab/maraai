@@ -66,6 +66,72 @@
   margin-top: 4px;
 }
 
+.missions-level-badge {
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+}
+
+/* ---- Stats strip ---- */
+.missions-stats-strip {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.missions-stat-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(168,85,247,.1);
+  border: 1px solid rgba(168,85,247,.2);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: #c4b5fd;
+}
+.missions-stat-pill--fire {
+  background: rgba(245,158,11,.1);
+  border-color: rgba(245,158,11,.25);
+  color: #fcd34d;
+}
+.missions-stat-icon { font-size: 14px; }
+
+/* ---- Leaderboard ---- */
+.leaderboard-root { padding: 0 16px 32px; }
+.leaderboard-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.leaderboard-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 12px;
+  transition: background .15s;
+}
+.leaderboard-row:hover { background: rgba(255,255,255,.05); }
+.leaderboard-row--top1 { border-color: rgba(255,215,0,.35); background: rgba(255,215,0,.06); }
+.leaderboard-row--top2 { border-color: rgba(192,192,192,.35); background: rgba(192,192,192,.05); }
+.leaderboard-row--top3 { border-color: rgba(205,127,50,.35); background: rgba(205,127,50,.05); }
+.leaderboard-rank { font-size: 20px; width: 32px; text-align: center; flex-shrink: 0; }
+.leaderboard-avatar { width: 40px; height: 40px; border-radius: 50%; overflow: hidden; flex-shrink: 0; }
+.leaderboard-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.leaderboard-avatar-fallback {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 16px; color: #fff;
+}
+.leaderboard-info { flex: 1; min-width: 0; }
+.leaderboard-name { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.leaderboard-meta { font-size: 12px; color: #64748b; margin-top: 2px; }
+.leaderboard-xp { font-weight: 700; color: #a855f7; font-size: 14px; white-space: nowrap; }
+
 /* ---- Back button ---- */
 .missions-back-btn {
   background: none;
