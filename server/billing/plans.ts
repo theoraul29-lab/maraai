@@ -32,7 +32,6 @@ const FREE_FEATURES = [
   'chat.basic',
   'reels.watch',
   'writers.read_public',
-  'trading.level_1_fundamentals',
 ] as const;
 
 const PRO_FEATURES = [
@@ -47,8 +46,6 @@ const VIP_FEATURES = [
   ...PRO_FEATURES,
   'writers.read_vip',
   'writers.publish_vip',
-  'trading.all_levels',
-  'trading.live_sessions',
   'chat.custom_personality',
   'reels.hd',
 ] as const;
