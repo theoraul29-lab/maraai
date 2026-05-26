@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from './contexts/AuthContext';
 import ShareButton from './components/ShareButton';
+import PayPalProgramButton from './components/PayPalProgramButton';
 import './styles/Missions.css';
 
 const API = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:5000');
@@ -392,6 +393,9 @@ export default function Missions() {
   const [error, setError] = useState('');
 
   const [programs, setPrograms] = useState<Program[]>([]);
+  const [billingPrograms, setBillingPrograms] = useState<Array<{
+    id: string; name: string; durationDays: number; priceCents: number; freeDays: number; currency: string;
+  }>>([]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [dayMissions, setDayMissions] = useState<Record<string, DayMissionData>>({});
   const [enrollingSlug, setEnrollingSlug] = useState<string | null>(null);
@@ -411,6 +415,11 @@ export default function Missions() {
   const [statsDetailed, setStatsDetailed] = useState<{
     completed: number; byPillar: Array<{ pillar: string; cnt: number }>;
   } | null>(null);
+  const [purchasedPrograms, setPurchasedPrograms] = useState<string[]>([]);
+  const [paymentNotice, setPaymentNotice] = useState<'success' | 'failed' | 'cancelled' | null>(null);
+  const [paymentProgram, setPaymentProgram] = useState<string | null>(null);
+
+  const location = useLocation();
 
   // ── data loaders ──────────────────────────────────────────────────────────
   const loadMissions = useCallback(async () => {
@@ -434,8 +443,12 @@ export default function Missions() {
 
   async function loadPrograms() {
     try {
-      const r = await apiFetchJson<{ programs: Program[] }>('/api/programs');
+      const [r, billing] = await Promise.all([
+        apiFetchJson<{ programs: Program[] }>('/api/programs'),
+        apiFetchJson<{ programs: Array<{ id: string; name: string; durationDays: number; priceCents: number; freeDays: number; currency: string }> }>('/api/billing/programs').catch(() => ({ programs: [] })),
+      ]);
       setPrograms(r.programs ?? []);
+      setBillingPrograms(billing.programs ?? []);
     } catch {}
   }
 
@@ -499,6 +512,14 @@ export default function Missions() {
     } catch {}
   }
 
+  async function loadPurchasedPrograms() {
+    if (!isAuthenticated) return;
+    try {
+      const r = await apiFetchJson<{ purchased: string[] }>('/api/billing/program/access');
+      setPurchasedPrograms(r.purchased ?? []);
+    } catch {}
+  }
+
   useEffect(() => {
     if (!isAuthenticated) return;
     apiFetchJson<{ done: boolean }>('/api/missions/onboarding')
@@ -510,7 +531,24 @@ export default function Missions() {
     loadBooks();
     loadCommunity();
     loadStatsDetailed();
+    loadPurchasedPrograms();
   }, [isAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Handle PayPal redirect back (?payment=success&program=new_habit)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const payment = params.get('payment') as 'success' | 'failed' | 'cancelled' | null;
+    if (payment) {
+      setPaymentNotice(payment);
+      setPaymentProgram(params.get('program'));
+      if (payment === 'success') {
+        loadPurchasedPrograms();
+        setActiveTab('programs');
+      }
+      window.history.replaceState({}, '', location.pathname);
+      setTimeout(() => setPaymentNotice(null), 6000);
+    }
+  }, [location.search]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (view === 'list') loadMissions();
@@ -1021,6 +1059,68 @@ export default function Missions() {
       {/* ── PROGRAMS TAB ─────────────────────────────────────────────────── */}
       {activeTab === 'programs' && (
         <div className="programs-root">
+
+          {/* Payment notice banner */}
+          {paymentNotice && (
+            <div className={`payment-notice payment-notice--${paymentNotice}`}>
+              {paymentNotice === 'success' && `✅ Plată reușită! ${paymentProgram ? `Ai deblocat ${paymentProgram.replace(/_/g, ' ')}.` : ''}`}
+              {paymentNotice === 'failed' && '❌ Plata a eșuat. Încearcă din nou sau contactează suportul.'}
+              {paymentNotice === 'cancelled' && '↩️ Plata a fost anulată.'}
+            </div>
+          )}
+
+          {/* Transformation progression */}
+          {billingPrograms.length > 0 && (
+            <div className="billing-programs-section">
+              <h2 className="billing-programs-title">🚀 Calea ta de transformare</h2>
+              <div className="billing-programs-grid">
+                {billingPrograms.map((bp) => {
+                  const icons: Record<string, string> = {
+                    new_mindset: '🧠', new_habit: '🔁', new_skills: '⚡',
+                    new_body: '💪', new_life: '🌅', new_you: '✨',
+                  };
+                  const isPurchased = purchasedPrograms.includes(bp.id);
+                  const isFree = bp.priceCents === 0;
+                  const hasFreeDays = bp.freeDays > 0 && !isFree;
+                  return (
+                    <div key={bp.id} className={`billing-program-card ${isPurchased ? 'billing-program-card--owned' : ''} ${isFree ? 'billing-program-card--free' : ''}`}>
+                      <div className="billing-program-icon">{icons[bp.id] ?? '📘'}</div>
+                      <div className="billing-program-info">
+                        <h3>{bp.name}</h3>
+                        <span className="billing-program-days">{bp.durationDays} {bp.durationDays === 1 ? 'zi' : 'zile'}</span>
+                        {hasFreeDays && !isPurchased && (
+                          <span className="billing-program-free-days">Primele {bp.freeDays} zile gratuite</span>
+                        )}
+                      </div>
+                      <div className="billing-program-action">
+                        {isFree || isPurchased ? (
+                          <span className="billing-program-badge">
+                            {isFree ? '🎁 Gratuit' : '✅ Deblocat'}
+                          </span>
+                        ) : (
+                          <PayPalProgramButton
+                            programId={bp.id}
+                            programName={bp.name}
+                            priceCents={bp.priceCents}
+                            onSuccess={(id) => {
+                              setPurchasedPrograms((prev) => [...prev, id]);
+                              setPaymentNotice('success');
+                              setPaymentProgram(id);
+                              setTimeout(() => setPaymentNotice(null), 6000);
+                            }}
+                            onError={() => {
+                              setPaymentNotice('failed');
+                              setTimeout(() => setPaymentNotice(null), 6000);
+                            }}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           {enrollments.filter((e) => e.status === 'active').map((enrollment) => {
             const dm = dayMissions[enrollment.id];
             const pct = Math.round((enrollment.current_day / enrollment.duration_days) * 100);
