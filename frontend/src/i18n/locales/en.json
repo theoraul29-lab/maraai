@@ -122,7 +122,8 @@
     "creatorPanel": "Creator Panel",
     "creatorAriaLabel": "Open creator panel",
     "profileMenuFor": "Profile menu for {{name}}",
-    "loginOrSignup": "Login or sign up"
+    "loginOrSignup": "Login or sign up",
+    "forgotPassword": "Forgot password?"
   },
   "vip": {
     "title": "PREMIUM VIP MODULE",

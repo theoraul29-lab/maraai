@@ -79,7 +79,8 @@
     "signInWith": "Sign in with {{provider}}",
     "switchToSignup": "Switch to sign up",
     "switchToLogin": "Switch to login",
-    "or": "LUB"
+    "or": "LUB",
+    "forgotPassword": "Zapomniałeś hasła?"
   },
   "vip": {
     "title": "PREMIUM VIP MODULE",

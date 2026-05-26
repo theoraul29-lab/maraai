@@ -79,7 +79,8 @@
     "signInWith": "Sign in with {{provider}}",
     "switchToSignup": "Switch to sign up",
     "switchToLogin": "Switch to login",
-    "or": "HOẶC"
+    "or": "HOẶC",
+    "forgotPassword": "Quên mật khẩu?"
   },
   "vip": {
     "title": "PREMIUM VIP MODULE",

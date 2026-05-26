@@ -79,7 +79,8 @@
     "signInWith": "Sign in with {{provider}}",
     "switchToSignup": "Switch to sign up",
     "switchToLogin": "Switch to login",
-    "or": "VEYA"
+    "or": "VEYA",
+    "forgotPassword": "Şifrenizi mi unuttunuz?"
   },
   "vip": {
     "title": "PREMIUM VIP MODULE",

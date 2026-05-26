@@ -122,7 +122,8 @@
     "creatorPanel": "Panou Creator",
     "creatorAriaLabel": "Deschide panoul de creator",
     "profileMenuFor": "Meniu profil pentru {{name}}",
-    "loginOrSignup": "Autentificare sau înregistrare"
+    "loginOrSignup": "Autentificare sau înregistrare",
+    "forgotPassword": "Ai uitat parola?"
   },
   "vip": {
     "title": "MODUL PREMIUM VIP",

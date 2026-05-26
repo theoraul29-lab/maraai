@@ -93,7 +93,8 @@
       "oauth_not_enabled": "La connexion OAuth n'est pas encore activée. Utilise email et mot de passe.",
       "network_error": "Erreur réseau. Réessaie.",
       "unknown": "Quelque chose a mal tourné. Réessaie."
-    }
+    },
+    "forgotPassword": "Mot de passe oublié ?"
   },
   "vip": {
     "title": "MODULE VIP PREMIUM",

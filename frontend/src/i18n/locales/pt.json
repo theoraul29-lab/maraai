@@ -93,7 +93,8 @@
       "oauth_not_enabled": "O login via OAuth ainda não está ativo. Use email e senha.",
       "network_error": "Erro de rede. Tente novamente.",
       "unknown": "Algo deu errado. Tente novamente."
-    }
+    },
+    "forgotPassword": "Esqueceu a senha?"
   },
   "vip": {
     "title": "MÓDULO VIP PREMIUM",

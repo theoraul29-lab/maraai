@@ -93,7 +93,8 @@
       "oauth_not_enabled": "El inicio con OAuth aún no está habilitado. Usa email y contraseña.",
       "network_error": "Error de red. Inténtalo de nuevo.",
       "unknown": "Algo salió mal. Inténtalo de nuevo."
-    }
+    },
+    "forgotPassword": "¿Olvidaste tu contraseña?"
   },
   "vip": {
     "title": "MÓDULO VIP PREMIUM",

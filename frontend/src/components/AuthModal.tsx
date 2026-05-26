@@ -321,6 +321,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                 {t('auth.passwordHint')}
               </small>
             )}
+            {mode === 'login' && (
+              <a href="/reset-password" className="auth-forgot-link">
+                {t('auth.forgotPassword')}
+              </a>
+            )}
           </div>
 
           {/* P2P opt-in card (signup only) — explains what P2P is and

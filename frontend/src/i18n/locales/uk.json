@@ -93,7 +93,8 @@
       "oauth_not_enabled": "Вхід через OAuth ще не увімкнено. Використовуй email і пароль.",
       "network_error": "Помилка мережі. Спробуй ще раз.",
       "unknown": "Щось пішло не так. Спробуй ще раз."
-    }
+    },
+    "forgotPassword": "Забули пароль?"
   },
   "vip": {
     "title": "PREMIUM VIP-МОДУЛЬ",

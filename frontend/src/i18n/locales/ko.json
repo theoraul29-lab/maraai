@@ -79,7 +79,8 @@
     "signInWith": "Sign in with {{provider}}",
     "switchToSignup": "Switch to sign up",
     "switchToLogin": "Switch to login",
-    "or": "또는"
+    "or": "또는",
+    "forgotPassword": "비밀번호를 잊으셨나요?"
   },
   "vip": {
     "title": "PREMIUM VIP MODULE",

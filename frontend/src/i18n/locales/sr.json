@@ -79,7 +79,8 @@
     "signInWith": "Sign in with {{provider}}",
     "switchToSignup": "Switch to sign up",
     "switchToLogin": "Switch to login",
-    "or": "ИЛИ"
+    "or": "ИЛИ",
+    "forgotPassword": "Zaboravili ste lozinku?"
   },
   "vip": {
     "title": "PREMIUM VIP MODULE",

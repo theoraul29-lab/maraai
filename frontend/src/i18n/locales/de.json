@@ -93,7 +93,8 @@
       "oauth_not_enabled": "OAuth-Anmeldung ist noch nicht aktiviert. Bitte E-Mail und Passwort verwenden.",
       "network_error": "Netzwerkfehler. Bitte erneut versuchen.",
       "unknown": "Etwas ist schiefgelaufen. Bitte erneut versuchen."
-    }
+    },
+    "forgotPassword": "Passwort vergessen?"
   },
   "vip": {
     "title": "PREMIUM-VIP-MODUL",

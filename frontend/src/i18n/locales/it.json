@@ -79,7 +79,8 @@
     "signInWith": "Accedi con {{provider}}",
     "switchToSignup": "Vai alla registrazione",
     "switchToLogin": "Vai all'accesso",
-    "or": "O"
+    "or": "O",
+    "forgotPassword": "Password dimenticata?"
   },
   "vip": {
     "title": "PREMIUM VIP MODULE",

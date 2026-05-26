@@ -79,7 +79,8 @@
     "signInWith": "Sign in with {{provider}}",
     "switchToSignup": "Switch to sign up",
     "switchToLogin": "Switch to login",
-    "or": "NEBO"
+    "or": "NEBO",
+    "forgotPassword": "Zapomněli jste heslo?"
   },
   "vip": {
     "title": "PREMIUM VIP MODULE",

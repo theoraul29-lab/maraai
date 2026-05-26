@@ -79,7 +79,8 @@
     "signInWith": "Sign in with {{provider}}",
     "switchToSignup": "Switch to sign up",
     "switchToLogin": "Switch to login",
-    "or": "VAGY"
+    "or": "VAGY",
+    "forgotPassword": "Elfelejtette jelszavát?"
   },
   "vip": {
     "title": "PREMIUM VIP MODULE",

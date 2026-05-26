@@ -450,3 +450,14 @@
 .p2p-toggle input:checked + .p2p-toggle__slider::after {
   transform: translateX(18px);
 }
+
+.auth-forgot-link {
+  display: block;
+  text-align: right;
+  margin-top: 6px;
+  font-size: 12px;
+  color: #a78bfa;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.auth-forgot-link:hover { color: #c77dff; text-decoration: underline; }
