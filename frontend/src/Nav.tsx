@@ -17,11 +17,9 @@ const linkKeys = [
 	{ to: '/reels', key: 'reels', icon: '🎬' },
 	{ to: '/missions', key: 'missions', icon: '🎯' },
 	{ to: '/community', key: 'community', icon: '🌐' },
-	{ to: '/membership', key: 'vip', icon: '👑' },
 	{ to: '/creator-panel', key: 'creator', icon: '✨' },
 	{ to: '/writers-hub', key: 'writers', icon: '✍️' },
 	{ to: '/you', key: 'profile', icon: '👤' },
-	{ to: '/pricing', key: 'pricing', icon: '💎' },
 ];
 
 interface NotificationItem {

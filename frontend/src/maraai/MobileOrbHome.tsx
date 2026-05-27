@@ -38,7 +38,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { SubsystemSettings } from './SubsystemSettings';
 import './MobileOrbHome.css';
 
-type OrbId = 'you' | 'reels' | 'missions' | 'writers' | 'vip' | 'creators';
+type OrbId = 'you' | 'reels' | 'missions' | 'writers' | 'programs' | 'creators';
 
 type OrbItem = {
   id: OrbId;
@@ -90,11 +90,11 @@ const ICONS: Record<OrbId, ReactNode> = {
       />
     </svg>
   ),
-  vip: (
+  programs: (
     <svg viewBox="0 0 24 24" width="32" height="32" aria-hidden>
       <path
         fill="currentColor"
-        d="m12 2 2.9 6.4 7 .7-5.2 4.7 1.5 6.9L12 17.7 5.8 20.7l1.5-6.9L2.1 9.1l7-.7L12 2Z"
+        d="M3 17h2v-7H3v7zm4 0h2V7H7v10zm4 0h2v-4h-2v4zm4 0h2V3h-2v14zm4 0h2v-10h-2v10z"
       />
     </svg>
   ),
@@ -112,8 +112,8 @@ const ITEMS: OrbItem[] = [
   { id: 'you', label: 'You', to: '/you', icon: ICONS.you },
   { id: 'reels', label: 'Reels', to: '/reels', icon: ICONS.reels },
   { id: 'missions', label: 'Missions', to: '/missions', icon: ICONS.missions },
+  { id: 'programs', label: 'Programs', to: '/pricing', icon: ICONS.programs },
   { id: 'writers', label: 'Writers', to: '/writers-hub', icon: ICONS.writers },
-  { id: 'vip', label: 'VIP', to: '/membership', icon: ICONS.vip },
   { id: 'creators', label: 'Creators', to: '/creator-panel', icon: ICONS.creators },
 ];
 
