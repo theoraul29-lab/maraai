@@ -315,6 +315,8 @@
     "sfFantasy": "SF & Fantasy",
     "nonFiction": "Non-Ficțiune",
     "anonymous": "Anonim",
+    "deleteConfirm": "Ștergi acest articol? Acțiunea este ireversibilă.",
+    "searchPlaceholder": "🔍 Caută titlu sau autor…",
     "likes": "aprecieri",
     "maraAssistant": "🧠 Asistent de scriere Mara AI",
     "maraPromptPlaceholder": "Ex.: Generează un dialog între două personaje...",
@@ -396,7 +398,8 @@
     "engagementLabel": "Angajament",
     "saved": "Salvat",
     "saveLabel": "Salvează",
-    "createFirst": "+ Creează reel"
+    "createFirst": "+ Creează reel",
+    "deleteConfirm": "Ștergi acest reel?"
   },
   "you": {
     "profileTab": "📊 Profil",
@@ -787,7 +790,14 @@
     "communitySubtitle": "Pagini publice scrise de Mara pentru membrii comunității",
     "communityEmpty": "Nicio pagină publică încă.",
     "communityEmptyDesc": "Marchează o pagină din jurnalul tău ca 'Comunitate' pentru a o partaja.",
-    "anonymous": "Anonim"
+    "anonymous": "Anonim",
+    "freeDaysLabel": "Primele {{count}} zile gratuite",
+    "unlocked": "✅ Deblocat",
+    "transformationPath": "🚀 Calea ta de transformare",
+    "paymentSuccess": "✅ Plată reușită! {{name}}",
+    "paymentFailed": "❌ Plata a eșuat. Încearcă din nou sau contactează suportul.",
+    "paymentCancelled": "↩️ Plata a fost anulată.",
+    "levelMetaFull": "Lvl {{level}} · {{count}} misiuni"
   },
   "missionShare": {
     "cardLabel": "Misiune completă",

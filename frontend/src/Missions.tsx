@@ -642,9 +642,9 @@ export default function Missions() {
         setEnrollingSlug(null);
         await loadEnrollments();
       } else {
-        setError(r.message ?? 'Eroare la înrolare.');
+        setError(r.message ?? t('missions.errorEnroll'));
       }
-    } catch { setError('Eroare de rețea.'); }
+    } catch { setError(t('missions.errorNetwork')); }
   }
 
   async function handleCompleteDay(enrollmentId: string, proofContent: string) {
@@ -660,9 +660,9 @@ export default function Missions() {
         await loadJournal();
         if (r.programCompleted) await loadBooks();
       } else {
-        setError(r.message ?? 'Eroare.');
+        setError(r.message ?? t('common.error'));
       }
-    } catch { setError('Eroare de rețea.'); }
+    } catch { setError(t('missions.errorNetwork')); }
     setSubmitting(false);
   }
 
@@ -689,12 +689,12 @@ export default function Missions() {
   const xpProgress = (userXp.xp % 1000) / 1000 * 100;
 
   const TABS: { key: Tab; label: string }[] = [
-    { key: 'missions',    label: t('missions.tabMissions', '🎯 Misiuni') },
-    { key: 'programs',    label: '📋 Programe' },
-    { key: 'journal',     label: '📖 Jurnal' },
-    { key: 'book',        label: '📚 Carte' },
-    { key: 'community',   label: t('missions.tabCommunity', '👥 Comunitate') },
-    { key: 'leaderboard', label: '🏆 Top' },
+    { key: 'missions',    label: t('missions.tabMissions') },
+    { key: 'programs',    label: t('missions.tabPrograms') },
+    { key: 'journal',     label: t('missions.tabJournal') },
+    { key: 'book',        label: t('missions.tabBook') },
+    { key: 'community',   label: t('missions.tabCommunity') },
+    { key: 'leaderboard', label: t('missions.tabLeaderboard') },
   ];
 
   // ── auth wall ─────────────────────────────────────────────────────────────
@@ -759,18 +759,18 @@ export default function Missions() {
       {enrollingSlug && (
         <div className="enroll-modal-overlay" onClick={() => setEnrollingSlug(null)}>
           <div className="enroll-modal" onClick={(e) => e.stopPropagation()}>
-            <h3>Personalizează programul</h3>
-            <p>Spune-i Marei cu ce vrei să lucrezi:</p>
+            <h3>{t('missions.customizeProgram')}</h3>
+            <p>{t('missions.customizeProgramDesc')}</p>
             <textarea
               className="mara-proof-input"
-              placeholder="Ex: vreau să mă trezesc mai devreme, să fac sport, să scriu zilnic..."
+              placeholder={t('missions.customizeProgramPlaceholder')}
               value={enrollSettings.habitDescription}
               onChange={(e) => setEnrollSettings((prev) => ({ ...prev, habitDescription: e.target.value }))}
               rows={3}
             />
             <div className="enroll-modal-actions">
-              <button className="mara-cta-btn" onClick={confirmEnroll}>🌱 Începe programul</button>
-              <button className="mara-btn-ghost" onClick={() => setEnrollingSlug(null)}>Anulează</button>
+              <button className="mara-cta-btn" onClick={confirmEnroll}>{t('missions.startProgram')}</button>
+              <button className="mara-btn-ghost" onClick={() => setEnrollingSlug(null)}>{t('common.cancel')}</button>
             </div>
           </div>
         </div>
@@ -778,7 +778,7 @@ export default function Missions() {
 
       {/* Compact header */}
       <div className="missions-header-v4">
-        <button className="missions-back-btn" onClick={() => navigate('/')}>← Acasă</button>
+        <button className="missions-back-btn" onClick={() => navigate('/')}>{t('missions.backHome')}</button>
         <div className="missions-xp-strip">
           <span className="missions-level-badge">Lvl {userXp.level}</span>
           <div className="missions-xp-bar">
@@ -808,12 +808,12 @@ export default function Missions() {
           <div className="missions-panel-left">
             <MaraLightning isThinking={chatPhase === 'reviewing' || (loading && chatPhase === 'idle') || generating} />
             <div className="mara-motto">
-              <span>1 zi · mindset</span>
-              <span>21 zile · habit</span>
-              <span>90 zile · skills</span>
-              <span>180 zile · body</span>
-              <span>365 zile · viață</span>
-              <span>1095 zile · tu</span>
+              <span>{t('missions.motto1')}</span>
+              <span>{t('missions.motto21')}</span>
+              <span>{t('missions.motto90')}</span>
+              <span>{t('missions.motto180')}</span>
+              <span>{t('missions.motto365')}</span>
+              <span>{t('missions.motto1095')}</span>
             </div>
 
             <div className="mara-chat-area">
@@ -824,11 +824,11 @@ export default function Missions() {
               {/* IDLE */}
               {chatPhase === 'idle' && (
                 <div className="mara-bubble mara-bubble--mara">
-                  <p className="mara-greeting">Bună! Sunt Mara 🌳</p>
-                  <p>Alege o misiune din dreapta. Primele 10 sunt gratuite — fiecare misiune se deschide după ce o termini pe cea anterioară.</p>
+                  <p className="mara-greeting">{t('missions.maraGreeting')}</p>
+                  <p>{t('missions.maraIdleDesc')}</p>
                   {dailyMissions.length > 0 && (
                     <button className="mara-cta-btn" onClick={() => handleCardSelect(dailyMissions[0], false)}>
-                      ⚡ Misiunea zilei →
+                      {t('missions.dailyMissionCta')}
                     </button>
                   )}
                 </div>
@@ -837,10 +837,10 @@ export default function Missions() {
               {/* LOCKED */}
               {chatPhase === 'locked' && (
                 <div className="mara-bubble mara-bubble--mara">
-                  <p>🔒 Trebuie să completezi misiunea anterioară mai întâi!</p>
-                  <p style={{ opacity: 0.7, fontSize: '0.88rem' }}>Fiecare misiune deschide calea spre următoarea. Continuă!</p>
+                  <p>{t('missions.lockedMsg')}</p>
+                  <p style={{ opacity: 0.7, fontSize: '0.88rem' }}>{t('missions.lockedSub')}</p>
                   <button className="mara-cta-btn mara-cta-btn--secondary" onClick={() => setChatPhase('idle')}>
-                    ← Înapoi
+                    {t('missions.back')}
                   </button>
                 </div>
               )}
@@ -869,14 +869,14 @@ export default function Missions() {
                   <div className="mara-xp-badge">+{activeMission.xp_reward} XP</div>
                   {activeMission.user_status === 'completed' ? (
                     <div className="mara-completed-note">
-                      <span>✅ Misiune completată!</span>
+                      <span>{t('missions.missionCompleted')}</span>
                       {activeMission.mara_feedback && (
                         <p className="mara-feedback-quote">"{activeMission.mara_feedback}"</p>
                       )}
                     </div>
                   ) : (
                     <button className="mara-cta-btn" onClick={() => handleStartMission(activeMission)} disabled={loading}>
-                      {loading ? '⏳ Se pornește...' : '⚡ Acceptă misiunea'}
+                      {loading ? t('missions.starting') : t('missions.acceptMission')}
                     </button>
                   )}
                 </div>
@@ -888,7 +888,7 @@ export default function Missions() {
                   <div className="mara-bubble mara-bubble--mara">
                     <div className="mara-mission-header">
                       <span className="mara-pillar-icon">{PILLAR_META[activeMission.pillar]?.icon ?? '🎯'}</span>
-                      <span className="mara-active-label">În desfășurare</span>
+                      <span className="mara-active-label">{t('missions.inProgress')}</span>
                     </div>
                     <h3 className="mara-mission-title">{activeMission.title}</h3>
                     <p className="mara-proof-prompt">{activeMission.proof_prompt}</p>
@@ -898,7 +898,7 @@ export default function Missions() {
                       className="mara-proof-input"
                       value={proofText}
                       onChange={(e) => setProofText(e.target.value)}
-                      placeholder="Scrie ce ai făcut, ce ai simțit, ce ai realizat..."
+                      placeholder={t('missions.proofPlaceholderDetailed')}
                       rows={5}
                     />
                     {activeMission.reflection && (
@@ -906,17 +906,17 @@ export default function Missions() {
                         className="mara-proof-input"
                         value={reflectionText}
                         onChange={(e) => setReflectionText(e.target.value)}
-                        placeholder={`Reflecție: ${activeMission.reflection}`}
+                        placeholder={t('missions.reflectionPrefix') + activeMission.reflection}
                         rows={2}
                         style={{ marginTop: '8px' }}
                       />
                     )}
                     <div className="mara-input-actions">
                       <button className="mara-cta-btn" onClick={handleSubmitProof} disabled={!proofText.trim()}>
-                        📤 Trimite (+{activeMission.xp_reward} XP)
+                        {t('missions.submitProofXp', { xp: activeMission.xp_reward })}
                       </button>
                       <button className="mara-btn-ghost" onClick={() => setChatPhase('preview')}>
-                        ← Înapoi
+                        {t('missions.back')}
                       </button>
                     </div>
                   </div>
@@ -953,7 +953,7 @@ export default function Missions() {
                     )}
                     <button className="mara-cta-btn mara-cta-btn--secondary"
                       onClick={() => { setChatPhase('idle'); setActiveMission(null); setCompletionResult(null); }}>
-                      Misiune nouă →
+                      {t('missions.newMission')}
                     </button>
                   </div>
                 </div>
@@ -965,9 +965,9 @@ export default function Missions() {
           <div className="missions-panel-right">
             <div className="missions-panel-right-header">
               <div>
-                <h3 className="missions-panel-right-title">Misiunile tale</h3>
+                <h3 className="missions-panel-right-title">{t('missions.yourMissions')}</h3>
                 <p className="missions-panel-right-sub">
-                  {statsDetailed?.completed ?? 0} completate · primele 10 gratuite
+                  {t('missions.completedFreeLabel', { count: statsDetailed?.completed ?? 0 })}
                 </p>
               </div>
               <TransformationJourney completed={statsDetailed?.completed ?? 0} />
@@ -979,7 +979,7 @@ export default function Missions() {
                 className={`mc-filter-btn ${selectedPillar === 'all' ? 'active' : ''}`}
                 onClick={() => setSelectedPillar('all')}
               >
-                Toate
+                {t('missions.filterAll')}
               </button>
               {Object.entries(PILLAR_META).map(([key, meta]) => (
                 <button
@@ -996,7 +996,7 @@ export default function Missions() {
             {/* Daily missions row */}
             {dailyMissions.length > 0 && (
               <div className="mc-section">
-                <div className="mc-section-label">⚡ Misiunile zilei</div>
+                <div className="mc-section-label">{t('missions.dailyLabel')}</div>
                 <div className="mc-grid mc-grid--daily">
                   {dailyMissions.map((m) => (
                     <MissionCardNew
@@ -1013,12 +1013,12 @@ export default function Missions() {
 
             {/* Missions collection */}
             <div className="mc-section">
-              <div className="mc-section-label">🎯 Colecția ({orderedMissions.length})</div>
+              <div className="mc-section-label">{t('missions.collectionLabel', { count: orderedMissions.length })}</div>
               {loading ? (
                 <div className="missions-loading"><div className="missions-spinner" /></div>
               ) : orderedMissions.length === 0 ? (
                 <div className="missions-empty">
-                  <p>Nicio misiune disponibilă.</p>
+                  <p>{t('missions.noMissions')}</p>
                 </div>
               ) : (
                 <div className="mc-grid">
@@ -1030,7 +1030,7 @@ export default function Missions() {
                           <div className="mc-milestone-banner" style={{ '--m-color': milestone.color } as React.CSSProperties}>
                             <span>{milestone.icon}</span>
                             <span>{milestone.label}</span>
-                            <span className="mc-milestone-days">{milestone.days} {milestone.days === 1 ? 'zi' : 'zile'}</span>
+                            <span className="mc-milestone-days">{t('missions.daysLabel', { count: milestone.days })}</span>
                           </div>
                         )}
                         <MissionCardNew
@@ -1050,7 +1050,7 @@ export default function Missions() {
 
             <div className="mc-generate">
               <button className="mara-cta-btn mara-cta-btn--secondary" onClick={handleGenerateMission} disabled={generating}>
-                {generating ? '⏳ Generez...' : '✨ Misiune nouă de la Mara'}
+                {generating ? t('missions.generating') : t('missions.requestNew')}
               </button>
             </div>
           </div>
@@ -1064,16 +1064,16 @@ export default function Missions() {
           {/* Payment notice banner */}
           {paymentNotice && (
             <div className={`payment-notice payment-notice--${paymentNotice}`}>
-              {paymentNotice === 'success' && `✅ Plată reușită! ${paymentProgram ? `Ai deblocat ${paymentProgram.replace(/_/g, ' ')}.` : ''}`}
-              {paymentNotice === 'failed' && '❌ Plata a eșuat. Încearcă din nou sau contactează suportul.'}
-              {paymentNotice === 'cancelled' && '↩️ Plata a fost anulată.'}
+              {paymentNotice === 'success' && t('missions.paymentSuccess', { name: paymentProgram ? paymentProgram.replace(/_/g, ' ') : '' })}
+              {paymentNotice === 'failed' && t('missions.paymentFailed')}
+              {paymentNotice === 'cancelled' && t('missions.paymentCancelled')}
             </div>
           )}
 
           {/* Transformation progression */}
           {billingPrograms.length > 0 && (
             <div className="billing-programs-section">
-              <h2 className="billing-programs-title">🚀 Calea ta de transformare</h2>
+              <h2 className="billing-programs-title">{t('missions.transformationPath')}</h2>
               <div className="billing-programs-grid">
                 {billingPrograms.map((bp) => {
                   const icons: Record<string, string> = {
@@ -1088,15 +1088,15 @@ export default function Missions() {
                       <div className="billing-program-icon">{icons[bp.id] ?? '📘'}</div>
                       <div className="billing-program-info">
                         <h3>{bp.name}</h3>
-                        <span className="billing-program-days">{bp.durationDays} {bp.durationDays === 1 ? 'zi' : 'zile'}</span>
+                        <span className="billing-program-days">{t('missions.daysLabel', { count: bp.durationDays })}</span>
                         {hasFreeDays && !isPurchased && (
-                          <span className="billing-program-free-days">Primele {bp.freeDays} zile gratuite</span>
+                          <span className="billing-program-free-days">{t('missions.freeDaysLabel', { count: bp.freeDays })}</span>
                         )}
                       </div>
                       <div className="billing-program-action">
                         {isFree || isPurchased ? (
                           <span className="billing-program-badge">
-                            {isFree ? '🎁 Gratuit' : '✅ Deblocat'}
+                            {isFree ? t('missions.free') : t('missions.unlocked')}
                           </span>
                         ) : (
                           <PayPalProgramButton
@@ -1133,22 +1133,22 @@ export default function Missions() {
                   <div className="enrollment-title-row">
                     <h2>{enrollment.program_name}</h2>
                     {enrollment.streak > 0 && (
-                      <span className="enrollment-streak">🔥 {enrollment.streak} zile</span>
+                      <span className="enrollment-streak">{t('missions.streakDays', { count: enrollment.streak })}</span>
                     )}
                   </div>
                   <div className="enrollment-progress-wrap">
                     <div className="enrollment-bar">
                       <div className="enrollment-fill" style={{ width: `${pct}%` }} />
                     </div>
-                    <span className="enrollment-pct">Ziua {enrollment.current_day}/{enrollment.duration_days} · {pct}%</span>
+                    <span className="enrollment-pct">{t('missions.dayOf', { current: enrollment.current_day, total: enrollment.duration_days, pct })}</span>
                   </div>
                   {dm?.streakMessage && <div className="enrollment-streak-msg">{dm.streakMessage}</div>}
                 </div>
                 {dm && !dm.isCompleted && dm.mission && (
                   <div className="day-mission-card">
                     <div className="day-mission-header">
-                      <span className="day-badge">Ziua {dm.currentDay}</span>
-                      {dm.mission.isAiGenerated && <span className="ai-badge">✨ Personalizată de Mara</span>}
+                      <span className="day-badge">{t('missions.dayBadge', { day: dm.currentDay })}</span>
+                      {dm.mission.isAiGenerated && <span className="ai-badge">{t('missions.personalizedByMara')}</span>}
                     </div>
                     <h3 className="day-mission-title">{dm.mission.title}</h3>
                     <p className="day-mission-desc">{dm.mission.description}</p>
@@ -1169,7 +1169,7 @@ export default function Missions() {
                     )}
                     <textarea
                       className="mara-proof-input"
-                      placeholder="Scrie experiența ta de azi..."
+                      placeholder={t('missions.todayExperience')}
                       value={completingEnrollment === enrollment.id ? programProofText : ''}
                       onChange={(e) => {
                         setCompletingEnrollment(enrollment.id);
@@ -1186,7 +1186,7 @@ export default function Missions() {
                       disabled={submitting || !programProofText.trim() || completingEnrollment !== enrollment.id}
                       onClick={() => handleCompleteDay(enrollment.id, programProofText)}
                     >
-                      {submitting ? '⏳ Mara scrie jurnalul...' : `✓ Completează ziua ${dm.currentDay}`}
+                      {submitting ? t('missions.maraWritingJournal') : t('missions.completeDay', { day: dm.currentDay })}
                     </button>
                     {programResult && completingEnrollment === enrollment.id && (
                       <div className="program-result">
@@ -1197,7 +1197,7 @@ export default function Missions() {
                         </div>
                         {programResult.programCompleted && (
                           <div className="program-completed">
-                            🎉 Felicitări! Cartea ta e gata în tab-ul "Carte"!
+                            {t('missions.bookReady')}
                           </div>
                         )}
                       </div>
@@ -1206,7 +1206,7 @@ export default function Missions() {
                 )}
                 {dm?.isCompleted && (
                   <div className="day-completed">
-                    ✅ Misiunea de azi completată! Revino mâine pentru ziua {enrollment.current_day + 1}.
+                    {t('missions.dayCompletedMsg', { day: enrollment.current_day + 1 })}
                   </div>
                 )}
               </div>
@@ -1215,27 +1215,27 @@ export default function Missions() {
 
           <div className="programs-section-title">
             {enrollments.filter((e) => e.status === 'active').length > 0
-              ? '📚 Alte programe disponibile'
-              : '🎯 Alege programul tău'}
+              ? t('missions.morePrograms')
+              : t('missions.chooseProgram')}
           </div>
           <div className="programs-grid">
             {programs
               .filter((p) => !enrollments.some((e) => e.slug === p.slug && e.status === 'active'))
               .map((program) => (
                 <div key={program.id} className={`program-card ${program.is_featured ? 'program-card--featured' : ''}`}>
-                  {program.is_featured && <div className="program-featured-badge">⭐ Recomandat</div>}
+                  {program.is_featured && <div className="program-featured-badge">{t('missions.featuredBadge')}</div>}
                   <div className="program-card-header">
                     <h2>{program.name}</h2>
                     <span className="program-tagline">{program.tagline}</span>
                   </div>
                   <p className="program-description">{program.description}</p>
                   <div className="program-meta">
-                    <span>📅 {program.duration_days} zile</span>
+                    <span>📅 {t('missions.daysLabel', { count: program.duration_days })}</span>
                     <span>💪 {program.difficulty}</span>
-                    <span>{program.price_cents === 0 ? '🎁 Gratuit' : `💰 ${(program.price_cents / 100).toFixed(2)} EUR`}</span>
+                    <span>{program.price_cents === 0 ? t('missions.free') : `💰 ${(program.price_cents / 100).toFixed(2)} EUR`}</span>
                   </div>
                   <button className="program-enroll-btn" onClick={() => setEnrollingSlug(program.slug)}>
-                    Începe {program.name} →
+                    {t('missions.startProgramCta', { name: program.name })}
                   </button>
                 </div>
               ))}
@@ -1243,13 +1243,13 @@ export default function Missions() {
 
           {enrollments.filter((e) => e.status === 'completed').length > 0 && (
             <>
-              <div className="programs-section-title" style={{ marginTop: '32px' }}>🏆 Programe completate</div>
+              <div className="programs-section-title" style={{ marginTop: '32px' }}>{t('missions.completedPrograms')}</div>
               <div className="programs-grid">
                 {enrollments.filter((e) => e.status === 'completed').map((e) => (
                   <div key={e.id} className="program-card program-card--completed">
                     <h2>{e.program_name}</h2>
                     <p className="program-description">
-                      Completat în {e.duration_days} zile · Streak maxim: {e.longest_streak} zile
+                      {t('missions.programCompletedInfo', { days: e.duration_days, streak: e.longest_streak })}
                     </p>
                   </div>
                 ))}
@@ -1263,23 +1263,23 @@ export default function Missions() {
       {activeTab === 'journal' && (
         <div className="journal-root">
           <div className="journal-header">
-            <h2>📖 Jurnalul tău</h2>
-            <p>{journalTotal} {journalTotal === 1 ? 'pagină scrisă' : 'pagini scrise'} de Mara pentru tine</p>
+            <h2>{t('missions.journalTitle')}</h2>
+            <p>{t('missions.journalPages', { count: journalTotal })}</p>
           </div>
           {journalEntries.length === 0 ? (
             <div className="missions-empty">
-              <p>🌱 Jurnalul tău e gol.</p>
+              <p>{t('missions.journalEmpty')}</p>
               <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.4)', marginTop: '8px' }}>
-                Completează misiunile din Programe și Mara va scrie prima ta pagină. ✍️
+                {t('missions.journalEmptyDesc')}
               </p>
             </div>
           ) : (
             <div className="journal-entries">
               {journalEntries.map((entry) => (
                 <div key={entry.id} className={`journal-entry ${entry.is_milestone ? 'journal-entry--milestone' : ''}`}>
-                  {entry.is_milestone && <div className="journal-milestone-badge">🌟 Moment important</div>}
+                  {entry.is_milestone && <div className="journal-milestone-badge">{t('missions.milestoneMoment')}</div>}
                   <div className="journal-entry-header">
-                    <span className="journal-day">Ziua {entry.day_number}</span>
+                    <span className="journal-day">{t('missions.dayBadge', { day: entry.day_number })}</span>
                     {entry.program_name && <span className="journal-program">{entry.program_name}</span>}
                     {entry.mood && <span className="journal-mood">{entry.mood}</span>}
                     <span className="journal-date">
@@ -1299,13 +1299,13 @@ export default function Missions() {
                   })()}
                   <div className="journal-visibility-row">
                     <select value={entry.visibility} onChange={(e) => updateVisibility(entry.id, e.target.value)}>
-                      <option value="private">🔒 Privat</option>
-                      <option value="community">👥 Comunitate</option>
-                      <option value="public">🌍 Public</option>
+                      <option value="private">{t('missions.privLabel')}</option>
+                      <option value="community">{t('missions.communityLabel')}</option>
+                      <option value="public">{t('missions.publicLabel')}</option>
                     </select>
                     <span className="journal-visibility-hint">
-                      {entry.visibility === 'private' ? 'Doar tu poți vedea'
-                        : entry.visibility === 'community' ? 'Vizibil în comunitate' : 'Public'}
+                      {entry.visibility === 'private' ? t('missions.visPrivate')
+                        : entry.visibility === 'community' ? t('missions.visCommunity') : t('missions.visPublic')}
                     </span>
                   </div>
                 </div>
@@ -1319,17 +1319,17 @@ export default function Missions() {
       {activeTab === 'book' && (
         <div className="book-root">
           <div className="journal-header">
-            <h2>📚 Cartea ta</h2>
-            <p>Generată automat când completezi un program · 365 zile de misiuni zilnice = cartea ta fizică</p>
+            <h2>{t('missions.bookTitle')}</h2>
+            <p>{t('missions.bookDesc')}</p>
           </div>
           {books.length === 0 ? (
             <div className="missions-empty">
-              <p>📖 Cartea ta nu e gata încă.</p>
+              <p>{t('missions.bookEmpty')}</p>
               <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.4)', marginTop: '8px' }}>
-                Completează un program și Mara va genera cartea vieții tale.
+                {t('missions.bookEmptyDesc')}
               </p>
               <button className="mara-cta-btn" style={{ marginTop: '16px' }} onClick={() => setActiveTab('programs')}>
-                Vezi programele →
+                {t('missions.viewPrograms')}
               </button>
             </div>
           ) : (
@@ -1340,9 +1340,9 @@ export default function Missions() {
                   <div className="book-cover-content">
                     <h1 className="book-title">{book.title}</h1>
                     {book.subtitle && <h2 className="book-subtitle">{book.subtitle}</h2>}
-                    <p className="book-meta">{book.total_pages} pagini · {book.program_name}</p>
+                    <p className="book-meta">{t('missions.bookMeta', { pages: book.total_pages, program: book.program_name })}</p>
                     <button className="book-read-btn">
-                      {selectedBook?.id === book.id ? '▲ Închide' : '▼ Citește cartea'}
+                      {selectedBook?.id === book.id ? t('missions.bookClose') : t('missions.bookRead')}
                     </button>
                   </div>
                 </div>
@@ -1357,13 +1357,13 @@ export default function Missions() {
                             <p className="book-chapter-range">{ch.dayRange}</p>
                             {(ch.entries ?? []).map((entry: any, i: number) => (
                               <div key={i} className="book-page">
-                                <div className="book-page-number">Ziua {entry.day}</div>
+                                <div className="book-page-number">{t('missions.dayBadge', { day: entry.day })}</div>
                                 <div className="book-page-content">{entry.page}</div>
                               </div>
                             ))}
                           </div>
                         ));
-                      } catch { return <p>Eroare la încărcarea cărții.</p>; }
+                      } catch { return <p>{t('missions.bookLoadError')}</p>; }
                     })()}
                   </div>
                 )}
@@ -1377,13 +1377,13 @@ export default function Missions() {
       {activeTab === 'leaderboard' && (
         <div className="leaderboard-root">
           <div className="journal-header">
-            <h2>🏆 Top utilizatori</h2>
-            <p>Clasamentul după XP acumulat</p>
+            <h2>{t('missions.leaderboardTitle')}</h2>
+            <p>{t('missions.leaderboardSubtitle')}</p>
           </div>
           {leaderboardLoading ? (
             <div className="missions-loading"><div className="missions-spinner" /></div>
           ) : leaderboard.length === 0 ? (
-            <div className="missions-empty"><p>Nicio activitate înregistrată încă.</p></div>
+            <div className="missions-empty"><p>{t('missions.leaderboardEmpty')}</p></div>
           ) : (
             <div className="leaderboard-list">
               {leaderboard.map((entry) => (
@@ -1400,7 +1400,7 @@ export default function Missions() {
                   <div className="leaderboard-info">
                     <div className="leaderboard-name">{entry.displayName}</div>
                     <div className="leaderboard-meta">
-                      Lvl {entry.level} · {entry.missionsCompleted} misiuni
+                      {t('missions.levelShort')} {entry.level} · {t('missions.missionsCompleted', { count: entry.missionsCompleted })}
                       {entry.streak > 0 && ` · 🔥 ${entry.streak}z`}
                     </div>
                   </div>
@@ -1416,14 +1416,14 @@ export default function Missions() {
       {activeTab === 'community' && (
         <div className="community-root">
           <div className="journal-header">
-            <h2>👥 Jurnalul comunității</h2>
-            <p>Pagini publice scrise de Mara pentru membrii comunității</p>
+            <h2>{t('missions.communityTitle')}</h2>
+            <p>{t('missions.communitySubtitle')}</p>
           </div>
           {communityFeed.length === 0 ? (
             <div className="missions-empty">
-              <p>Nicio pagină publică încă.</p>
+              <p>{t('missions.communityEmpty')}</p>
               <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.4)', marginTop: '8px' }}>
-                Marchează o pagină din jurnalul tău ca "Comunitate" pentru a o partaja.
+                {t('missions.communityEmptyDesc')}
               </p>
             </div>
           ) : (
@@ -1431,7 +1431,7 @@ export default function Missions() {
               {communityFeed.map((entry, i) => (
                 <div key={i} className="journal-entry">
                   <div className="journal-entry-header">
-                    <span className="journal-day">{entry.display_name ?? 'Anonim'}</span>
+                    <span className="journal-day">{entry.display_name ?? t('missions.anonymous')}</span>
                     {entry.program_name && <span className="journal-program">{entry.program_name}</span>}
                     {entry.mood && <span className="journal-mood">{entry.mood}</span>}
                     <span className="journal-date">

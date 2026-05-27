@@ -315,6 +315,8 @@
     "sfFantasy": "SF & Fantasy",
     "nonFiction": "Non-Fiction",
     "anonymous": "Anonymous",
+    "deleteConfirm": "Delete this article? This action is irreversible.",
+    "searchPlaceholder": "🔍 Search by title or author…",
     "likes": "likes",
     "maraAssistant": "🧠 Mara AI Writing Assistant",
     "maraPromptPlaceholder": "E.g.: Generate a dialogue between two characters...",
@@ -396,7 +398,8 @@
     "engagementLabel": "Engagement",
     "saved": "Saved",
     "saveLabel": "Save",
-    "createFirst": "+ Create Reel"
+    "createFirst": "+ Create Reel",
+    "deleteConfirm": "Delete this reel?"
   },
   "you": {
     "profileTab": "📊 Profile",
@@ -787,7 +790,14 @@
     "communitySubtitle": "Public pages written by Mara for community members",
     "communityEmpty": "No public pages yet.",
     "communityEmptyDesc": "Mark a page from your journal as 'Community' to share it.",
-    "anonymous": "Anonymous"
+    "anonymous": "Anonymous",
+    "freeDaysLabel": "First {{count}} days free",
+    "unlocked": "✅ Unlocked",
+    "transformationPath": "🚀 Your transformation path",
+    "paymentSuccess": "✅ Payment successful! {{name}}",
+    "paymentFailed": "❌ Payment failed. Try again or contact support.",
+    "paymentCancelled": "↩️ Payment cancelled.",
+    "levelMetaFull": "Lvl {{level}} · {{count}} missions"
   },
   "missionShare": {
     "cardLabel": "Mission complete",

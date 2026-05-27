@@ -382,7 +382,7 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
   };
 
   const deleteArticle = async (workId: number) => {
-    if (!window.confirm('Stergi acest articol? Actiunea este ireversibila.')) return;
+    if (!window.confirm(t('writers.deleteConfirm'))) return;
     try {
       await axios.delete(`${API_URL}/api/writers/${workId}`, { withCredentials: true });
       setLibrary((prev) => prev.filter((w) => w.id !== workId));
@@ -699,7 +699,7 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
               <h2 className="writers-section-title">{t('writers.libraryTitle')}</h2>
               <input
                 className="writers-search-input"
-                placeholder="🔍 Caută titlu sau autor…"
+                placeholder={t('writers.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />

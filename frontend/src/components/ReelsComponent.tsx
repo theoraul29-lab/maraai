@@ -223,7 +223,7 @@ const ReelsComponent: React.FC = () => {
   };
 
   const handleDeleteReel = async (reelId: number) => {
-    if (!window.confirm('Stergi acest reel?')) return;
+    if (!window.confirm(t('reels.deleteConfirm'))) return;
     try {
       await axios.delete(`${API_URL}/api/creator/videos/${reelId}`, { withCredentials: true });
       setMyReels(prev => prev.filter(r => r.id !== reelId));
