@@ -53,13 +53,13 @@ const You: React.FC = () => {
           className={`you-tab${activeTab === 'profile' ? ' active' : ''}`}
           onClick={() => switchTab('profile')}
         >
-          {t('you.profile', 'Profil')}
+          {t('you.profile', 'Profile')}
         </button>
         <button
           className={`you-tab${activeTab === 'messages' ? ' active' : ''}`}
           onClick={() => switchTab('messages')}
         >
-          {t('you.messages', 'Mesaje')}
+          {t('you.messages', 'Messages')}
           {unreadCount > 0 && <span className="you-tab-badge">{unreadCount}</span>}
         </button>
       </div>

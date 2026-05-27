@@ -355,6 +355,29 @@
       "public": "Публично",
       "vip": "VIP",
       "paid": "Премиум"
+    },
+    "deleteConfirm": "Удалить эту статью? Это действие необратимо.",
+    "searchPlaceholder": "🔍 Поиск по заголовку или автору…",
+    "removeCover": "Удалить",
+    "uploadCover": "Загрузить обложку",
+    "uploading": "Загружается...",
+    "editor": {
+      "bold": "Жирный",
+      "italic": "Курсив",
+      "heading2": "Заголовок 2",
+      "heading3": "Заголовок 3",
+      "bulletList": "Маркированный список",
+      "orderedList": "Нумерованный список",
+      "blockquote": "Цитата",
+      "inlineCode": "Встроенный код",
+      "codeBlock": "Блок кода",
+      "link": "Ссылка",
+      "image": "Изображение",
+      "undo": "Отменить",
+      "redo": "Повторить",
+      "imagePrompt": "URL изображения (https://…)",
+      "linkPrompt": "URL ссылки",
+      "toolbar": "Форматирование"
     }
   },
   "reels": {
@@ -396,7 +419,23 @@
     "engagementLabel": "Вовлечённость",
     "saved": "Сохранено",
     "saveLabel": "Сохранить",
-    "createFirst": "+ Создать Reel"
+    "createFirst": "+ Создать Reel",
+    "defaultCreator": "Автор",
+    "untitled": "Без названия",
+    "originalAudio": "Оригинальный звук",
+    "generalTag": "Общее",
+    "youLabel": "Вы",
+    "videoPlayer": "Видеоплеер",
+    "headerTitle": "REELS",
+    "tags": {
+      "ai": "ИИ",
+      "tech": "Технологии",
+      "future": "Будущее",
+      "design": "Дизайн",
+      "music": "Музыка",
+      "comedy": "Комедия",
+      "tutorial": "Урок"
+    }
   },
   "you": {
     "profileTab": "📊 Профиль",
@@ -725,7 +764,7 @@
     "stepsTitle": "Шаги для выполнения:",
     "proofPlaceholder": "Напиши своё доказательство здесь...",
     "reflectionPlaceholder": "Необязательно, но очень полезно...",
-    "analyzing": "Mara анализирует...",
+    "analyzing": "Мара анализирует твой ответ...",
     "submitProof": "Отправить доказательство → +{{xp}} XP",
     "howToTitle": "Как это сделать:",
     "reflectLabel": "💭 Ты поразмыслишь: ",
@@ -852,7 +891,16 @@
     "communitySubtitle": "Публичные страницы, написанные Mara для участников сообщества",
     "communityEmpty": "Пока нет публичных страниц.",
     "communityEmptyDesc": "Отметь страницу из своего дневника как «Сообщество», чтобы поделиться ею.",
-    "anonymous": "Аноним"
+    "anonymous": "Аноним",
+    "freeBadge": "БЕСПЛАТНО",
+    "milestone": {
+      "newMindset": "Новое Мышление",
+      "newHabit": "Новая Привычка",
+      "newSkills": "Новые Навыки",
+      "newBody": "Новое Тело",
+      "newLife": "Новая Жизнь",
+      "newYou": "Новый Ты"
+    }
   },
   "missionShare": {
     "cardLabel": "Миссия выполнена",

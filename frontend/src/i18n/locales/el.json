@@ -278,7 +278,64 @@
     "insertInText": "📝 Insert into text",
     "untitled": "Untitled",
     "maraNoSuggestion": "Mara could not generate a suggestion.",
-    "maraError": "⚠️ Could not contact Mara AI."
+    "maraError": "⚠️ Could not contact Mara AI.",
+    "deleteConfirm": "Διαγραφή αυτού του άρθρου; Αυτή η ενέργεια είναι μη αναστρέψιμη.",
+    "searchPlaceholder": "🔍 Αναζήτηση κατά τίτλο ή συγγραφέα…",
+    "tagline": "Η πλατφόρμα για συγγραφείς",
+    "home": "Αρχική",
+    "heroTitle": "Γράψε. Δημοσίευσε. Φτάσε στους αναγνώστες.",
+    "heroBody": "Το Writers Hub είναι το σπίτι των συγγραφέων στο MaraAI — δημόσια, VIP και premium άρθρα, ένας πλούσιος επεξεργαστής και η προσοχή της κοινότητας σε ένα μέρος.",
+    "ctaWrite": "Αρχίστε να γράφετε",
+    "ctaExplore": "Εξερεύνηση βιβλιοθήκης",
+    "featured": "Προτεινόμενο",
+    "categoryLabel": "Κατηγορία",
+    "visibilityLabel": "Ορατότητα",
+    "priceLabel": "Τιμή (EUR)",
+    "readTime": "{{n}} λεπτά",
+    "shareOnYou": "Κοινοποίηση στο You",
+    "sharedToYou": "Κοινοποιήθηκε στο προφίλ σου",
+    "shareFailed": "Αδυναμία κοινοποίησης",
+    "publishFailed": "Αποτυχία δημοσίευσης",
+    "errorAuthRequired": "Συνδέσου για να δημοσιεύσεις",
+    "errorPlanBlocked": "Το πρόγραμμά σου δεν επιτρέπει αυτή την ορατότητα",
+    "errorVipRequired": "Απαιτείται συνδρομή VIP για ανάγνωση αυτού του άρθρου",
+    "errorPurchaseRequired": "Απαιτείται αγορά για ανάγνωση αυτού του άρθρου",
+    "errorNotFound": "Το άρθρο δεν βρέθηκε",
+    "errorGeneric": "Δεν ήταν δυνατή η φόρτωση του άρθρου",
+    "category": {
+      "fiction": "Μυθοπλασία",
+      "nonFiction": "Μη μυθοπλασία",
+      "business": "Επιχείρηση",
+      "poetry": "Ποίηση",
+      "journal": "Ημερολόγιο",
+      "tutorials": "Οδηγίες"
+    },
+    "visibility": {
+      "public": "Δημόσιο",
+      "vip": "VIP",
+      "paid": "Premium"
+    },
+    "removeCover": "Κατάργηση",
+    "uploadCover": "Μεταφόρτωση εξωφύλλου",
+    "uploading": "Μεταφόρτωση...",
+    "editor": {
+      "bold": "Έντονο",
+      "italic": "Πλάγιο",
+      "heading2": "Κεφαλίδα 2",
+      "heading3": "Κεφαλίδα 3",
+      "bulletList": "Λίστα με κουκκίδες",
+      "orderedList": "Αριθμημένη λίστα",
+      "blockquote": "Παράθεση",
+      "inlineCode": "Ενσωματωμένος κώδικας",
+      "codeBlock": "Μπλοκ κώδικα",
+      "link": "Σύνδεσμος",
+      "image": "Εικόνα",
+      "undo": "Αναίρεση",
+      "redo": "Επανάληψη",
+      "imagePrompt": "URL εικόνας (https://…)",
+      "linkPrompt": "URL συνδέσμου",
+      "toolbar": "Μορφοποίηση"
+    }
   },
   "reels": {
     "feed": "Feed",
@@ -319,7 +376,23 @@
     "engagementLabel": "Engagement",
     "saved": "Saved",
     "saveLabel": "Save",
-    "createFirst": "+ Create Reel"
+    "createFirst": "+ Create Reel",
+    "defaultCreator": "Δημιουργός",
+    "untitled": "Χωρίς τίτλο",
+    "originalAudio": "Πρωτότυπος ήχος",
+    "generalTag": "Γενικά",
+    "youLabel": "Εσύ",
+    "videoPlayer": "Αναπαραγωγή βίντεο",
+    "headerTitle": "REELS",
+    "tags": {
+      "ai": "ΤΝ",
+      "tech": "Tech",
+      "future": "Μέλλον",
+      "design": "Σχεδιασμός",
+      "music": "Μουσική",
+      "comedy": "Κωμωδία",
+      "tutorial": "Οδηγός"
+    }
   },
   "you": {
     "profileTab": "📊 Profile",
@@ -648,7 +721,7 @@
     "stepsTitle": "Steps to follow:",
     "proofPlaceholder": "Write your proof here...",
     "reflectionPlaceholder": "Optional, but powerful...",
-    "analyzing": "Mara is analyzing...",
+    "analyzing": "Η Mara αναλύει την απάντησή σου...",
     "submitProof": "Submit proof → +{{xp}} XP",
     "howToTitle": "How to do this:",
     "reflectLabel": "💭 You will reflect: ",
@@ -775,7 +848,16 @@
     "communitySubtitle": "Public pages written by Mara for community members",
     "communityEmpty": "No public pages yet.",
     "communityEmptyDesc": "Mark a page from your journal as 'Community' to share it.",
-    "anonymous": "Anonymous"
+    "anonymous": "Anonymous",
+    "freeBadge": "ΔΩΡΕΑΝ",
+    "milestone": {
+      "newMindset": "Νέα Νοοτροπία",
+      "newHabit": "Νέα Συνήθεια",
+      "newSkills": "Νέες Δεξιότητες",
+      "newBody": "Νέο Σώμα",
+      "newLife": "Νέα Ζωή",
+      "newYou": "Νέος Εσύ"
+    }
   },
   "missionShare": {
     "cardLabel": "Mission complete",

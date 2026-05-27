@@ -278,7 +278,64 @@
     "insertInText": "📝 Insert into text",
     "untitled": "Untitled",
     "maraNoSuggestion": "Mara could not generate a suggestion.",
-    "maraError": "⚠️ Could not contact Mara AI."
+    "maraError": "⚠️ Could not contact Mara AI.",
+    "deleteConfirm": "Izbrisati ovaj članak? Ova radnja je nepovratna.",
+    "searchPlaceholder": "🔍 Pretraži po naslovu ili autoru…",
+    "tagline": "Platforma za pisce",
+    "home": "Početna",
+    "heroTitle": "Piši. Objavi. Dohvati čitatelje.",
+    "heroBody": "Writers Hub je dom pisaca na MaraAI — javni, VIP i premium članci, bogati uređivač i pažnja zajednice na jednom mjestu.",
+    "ctaWrite": "Počni pisati",
+    "ctaExplore": "Istraži biblioteku",
+    "featured": "Istaknuto",
+    "categoryLabel": "Kategorija",
+    "visibilityLabel": "Vidljivost",
+    "priceLabel": "Cijena (EUR)",
+    "readTime": "{{n}} min",
+    "shareOnYou": "Dijeli na You",
+    "sharedToYou": "Podijeljeno na tvom profilu",
+    "shareFailed": "Dijeljenje nije uspjelo",
+    "publishFailed": "Objava nije uspjela",
+    "errorAuthRequired": "Prijavi se za objavu",
+    "errorPlanBlocked": "Tvoj plan ne dopušta ovu vidljivost",
+    "errorVipRequired": "Za čitanje ovog članka potrebna je VIP pretplata",
+    "errorPurchaseRequired": "Za čitanje ovog članka potrebna je kupnja",
+    "errorNotFound": "Članak nije pronađen",
+    "errorGeneric": "Nije moguće učitati članak",
+    "category": {
+      "fiction": "Fikcija",
+      "nonFiction": "Nefikcija",
+      "business": "Poslovanje",
+      "poetry": "Poezija",
+      "journal": "Dnevnik",
+      "tutorials": "Vodiči"
+    },
+    "visibility": {
+      "public": "Javno",
+      "vip": "VIP",
+      "paid": "Premium"
+    },
+    "removeCover": "Ukloni",
+    "uploadCover": "Učitaj naslovnicu",
+    "uploading": "Učitavanje...",
+    "editor": {
+      "bold": "Podebljano",
+      "italic": "Kurziv",
+      "heading2": "Naslov 2",
+      "heading3": "Naslov 3",
+      "bulletList": "Neuredeni popis",
+      "orderedList": "Uređeni popis",
+      "blockquote": "Citat",
+      "inlineCode": "Inline kod",
+      "codeBlock": "Blok koda",
+      "link": "Veza",
+      "image": "Slika",
+      "undo": "Poništi",
+      "redo": "Ponovi",
+      "imagePrompt": "URL slike (https://…)",
+      "linkPrompt": "URL veze",
+      "toolbar": "Oblikovanje"
+    }
   },
   "reels": {
     "feed": "Feed",
@@ -319,7 +376,23 @@
     "engagementLabel": "Engagement",
     "saved": "Saved",
     "saveLabel": "Save",
-    "createFirst": "+ Create Reel"
+    "createFirst": "+ Create Reel",
+    "defaultCreator": "Kreator",
+    "untitled": "Bez naslova",
+    "originalAudio": "Originalni zvuk",
+    "generalTag": "Opće",
+    "youLabel": "Ti",
+    "videoPlayer": "Video player",
+    "headerTitle": "REELS",
+    "tags": {
+      "ai": "AI",
+      "tech": "Tech",
+      "future": "Budućnost",
+      "design": "Dizajn",
+      "music": "Glazba",
+      "comedy": "Komedija",
+      "tutorial": "Tutorial"
+    }
   },
   "you": {
     "profileTab": "📊 Profile",
@@ -648,7 +721,7 @@
     "stepsTitle": "Steps to follow:",
     "proofPlaceholder": "Write your proof here...",
     "reflectionPlaceholder": "Optional, but powerful...",
-    "analyzing": "Mara is analyzing...",
+    "analyzing": "Mara analizira tvoj odgovor...",
     "submitProof": "Submit proof → +{{xp}} XP",
     "howToTitle": "How to do this:",
     "reflectLabel": "💭 You will reflect: ",
@@ -775,7 +848,16 @@
     "communitySubtitle": "Public pages written by Mara for community members",
     "communityEmpty": "No public pages yet.",
     "communityEmptyDesc": "Mark a page from your journal as 'Community' to share it.",
-    "anonymous": "Anonymous"
+    "anonymous": "Anonymous",
+    "freeBadge": "BESPLATNO",
+    "milestone": {
+      "newMindset": "Novi Mentalitet",
+      "newHabit": "Nova Navika",
+      "newSkills": "Nove Vještine",
+      "newBody": "Novo Tijelo",
+      "newLife": "Novi Život",
+      "newYou": "Novi Ti"
+    }
   },
   "missionShare": {
     "cardLabel": "Mission complete",

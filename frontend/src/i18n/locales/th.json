@@ -278,7 +278,64 @@
     "insertInText": "📝 Insert into text",
     "untitled": "Untitled",
     "maraNoSuggestion": "Mara could not generate a suggestion.",
-    "maraError": "⚠️ Could not contact Mara AI."
+    "maraError": "⚠️ Could not contact Mara AI.",
+    "deleteConfirm": "ลบบทความนี้? การดำเนินการนี้ไม่สามารถย้อนกลับได้",
+    "searchPlaceholder": "🔍 ค้นหาด้วยชื่อเรื่องหรือผู้เขียน…",
+    "tagline": "แพลตฟอร์มสำหรับนักเขียน",
+    "home": "หน้าหลัก",
+    "heroTitle": "เขียน. เผยแพร่. เข้าถึงผู้อ่าน.",
+    "heroBody": "Writers Hub คือบ้านของนักเขียนบน MaraAI — บทความสาธารณะ VIP และพรีเมียม เครื่องมือแก้ไขที่หลากหลาย และความสนใจของชุมชนในที่เดียว",
+    "ctaWrite": "เริ่มเขียน",
+    "ctaExplore": "สำรวจห้องสมุด",
+    "featured": "แนะนำ",
+    "categoryLabel": "หมวดหมู่",
+    "visibilityLabel": "การมองเห็น",
+    "priceLabel": "ราคา (EUR)",
+    "readTime": "{{n}} นาที",
+    "shareOnYou": "แชร์บน You",
+    "sharedToYou": "แชร์บนโปรไฟล์ของคุณแล้ว",
+    "shareFailed": "ไม่สามารถแชร์ได้",
+    "publishFailed": "การเผยแพร่ล้มเหลว",
+    "errorAuthRequired": "ลงชื่อเข้าใช้เพื่อเผยแพร่",
+    "errorPlanBlocked": "แผนของคุณไม่อนุญาตการมองเห็นนี้",
+    "errorVipRequired": "ต้องสมัคร VIP เพื่ออ่านบทความนี้",
+    "errorPurchaseRequired": "ต้องซื้อเพื่ออ่านบทความนี้",
+    "errorNotFound": "ไม่พบบทความ",
+    "errorGeneric": "ไม่สามารถโหลดบทความได้",
+    "category": {
+      "fiction": "นิยาย",
+      "nonFiction": "สารคดี",
+      "business": "ธุรกิจ",
+      "poetry": "กวีนิพนธ์",
+      "journal": "บันทึก",
+      "tutorials": "บทแนะนำ"
+    },
+    "visibility": {
+      "public": "สาธารณะ",
+      "vip": "VIP",
+      "paid": "พรีเมียม"
+    },
+    "removeCover": "ลบ",
+    "uploadCover": "อัปโหลดปก",
+    "uploading": "กำลังอัปโหลด...",
+    "editor": {
+      "bold": "ตัวหนา",
+      "italic": "ตัวเอียง",
+      "heading2": "หัวข้อ 2",
+      "heading3": "หัวข้อ 3",
+      "bulletList": "รายการแบบมีสัญลักษณ์",
+      "orderedList": "รายการแบบมีลำดับ",
+      "blockquote": "คำพูดอ้างอิง",
+      "inlineCode": "โค้ดแบบอินไลน์",
+      "codeBlock": "บล็อกโค้ด",
+      "link": "ลิงก์",
+      "image": "รูปภาพ",
+      "undo": "เลิกทำ",
+      "redo": "ทำซ้ำ",
+      "imagePrompt": "URL รูปภาพ (https://…)",
+      "linkPrompt": "URL ลิงก์",
+      "toolbar": "การจัดรูปแบบ"
+    }
   },
   "reels": {
     "feed": "Feed",
@@ -319,7 +376,23 @@
     "engagementLabel": "Engagement",
     "saved": "Saved",
     "saveLabel": "Save",
-    "createFirst": "+ Create Reel"
+    "createFirst": "+ Create Reel",
+    "defaultCreator": "ผู้สร้าง",
+    "untitled": "ไม่มีชื่อ",
+    "originalAudio": "เสียงต้นฉบับ",
+    "generalTag": "ทั่วไป",
+    "youLabel": "คุณ",
+    "videoPlayer": "เครื่องเล่นวิดีโอ",
+    "headerTitle": "REELS",
+    "tags": {
+      "ai": "AI",
+      "tech": "เทค",
+      "future": "อนาคต",
+      "design": "ดีไซน์",
+      "music": "เพลง",
+      "comedy": "ตลก",
+      "tutorial": "บทแนะนำ"
+    }
   },
   "you": {
     "profileTab": "📊 Profile",
@@ -648,7 +721,7 @@
     "stepsTitle": "Steps to follow:",
     "proofPlaceholder": "Write your proof here...",
     "reflectionPlaceholder": "Optional, but powerful...",
-    "analyzing": "Mara is analyzing...",
+    "analyzing": "Mara กำลังวิเคราะห์คำตอบของคุณ...",
     "submitProof": "Submit proof → +{{xp}} XP",
     "howToTitle": "How to do this:",
     "reflectLabel": "💭 You will reflect: ",
@@ -775,7 +848,16 @@
     "communitySubtitle": "Public pages written by Mara for community members",
     "communityEmpty": "No public pages yet.",
     "communityEmptyDesc": "Mark a page from your journal as 'Community' to share it.",
-    "anonymous": "Anonymous"
+    "anonymous": "Anonymous",
+    "freeBadge": "ฟรี",
+    "milestone": {
+      "newMindset": "แนวคิดใหม่",
+      "newHabit": "นิสัยใหม่",
+      "newSkills": "ทักษะใหม่",
+      "newBody": "ร่างกายใหม่",
+      "newLife": "ชีวิตใหม่",
+      "newYou": "คุณใหม่"
+    }
   },
   "missionShare": {
     "cardLabel": "Mission complete",

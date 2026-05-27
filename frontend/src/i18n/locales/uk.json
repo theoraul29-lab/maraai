@@ -355,6 +355,29 @@
       "public": "Публічно",
       "vip": "VIP",
       "paid": "Преміум"
+    },
+    "deleteConfirm": "Видалити цю статтю? Ця дія незворотна.",
+    "searchPlaceholder": "🔍 Пошук за заголовком або автором…",
+    "removeCover": "Видалити",
+    "uploadCover": "Завантажити обкладинку",
+    "uploading": "Завантаження...",
+    "editor": {
+      "bold": "Жирний",
+      "italic": "Курсив",
+      "heading2": "Заголовок 2",
+      "heading3": "Заголовок 3",
+      "bulletList": "Маркований список",
+      "orderedList": "Нумерований список",
+      "blockquote": "Цитата",
+      "inlineCode": "Вбудований код",
+      "codeBlock": "Блок коду",
+      "link": "Посилання",
+      "image": "Зображення",
+      "undo": "Скасувати",
+      "redo": "Повторити",
+      "imagePrompt": "URL зображення (https://…)",
+      "linkPrompt": "URL посилання",
+      "toolbar": "Форматування"
     }
   },
   "reels": {
@@ -396,7 +419,23 @@
     "engagementLabel": "Залученість",
     "saved": "Збережено",
     "saveLabel": "Зберегти",
-    "createFirst": "+ Створити Reel"
+    "createFirst": "+ Створити Reel",
+    "defaultCreator": "Автор",
+    "untitled": "Без назви",
+    "originalAudio": "Оригінальний звук",
+    "generalTag": "Загальне",
+    "youLabel": "Ви",
+    "videoPlayer": "Відеоплеєр",
+    "headerTitle": "REELS",
+    "tags": {
+      "ai": "ШІ",
+      "tech": "Технології",
+      "future": "Майбутнє",
+      "design": "Дизайн",
+      "music": "Музика",
+      "comedy": "Комедія",
+      "tutorial": "Урок"
+    }
   },
   "you": {
     "profileTab": "📊 Профіль",
@@ -725,7 +764,7 @@
     "stepsTitle": "Кроки для виконання:",
     "proofPlaceholder": "Напиши своє підтвердження тут...",
     "reflectionPlaceholder": "Необов'язково, але дуже корисно...",
-    "analyzing": "Mara аналізує...",
+    "analyzing": "Мара аналізує твою відповідь...",
     "submitProof": "Надіслати підтвердження → +{{xp}} XP",
     "howToTitle": "Як це зробити:",
     "reflectLabel": "💭 Ти поміркуєш: ",
@@ -852,7 +891,16 @@
     "communitySubtitle": "Публічні сторінки, написані Mara для учасників спільноти",
     "communityEmpty": "Поки немає публічних сторінок.",
     "communityEmptyDesc": "Познач сторінку зі свого щоденника як «Спільнота», щоб поділитися нею.",
-    "anonymous": "Анонім"
+    "anonymous": "Анонім",
+    "freeBadge": "БЕЗКОШТОВНО",
+    "milestone": {
+      "newMindset": "Нове Мислення",
+      "newHabit": "Нова Звичка",
+      "newSkills": "Нові Навички",
+      "newBody": "Нове Тіло",
+      "newLife": "Нове Життя",
+      "newYou": "Новий Ти"
+    }
   },
   "missionShare": {
     "cardLabel": "Місію виконано",

@@ -292,7 +292,64 @@
     "insertInText": "📝 पाठ में डालें",
     "untitled": "शीर्षकहीन",
     "maraNoSuggestion": "मारा सुझाव नहीं बना सकी।",
-    "maraError": "⚠️ Mara AI से संपर्क नहीं हो सका।"
+    "maraError": "⚠️ Mara AI से संपर्क नहीं हो सका।",
+    "deleteConfirm": "यह लेख हटाएं? यह क्रिया अपरिवर्तनीय है।",
+    "searchPlaceholder": "🔍 शीर्षक या लेखक से खोजें…",
+    "tagline": "लेखकों के लिए प्लेटफॉर्म",
+    "home": "होम",
+    "heroTitle": "लिखें। प्रकाशित करें। पाठकों तक पहुंचें।",
+    "heroBody": "Writers Hub MaraAI पर लेखकों का घर है — सार्वजनिक, VIP और प्रीमियम लेख, एक समृद्ध संपादक, और एक ही स्थान पर समुदाय का ध्यान।",
+    "ctaWrite": "लिखना शुरू करें",
+    "ctaExplore": "लाइब्रेरी खोजें",
+    "featured": "विशेष रुप से प्रदर्शित",
+    "categoryLabel": "श्रेणी",
+    "visibilityLabel": "दृश्यता",
+    "priceLabel": "मूल्य (EUR)",
+    "readTime": "{{n}} मिनट",
+    "shareOnYou": "You पर शेयर करें",
+    "sharedToYou": "आपकी प्रोफाइल पर शेयर किया गया",
+    "shareFailed": "शेयर नहीं हो सका",
+    "publishFailed": "प्रकाशित करने में विफल",
+    "errorAuthRequired": "प्रकाशित करने के लिए साइन इन करें",
+    "errorPlanBlocked": "आपकी योजना इस दृश्यता की अनुमति नहीं देती",
+    "errorVipRequired": "इस लेख को पढ़ने के लिए VIP सदस्यता आवश्यक है",
+    "errorPurchaseRequired": "इस लेख को पढ़ने के लिए खरीदारी आवश्यक है",
+    "errorNotFound": "लेख नहीं मिला",
+    "errorGeneric": "लेख लोड नहीं हो सका",
+    "category": {
+      "fiction": "काल्पनिक",
+      "nonFiction": "गैर-काल्पनिक",
+      "business": "व्यवसाय",
+      "poetry": "कविता",
+      "journal": "पत्रिका",
+      "tutorials": "ट्यूटोरियल"
+    },
+    "visibility": {
+      "public": "सार्वजनिक",
+      "vip": "VIP",
+      "paid": "प्रीमियम"
+    },
+    "removeCover": "हटाएं",
+    "uploadCover": "कवर अपलोड करें",
+    "uploading": "अपलोड हो रहा है...",
+    "editor": {
+      "bold": "बोल्ड",
+      "italic": "इटैलिक",
+      "heading2": "शीर्षक 2",
+      "heading3": "शीर्षक 3",
+      "bulletList": "बुलेट सूची",
+      "orderedList": "क्रमांकित सूची",
+      "blockquote": "उद्धरण",
+      "inlineCode": "इनलाइन कोड",
+      "codeBlock": "कोड ब्लॉक",
+      "link": "लिंक",
+      "image": "चित्र",
+      "undo": "पूर्ववत करें",
+      "redo": "फिर से करें",
+      "imagePrompt": "छवि URL (https://…)",
+      "linkPrompt": "लिंक URL",
+      "toolbar": "स्वरूपण"
+    }
   },
   "reels": {
     "feed": "फ़ीड",
@@ -333,7 +390,23 @@
     "engagementLabel": "सहभागिता",
     "saved": "सहेजा गया",
     "saveLabel": "सहेजें",
-    "createFirst": "+ Reel बनाएँ"
+    "createFirst": "+ Reel बनाएँ",
+    "defaultCreator": "क्रिएटर",
+    "untitled": "बिना शीर्षक",
+    "originalAudio": "मूल ऑडियो",
+    "generalTag": "सामान्य",
+    "youLabel": "आप",
+    "videoPlayer": "वीडियो प्लेयर",
+    "headerTitle": "REELS",
+    "tags": {
+      "ai": "AI",
+      "tech": "टेक",
+      "future": "भविष्य",
+      "design": "डिज़ाइन",
+      "music": "संगीत",
+      "comedy": "कॉमेडी",
+      "tutorial": "ट्यूटोरियल"
+    }
   },
   "you": {
     "profileTab": "📊 प्रोफ़ाइल",
@@ -662,7 +735,7 @@
     "stepsTitle": "Steps to follow:",
     "proofPlaceholder": "Write your proof here...",
     "reflectionPlaceholder": "Optional, but powerful...",
-    "analyzing": "Mara is analyzing...",
+    "analyzing": "Mara आपके उत्तर का विश्लेषण कर रही है...",
     "submitProof": "Submit proof → +{{xp}} XP",
     "howToTitle": "How to do this:",
     "reflectLabel": "💭 You will reflect: ",
@@ -789,7 +862,16 @@
     "communitySubtitle": "Public pages written by Mara for community members",
     "communityEmpty": "No public pages yet.",
     "communityEmptyDesc": "Mark a page from your journal as 'Community' to share it.",
-    "anonymous": "Anonymous"
+    "anonymous": "Anonymous",
+    "freeBadge": "मुफ्त",
+    "milestone": {
+      "newMindset": "नई मानसिकता",
+      "newHabit": "नई आदत",
+      "newSkills": "नए कौशल",
+      "newBody": "नया शरीर",
+      "newLife": "नया जीवन",
+      "newYou": "नया आप"
+    }
   },
   "missionShare": {
     "cardLabel": "Mission complete",

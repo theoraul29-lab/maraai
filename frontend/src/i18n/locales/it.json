@@ -355,6 +355,29 @@
       "public": "Pubblico",
       "vip": "VIP",
       "paid": "Premium"
+    },
+    "deleteConfirm": "Eliminare questo articolo? Questa azione è irreversibile.",
+    "searchPlaceholder": "🔍 Cerca per titolo o autore…",
+    "removeCover": "Rimuovi",
+    "uploadCover": "Carica copertina",
+    "uploading": "Caricamento...",
+    "editor": {
+      "bold": "Grassetto",
+      "italic": "Corsivo",
+      "heading2": "Intestazione 2",
+      "heading3": "Intestazione 3",
+      "bulletList": "Elenco puntato",
+      "orderedList": "Elenco numerato",
+      "blockquote": "Citazione",
+      "inlineCode": "Codice inline",
+      "codeBlock": "Blocco di codice",
+      "link": "Collegamento",
+      "image": "Immagine",
+      "undo": "Annulla",
+      "redo": "Ripristina",
+      "imagePrompt": "URL immagine (https://…)",
+      "linkPrompt": "URL collegamento",
+      "toolbar": "Formattazione"
     }
   },
   "reels": {
@@ -396,7 +419,23 @@
     "engagementLabel": "Engagement",
     "saved": "Salvato",
     "saveLabel": "Salva",
-    "createFirst": "+ Crea Reel"
+    "createFirst": "+ Crea Reel",
+    "defaultCreator": "Creatore",
+    "untitled": "Senza titolo",
+    "originalAudio": "Audio originale",
+    "generalTag": "Generale",
+    "youLabel": "Tu",
+    "videoPlayer": "Lettore video",
+    "headerTitle": "REELS",
+    "tags": {
+      "ai": "IA",
+      "tech": "Tech",
+      "future": "Futuro",
+      "design": "Design",
+      "music": "Musica",
+      "comedy": "Commedia",
+      "tutorial": "Tutorial"
+    }
   },
   "you": {
     "profileTab": "📊 Profilo",
@@ -725,7 +764,7 @@
     "stepsTitle": "Passi da seguire:",
     "proofPlaceholder": "Scrivi qui la tua prova...",
     "reflectionPlaceholder": "Opzionale, ma potente...",
-    "analyzing": "Mara sta analizzando...",
+    "analyzing": "Mara sta analizzando la tua risposta...",
     "submitProof": "Invia prova → +{{xp}} XP",
     "howToTitle": "Come farlo:",
     "reflectLabel": "💭 Rifletterai: ",
@@ -852,7 +891,16 @@
     "communitySubtitle": "Pagine pubbliche scritte da Mara per i membri della comunità",
     "communityEmpty": "Nessuna pagina pubblica ancora.",
     "communityEmptyDesc": "Contrassegna una pagina del tuo diario come 'Comunità' per condividerla.",
-    "anonymous": "Anonimo"
+    "anonymous": "Anonimo",
+    "freeBadge": "GRATIS",
+    "milestone": {
+      "newMindset": "Nuova Mentalità",
+      "newHabit": "Nuova Abitudine",
+      "newSkills": "Nuove Competenze",
+      "newBody": "Nuovo Corpo",
+      "newLife": "Nuova Vita",
+      "newYou": "Nuovo Te"
+    }
   },
   "missionShare": {
     "cardLabel": "Missione completata",

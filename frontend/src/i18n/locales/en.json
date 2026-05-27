@@ -357,6 +357,27 @@
       "public": "Public",
       "vip": "VIP",
       "paid": "Premium"
+    },
+    "removeCover": "Remove",
+    "uploadCover": "Upload cover",
+    "uploading": "Uploading...",
+    "editor": {
+      "bold": "Bold",
+      "italic": "Italic",
+      "heading2": "Heading 2",
+      "heading3": "Heading 3",
+      "bulletList": "Bullet list",
+      "orderedList": "Numbered list",
+      "blockquote": "Blockquote",
+      "inlineCode": "Inline code",
+      "codeBlock": "Code block",
+      "link": "Link",
+      "image": "Image",
+      "undo": "Undo",
+      "redo": "Redo",
+      "imagePrompt": "Image URL (https://…)",
+      "linkPrompt": "Link URL",
+      "toolbar": "Formatting"
     }
   },
   "reels": {
@@ -399,7 +420,23 @@
     "saved": "Saved",
     "saveLabel": "Save",
     "createFirst": "+ Create Reel",
-    "deleteConfirm": "Delete this reel?"
+    "deleteConfirm": "Delete this reel?",
+    "defaultCreator": "Creator",
+    "untitled": "Untitled",
+    "originalAudio": "Original Audio",
+    "generalTag": "General",
+    "youLabel": "You",
+    "videoPlayer": "Video Player",
+    "headerTitle": "REELS",
+    "tags": {
+      "ai": "AI",
+      "tech": "Tech",
+      "future": "Future",
+      "design": "Design",
+      "music": "Music",
+      "comedy": "Comedy",
+      "tutorial": "Tutorial"
+    }
   },
   "you": {
     "profileTab": "📊 Profile",
@@ -728,7 +765,7 @@
     "stepsTitle": "Steps to follow:",
     "proofPlaceholder": "Write your proof here...",
     "reflectionPlaceholder": "Optional, but powerful...",
-    "analyzing": "Mara is analyzing...",
+    "analyzing": "Mara is analyzing your answer...",
     "submitProof": "Submit proof → +{{xp}} XP",
     "howToTitle": "How to do this:",
     "reflectLabel": "💭 You will reflect: ",
@@ -862,7 +899,16 @@
     "paymentSuccess": "✅ Payment successful! {{name}}",
     "paymentFailed": "❌ Payment failed. Try again or contact support.",
     "paymentCancelled": "↩️ Payment cancelled.",
-    "levelMetaFull": "Lvl {{level}} · {{count}} missions"
+    "levelMetaFull": "Lvl {{level}} · {{count}} missions",
+    "freeBadge": "FREE",
+    "milestone": {
+      "newMindset": "New Mindset",
+      "newHabit": "New Habit",
+      "newSkills": "New Skills",
+      "newBody": "New Body",
+      "newLife": "New Life",
+      "newYou": "New You"
+    }
   },
   "missionShare": {
     "cardLabel": "Mission complete",

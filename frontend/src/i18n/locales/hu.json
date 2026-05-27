@@ -278,7 +278,64 @@
     "insertInText": "📝 Insert into text",
     "untitled": "Untitled",
     "maraNoSuggestion": "Mara could not generate a suggestion.",
-    "maraError": "⚠️ Could not contact Mara AI."
+    "maraError": "⚠️ Could not contact Mara AI.",
+    "deleteConfirm": "Törli ezt a cikket? Ez a művelet visszafordíthatatlan.",
+    "searchPlaceholder": "🔍 Keresés cím vagy szerző szerint…",
+    "tagline": "Az írók platformja",
+    "home": "Főoldal",
+    "heroTitle": "Írj. Publikálj. Érj el olvasókat.",
+    "heroBody": "A Writers Hub az írók otthona a MaraAI-on — nyilvános, VIP és prémium cikkek, gazdag szerkesztő és a közösség figyelme egy helyen.",
+    "ctaWrite": "Kezdj el írni",
+    "ctaExplore": "Fedezd fel a könyvtárat",
+    "featured": "Kiemelt",
+    "categoryLabel": "Kategória",
+    "visibilityLabel": "Láthatóság",
+    "priceLabel": "Ár (EUR)",
+    "readTime": "{{n}} perc",
+    "shareOnYou": "Megosztás a You-on",
+    "sharedToYou": "Megosztva a profilodon",
+    "shareFailed": "Nem sikerült megosztani",
+    "publishFailed": "A közzététel sikertelen",
+    "errorAuthRequired": "Jelentkezz be a közzétételhez",
+    "errorPlanBlocked": "A terved nem engedélyezi ezt a láthatóságot",
+    "errorVipRequired": "A cikk olvasásához VIP előfizetés szükséges",
+    "errorPurchaseRequired": "A cikk olvasásához vásárlás szükséges",
+    "errorNotFound": "A cikk nem található",
+    "errorGeneric": "A cikket nem sikerült betölteni",
+    "category": {
+      "fiction": "Szépirodalom",
+      "nonFiction": "Ismeretterjesztő",
+      "business": "Üzlet",
+      "poetry": "Költészet",
+      "journal": "Napló",
+      "tutorials": "Útmutatók"
+    },
+    "visibility": {
+      "public": "Nyilvános",
+      "vip": "VIP",
+      "paid": "Prémium"
+    },
+    "removeCover": "Eltávolítás",
+    "uploadCover": "Borítókép feltöltése",
+    "uploading": "Feltöltés...",
+    "editor": {
+      "bold": "Félkövér",
+      "italic": "Dőlt",
+      "heading2": "2. szintű fejléc",
+      "heading3": "3. szintű fejléc",
+      "bulletList": "Felsorolásos lista",
+      "orderedList": "Számozott lista",
+      "blockquote": "Idézet",
+      "inlineCode": "Beágyazott kód",
+      "codeBlock": "Kódblokk",
+      "link": "Link",
+      "image": "Kép",
+      "undo": "Visszavonás",
+      "redo": "Újra",
+      "imagePrompt": "Kép URL-je (https://…)",
+      "linkPrompt": "Link URL-je",
+      "toolbar": "Formázás"
+    }
   },
   "reels": {
     "feed": "Feed",
@@ -319,7 +376,23 @@
     "engagementLabel": "Engagement",
     "saved": "Saved",
     "saveLabel": "Save",
-    "createFirst": "+ Create Reel"
+    "createFirst": "+ Create Reel",
+    "defaultCreator": "Alkotó",
+    "untitled": "Cím nélkül",
+    "originalAudio": "Eredeti hang",
+    "generalTag": "Általános",
+    "youLabel": "Te",
+    "videoPlayer": "Videólejátszó",
+    "headerTitle": "REELS",
+    "tags": {
+      "ai": "MI",
+      "tech": "Tech",
+      "future": "Jövő",
+      "design": "Design",
+      "music": "Zene",
+      "comedy": "Komédia",
+      "tutorial": "Útmutató"
+    }
   },
   "you": {
     "profileTab": "📊 Profile",
@@ -648,7 +721,7 @@
     "stepsTitle": "Steps to follow:",
     "proofPlaceholder": "Write your proof here...",
     "reflectionPlaceholder": "Optional, but powerful...",
-    "analyzing": "Mara is analyzing...",
+    "analyzing": "Mara elemzi a válaszodat...",
     "submitProof": "Submit proof → +{{xp}} XP",
     "howToTitle": "How to do this:",
     "reflectLabel": "💭 You will reflect: ",
@@ -775,7 +848,16 @@
     "communitySubtitle": "Public pages written by Mara for community members",
     "communityEmpty": "No public pages yet.",
     "communityEmptyDesc": "Mark a page from your journal as 'Community' to share it.",
-    "anonymous": "Anonymous"
+    "anonymous": "Anonymous",
+    "freeBadge": "INGYENES",
+    "milestone": {
+      "newMindset": "Új Gondolkodásmód",
+      "newHabit": "Új Szokás",
+      "newSkills": "Új Készségek",
+      "newBody": "Új Test",
+      "newLife": "Új Élet",
+      "newYou": "Új Te"
+    }
   },
   "missionShare": {
     "cardLabel": "Mission complete",

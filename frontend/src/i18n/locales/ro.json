@@ -357,6 +357,27 @@
       "public": "Public",
       "vip": "VIP",
       "paid": "Premium"
+    },
+    "removeCover": "Șterge",
+    "uploadCover": "Încarcă copertă",
+    "uploading": "Se încarcă...",
+    "editor": {
+      "bold": "Aldin",
+      "italic": "Cursiv",
+      "heading2": "Titlu 2",
+      "heading3": "Titlu 3",
+      "bulletList": "Listă cu marcatori",
+      "orderedList": "Listă numerotată",
+      "blockquote": "Citat",
+      "inlineCode": "Cod inline",
+      "codeBlock": "Bloc de cod",
+      "link": "Link",
+      "image": "Imagine",
+      "undo": "Anulează",
+      "redo": "Refacere",
+      "imagePrompt": "URL imagine (https://…)",
+      "linkPrompt": "URL link",
+      "toolbar": "Formatare"
     }
   },
   "reels": {
@@ -399,7 +420,23 @@
     "saved": "Salvat",
     "saveLabel": "Salvează",
     "createFirst": "+ Creează reel",
-    "deleteConfirm": "Ștergi acest reel?"
+    "deleteConfirm": "Ștergi acest reel?",
+    "defaultCreator": "Creator",
+    "untitled": "Fără titlu",
+    "originalAudio": "Audio original",
+    "generalTag": "General",
+    "youLabel": "Tu",
+    "videoPlayer": "Player video",
+    "headerTitle": "REELS",
+    "tags": {
+      "ai": "AI",
+      "tech": "Tech",
+      "future": "Viitor",
+      "design": "Design",
+      "music": "Muzică",
+      "comedy": "Comedie",
+      "tutorial": "Tutorial"
+    }
   },
   "you": {
     "profileTab": "📊 Profil",
@@ -728,7 +765,7 @@
     "stepsTitle": "Pași de urmat:",
     "proofPlaceholder": "Scrie dovada ta aici...",
     "reflectionPlaceholder": "Opțional, dar puternic...",
-    "analyzing": "Mara analizează...",
+    "analyzing": "Mara analizează răspunsul tău...",
     "submitProof": "Trimite dovada → +{{xp}} XP",
     "howToTitle": "Cum faci asta:",
     "reflectLabel": "💭 Vei reflecta: ",
@@ -862,7 +899,16 @@
     "paymentSuccess": "✅ Plată reușită! {{name}}",
     "paymentFailed": "❌ Plata a eșuat. Încearcă din nou sau contactează suportul.",
     "paymentCancelled": "↩️ Plata a fost anulată.",
-    "levelMetaFull": "Lvl {{level}} · {{count}} misiuni"
+    "levelMetaFull": "Lvl {{level}} · {{count}} misiuni",
+    "freeBadge": "GRATUIT",
+    "milestone": {
+      "newMindset": "Mentalitate Nouă",
+      "newHabit": "Obicei Nou",
+      "newSkills": "Abilități Noi",
+      "newBody": "Corp Nou",
+      "newLife": "Viață Nouă",
+      "newYou": "Noul Tu"
+    }
   },
   "missionShare": {
     "cardLabel": "Misiune completă",

@@ -355,6 +355,29 @@
       "public": "Публично",
       "vip": "VIP",
       "paid": "Премиум"
+    },
+    "deleteConfirm": "Изтрий тази статия? Това действие е необратимо.",
+    "searchPlaceholder": "🔍 Търсене по заглавие или автор…",
+    "removeCover": "Премахни",
+    "uploadCover": "Качи корица",
+    "uploading": "Качване...",
+    "editor": {
+      "bold": "Удебелен",
+      "italic": "Курсив",
+      "heading2": "Заглавие 2",
+      "heading3": "Заглавие 3",
+      "bulletList": "Списък с точки",
+      "orderedList": "Номериран списък",
+      "blockquote": "Цитат",
+      "inlineCode": "Вграден код",
+      "codeBlock": "Блок с код",
+      "link": "Линк",
+      "image": "Изображение",
+      "undo": "Отмяна",
+      "redo": "Повторение",
+      "imagePrompt": "URL на изображение (https://…)",
+      "linkPrompt": "URL на линк",
+      "toolbar": "Форматиране"
     }
   },
   "reels": {
@@ -396,7 +419,23 @@
     "engagementLabel": "Ангажираност",
     "saved": "Запазено",
     "saveLabel": "Запази",
-    "createFirst": "+ Създай Reel"
+    "createFirst": "+ Създай Reel",
+    "defaultCreator": "Създател",
+    "untitled": "Без заглавие",
+    "originalAudio": "Оригинален звук",
+    "generalTag": "Общо",
+    "youLabel": "Ти",
+    "videoPlayer": "Видео плейър",
+    "headerTitle": "REELS",
+    "tags": {
+      "ai": "ИИ",
+      "tech": "Технологии",
+      "future": "Бъдеще",
+      "design": "Дизайн",
+      "music": "Музика",
+      "comedy": "Комедия",
+      "tutorial": "Урок"
+    }
   },
   "you": {
     "profileTab": "📊 Профил",
@@ -725,7 +764,7 @@
     "stepsTitle": "Стъпки за следване:",
     "proofPlaceholder": "Напиши своето доказателство тук...",
     "reflectionPlaceholder": "Незадължително, но мощно...",
-    "analyzing": "Mara анализира...",
+    "analyzing": "Мара анализира отговора ти...",
     "submitProof": "Изпрати доказателство → +{{xp}} XP",
     "howToTitle": "Как да го направиш:",
     "reflectLabel": "💭 Ще размислиш: ",
@@ -852,7 +891,16 @@
     "communitySubtitle": "Публични страници, написани от Mara за членовете на общността",
     "communityEmpty": "Все още няма публични страници.",
     "communityEmptyDesc": "Маркирай страница от дневника си като 'Общност', за да я споделиш.",
-    "anonymous": "Анонимен"
+    "anonymous": "Анонимен",
+    "freeBadge": "БЕЗПЛАТНО",
+    "milestone": {
+      "newMindset": "Ново Мислене",
+      "newHabit": "Нов Навик",
+      "newSkills": "Нови Умения",
+      "newBody": "Ново Тяло",
+      "newLife": "Нов Живот",
+      "newYou": "Нов Ти"
+    }
   },
   "missionShare": {
     "cardLabel": "Мисията е изпълнена",

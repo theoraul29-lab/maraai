@@ -278,7 +278,64 @@
     "insertInText": "📝 Insert into text",
     "untitled": "Untitled",
     "maraNoSuggestion": "Mara could not generate a suggestion.",
-    "maraError": "⚠️ Could not contact Mara AI."
+    "maraError": "⚠️ Could not contact Mara AI.",
+    "deleteConfirm": "Smazat tento článek? Tato akce je nevratná.",
+    "searchPlaceholder": "🔍 Hledat podle názvu nebo autora…",
+    "tagline": "Platforma pro spisovatele",
+    "home": "Domů",
+    "heroTitle": "Piš. Publikuj. Oslovuj čtenáře.",
+    "heroBody": "Writers Hub je domov pro spisovatele na MaraAI — veřejné, VIP a prémiové články, bohatý editor a pozornost komunity na jednom místě.",
+    "ctaWrite": "Začít psát",
+    "ctaExplore": "Prozkoumat knihovnu",
+    "featured": "Doporučené",
+    "categoryLabel": "Kategorie",
+    "visibilityLabel": "Viditelnost",
+    "priceLabel": "Cena (EUR)",
+    "readTime": "{{n}} min",
+    "shareOnYou": "Sdílet v You",
+    "sharedToYou": "Sdíleno na tvém profilu",
+    "shareFailed": "Sdílení selhalo",
+    "publishFailed": "Publikování selhalo",
+    "errorAuthRequired": "Přihlas se, aby sis mohl publikovat",
+    "errorPlanBlocked": "Tvůj plán neumožňuje tuto viditelnost",
+    "errorVipRequired": "Pro čtení tohoto článku je vyžadováno VIP předplatné",
+    "errorPurchaseRequired": "Pro čtení tohoto článku je vyžadován nákup",
+    "errorNotFound": "Článek nenalezen",
+    "errorGeneric": "Článek se nepodařilo načíst",
+    "category": {
+      "fiction": "Beletrie",
+      "nonFiction": "Literatura faktu",
+      "business": "Byznys",
+      "poetry": "Poezie",
+      "journal": "Deník",
+      "tutorials": "Tutoriály"
+    },
+    "visibility": {
+      "public": "Veřejné",
+      "vip": "VIP",
+      "paid": "Prémiové"
+    },
+    "removeCover": "Odebrat",
+    "uploadCover": "Nahrát obálku",
+    "uploading": "Nahrávání...",
+    "editor": {
+      "bold": "Tučné",
+      "italic": "Kurzíva",
+      "heading2": "Nadpis 2",
+      "heading3": "Nadpis 3",
+      "bulletList": "Odrážkový seznam",
+      "orderedList": "Číslovaný seznam",
+      "blockquote": "Citát",
+      "inlineCode": "Inline kód",
+      "codeBlock": "Blok kódu",
+      "link": "Odkaz",
+      "image": "Obrázek",
+      "undo": "Zpět",
+      "redo": "Vpřed",
+      "imagePrompt": "URL obrázku (https://…)",
+      "linkPrompt": "URL odkazu",
+      "toolbar": "Formátování"
+    }
   },
   "reels": {
     "feed": "Feed",
@@ -319,7 +376,23 @@
     "engagementLabel": "Engagement",
     "saved": "Saved",
     "saveLabel": "Save",
-    "createFirst": "+ Create Reel"
+    "createFirst": "+ Create Reel",
+    "defaultCreator": "Tvůrce",
+    "untitled": "Bez názvu",
+    "originalAudio": "Původní zvuk",
+    "generalTag": "Obecné",
+    "youLabel": "Ty",
+    "videoPlayer": "Přehrávač videa",
+    "headerTitle": "REELS",
+    "tags": {
+      "ai": "AI",
+      "tech": "Tech",
+      "future": "Budoucnost",
+      "design": "Design",
+      "music": "Hudba",
+      "comedy": "Komedie",
+      "tutorial": "Návod"
+    }
   },
   "you": {
     "profileTab": "📊 Profile",
@@ -648,7 +721,7 @@
     "stepsTitle": "Steps to follow:",
     "proofPlaceholder": "Write your proof here...",
     "reflectionPlaceholder": "Optional, but powerful...",
-    "analyzing": "Mara is analyzing...",
+    "analyzing": "Mara analyzuje tvoji odpověď...",
     "submitProof": "Submit proof → +{{xp}} XP",
     "howToTitle": "How to do this:",
     "reflectLabel": "💭 You will reflect: ",
@@ -775,7 +848,16 @@
     "communitySubtitle": "Public pages written by Mara for community members",
     "communityEmpty": "No public pages yet.",
     "communityEmptyDesc": "Mark a page from your journal as 'Community' to share it.",
-    "anonymous": "Anonymous"
+    "anonymous": "Anonymous",
+    "freeBadge": "ZDARMA",
+    "milestone": {
+      "newMindset": "Nové Myšlení",
+      "newHabit": "Nový Návyk",
+      "newSkills": "Nové Dovednosti",
+      "newBody": "Nové Tělo",
+      "newLife": "Nový Život",
+      "newYou": "Nový Ty"
+    }
   },
   "missionShare": {
     "cardLabel": "Mission complete",

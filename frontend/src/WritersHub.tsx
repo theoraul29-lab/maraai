@@ -443,7 +443,7 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
 
       <div className="writers-header">
         <h1 className="writers-title">{t('writers.title')}</h1>
-        <div className="writers-header-tagline">{t('writers.tagline', 'Platforma dedicată scriitorilor')}</div>
+        <div className="writers-header-tagline">{t('writers.tagline', 'The platform for writers')}</div>
         <button onClick={onClose} className="writers-close-btn" aria-label={t('writers.close', 'Close')}>✕</button>
       </div>
 
@@ -472,8 +472,8 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
         {view === 'landing' && (
           <div className="writers-landing">
             <section className="writers-hero">
-              <h2>{t('writers.heroTitle', 'Scrie. Publică. Câștigă cititori.')}</h2>
-              <p>{t('writers.heroBody', 'Writers Hub este casa scriitorilor pe MaraAI — articole publice, VIP și premium, editor cu format bogat și audiența comunității într-un singur loc.')}</p>
+              <h2>{t('writers.heroTitle', 'Write. Publish. Reach readers.')}</h2>
+              <p>{t('writers.heroBody', "Writers Hub is the writers' home on MaraAI — public, VIP and premium articles, a rich editor, and the community's attention all in one place.")}</p>
               <div className="writers-hero-actions">
                 <button className="writers-button" onClick={() => setView('write')}>
                   ✍ {t('writers.ctaWrite', 'Start writing')}
@@ -765,7 +765,7 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
                             <button
                               className="writers-delete-btn"
                               onClick={() => deleteArticle(w.id)}
-                              title="Șterge articol"
+                              title={t('common.delete')}
                             >
                               🗑️
                             </button>

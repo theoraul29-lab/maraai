@@ -355,6 +355,29 @@
       "public": "Openbaar",
       "vip": "VIP",
       "paid": "Premium"
+    },
+    "deleteConfirm": "Dit artikel verwijderen? Deze actie is onomkeerbaar.",
+    "searchPlaceholder": "🔍 Zoeken op titel of auteur…",
+    "removeCover": "Verwijderen",
+    "uploadCover": "Omslagafbeelding uploaden",
+    "uploading": "Uploaden...",
+    "editor": {
+      "bold": "Vet",
+      "italic": "Cursief",
+      "heading2": "Kop 2",
+      "heading3": "Kop 3",
+      "bulletList": "Ongeordende lijst",
+      "orderedList": "Genummerde lijst",
+      "blockquote": "Citaat",
+      "inlineCode": "Inline code",
+      "codeBlock": "Codeblok",
+      "link": "Link",
+      "image": "Afbeelding",
+      "undo": "Ongedaan maken",
+      "redo": "Opnieuw",
+      "imagePrompt": "Afbeeldings-URL (https://…)",
+      "linkPrompt": "Link-URL",
+      "toolbar": "Opmaak"
     }
   },
   "reels": {
@@ -396,7 +419,23 @@
     "engagementLabel": "Engagement",
     "saved": "Opgeslagen",
     "saveLabel": "Opslaan",
-    "createFirst": "+ Reel maken"
+    "createFirst": "+ Reel maken",
+    "defaultCreator": "Maker",
+    "untitled": "Zonder titel",
+    "originalAudio": "Origineel geluid",
+    "generalTag": "Algemeen",
+    "youLabel": "Jij",
+    "videoPlayer": "Videospeler",
+    "headerTitle": "REELS",
+    "tags": {
+      "ai": "AI",
+      "tech": "Tech",
+      "future": "Toekomst",
+      "design": "Design",
+      "music": "Muziek",
+      "comedy": "Komedie",
+      "tutorial": "Tutorial"
+    }
   },
   "you": {
     "profileTab": "📊 Profiel",
@@ -725,7 +764,7 @@
     "stepsTitle": "Te volgen stappen:",
     "proofPlaceholder": "Schrijf hier je bewijs...",
     "reflectionPlaceholder": "Optioneel, maar krachtig...",
-    "analyzing": "Mara analyseert...",
+    "analyzing": "Mara analyseert je antwoord...",
     "submitProof": "Bewijs indienen → +{{xp}} XP",
     "howToTitle": "Hoe doe je dit:",
     "reflectLabel": "💭 Je zult reflecteren: ",
@@ -852,7 +891,16 @@
     "communitySubtitle": "Openbare pagina's door Mara geschreven voor gemeenschapsleden",
     "communityEmpty": "Nog geen openbare pagina's.",
     "communityEmptyDesc": "Markeer een pagina uit je dagboek als 'Gemeenschap' om het te delen.",
-    "anonymous": "Anoniem"
+    "anonymous": "Anoniem",
+    "freeBadge": "GRATIS",
+    "milestone": {
+      "newMindset": "Nieuwe Mindset",
+      "newHabit": "Nieuwe Gewoonte",
+      "newSkills": "Nieuwe Vaardigheden",
+      "newBody": "Nieuw Lichaam",
+      "newLife": "Nieuw Leven",
+      "newYou": "Nieuw Jij"
+    }
   },
   "missionShare": {
     "cardLabel": "Missie voltooid",

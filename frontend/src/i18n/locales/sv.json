@@ -355,6 +355,29 @@
       "public": "Offentlig",
       "vip": "VIP",
       "paid": "Premium"
+    },
+    "deleteConfirm": "Ta bort den här artikeln? Den här åtgärden är oåterkallelig.",
+    "searchPlaceholder": "🔍 Sök efter titel eller författare…",
+    "removeCover": "Ta bort",
+    "uploadCover": "Ladda upp omslag",
+    "uploading": "Laddar upp...",
+    "editor": {
+      "bold": "Fet",
+      "italic": "Kursiv",
+      "heading2": "Rubrik 2",
+      "heading3": "Rubrik 3",
+      "bulletList": "Punktlista",
+      "orderedList": "Numrerad lista",
+      "blockquote": "Citat",
+      "inlineCode": "Inline-kod",
+      "codeBlock": "Kodblock",
+      "link": "Länk",
+      "image": "Bild",
+      "undo": "Ångra",
+      "redo": "Gör om",
+      "imagePrompt": "Bild-URL (https://…)",
+      "linkPrompt": "Länk-URL",
+      "toolbar": "Formatering"
     }
   },
   "reels": {
@@ -396,7 +419,23 @@
     "engagementLabel": "Engagemang",
     "saved": "Sparad",
     "saveLabel": "Spara",
-    "createFirst": "+ Skapa reel"
+    "createFirst": "+ Skapa reel",
+    "defaultCreator": "Skapare",
+    "untitled": "Utan titel",
+    "originalAudio": "Originalljud",
+    "generalTag": "Allmänt",
+    "youLabel": "Du",
+    "videoPlayer": "Videospelare",
+    "headerTitle": "REELS",
+    "tags": {
+      "ai": "AI",
+      "tech": "Tech",
+      "future": "Framtid",
+      "design": "Design",
+      "music": "Musik",
+      "comedy": "Komedi",
+      "tutorial": "Tutorial"
+    }
   },
   "you": {
     "profileTab": "📊 Profil",
@@ -725,7 +764,7 @@
     "stepsTitle": "Steg att följa:",
     "proofPlaceholder": "Skriv ditt bevis här...",
     "reflectionPlaceholder": "Valfritt, men kraftfullt...",
-    "analyzing": "Mara analyserar...",
+    "analyzing": "Mara analyserar ditt svar...",
     "submitProof": "Skicka bevis → +{{xp}} XP",
     "howToTitle": "Hur man gör detta:",
     "reflectLabel": "💭 Du kommer att reflektera: ",
@@ -852,7 +891,16 @@
     "communitySubtitle": "Offentliga sidor skrivna av Mara för gemenskapsmedlemmar",
     "communityEmpty": "Inga offentliga sidor ännu.",
     "communityEmptyDesc": "Markera en sida från din dagbok som 'Gemenskap' för att dela den.",
-    "anonymous": "Anonym"
+    "anonymous": "Anonym",
+    "freeBadge": "GRATIS",
+    "milestone": {
+      "newMindset": "Ny Tankegång",
+      "newHabit": "Ny Vana",
+      "newSkills": "Nya Färdigheter",
+      "newBody": "Ny Kropp",
+      "newLife": "Nytt Liv",
+      "newYou": "Ny Du"
+    }
   },
   "missionShare": {
     "cardLabel": "Uppdrag slutfört",

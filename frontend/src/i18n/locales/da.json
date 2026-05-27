@@ -278,7 +278,64 @@
     "insertInText": "📝 Insert into text",
     "untitled": "Untitled",
     "maraNoSuggestion": "Mara could not generate a suggestion.",
-    "maraError": "⚠️ Could not contact Mara AI."
+    "maraError": "⚠️ Could not contact Mara AI.",
+    "deleteConfirm": "Slet denne artikel? Denne handling er uigenkaldelig.",
+    "searchPlaceholder": "🔍 Søg efter titel eller forfatter…",
+    "tagline": "Platformen for forfattere",
+    "home": "Hjem",
+    "heroTitle": "Skriv. Udgiv. Nå ud til læserne.",
+    "heroBody": "Writers Hub er hjemmet for forfattere på MaraAI — offentlige, VIP og premium artikler, en rig editor og samfundets opmærksomhed på ét sted.",
+    "ctaWrite": "Begynd at skrive",
+    "ctaExplore": "Udforsk biblioteket",
+    "featured": "Udvalgt",
+    "categoryLabel": "Kategori",
+    "visibilityLabel": "Synlighed",
+    "priceLabel": "Pris (EUR)",
+    "readTime": "{{n}} min",
+    "shareOnYou": "Del på You",
+    "sharedToYou": "Delt på din profil",
+    "shareFailed": "Kunne ikke dele",
+    "publishFailed": "Offentliggørelse mislykkedes",
+    "errorAuthRequired": "Log ind for at offentliggøre",
+    "errorPlanBlocked": "Din plan tillader ikke denne synlighed",
+    "errorVipRequired": "VIP-abonnement kræves for at læse denne artikel",
+    "errorPurchaseRequired": "Køb kræves for at læse denne artikel",
+    "errorNotFound": "Artikel ikke fundet",
+    "errorGeneric": "Kunne ikke indlæse artikel",
+    "category": {
+      "fiction": "Fiktion",
+      "nonFiction": "Non-fiction",
+      "business": "Erhverv",
+      "poetry": "Poesi",
+      "journal": "Journal",
+      "tutorials": "Vejledninger"
+    },
+    "visibility": {
+      "public": "Offentlig",
+      "vip": "VIP",
+      "paid": "Premium"
+    },
+    "removeCover": "Fjern",
+    "uploadCover": "Upload forside",
+    "uploading": "Uploader...",
+    "editor": {
+      "bold": "Fed",
+      "italic": "Kursiv",
+      "heading2": "Overskrift 2",
+      "heading3": "Overskrift 3",
+      "bulletList": "Punktliste",
+      "orderedList": "Nummereret liste",
+      "blockquote": "Citat",
+      "inlineCode": "Inline kode",
+      "codeBlock": "Kodeblok",
+      "link": "Link",
+      "image": "Billede",
+      "undo": "Fortryd",
+      "redo": "Gentag",
+      "imagePrompt": "Billed-URL (https://…)",
+      "linkPrompt": "Link-URL",
+      "toolbar": "Formatering"
+    }
   },
   "reels": {
     "feed": "Feed",
@@ -319,7 +376,23 @@
     "engagementLabel": "Engagement",
     "saved": "Saved",
     "saveLabel": "Save",
-    "createFirst": "+ Create Reel"
+    "createFirst": "+ Create Reel",
+    "defaultCreator": "Skaber",
+    "untitled": "Uden titel",
+    "originalAudio": "Original lyd",
+    "generalTag": "Generelt",
+    "youLabel": "Dig",
+    "videoPlayer": "Videoafspiller",
+    "headerTitle": "REELS",
+    "tags": {
+      "ai": "AI",
+      "tech": "Tech",
+      "future": "Fremtid",
+      "design": "Design",
+      "music": "Musik",
+      "comedy": "Komedie",
+      "tutorial": "Vejledning"
+    }
   },
   "you": {
     "profileTab": "📊 Profile",
@@ -648,7 +721,7 @@
     "stepsTitle": "Steps to follow:",
     "proofPlaceholder": "Write your proof here...",
     "reflectionPlaceholder": "Optional, but powerful...",
-    "analyzing": "Mara is analyzing...",
+    "analyzing": "Mara analyserer dit svar...",
     "submitProof": "Submit proof → +{{xp}} XP",
     "howToTitle": "How to do this:",
     "reflectLabel": "💭 You will reflect: ",
@@ -775,7 +848,16 @@
     "communitySubtitle": "Public pages written by Mara for community members",
     "communityEmpty": "No public pages yet.",
     "communityEmptyDesc": "Mark a page from your journal as 'Community' to share it.",
-    "anonymous": "Anonymous"
+    "anonymous": "Anonymous",
+    "freeBadge": "GRATIS",
+    "milestone": {
+      "newMindset": "Ny Tankegang",
+      "newHabit": "Ny Vane",
+      "newSkills": "Nye Færdigheder",
+      "newBody": "Nyt Legeme",
+      "newLife": "Nyt Liv",
+      "newYou": "Ny Dig"
+    }
   },
   "missionShare": {
     "cardLabel": "Mission complete",

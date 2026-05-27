@@ -18,6 +18,7 @@ import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import DOMPurify from 'dompurify';
+import { useTranslation } from 'react-i18next';
 import './RichEditor.css';
 
 interface Props {
@@ -55,13 +56,16 @@ function ToolbarButton({
   cmd,
   active,
   label,
+  tooltip,
   hotkey,
 }: {
   cmd: () => void;
   active?: boolean;
   label: string;
+  tooltip?: string;
   hotkey?: string;
 }) {
+  const tip = tooltip || label;
   return (
     <button
       type="button"
@@ -73,8 +77,8 @@ function ToolbarButton({
         cmd();
       }}
       className={`rt-btn ${active ? 'is-active' : ''}`}
-      title={hotkey ? `${label} (${hotkey})` : label}
-      aria-label={label}
+      title={hotkey ? `${tip} (${hotkey})` : tip}
+      aria-label={tip}
       aria-pressed={active ? 'true' : 'false'}
     >
       {label}
@@ -88,6 +92,8 @@ export const RichEditor: React.FC<Props> = ({
   onChange,
   compact = false,
 }) => {
+  const { t } = useTranslation();
+
   // Keep latest onChange in a ref so the editor instance doesn't need to be
   // recreated every time the parent re-renders with a new callback closure.
   const onChangeRef = useRef(onChange);
@@ -149,7 +155,7 @@ export const RichEditor: React.FC<Props> = ({
   }
 
   const addImage = () => {
-    const url = window.prompt('Image URL (https://…)');
+    const url = window.prompt(t('writers.editor.imagePrompt', 'Image URL (https://…)'));
     if (!url) return;
     try {
       const u = new URL(url);
@@ -162,7 +168,7 @@ export const RichEditor: React.FC<Props> = ({
 
   const addLink = () => {
     const prev = editor.getAttributes('link').href as string | undefined;
-    const url = window.prompt('Link URL', prev ?? 'https://');
+    const url = window.prompt(t('writers.editor.linkPrompt', 'Link URL'), prev ?? 'https://');
     if (url === null) return; // cancelled
     if (url === '') {
       editor.chain().focus().extendMarkRange('link').unsetLink().run();
@@ -179,17 +185,19 @@ export const RichEditor: React.FC<Props> = ({
 
   return (
     <div className={`rt-shell ${compact ? 'rt-compact' : ''}`}>
-      <div className="rt-toolbar" role="toolbar" aria-label="Formatting">
+      <div className="rt-toolbar" role="toolbar" aria-label={t('writers.editor.toolbar', 'Formatting')}>
         <ToolbarButton
           cmd={() => editor.chain().focus().toggleBold().run()}
           active={editor.isActive('bold')}
           label="B"
+          tooltip={t('writers.editor.bold', 'Bold')}
           hotkey="Ctrl+B"
         />
         <ToolbarButton
           cmd={() => editor.chain().focus().toggleItalic().run()}
           active={editor.isActive('italic')}
           label="I"
+          tooltip={t('writers.editor.italic', 'Italic')}
           hotkey="Ctrl+I"
         />
         <span className="rt-sep" />
@@ -197,51 +205,60 @@ export const RichEditor: React.FC<Props> = ({
           cmd={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
           active={editor.isActive('heading', { level: 2 })}
           label="H2"
+          tooltip={t('writers.editor.heading2', 'Heading 2')}
         />
         <ToolbarButton
           cmd={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
           active={editor.isActive('heading', { level: 3 })}
           label="H3"
+          tooltip={t('writers.editor.heading3', 'Heading 3')}
         />
         <span className="rt-sep" />
         <ToolbarButton
           cmd={() => editor.chain().focus().toggleBulletList().run()}
           active={editor.isActive('bulletList')}
           label="• List"
+          tooltip={t('writers.editor.bulletList', 'Bullet list')}
         />
         <ToolbarButton
           cmd={() => editor.chain().focus().toggleOrderedList().run()}
           active={editor.isActive('orderedList')}
           label="1. List"
+          tooltip={t('writers.editor.orderedList', 'Numbered list')}
         />
         <span className="rt-sep" />
         <ToolbarButton
           cmd={() => editor.chain().focus().toggleBlockquote().run()}
           active={editor.isActive('blockquote')}
           label="&ldquo;&nbsp;&rdquo;"
+          tooltip={t('writers.editor.blockquote', 'Blockquote')}
         />
         <ToolbarButton
           cmd={() => editor.chain().focus().toggleCode().run()}
           active={editor.isActive('code')}
           label="`code`"
+          tooltip={t('writers.editor.inlineCode', 'Inline code')}
         />
         <ToolbarButton
           cmd={() => editor.chain().focus().toggleCodeBlock().run()}
           active={editor.isActive('codeBlock')}
           label="</>"
+          tooltip={t('writers.editor.codeBlock', 'Code block')}
         />
         <span className="rt-sep" />
-        <ToolbarButton cmd={addLink} active={editor.isActive('link')} label="🔗" />
-        <ToolbarButton cmd={addImage} label="🖼" />
+        <ToolbarButton cmd={addLink} active={editor.isActive('link')} label="🔗" tooltip={t('writers.editor.link', 'Link')} />
+        <ToolbarButton cmd={addImage} label="🖼" tooltip={t('writers.editor.image', 'Image')} />
         <span className="rt-sep" />
         <ToolbarButton
           cmd={() => editor.chain().focus().undo().run()}
           label="↶"
+          tooltip={t('writers.editor.undo', 'Undo')}
           hotkey="Ctrl+Z"
         />
         <ToolbarButton
           cmd={() => editor.chain().focus().redo().run()}
           label="↷"
+          tooltip={t('writers.editor.redo', 'Redo')}
           hotkey="Ctrl+Shift+Z"
         />
       </div>

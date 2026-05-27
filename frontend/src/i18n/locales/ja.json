@@ -355,6 +355,29 @@
       "public": "パブリック",
       "vip": "VIP",
       "paid": "プレミアム"
+    },
+    "deleteConfirm": "この記事を削除しますか？この操作は元に戻せません。",
+    "searchPlaceholder": "🔍 タイトルまたは著者で検索…",
+    "removeCover": "削除",
+    "uploadCover": "カバーをアップロード",
+    "uploading": "アップロード中...",
+    "editor": {
+      "bold": "太字",
+      "italic": "斜体",
+      "heading2": "見出し 2",
+      "heading3": "見出し 3",
+      "bulletList": "箇条書き",
+      "orderedList": "番号付きリスト",
+      "blockquote": "引用",
+      "inlineCode": "インラインコード",
+      "codeBlock": "コードブロック",
+      "link": "リンク",
+      "image": "画像",
+      "undo": "元に戻す",
+      "redo": "やり直す",
+      "imagePrompt": "画像URL (https://…)",
+      "linkPrompt": "リンクURL",
+      "toolbar": "書式設定"
     }
   },
   "reels": {
@@ -396,7 +419,23 @@
     "engagementLabel": "エンゲージメント",
     "saved": "保存済み",
     "saveLabel": "保存",
-    "createFirst": "+ リール作成"
+    "createFirst": "+ リール作成",
+    "defaultCreator": "クリエイター",
+    "untitled": "タイトルなし",
+    "originalAudio": "オリジナル音声",
+    "generalTag": "一般",
+    "youLabel": "あなた",
+    "videoPlayer": "ビデオプレーヤー",
+    "headerTitle": "REELS",
+    "tags": {
+      "ai": "AI",
+      "tech": "テック",
+      "future": "未来",
+      "design": "デザイン",
+      "music": "音楽",
+      "comedy": "コメディ",
+      "tutorial": "チュートリアル"
+    }
   },
   "you": {
     "profileTab": "📊 プロフィール",
@@ -725,7 +764,7 @@
     "stepsTitle": "手順:",
     "proofPlaceholder": "証明をここに書いてください...",
     "reflectionPlaceholder": "任意ですが、効果的です...",
-    "analyzing": "Mara が分析中...",
+    "analyzing": "Maraがあなたの回答を分析中...",
     "submitProof": "証明を提出 → +{{xp}} XP",
     "howToTitle": "やり方:",
     "reflectLabel": "💭 振り返り: ",
@@ -852,7 +891,16 @@
     "communitySubtitle": "コミュニティメンバーのために Mara が書いた公開ページ",
     "communityEmpty": "まだ公開ページがありません。",
     "communityEmptyDesc": "ジャーナルのページを「コミュニティ」にすることでシェアできます。",
-    "anonymous": "匿名"
+    "anonymous": "匿名",
+    "freeBadge": "無料",
+    "milestone": {
+      "newMindset": "新しいマインドセット",
+      "newHabit": "新しい習慣",
+      "newSkills": "新しいスキル",
+      "newBody": "新しい体",
+      "newLife": "新しい人生",
+      "newYou": "新しいあなた"
+    }
   },
   "missionShare": {
     "cardLabel": "ミッション完了",

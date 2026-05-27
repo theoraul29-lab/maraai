@@ -278,7 +278,64 @@
     "insertInText": "📝 Insert into text",
     "untitled": "Untitled",
     "maraNoSuggestion": "Mara could not generate a suggestion.",
-    "maraError": "⚠️ Could not contact Mara AI."
+    "maraError": "⚠️ Could not contact Mara AI.",
+    "deleteConfirm": "删除此文章？此操作不可撤销。",
+    "searchPlaceholder": "🔍 按标题或作者搜索…",
+    "tagline": "作家的平台",
+    "home": "首页",
+    "heroTitle": "写作。发布。触达读者。",
+    "heroBody": "Writers Hub 是 MaraAI 上作家的家园 — 公开、VIP 和付费文章，富文本编辑器，以及社区关注，尽在一处。",
+    "ctaWrite": "开始写作",
+    "ctaExplore": "探索图书馆",
+    "featured": "精选",
+    "categoryLabel": "类别",
+    "visibilityLabel": "可见性",
+    "priceLabel": "价格（EUR）",
+    "readTime": "{{n}} 分钟",
+    "shareOnYou": "分享到 You",
+    "sharedToYou": "已分享到您的主页",
+    "shareFailed": "无法分享",
+    "publishFailed": "发布失败",
+    "errorAuthRequired": "登录后发布",
+    "errorPlanBlocked": "您的计划不允许此可见性",
+    "errorVipRequired": "阅读此文章需要 VIP 订阅",
+    "errorPurchaseRequired": "阅读此文章需要购买",
+    "errorNotFound": "文章未找到",
+    "errorGeneric": "无法加载文章",
+    "category": {
+      "fiction": "小说",
+      "nonFiction": "非虚构",
+      "business": "商业",
+      "poetry": "诗歌",
+      "journal": "日记",
+      "tutorials": "教程"
+    },
+    "visibility": {
+      "public": "公开",
+      "vip": "VIP",
+      "paid": "付费"
+    },
+    "removeCover": "删除",
+    "uploadCover": "上传封面",
+    "uploading": "上传中...",
+    "editor": {
+      "bold": "加粗",
+      "italic": "斜体",
+      "heading2": "标题 2",
+      "heading3": "标题 3",
+      "bulletList": "无序列表",
+      "orderedList": "有序列表",
+      "blockquote": "引用",
+      "inlineCode": "行内代码",
+      "codeBlock": "代码块",
+      "link": "链接",
+      "image": "图片",
+      "undo": "撤销",
+      "redo": "重做",
+      "imagePrompt": "图片URL (https://…)",
+      "linkPrompt": "链接URL",
+      "toolbar": "格式"
+    }
   },
   "reels": {
     "feed": "Feed",
@@ -319,7 +376,23 @@
     "engagementLabel": "Engagement",
     "saved": "Saved",
     "saveLabel": "Save",
-    "createFirst": "+ Create Reel"
+    "createFirst": "+ Create Reel",
+    "defaultCreator": "创作者",
+    "untitled": "无标题",
+    "originalAudio": "原声",
+    "generalTag": "一般",
+    "youLabel": "你",
+    "videoPlayer": "视频播放器",
+    "headerTitle": "REELS",
+    "tags": {
+      "ai": "AI",
+      "tech": "科技",
+      "future": "未来",
+      "design": "设计",
+      "music": "音乐",
+      "comedy": "喜剧",
+      "tutorial": "教程"
+    }
   },
   "you": {
     "profileTab": "📊 Profile",
@@ -648,7 +721,7 @@
     "stepsTitle": "Steps to follow:",
     "proofPlaceholder": "Write your proof here...",
     "reflectionPlaceholder": "Optional, but powerful...",
-    "analyzing": "Mara is analyzing...",
+    "analyzing": "Mara正在分析你的回答...",
     "submitProof": "Submit proof → +{{xp}} XP",
     "howToTitle": "How to do this:",
     "reflectLabel": "💭 You will reflect: ",
@@ -775,7 +848,16 @@
     "communitySubtitle": "Public pages written by Mara for community members",
     "communityEmpty": "No public pages yet.",
     "communityEmptyDesc": "Mark a page from your journal as 'Community' to share it.",
-    "anonymous": "Anonymous"
+    "anonymous": "Anonymous",
+    "freeBadge": "免费",
+    "milestone": {
+      "newMindset": "新思维",
+      "newHabit": "新习惯",
+      "newSkills": "新技能",
+      "newBody": "新身体",
+      "newLife": "新生活",
+      "newYou": "新的你"
+    }
   },
   "missionShare": {
     "cardLabel": "Mission complete",

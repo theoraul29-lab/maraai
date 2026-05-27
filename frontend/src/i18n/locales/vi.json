@@ -278,7 +278,64 @@
     "insertInText": "📝 Insert into text",
     "untitled": "Untitled",
     "maraNoSuggestion": "Mara could not generate a suggestion.",
-    "maraError": "⚠️ Could not contact Mara AI."
+    "maraError": "⚠️ Could not contact Mara AI.",
+    "deleteConfirm": "Xóa bài viết này? Hành động này không thể hoàn tác.",
+    "searchPlaceholder": "🔍 Tìm kiếm theo tiêu đề hoặc tác giả…",
+    "tagline": "Nền tảng dành cho nhà văn",
+    "home": "Trang chủ",
+    "heroTitle": "Viết. Xuất bản. Tiếp cận độc giả.",
+    "heroBody": "Writers Hub là ngôi nhà của các nhà văn trên MaraAI — bài viết công khai, VIP và cao cấp, trình soạn thảo phong phú và sự chú ý của cộng đồng trong một nơi.",
+    "ctaWrite": "Bắt đầu viết",
+    "ctaExplore": "Khám phá thư viện",
+    "featured": "Nổi bật",
+    "categoryLabel": "Danh mục",
+    "visibilityLabel": "Chế độ hiển thị",
+    "priceLabel": "Giá (EUR)",
+    "readTime": "{{n}} phút",
+    "shareOnYou": "Chia sẻ trên You",
+    "sharedToYou": "Đã chia sẻ trên hồ sơ của bạn",
+    "shareFailed": "Không thể chia sẻ",
+    "publishFailed": "Xuất bản thất bại",
+    "errorAuthRequired": "Đăng nhập để xuất bản",
+    "errorPlanBlocked": "Gói của bạn không cho phép chế độ hiển thị này",
+    "errorVipRequired": "Cần đăng ký VIP để đọc bài viết này",
+    "errorPurchaseRequired": "Cần mua để đọc bài viết này",
+    "errorNotFound": "Không tìm thấy bài viết",
+    "errorGeneric": "Không thể tải bài viết",
+    "category": {
+      "fiction": "Hư cấu",
+      "nonFiction": "Phi hư cấu",
+      "business": "Kinh doanh",
+      "poetry": "Thơ",
+      "journal": "Nhật ký",
+      "tutorials": "Hướng dẫn"
+    },
+    "visibility": {
+      "public": "Công khai",
+      "vip": "VIP",
+      "paid": "Cao cấp"
+    },
+    "removeCover": "Xóa",
+    "uploadCover": "Tải lên ảnh bìa",
+    "uploading": "Đang tải lên...",
+    "editor": {
+      "bold": "Đậm",
+      "italic": "Nghiêng",
+      "heading2": "Tiêu đề 2",
+      "heading3": "Tiêu đề 3",
+      "bulletList": "Danh sách có dấu đầu dòng",
+      "orderedList": "Danh sách có số thứ tự",
+      "blockquote": "Trích dẫn",
+      "inlineCode": "Mã nội tuyến",
+      "codeBlock": "Khối mã",
+      "link": "Liên kết",
+      "image": "Hình ảnh",
+      "undo": "Hoàn tác",
+      "redo": "Làm lại",
+      "imagePrompt": "URL hình ảnh (https://…)",
+      "linkPrompt": "URL liên kết",
+      "toolbar": "Định dạng"
+    }
   },
   "reels": {
     "feed": "Feed",
@@ -319,7 +376,23 @@
     "engagementLabel": "Engagement",
     "saved": "Saved",
     "saveLabel": "Save",
-    "createFirst": "+ Create Reel"
+    "createFirst": "+ Create Reel",
+    "defaultCreator": "Nhà sáng tạo",
+    "untitled": "Không có tiêu đề",
+    "originalAudio": "Âm thanh gốc",
+    "generalTag": "Chung",
+    "youLabel": "Bạn",
+    "videoPlayer": "Trình phát video",
+    "headerTitle": "REELS",
+    "tags": {
+      "ai": "AI",
+      "tech": "Công nghệ",
+      "future": "Tương lai",
+      "design": "Thiết kế",
+      "music": "Âm nhạc",
+      "comedy": "Hài kịch",
+      "tutorial": "Hướng dẫn"
+    }
   },
   "you": {
     "profileTab": "📊 Profile",
@@ -648,7 +721,7 @@
     "stepsTitle": "Steps to follow:",
     "proofPlaceholder": "Write your proof here...",
     "reflectionPlaceholder": "Optional, but powerful...",
-    "analyzing": "Mara is analyzing...",
+    "analyzing": "Mara đang phân tích câu trả lời của bạn...",
     "submitProof": "Submit proof → +{{xp}} XP",
     "howToTitle": "How to do this:",
     "reflectLabel": "💭 You will reflect: ",
@@ -775,7 +848,16 @@
     "communitySubtitle": "Public pages written by Mara for community members",
     "communityEmpty": "No public pages yet.",
     "communityEmptyDesc": "Mark a page from your journal as 'Community' to share it.",
-    "anonymous": "Anonymous"
+    "anonymous": "Anonymous",
+    "freeBadge": "MIỄN PHÍ",
+    "milestone": {
+      "newMindset": "Tư Duy Mới",
+      "newHabit": "Thói Quen Mới",
+      "newSkills": "Kỹ Năng Mới",
+      "newBody": "Cơ Thể Mới",
+      "newLife": "Cuộc Sống Mới",
+      "newYou": "Bạn Mới"
+    }
   },
   "missionShare": {
     "cardLabel": "Mission complete",

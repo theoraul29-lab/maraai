@@ -278,7 +278,64 @@
     "insertInText": "📝 Insert into text",
     "untitled": "Untitled",
     "maraNoSuggestion": "Mara could not generate a suggestion.",
-    "maraError": "⚠️ Could not contact Mara AI."
+    "maraError": "⚠️ Could not contact Mara AI.",
+    "deleteConfirm": "Bu makaleyi sil? Bu işlem geri alınamaz.",
+    "searchPlaceholder": "🔍 Başlık veya yazar ile ara…",
+    "tagline": "Yazarlar için platform",
+    "home": "Ana Sayfa",
+    "heroTitle": "Yaz. Yayınla. Okuyuculara ulaş.",
+    "heroBody": "Writers Hub, MaraAI'daki yazarların evi — genel, VIP ve premium makaleler, zengin bir editör ve topluluk ilgisi tek bir yerde.",
+    "ctaWrite": "Yazmaya başla",
+    "ctaExplore": "Kütüphaneyi keşfet",
+    "featured": "Öne Çıkan",
+    "categoryLabel": "Kategori",
+    "visibilityLabel": "Görünürlük",
+    "priceLabel": "Fiyat (EUR)",
+    "readTime": "{{n}} dk",
+    "shareOnYou": "You'da Paylaş",
+    "sharedToYou": "Profilinde paylaşıldı",
+    "shareFailed": "Paylaşılamadı",
+    "publishFailed": "Yayınlama başarısız",
+    "errorAuthRequired": "Yayınlamak için giriş yap",
+    "errorPlanBlocked": "Planın bu görünürlüğe izin vermiyor",
+    "errorVipRequired": "Bu makaleyi okumak için VIP aboneliği gerekiyor",
+    "errorPurchaseRequired": "Bu makaleyi okumak için satın alma gerekiyor",
+    "errorNotFound": "Makale bulunamadı",
+    "errorGeneric": "Makale yüklenemedi",
+    "category": {
+      "fiction": "Kurgu",
+      "nonFiction": "Kurgu Dışı",
+      "business": "İş",
+      "poetry": "Şiir",
+      "journal": "Günlük",
+      "tutorials": "Eğitimler"
+    },
+    "visibility": {
+      "public": "Herkese Açık",
+      "vip": "VIP",
+      "paid": "Premium"
+    },
+    "removeCover": "Kaldır",
+    "uploadCover": "Kapak yükle",
+    "uploading": "Yükleniyor...",
+    "editor": {
+      "bold": "Kalın",
+      "italic": "İtalik",
+      "heading2": "Başlık 2",
+      "heading3": "Başlık 3",
+      "bulletList": "Madde işaretli liste",
+      "orderedList": "Numaralı liste",
+      "blockquote": "Alıntı",
+      "inlineCode": "Satır içi kod",
+      "codeBlock": "Kod bloğu",
+      "link": "Bağlantı",
+      "image": "Resim",
+      "undo": "Geri al",
+      "redo": "Yeniden yap",
+      "imagePrompt": "Resim URL'si (https://…)",
+      "linkPrompt": "Bağlantı URL'si",
+      "toolbar": "Biçimlendirme"
+    }
   },
   "reels": {
     "feed": "Feed",
@@ -319,7 +376,23 @@
     "engagementLabel": "Engagement",
     "saved": "Saved",
     "saveLabel": "Save",
-    "createFirst": "+ Create Reel"
+    "createFirst": "+ Create Reel",
+    "defaultCreator": "İçerik Üreticisi",
+    "untitled": "Başlıksız",
+    "originalAudio": "Orijinal Ses",
+    "generalTag": "Genel",
+    "youLabel": "Sen",
+    "videoPlayer": "Video Oynatıcı",
+    "headerTitle": "REELS",
+    "tags": {
+      "ai": "YZ",
+      "tech": "Teknoloji",
+      "future": "Gelecek",
+      "design": "Tasarım",
+      "music": "Müzik",
+      "comedy": "Komedi",
+      "tutorial": "Eğitim"
+    }
   },
   "you": {
     "profileTab": "📊 Profile",
@@ -648,7 +721,7 @@
     "stepsTitle": "Steps to follow:",
     "proofPlaceholder": "Write your proof here...",
     "reflectionPlaceholder": "Optional, but powerful...",
-    "analyzing": "Mara is analyzing...",
+    "analyzing": "Mara cevabını analiz ediyor...",
     "submitProof": "Submit proof → +{{xp}} XP",
     "howToTitle": "How to do this:",
     "reflectLabel": "💭 You will reflect: ",
@@ -775,7 +848,16 @@
     "communitySubtitle": "Public pages written by Mara for community members",
     "communityEmpty": "No public pages yet.",
     "communityEmptyDesc": "Mark a page from your journal as 'Community' to share it.",
-    "anonymous": "Anonymous"
+    "anonymous": "Anonymous",
+    "freeBadge": "ÜCRETSİZ",
+    "milestone": {
+      "newMindset": "Yeni Zihniyet",
+      "newHabit": "Yeni Alışkanlık",
+      "newSkills": "Yeni Beceriler",
+      "newBody": "Yeni Vücut",
+      "newLife": "Yeni Hayat",
+      "newYou": "Yeni Sen"
+    }
   },
   "missionShare": {
     "cardLabel": "Mission complete",

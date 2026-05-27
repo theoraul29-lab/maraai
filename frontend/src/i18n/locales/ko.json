@@ -355,6 +355,29 @@
       "public": "공개",
       "vip": "VIP",
       "paid": "프리미엄"
+    },
+    "deleteConfirm": "이 기사를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+    "searchPlaceholder": "🔍 제목 또는 저자로 검색…",
+    "removeCover": "제거",
+    "uploadCover": "표지 업로드",
+    "uploading": "업로드 중...",
+    "editor": {
+      "bold": "굵게",
+      "italic": "기울임",
+      "heading2": "제목 2",
+      "heading3": "제목 3",
+      "bulletList": "글머리 기호 목록",
+      "orderedList": "번호 매기기 목록",
+      "blockquote": "인용",
+      "inlineCode": "인라인 코드",
+      "codeBlock": "코드 블록",
+      "link": "링크",
+      "image": "이미지",
+      "undo": "실행 취소",
+      "redo": "다시 실행",
+      "imagePrompt": "이미지 URL (https://…)",
+      "linkPrompt": "링크 URL",
+      "toolbar": "서식"
     }
   },
   "reels": {
@@ -396,7 +419,23 @@
     "engagementLabel": "참여",
     "saved": "저장됨",
     "saveLabel": "저장",
-    "createFirst": "+ 릴 만들기"
+    "createFirst": "+ 릴 만들기",
+    "defaultCreator": "크리에이터",
+    "untitled": "제목 없음",
+    "originalAudio": "원본 오디오",
+    "generalTag": "일반",
+    "youLabel": "나",
+    "videoPlayer": "비디오 플레이어",
+    "headerTitle": "REELS",
+    "tags": {
+      "ai": "AI",
+      "tech": "기술",
+      "future": "미래",
+      "design": "디자인",
+      "music": "음악",
+      "comedy": "코미디",
+      "tutorial": "튜토리얼"
+    }
   },
   "you": {
     "profileTab": "📊 프로필",
@@ -725,7 +764,7 @@
     "stepsTitle": "따를 단계:",
     "proofPlaceholder": "여기에 증명을 작성하세요...",
     "reflectionPlaceholder": "선택사항이지만 강력합니다...",
-    "analyzing": "Mara 분석 중...",
+    "analyzing": "Mara가 답변을 분석 중...",
     "submitProof": "증명 제출 → +{{xp}} XP",
     "howToTitle": "방법:",
     "reflectLabel": "💭 반성할 것: ",
@@ -852,7 +891,16 @@
     "communitySubtitle": "커뮤니티 회원을 위해 Mara가 쓴 공개 페이지",
     "communityEmpty": "아직 공개 페이지가 없습니다.",
     "communityEmptyDesc": "저널의 페이지를 '커뮤니티'로 표시하여 공유하세요.",
-    "anonymous": "익명"
+    "anonymous": "익명",
+    "freeBadge": "무료",
+    "milestone": {
+      "newMindset": "새로운 사고방식",
+      "newHabit": "새로운 습관",
+      "newSkills": "새로운 기술",
+      "newBody": "새로운 몸",
+      "newLife": "새로운 삶",
+      "newYou": "새로운 나"
+    }
   },
   "missionShare": {
     "cardLabel": "미션 완료",

@@ -292,7 +292,64 @@
     "insertInText": "📝 Insérer dans le texte",
     "untitled": "Sans titre",
     "maraNoSuggestion": "Mara n'a pas pu générer de suggestion.",
-    "maraError": "⚠️ Impossible de contacter Mara AI."
+    "maraError": "⚠️ Impossible de contacter Mara AI.",
+    "deleteConfirm": "Supprimer cet article ? Cette action est irréversible.",
+    "searchPlaceholder": "🔍 Rechercher par titre ou auteur…",
+    "tagline": "La plateforme pour les écrivains",
+    "home": "Accueil",
+    "heroTitle": "Écrire. Publier. Atteindre des lecteurs.",
+    "heroBody": "Writers Hub est la maison des écrivains sur MaraAI — articles publics, VIP et premium, un éditeur riche et l'attention de la communauté en un seul endroit.",
+    "ctaWrite": "Commencer à écrire",
+    "ctaExplore": "Explorer la bibliothèque",
+    "featured": "À la une",
+    "categoryLabel": "Catégorie",
+    "visibilityLabel": "Visibilité",
+    "priceLabel": "Prix (EUR)",
+    "readTime": "{{n}} min",
+    "shareOnYou": "Partager sur You",
+    "sharedToYou": "Partagé sur ton profil",
+    "shareFailed": "Impossible de partager",
+    "publishFailed": "Échec de la publication",
+    "errorAuthRequired": "Connecte-toi pour publier",
+    "errorPlanBlocked": "Ton plan ne permet pas cette visibilité",
+    "errorVipRequired": "Abonnement VIP requis pour lire cet article",
+    "errorPurchaseRequired": "Achat requis pour lire cet article",
+    "errorNotFound": "Article introuvable",
+    "errorGeneric": "Impossible de charger l'article",
+    "category": {
+      "fiction": "Fiction",
+      "nonFiction": "Non-fiction",
+      "business": "Business",
+      "poetry": "Poésie",
+      "journal": "Journal",
+      "tutorials": "Tutoriels"
+    },
+    "visibility": {
+      "public": "Public",
+      "vip": "VIP",
+      "paid": "Premium"
+    },
+    "removeCover": "Supprimer",
+    "uploadCover": "Télécharger la couverture",
+    "uploading": "Téléchargement...",
+    "editor": {
+      "bold": "Gras",
+      "italic": "Italique",
+      "heading2": "Titre 2",
+      "heading3": "Titre 3",
+      "bulletList": "Liste à puces",
+      "orderedList": "Liste numérotée",
+      "blockquote": "Citation",
+      "inlineCode": "Code en ligne",
+      "codeBlock": "Bloc de code",
+      "link": "Lien",
+      "image": "Image",
+      "undo": "Annuler",
+      "redo": "Rétablir",
+      "imagePrompt": "URL de l'image (https://…)",
+      "linkPrompt": "URL du lien",
+      "toolbar": "Mise en forme"
+    }
   },
   "reels": {
     "feed": "Fil",
@@ -333,7 +390,23 @@
     "engagementLabel": "Engagement",
     "saved": "Enregistré",
     "saveLabel": "Enregistrer",
-    "createFirst": "+ Créer un reel"
+    "createFirst": "+ Créer un reel",
+    "defaultCreator": "Créateur",
+    "untitled": "Sans titre",
+    "originalAudio": "Audio original",
+    "generalTag": "Général",
+    "youLabel": "Toi",
+    "videoPlayer": "Lecteur vidéo",
+    "headerTitle": "REELS",
+    "tags": {
+      "ai": "IA",
+      "tech": "Tech",
+      "future": "Avenir",
+      "design": "Design",
+      "music": "Musique",
+      "comedy": "Comédie",
+      "tutorial": "Tutoriel"
+    }
   },
   "you": {
     "profileTab": "📊 Profil",
@@ -662,7 +735,7 @@
     "stepsTitle": "Steps to follow:",
     "proofPlaceholder": "Write your proof here...",
     "reflectionPlaceholder": "Optional, but powerful...",
-    "analyzing": "Mara is analyzing...",
+    "analyzing": "Mara analyse ta réponse...",
     "submitProof": "Submit proof → +{{xp}} XP",
     "howToTitle": "How to do this:",
     "reflectLabel": "💭 You will reflect: ",
@@ -789,7 +862,16 @@
     "communitySubtitle": "Public pages written by Mara for community members",
     "communityEmpty": "No public pages yet.",
     "communityEmptyDesc": "Mark a page from your journal as 'Community' to share it.",
-    "anonymous": "Anonymous"
+    "anonymous": "Anonymous",
+    "freeBadge": "GRATUIT",
+    "milestone": {
+      "newMindset": "Nouveau État d'esprit",
+      "newHabit": "Nouvelle Habitude",
+      "newSkills": "Nouvelles Compétences",
+      "newBody": "Nouveau Corps",
+      "newLife": "Nouvelle Vie",
+      "newYou": "Nouveau Toi"
+    }
   },
   "missionShare": {
     "cardLabel": "Mission complete",

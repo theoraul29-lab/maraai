@@ -278,7 +278,64 @@
     "insertInText": "📝 Insert into text",
     "untitled": "Untitled",
     "maraNoSuggestion": "Mara could not generate a suggestion.",
-    "maraError": "⚠️ Could not contact Mara AI."
+    "maraError": "⚠️ Could not contact Mara AI.",
+    "deleteConfirm": "Usunąć ten artykuł? Tej akcji nie można cofnąć.",
+    "searchPlaceholder": "🔍 Szukaj według tytułu lub autora…",
+    "tagline": "Platforma dla pisarzy",
+    "home": "Strona główna",
+    "heroTitle": "Pisz. Publikuj. Docieraj do czytelników.",
+    "heroBody": "Writers Hub to dom pisarzy na MaraAI — publiczne, VIP i premium artykuły, bogaty edytor i uwaga społeczności w jednym miejscu.",
+    "ctaWrite": "Zacznij pisać",
+    "ctaExplore": "Odkryj bibliotekę",
+    "featured": "Polecane",
+    "categoryLabel": "Kategoria",
+    "visibilityLabel": "Widoczność",
+    "priceLabel": "Cena (EUR)",
+    "readTime": "{{n}} min",
+    "shareOnYou": "Udostępnij w You",
+    "sharedToYou": "Udostępniono na Twoim profilu",
+    "shareFailed": "Nie można udostępnić",
+    "publishFailed": "Publikacja nie powiodła się",
+    "errorAuthRequired": "Zaloguj się, aby publikować",
+    "errorPlanBlocked": "Twój plan nie zezwala na tę widoczność",
+    "errorVipRequired": "Wymagana subskrypcja VIP, aby przeczytać ten artykuł",
+    "errorPurchaseRequired": "Wymagany zakup, aby przeczytać ten artykuł",
+    "errorNotFound": "Artykuł nie znaleziony",
+    "errorGeneric": "Nie można załadować artykułu",
+    "category": {
+      "fiction": "Beletrystyka",
+      "nonFiction": "Literatura faktu",
+      "business": "Biznes",
+      "poetry": "Poezja",
+      "journal": "Dziennik",
+      "tutorials": "Poradniki"
+    },
+    "visibility": {
+      "public": "Publiczne",
+      "vip": "VIP",
+      "paid": "Premium"
+    },
+    "removeCover": "Usuń",
+    "uploadCover": "Prześlij okładkę",
+    "uploading": "Przesyłanie...",
+    "editor": {
+      "bold": "Pogrubienie",
+      "italic": "Kursywa",
+      "heading2": "Nagłówek 2",
+      "heading3": "Nagłówek 3",
+      "bulletList": "Lista punktowana",
+      "orderedList": "Lista numerowana",
+      "blockquote": "Cytat",
+      "inlineCode": "Kod inline",
+      "codeBlock": "Blok kodu",
+      "link": "Link",
+      "image": "Obraz",
+      "undo": "Cofnij",
+      "redo": "Ponów",
+      "imagePrompt": "URL obrazu (https://…)",
+      "linkPrompt": "URL linku",
+      "toolbar": "Formatowanie"
+    }
   },
   "reels": {
     "feed": "Feed",
@@ -319,7 +376,23 @@
     "engagementLabel": "Engagement",
     "saved": "Saved",
     "saveLabel": "Save",
-    "createFirst": "+ Create Reel"
+    "createFirst": "+ Create Reel",
+    "defaultCreator": "Twórca",
+    "untitled": "Bez tytułu",
+    "originalAudio": "Oryginalny dźwięk",
+    "generalTag": "Ogólne",
+    "youLabel": "Ty",
+    "videoPlayer": "Odtwarzacz wideo",
+    "headerTitle": "REELS",
+    "tags": {
+      "ai": "AI",
+      "tech": "Tech",
+      "future": "Przyszłość",
+      "design": "Design",
+      "music": "Muzyka",
+      "comedy": "Komedia",
+      "tutorial": "Samouczek"
+    }
   },
   "you": {
     "profileTab": "📊 Profile",
@@ -648,7 +721,7 @@
     "stepsTitle": "Steps to follow:",
     "proofPlaceholder": "Write your proof here...",
     "reflectionPlaceholder": "Optional, but powerful...",
-    "analyzing": "Mara is analyzing...",
+    "analyzing": "Mara analizuje twoją odpowiedź...",
     "submitProof": "Submit proof → +{{xp}} XP",
     "howToTitle": "How to do this:",
     "reflectLabel": "💭 You will reflect: ",
@@ -775,7 +848,16 @@
     "communitySubtitle": "Public pages written by Mara for community members",
     "communityEmpty": "No public pages yet.",
     "communityEmptyDesc": "Mark a page from your journal as 'Community' to share it.",
-    "anonymous": "Anonymous"
+    "anonymous": "Anonymous",
+    "freeBadge": "ZA DARMO",
+    "milestone": {
+      "newMindset": "Nowe Nastawienie",
+      "newHabit": "Nowy Nawyk",
+      "newSkills": "Nowe Umiejętności",
+      "newBody": "Nowe Ciało",
+      "newLife": "Nowe Życie",
+      "newYou": "Nowy Ty"
+    }
   },
   "missionShare": {
     "cardLabel": "Mission complete",

@@ -278,7 +278,64 @@
     "insertInText": "📝 Insert into text",
     "untitled": "Untitled",
     "maraNoSuggestion": "Mara could not generate a suggestion.",
-    "maraError": "⚠️ Could not contact Mara AI."
+    "maraError": "⚠️ Could not contact Mara AI.",
+    "deleteConfirm": "Избришати овај чланак? Ова радња је неповратна.",
+    "searchPlaceholder": "🔍 Претражи по наслову или аутору…",
+    "tagline": "Платформа за писце",
+    "home": "Почетна",
+    "heroTitle": "Пиши. Објави. Дохвати читаоце.",
+    "heroBody": "Writers Hub је дом писаца на MaraAI — јавни, VIP и премиум чланци, богати уређивач и пажња заједнице на једном месту.",
+    "ctaWrite": "Почни да пишеш",
+    "ctaExplore": "Истражи библиотеку",
+    "featured": "Истакнуто",
+    "categoryLabel": "Категорија",
+    "visibilityLabel": "Видљивост",
+    "priceLabel": "Цена (EUR)",
+    "readTime": "{{n}} мин",
+    "shareOnYou": "Подели на You",
+    "sharedToYou": "Подељено на твом профилу",
+    "shareFailed": "Дељење није успело",
+    "publishFailed": "Објава није успела",
+    "errorAuthRequired": "Пријави се за објаву",
+    "errorPlanBlocked": "Твој план не дозвољава ову видљивост",
+    "errorVipRequired": "За читање овог чланка потребна је VIP претплата",
+    "errorPurchaseRequired": "За читање овог чланка потребна је куповина",
+    "errorNotFound": "Чланак није пронађен",
+    "errorGeneric": "Није могуће учитати чланак",
+    "category": {
+      "fiction": "Фикција",
+      "nonFiction": "Нефикција",
+      "business": "Бизнис",
+      "poetry": "Поезија",
+      "journal": "Дневник",
+      "tutorials": "Водичи"
+    },
+    "visibility": {
+      "public": "Јавно",
+      "vip": "VIP",
+      "paid": "Премиум"
+    },
+    "removeCover": "Уклони",
+    "uploadCover": "Постави насловну слику",
+    "uploading": "Постављање...",
+    "editor": {
+      "bold": "Подебљано",
+      "italic": "Курзив",
+      "heading2": "Наслов 2",
+      "heading3": "Наслов 3",
+      "bulletList": "Неуређена листа",
+      "orderedList": "Уређена листа",
+      "blockquote": "Цитат",
+      "inlineCode": "Inline код",
+      "codeBlock": "Блок кода",
+      "link": "Веза",
+      "image": "Слика",
+      "undo": "Поништи",
+      "redo": "Понови",
+      "imagePrompt": "URL слике (https://…)",
+      "linkPrompt": "URL везе",
+      "toolbar": "Форматирање"
+    }
   },
   "reels": {
     "feed": "Feed",
@@ -319,7 +376,23 @@
     "engagementLabel": "Engagement",
     "saved": "Saved",
     "saveLabel": "Save",
-    "createFirst": "+ Create Reel"
+    "createFirst": "+ Create Reel",
+    "defaultCreator": "Креатор",
+    "untitled": "Без наслова",
+    "originalAudio": "Оригинални звук",
+    "generalTag": "Опште",
+    "youLabel": "Ти",
+    "videoPlayer": "Видео плејер",
+    "headerTitle": "REELS",
+    "tags": {
+      "ai": "AI",
+      "tech": "Tech",
+      "future": "Будућност",
+      "design": "Дизајн",
+      "music": "Музика",
+      "comedy": "Комедија",
+      "tutorial": "Tutorial"
+    }
   },
   "you": {
     "profileTab": "📊 Profile",
@@ -648,7 +721,7 @@
     "stepsTitle": "Steps to follow:",
     "proofPlaceholder": "Write your proof here...",
     "reflectionPlaceholder": "Optional, but powerful...",
-    "analyzing": "Mara is analyzing...",
+    "analyzing": "Мара анализира твој одговор...",
     "submitProof": "Submit proof → +{{xp}} XP",
     "howToTitle": "How to do this:",
     "reflectLabel": "💭 You will reflect: ",
@@ -775,7 +848,16 @@
     "communitySubtitle": "Public pages written by Mara for community members",
     "communityEmpty": "No public pages yet.",
     "communityEmptyDesc": "Mark a page from your journal as 'Community' to share it.",
-    "anonymous": "Anonymous"
+    "anonymous": "Anonymous",
+    "freeBadge": "БЕСПЛАТНО",
+    "milestone": {
+      "newMindset": "Нови Менталитет",
+      "newHabit": "Нова Навика",
+      "newSkills": "Нове Вештине",
+      "newBody": "Ново Тело",
+      "newLife": "Нови Живот",
+      "newYou": "Нови Ти"
+    }
   },
   "missionShare": {
     "cardLabel": "Mission complete",

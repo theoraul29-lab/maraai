@@ -292,7 +292,64 @@
     "insertInText": "📝 إدراج في النص",
     "untitled": "بدون عنوان",
     "maraNoSuggestion": "لم تتمكن مارا من توليد اقتراح.",
-    "maraError": "⚠️ تعذّر الاتصال بـ Mara AI."
+    "maraError": "⚠️ تعذّر الاتصال بـ Mara AI.",
+    "deleteConfirm": "حذف هذه المقالة؟ هذا الإجراء لا يمكن التراجع عنه.",
+    "searchPlaceholder": "🔍 ابحث حسب العنوان أو المؤلف…",
+    "tagline": "المنصة للكتّاب",
+    "home": "الرئيسية",
+    "heroTitle": "اكتب. انشر. الوصل للقراء.",
+    "heroBody": "Writers Hub هو موطن الكتّاب على MaraAI — مقالات عامة وVIP وممتازة، محرر غني، واهتمام المجتمع في مكان واحد.",
+    "ctaWrite": "ابدأ الكتابة",
+    "ctaExplore": "استكشف المكتبة",
+    "featured": "مميز",
+    "categoryLabel": "الفئة",
+    "visibilityLabel": "الرؤية",
+    "priceLabel": "السعر (EUR)",
+    "readTime": "{{n}} دقيقة",
+    "shareOnYou": "مشاركة في You",
+    "sharedToYou": "تمت المشاركة في ملفك الشخصي",
+    "shareFailed": "تعذّر المشاركة",
+    "publishFailed": "فشل النشر",
+    "errorAuthRequired": "سجّل الدخول للنشر",
+    "errorPlanBlocked": "خطّتك لا تسمح بهذه الرؤية",
+    "errorVipRequired": "يلزم اشتراك VIP لقراءة هذه المقالة",
+    "errorPurchaseRequired": "يلزم الشراء لقراءة هذه المقالة",
+    "errorNotFound": "المقالة غير موجودة",
+    "errorGeneric": "تعذّر تحميل المقالة",
+    "category": {
+      "fiction": "خيال",
+      "nonFiction": "غير خيالي",
+      "business": "أعمال",
+      "poetry": "شعر",
+      "journal": "مجلة",
+      "tutorials": "دروس"
+    },
+    "visibility": {
+      "public": "عام",
+      "vip": "VIP",
+      "paid": "مميز"
+    },
+    "removeCover": "إزالة",
+    "uploadCover": "رفع الغلاف",
+    "uploading": "جارٍ الرفع...",
+    "editor": {
+      "bold": "عريض",
+      "italic": "مائل",
+      "heading2": "عنوان 2",
+      "heading3": "عنوان 3",
+      "bulletList": "قائمة نقطية",
+      "orderedList": "قائمة مرقّمة",
+      "blockquote": "اقتباس",
+      "inlineCode": "كود مضمّن",
+      "codeBlock": "كتلة كود",
+      "link": "رابط",
+      "image": "صورة",
+      "undo": "تراجع",
+      "redo": "إعادة",
+      "imagePrompt": "رابط الصورة (https://…)",
+      "linkPrompt": "رابط URL",
+      "toolbar": "التنسيق"
+    }
   },
   "reels": {
     "feed": "الخلاصة",
@@ -333,7 +390,23 @@
     "engagementLabel": "التفاعل",
     "saved": "محفوظ",
     "saveLabel": "حفظ",
-    "createFirst": "+ إنشاء Reel"
+    "createFirst": "+ إنشاء Reel",
+    "defaultCreator": "منشئ المحتوى",
+    "untitled": "بدون عنوان",
+    "originalAudio": "صوت أصلي",
+    "generalTag": "عام",
+    "youLabel": "أنت",
+    "videoPlayer": "مشغّل الفيديو",
+    "headerTitle": "ريلز",
+    "tags": {
+      "ai": "ذكاء اصطناعي",
+      "tech": "تكنولوجيا",
+      "future": "مستقبل",
+      "design": "تصميم",
+      "music": "موسيقى",
+      "comedy": "كوميديا",
+      "tutorial": "درس"
+    }
   },
   "you": {
     "profileTab": "📊 الملف الشخصي",
@@ -662,7 +735,7 @@
     "stepsTitle": "Steps to follow:",
     "proofPlaceholder": "Write your proof here...",
     "reflectionPlaceholder": "Optional, but powerful...",
-    "analyzing": "Mara is analyzing...",
+    "analyzing": "تحلّل مارا إجابتك...",
     "submitProof": "Submit proof → +{{xp}} XP",
     "howToTitle": "How to do this:",
     "reflectLabel": "💭 You will reflect: ",
@@ -789,7 +862,16 @@
     "communitySubtitle": "Public pages written by Mara for community members",
     "communityEmpty": "No public pages yet.",
     "communityEmptyDesc": "Mark a page from your journal as 'Community' to share it.",
-    "anonymous": "Anonymous"
+    "anonymous": "Anonymous",
+    "freeBadge": "مجاني",
+    "milestone": {
+      "newMindset": "عقلية جديدة",
+      "newHabit": "عادة جديدة",
+      "newSkills": "مهارات جديدة",
+      "newBody": "جسد جديد",
+      "newLife": "حياة جديدة",
+      "newYou": "أنت الجديد"
+    }
   },
   "missionShare": {
     "cardLabel": "Mission complete",

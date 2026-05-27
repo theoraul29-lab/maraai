@@ -355,6 +355,29 @@
       "public": "Öffentlich",
       "vip": "VIP",
       "paid": "Premium"
+    },
+    "deleteConfirm": "Diesen Artikel löschen? Diese Aktion ist unwiderruflich.",
+    "searchPlaceholder": "🔍 Nach Titel oder Autor suchen…",
+    "removeCover": "Entfernen",
+    "uploadCover": "Cover hochladen",
+    "uploading": "Wird hochgeladen...",
+    "editor": {
+      "bold": "Fett",
+      "italic": "Kursiv",
+      "heading2": "Überschrift 2",
+      "heading3": "Überschrift 3",
+      "bulletList": "Aufzählungsliste",
+      "orderedList": "Nummerierte Liste",
+      "blockquote": "Zitat",
+      "inlineCode": "Inline-Code",
+      "codeBlock": "Codeblock",
+      "link": "Link",
+      "image": "Bild",
+      "undo": "Rückgängig",
+      "redo": "Wiederholen",
+      "imagePrompt": "Bild-URL (https://…)",
+      "linkPrompt": "Link-URL",
+      "toolbar": "Formatierung"
     }
   },
   "reels": {
@@ -396,7 +419,23 @@
     "engagementLabel": "Engagement",
     "saved": "Gespeichert",
     "saveLabel": "Speichern",
-    "createFirst": "+ Reel erstellen"
+    "createFirst": "+ Reel erstellen",
+    "defaultCreator": "Creator",
+    "untitled": "Ohne Titel",
+    "originalAudio": "Originalton",
+    "generalTag": "Allgemein",
+    "youLabel": "Du",
+    "videoPlayer": "Videoplayer",
+    "headerTitle": "REELS",
+    "tags": {
+      "ai": "KI",
+      "tech": "Tech",
+      "future": "Zukunft",
+      "design": "Design",
+      "music": "Musik",
+      "comedy": "Komödie",
+      "tutorial": "Tutorial"
+    }
   },
   "you": {
     "profileTab": "📊 Profil",
@@ -725,7 +764,7 @@
     "stepsTitle": "Schritte zum Befolgen:",
     "proofPlaceholder": "Schreibe deinen Beweis hier...",
     "reflectionPlaceholder": "Optional, aber wirkungsvoll...",
-    "analyzing": "Mara analysiert...",
+    "analyzing": "Mara analysiert deine Antwort...",
     "submitProof": "Beweis einreichen → +{{xp}} XP",
     "howToTitle": "So geht es:",
     "reflectLabel": "💭 Du wirst reflektieren: ",
@@ -852,7 +891,16 @@
     "communitySubtitle": "Öffentliche Seiten von Mara für Community-Mitglieder geschrieben",
     "communityEmpty": "Noch keine öffentlichen Seiten.",
     "communityEmptyDesc": "Markiere eine Seite aus deinem Tagebuch als 'Community', um sie zu teilen.",
-    "anonymous": "Anonym"
+    "anonymous": "Anonym",
+    "freeBadge": "GRATIS",
+    "milestone": {
+      "newMindset": "Neue Denkweise",
+      "newHabit": "Neue Gewohnheit",
+      "newSkills": "Neue Fähigkeiten",
+      "newBody": "Neuer Körper",
+      "newLife": "Neues Leben",
+      "newYou": "Neues Du"
+    }
   },
   "missionShare": {
     "cardLabel": "Mission abgeschlossen",

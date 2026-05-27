@@ -76,9 +76,9 @@ const ReelsComponent: React.FC = () => {
 
       const mapped = feedItems.map((v: any) => ({
         id: v.id,
-        creator: v.creator || v.username || 'Creator',
+        creator: v.creator || v.username || t('reels.defaultCreator', 'Creator'),
         avatar: '🎬',
-        title: v.title || 'Untitled',
+        title: v.title || t('reels.untitled', 'Untitled'),
         url: v.url || v.videoUrl || '#',
         videoUrl: v.url || v.videoUrl || '#',
         likes: v.likes || 0,
@@ -88,8 +88,8 @@ const ReelsComponent: React.FC = () => {
         isSaved: v.isSaved || false,
         views: v.views || 0,
         duration: v.duration || '0:30',
-        music: v.music || 'Original Audio',
-        tags: v.tags || [v.topic || 'General'],
+        music: v.music || t('reels.originalAudio', 'Original Audio'),
+        tags: v.tags || [v.topic || t('reels.generalTag', 'General')],
         description: v.description || '',
         createdAt: v.createdAt || new Date().toISOString(),
         topic: v.topic,
@@ -121,9 +121,9 @@ const ReelsComponent: React.FC = () => {
       if (Array.isArray(videosRes.data)) {
         setMyReels(videosRes.data.map((v: any) => ({
           id: v.id,
-          creator: 'You',
+          creator: t('reels.youLabel', 'You'),
           avatar: '👤',
-          title: v.title || 'Untitled',
+          title: v.title || t('reels.untitled', 'Untitled'),
           url: v.url || '#',
           videoUrl: v.url || '#',
           likes: v.likes || 0,
@@ -242,7 +242,7 @@ const ReelsComponent: React.FC = () => {
     <div className="reels-container">
       {/* Header */}
       <div className="reels-header">
-        <h1>🎬 REELS</h1>
+        <h1>🎬 {t('reels.headerTitle', 'REELS')}</h1>
         <div className="reels-header-actions">
           <button className={`header-btn ${activeMode === 'feed' ? 'active' : ''}`} onClick={() => setActiveMode('feed')}>📺 {t('reels.feed')}</button>
           <button className={`header-btn ${activeMode === 'create' ? 'active' : ''}`} onClick={() => setActiveMode('create')}>➕ {t('reels.create')}</button>
@@ -262,12 +262,20 @@ const ReelsComponent: React.FC = () => {
       {activeMode === 'feed' && (
         <div className="reels-feed reels-feed-tiktok">
           <div className="tiktok-tag-bar">
-            {['AI', 'Tech', 'Future', 'Design', 'Music', 'Comedy', 'Tutorial'].map(tag => (
+            {([
+              { key: 'AI',       label: t('reels.tags.ai',       'AI') },
+              { key: 'Tech',     label: t('reels.tags.tech',     'Tech') },
+              { key: 'Future',   label: t('reels.tags.future',   'Future') },
+              { key: 'Design',   label: t('reels.tags.design',   'Design') },
+              { key: 'Music',    label: t('reels.tags.music',    'Music') },
+              { key: 'Comedy',   label: t('reels.tags.comedy',   'Comedy') },
+              { key: 'Tutorial', label: t('reels.tags.tutorial', 'Tutorial') },
+            ]).map(({ key, label }) => (
               <button
-                key={tag}
-                className={`tiktok-tag-btn ${filterTag === tag ? 'active' : ''}`}
-                onClick={() => setFilterTag(filterTag === tag ? '' : tag)}
-              >#{tag}</button>
+                key={key}
+                className={`tiktok-tag-btn ${filterTag === key ? 'active' : ''}`}
+                onClick={() => setFilterTag(filterTag === key ? '' : key)}
+              >#{label}</button>
             ))}
           </div>
 
@@ -417,7 +425,7 @@ const ReelsComponent: React.FC = () => {
               ) : selectedReel.url !== '#' ? (
                 <video src={selectedReel.url} controls autoPlay style={{ width:'100%', height:'100%', objectFit:'contain' }} />
               ) : (
-                <div className="player-placeholder">🎬 Video Player</div>
+                <div className="player-placeholder">🎬 {t('reels.videoPlayer', 'Video Player')}</div>
               )}
             </div>
             <div className="reel-details">

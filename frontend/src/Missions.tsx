@@ -289,7 +289,17 @@ function MaraLightning({ isThinking }: { isThinking: boolean }) {
 }
 
 // ── Transformation Journey ───────────────────────────────────────────────────
+const MILESTONE_KEYS: Record<number, string> = {
+  1: 'missions.milestone.newMindset',
+  21: 'missions.milestone.newHabit',
+  90: 'missions.milestone.newSkills',
+  180: 'missions.milestone.newBody',
+  365: 'missions.milestone.newLife',
+  1095: 'missions.milestone.newYou',
+};
+
 function TransformationJourney({ completed }: { completed: number }) {
+  const { t } = useTranslation();
   const activeTier = getActiveTier(completed);
   const next = TRANSFORMATION_MILESTONES[activeTier + 1];
   const current = TRANSFORMATION_MILESTONES[activeTier];
@@ -298,6 +308,9 @@ function TransformationJourney({ completed }: { completed: number }) {
     ? Math.min(1, (completed - current.days) / (next.days - current.days))
     : 1;
 
+  const getLabel = (m: typeof TRANSFORMATION_MILESTONES[number]) =>
+    t(MILESTONE_KEYS[m.days], m.label);
+
   return (
     <div className="transformation-journey">
       <div className="tj-milestones">
@@ -305,7 +318,7 @@ function TransformationJourney({ completed }: { completed: number }) {
           <div
             key={m.days}
             className={`tj-node ${i < activeTier ? 'tj-node--done' : i === activeTier ? 'tj-node--active' : 'tj-node--future'}`}
-            title={`${m.label} — ${m.days} zile`}
+            title={`${getLabel(m)} — ${m.days} ${t('missions.days', 'days')}`}
           >
             <span className="tj-node-icon">{i <= activeTier ? m.icon : '○'}</span>
           </div>
@@ -316,10 +329,10 @@ function TransformationJourney({ completed }: { completed: number }) {
       </div>
       <div className="tj-label">
         <span className="tj-current" style={{ color: current.color }}>
-          {current.icon} {current.label}
+          {current.icon} {getLabel(current)}
         </span>
         {next && (
-          <span className="tj-next">→ {next.label} ({next.days - completed} zile)</span>
+          <span className="tj-next">→ {getLabel(next)} ({next.days - completed} {t('missions.days', 'days')})</span>
         )}
       </div>
     </div>
@@ -338,6 +351,7 @@ function MissionCardNew({
   onSelect: (m: Mission, locked: boolean) => void;
   isSelected: boolean;
 }) {
+  const { t } = useTranslation();
   const pillarMeta = PILLAR_META[mission.pillar] ?? { icon: '🎯', color: '#a855f7' };
   const isCompleted = mission.user_status === 'completed';
 
@@ -354,7 +368,7 @@ function MissionCardNew({
       style={{ '--pillar': pillarMeta.color } as React.CSSProperties}
     >
       {index >= 0 && <div className="mc-num">#{index + 1}</div>}
-      {isFree && index >= 0 && index < 10 && !isCompleted && <div className="mc-free">FREE</div>}
+      {isFree && index >= 0 && index < 10 && !isCompleted && <div className="mc-free">{t('missions.freeBadge', 'FREE')}</div>}
       <div className="mc-icon">
         {isLocked ? '🔒' : pillarMeta.icon}
       </div>
@@ -929,7 +943,7 @@ export default function Missions() {
                   <div className="mara-thinking">
                     <span /><span /><span />
                   </div>
-                  <p style={{ opacity: 0.7, marginTop: '8px' }}>Mara analizează răspunsul tău...</p>
+                  <p style={{ opacity: 0.7, marginTop: '8px' }}>{t('missions.analyzing', 'Mara is analyzing your answer...')}</p>
                 </div>
               )}
 
