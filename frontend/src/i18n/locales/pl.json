@@ -1,4 +1,4 @@
-﻿{
+{
   "common": {
     "close": "Zamknij",
     "save": "Zapisz",
@@ -472,7 +472,7 @@
     "installDismiss": "Nie teraz",
     "installDismissAria": "Zamknij komunikat instalacji",
     "iosHintTitle": "Zainstaluj Mara",
-    "iosHintBody": "Dotknij Udostępnij, a następnie „Do ekranu początkowego”, aby zainstalować aplikację.",
+    "iosHintBody": "Dotknij Udostępnij, a następnie 'Do ekranu początkowego', aby zainstalować aplikację.",
     "iosHintDismiss": "Rozumiem",
     "updateTitle": "Aktualizacja gotowa",
     "updateBody": "Dostępna jest nowsza wersja Mara.",

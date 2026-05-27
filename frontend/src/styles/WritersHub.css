@@ -47,13 +47,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  border-radius: 50%;
+  transition:
+    color 120ms var(--ease-smooth, ease),
+    background 120ms var(--ease-smooth, ease),
+    transform 100ms var(--ease-smooth, ease);
   touch-action: manipulation;
 }
 
+.writers-close-btn:hover {
+  background: rgba(139, 92, 246, 0.1);
+}
+
 .writers-close-btn:active {
-  color: #ff6b00;
-  transform: scale(0.95);
+  color: #c4b5fd;
+  transform: scale(0.9);
+  transition-duration: 60ms;
 }
 
 /* Tab Navigation */
@@ -68,14 +77,18 @@
 
 .writers-tab {
   background: transparent;
-  border: 1px solid #8b5cf6;
-  color: #e0e0e0;
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  color: rgba(224, 224, 224, 0.8);
   padding: 8px 16px;
-  border-radius: 20px;
+  border-radius: var(--radius-full, 9999px);
   cursor: pointer;
   font-weight: 600;
   font-size: 13px;
-  transition: all 0.2s;
+  transition:
+    color 120ms var(--ease-smooth, ease),
+    background 120ms var(--ease-smooth, ease),
+    border-color 120ms var(--ease-smooth, ease),
+    transform 100ms var(--ease-smooth, ease);
   white-space: nowrap;
   min-height: 44px;
   touch-action: manipulation;

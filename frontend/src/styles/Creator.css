@@ -44,13 +44,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  border-radius: 50%;
+  transition:
+    color 120ms var(--ease-smooth, ease),
+    background 120ms var(--ease-smooth, ease),
+    transform 100ms var(--ease-smooth, ease);
   touch-action: manipulation;
+}
+
+.creator-close-btn:hover {
+  background: rgba(255, 107, 0, 0.1);
 }
 
 .creator-close-btn:active {
   color: #ffa500;
-  transform: scale(0.95);
+  transform: scale(0.9);
+  transition-duration: 60ms;
 }
 
 /* Content Area */

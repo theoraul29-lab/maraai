@@ -1,4 +1,4 @@
-﻿{
+{
   "common": {
     "close": "Zatvori",
     "save": "Spremi",
@@ -472,7 +472,7 @@
     "installDismiss": "Ne sada",
     "installDismissAria": "Odbaci poziv za instalaciju",
     "iosHintTitle": "Instaliraj Mara",
-    "iosHintBody": "Dodirnite Dijeli, zatim „Na početni zaslon“ kako biste instalirali aplikaciju.",
+    "iosHintBody": "Dodirnite Dijeli, zatim 'Na početni zaslon' kako biste instalirali aplikaciju.",
     "iosHintDismiss": "Razumijem",
     "updateTitle": "Ažuriranje spremno",
     "updateBody": "Dostupna je novija verzija Mare.",

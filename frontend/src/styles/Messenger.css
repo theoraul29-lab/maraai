@@ -18,12 +18,15 @@
   height: 520px;
   max-height: 90vh;
   background: #1a1a2e;
-  border: 1px solid rgba(168, 85, 247, 0.3);
-  border-radius: 16px 16px 0 0;
+  border: 1px solid rgba(168, 85, 247, 0.2);
+  border-radius: 20px 20px 0 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: messengerSlideUp 0.25s ease;
+  box-shadow:
+    0 -4px 16px rgba(0,0,0,0.4),
+    0 -8px 32px rgba(168,85,247,0.06);
+  animation: messengerSlideUp 0.3s var(--ease-out-expo, cubic-bezier(0.16,1,0.3,1));
 }
 
 @keyframes messengerSlideUp {
@@ -50,7 +53,7 @@
 .messenger-close {
   background: none;
   border: none;
-  color: #aaa;
+  color: rgba(170, 170, 170, 0.9);
   font-size: 1.1rem;
   cursor: pointer;
   min-height: 44px;
@@ -59,9 +62,13 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  transition: background 0.15s;
+  transition:
+    background 100ms var(--ease-smooth, ease),
+    color 100ms var(--ease-smooth, ease),
+    transform 80ms var(--ease-smooth, ease);
 }
 .messenger-close:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.messenger-close:active { transform: scale(0.88); transition-duration: 50ms; }
 
 .messenger-body {
   display: flex;

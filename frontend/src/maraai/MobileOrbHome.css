@@ -157,13 +157,16 @@
     );
   box-shadow:
     0 0 28px rgba(168, 85, 247, 0.45),
+    0 8px 24px rgba(0,0,0,0.4),
     inset 0 -10px 30px rgba(86, 21, 158, 0.55),
     inset 0 6px 14px rgba(255, 255, 255, 0.22);
   border: 1px solid rgba(199, 125, 255, 0.55);
   will-change: transform, opacity, filter;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: box-shadow 600ms ease;
+  transition:
+    box-shadow 300ms var(--ease-smooth, ease),
+    transform 200ms var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
   pointer-events: auto;
 }
 
@@ -252,12 +255,23 @@
   color: #fff;
   border: none;
   border-radius: 999px;
-  padding: 6px 12px;
+  padding: 7px 14px;
   font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.2px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(168, 85, 247, 0.35);
+  box-shadow:
+    0 2px 4px rgba(168, 85, 247, 0.2),
+    0 4px 16px rgba(168, 85, 247, 0.3);
+  transition:
+    transform 200ms var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1)),
+    box-shadow 150ms var(--ease-smooth, ease);
+  touch-action: manipulation;
+}
+
+.mara-orb-home__register-btn:active {
+  transform: scale(0.95);
+  transition-duration: 60ms;
 }
 
 .mara-orb-home__settings-btn {

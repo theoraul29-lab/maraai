@@ -1,4 +1,4 @@
-﻿{
+{
   "common": {
     "close": "Bezárás",
     "save": "Mentés",
@@ -472,7 +472,7 @@
     "installDismiss": "Most nem",
     "installDismissAria": "Telepítési felkérés bezárása",
     "iosHintTitle": "Mara telepítése",
-    "iosHintBody": "Koppints a Megosztás, majd a „Főképernyőre” lehetőségre az alkalmazás telepítéséhez.",
+    "iosHintBody": "Koppints a Megosztás, majd a 'Főképernyőre' lehetőségre az alkalmazás telepítéséhez.",
     "iosHintDismiss": "Értem",
     "updateTitle": "Frissítés kész",
     "updateBody": "A Mara újabb verziója érhető el.",

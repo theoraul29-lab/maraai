@@ -1,4 +1,4 @@
-﻿{
+{
   "common": {
     "close": "Zavřít",
     "save": "Uložit",
@@ -472,7 +472,7 @@
     "installDismiss": "Teď ne",
     "installDismissAria": "Zavřít výzvu k instalaci",
     "iosHintTitle": "Nainstalovat Mara",
-    "iosHintBody": "Klepněte na Sdílet a poté „Na plochu“ pro instalaci aplikace.",
+    "iosHintBody": "Klepněte na Sdílet a poté 'Na plochu' pro instalaci aplikace.",
     "iosHintDismiss": "Rozumím",
     "updateTitle": "Aktualizace připravena",
     "updateBody": "Je k dispozici novější verze Mara.",

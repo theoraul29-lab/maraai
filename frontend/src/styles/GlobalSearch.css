@@ -8,17 +8,21 @@
 .global-search-input {
   width: 100%;
   padding: 8px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-full, 9999px);
+  background: rgba(255, 255, 255, 0.06);
   color: inherit;
   font-size: 14px;
   outline: none;
-  transition: background 120ms, border-color 120ms;
+  transition:
+    background 120ms var(--ease-smooth, ease),
+    border-color 120ms var(--ease-smooth, ease),
+    box-shadow 120ms var(--ease-smooth, ease);
 }
 .global-search-input:focus {
-  background: rgba(255, 255, 255, 0.16);
-  border-color: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(168, 85, 247, 0.5);
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.08);
 }
 .global-search-input::placeholder {
   color: rgba(255, 255, 255, 0.55);
@@ -30,9 +34,12 @@
   left: 0;
   right: 0;
   background: #1b1d22;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-lg, 16px);
+  box-shadow:
+    0 4px 8px rgba(0,0,0,0.4),
+    0 8px 24px rgba(0,0,0,0.35),
+    0 24px 48px rgba(0,0,0,0.3);
   max-height: 60vh;
   overflow-y: auto;
   z-index: 1000;

@@ -15,15 +15,19 @@
 
 /* Auth Modal */
 .auth-modal {
-  background: linear-gradient(135deg, #1a1a2e, #16213e);
-  border: 1px solid rgba(157, 78, 221, 0.3);
-  border-radius: 16px;
+  background: linear-gradient(160deg, #1a1a2e 0%, #16213e 100%);
+  border: 1px solid rgba(157, 78, 221, 0.25);
+  border-radius: 20px;
   padding: 40px;
   width: 100%;
   max-width: 420px;
-  box-shadow: 0 8px 32px rgba(157, 78, 221, 0.2);
+  box-shadow:
+    0 4px 8px rgba(0,0,0,0.5),
+    0 8px 24px rgba(0,0,0,0.4),
+    0 24px 64px rgba(0,0,0,0.35),
+    0 0 0 1px rgba(157,78,221,0.08);
   position: relative;
-  animation: slideUp 0.3s ease-out;
+  animation: slideUp 0.25s var(--ease-out-expo, cubic-bezier(0.16,1,0.3,1));
 }
 
 .auth-modal-close {
@@ -70,12 +74,15 @@
 
 .auth-form input {
   padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(157, 78, 221, 0.2);
-  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(157, 78, 221, 0.18);
+  border-radius: 10px;
   color: #fff;
   font-size: 14px;
-  transition: all 0.2s;
+  transition:
+    border-color 120ms var(--ease-smooth, ease),
+    background 120ms var(--ease-smooth, ease),
+    box-shadow 120ms var(--ease-smooth, ease);
 }
 
 .auth-form input::placeholder {
@@ -108,22 +115,35 @@
   padding: 12px 16px;
   background: linear-gradient(135deg, #9d4edd, #7b2ff7);
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   color: #fff;
   font-size: 14px;
   font-weight: 600;
+  letter-spacing: 0.01em;
   cursor: pointer;
-  transition: all 0.3s;
-  box-shadow: 0 4px 12px rgba(157, 78, 221, 0.3);
+  transition:
+    transform 200ms var(--ease-spring, cubic-bezier(0.34,1.56,0.64,1)),
+    box-shadow 150ms var(--ease-smooth, ease),
+    opacity 150ms var(--ease-smooth, ease);
+  box-shadow:
+    0 2px 4px rgba(157, 78, 221, 0.2),
+    0 4px 16px rgba(157, 78, 221, 0.25);
 }
 
 .auth-submit:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(157, 78, 221, 0.4);
+  box-shadow:
+    0 4px 8px rgba(157, 78, 221, 0.3),
+    0 8px 24px rgba(157, 78, 221, 0.3);
+}
+
+.auth-submit:active:not(:disabled) {
+  transform: scale(0.97);
+  transition-duration: 60ms;
 }
 
 .auth-submit:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
