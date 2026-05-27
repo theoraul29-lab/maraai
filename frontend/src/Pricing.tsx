@@ -1,6 +1,57 @@
 import { useNavigate } from 'react-router-dom';
 import './styles/Pricing.css';
 
+const PLATFORM_FEATURES = [
+  {
+    icon: '🤖',
+    name: 'Mara AI',
+    desc: 'Asistentul tău personal de creștere — disponibil 24/7 pentru conversații, sfaturi și suport emoțional.',
+    access: 'free' as const,
+  },
+  {
+    icon: '🎬',
+    name: 'Reels',
+    desc: 'Video-uri scurte inspiraționale și educative create de comunitate și AI, curate zilnic.',
+    access: 'free' as const,
+  },
+  {
+    icon: '🌐',
+    name: 'Comunitate',
+    desc: 'Conectează-te cu oameni pe același drum. Postează, comentează, inspiră și fii inspirat.',
+    access: 'free' as const,
+  },
+  {
+    icon: '✍️',
+    name: 'Writers Hub',
+    desc: 'Scrie-ți cartea pas cu pas cu ajutorul AI. Structură, capitole, feedback instantaneu.',
+    access: 'free' as const,
+  },
+  {
+    icon: '✨',
+    name: 'Creator Panel',
+    desc: 'Creează și publică conținut pe platformă — reels, articole, misiuni pentru comunitate.',
+    access: 'free' as const,
+  },
+  {
+    icon: '🎯',
+    name: 'Misiuni zilnice AI',
+    desc: 'Provocări personalizate generate de Mara în fiecare zi, adaptate obiectivului tău.',
+    access: 'program' as const,
+  },
+  {
+    icon: '📊',
+    name: 'Streak & XP',
+    desc: 'Urmărește-ți progresul zilnic, câștigă XP și badge-uri pe măsură ce avansezi.',
+    access: 'program' as const,
+  },
+  {
+    icon: '📚',
+    name: 'Carte digitală',
+    desc: 'La finalul unui program, Mara generează cartea ta de viață — jurnalul tău transformat.',
+    access: 'program' as const,
+  },
+];
+
 const PROGRAMS = [
   {
     id: 'new_mindset',
@@ -121,6 +172,34 @@ export default function Pricing() {
         <p className="pricing-subtitle">
           Fiecare zi contează. Alege cât de departe vrei să mergi.
         </p>
+      </div>
+
+      <div className="pricing-platform">
+        <h2 className="pricing-platform-title">Ce primești cu MaraAI</h2>
+        <p className="pricing-platform-subtitle">
+          Unele funcții sunt gratuite pentru toți. Altele se deblochează cu un program.
+        </p>
+        <div className="pricing-platform-grid">
+          {PLATFORM_FEATURES.map((f) => (
+            <div key={f.name} className={`pricing-platform-card pricing-platform-card--${f.access}`}>
+              <div className="pricing-platform-icon">{f.icon}</div>
+              <div className="pricing-platform-body">
+                <div className="pricing-platform-name">
+                  {f.name}
+                  <span className={`pricing-platform-badge pricing-platform-badge--${f.access}`}>
+                    {f.access === 'free' ? 'Gratuit' : 'Cu program'}
+                  </span>
+                </div>
+                <p className="pricing-platform-desc">{f.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="pricing-section-divider">
+        <h2 className="pricing-section-title">Alege-ți programul de transformare</h2>
+        <p className="pricing-section-sub">O singură plată. Acces permanent. Nicio surpriză.</p>
       </div>
 
       <div className="pricing-grid">

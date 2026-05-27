@@ -103,6 +103,128 @@
   font-weight: 700;
 }
 
+.pricing-platform {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px 56px;
+}
+
+.pricing-platform-title {
+  font-size: clamp(1.3rem, 3vw, 2rem);
+  font-weight: 800;
+  color: #fff;
+  text-align: center;
+  margin: 0 0 8px;
+}
+
+.pricing-platform-subtitle {
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.45);
+  text-align: center;
+  margin: 0 0 36px;
+}
+
+.pricing-platform-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 14px;
+}
+
+.pricing-platform-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 18px 20px;
+  border-radius: 14px;
+  border: 1px solid rgba(168,85,247,0.12);
+  background: rgba(8,0,20,0.6);
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.pricing-platform-card:hover {
+  border-color: rgba(168,85,247,0.35);
+  background: rgba(168,85,247,0.06);
+}
+
+.pricing-platform-card--program {
+  border-color: rgba(96,165,250,0.15);
+  background: rgba(2,10,30,0.6);
+}
+
+.pricing-platform-card--program:hover {
+  border-color: rgba(96,165,250,0.4);
+  background: rgba(96,165,250,0.05);
+}
+
+.pricing-platform-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.pricing-platform-body {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.pricing-platform-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.9);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pricing-platform-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pricing-platform-badge--free {
+  background: rgba(52,211,153,0.15);
+  color: #34d399;
+  border: 1px solid rgba(52,211,153,0.3);
+}
+
+.pricing-platform-badge--program {
+  background: rgba(96,165,250,0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(96,165,250,0.3);
+}
+
+.pricing-platform-desc {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.5);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.pricing-section-divider {
+  text-align: center;
+  padding: 0 24px 40px;
+}
+
+.pricing-section-title {
+  font-size: clamp(1.3rem, 3vw, 2rem);
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 8px;
+}
+
+.pricing-section-sub {
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.45);
+  margin: 0;
+}
+
 .pricing-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -150,6 +272,75 @@
   font-weight: 700;
   color: #fff;
   white-space: nowrap;
+}
+
+.pricing-card--featured {
+  border-color: var(--accent, #a855f7);
+  background: rgba(168,85,247,0.08);
+}
+
+.pricing-card--featured:hover {
+  transform: translateY(-4px);
+}
+
+.pricing-card-icon {
+  font-size: 2.2rem;
+  text-align: center;
+}
+
+.pricing-card-name {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #fff;
+  text-align: center;
+  margin: 0;
+}
+
+.pricing-card-tagline {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.45);
+  text-align: center;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.pricing-card-days {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--accent, #a855f7);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.pricing-card-price {
+  text-align: center;
+}
+
+.pricing-free {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #34d399;
+}
+
+.pricing-amount {
+  font-size: 2.4rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.pricing-once {
+  display: block;
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.4);
+  margin-top: 2px;
+}
+
+.pricing-free-trial {
+  font-size: 0.78rem;
+  color: #34d399;
+  text-align: center;
+  font-weight: 600;
 }
 
 .pricing-card-header {
@@ -304,4 +495,6 @@
   .pricing-hero { padding: 40px 16px 28px; }
   .pricing-faq-grid { grid-template-columns: 1fr; }
   .pricing-footer { flex-direction: column; gap: 8px; text-align: center; }
+  .pricing-platform-grid { grid-template-columns: 1fr; }
+  .pricing-platform { padding: 0 16px 40px; }
 }
