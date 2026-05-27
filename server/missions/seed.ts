@@ -569,7 +569,90 @@ const MISSIONS_V4 = [
   },
 ];
 
-// ─── Cele 5 programe ─────────────────────────────────────────────────────────
+// ─── Cele 6 programe de transformare (progression tiers) ─────────────────────
+
+const PROGRESSION_PROGRAMS = [
+  {
+    id: 'prog-new-mindset',
+    slug: 'new-mindset',
+    name: 'New Mindset',
+    tagline: 'O zi. O schimbare de perspectivă.',
+    description: 'Prima ta misiune în transformarea personală. O singură zi, o singură misiune — simplă, profundă, imediată. Descoperă cum un moment de claritate poate schimba totul.',
+    duration_days: 1,
+    price_cents: 0,
+    pillar_focus: JSON.stringify(['self', 'acceptance']),
+    difficulty: 'gentle',
+    is_featured: 1,
+    sort_order: 0,
+  },
+  {
+    id: 'prog-new-habit',
+    slug: 'new-habit',
+    name: 'New Habit',
+    tagline: '21 de zile. Un obicei pentru viață.',
+    description: 'Știința confirmă: 21 de zile sunt suficiente pentru a consolida un nou obicei. Primele 10 zile sunt gratuite — ca să simți cum funcționează. Restul de 11 zile sunt ale tale dacă alegi să continui.',
+    duration_days: 21,
+    price_cents: 600,
+    pillar_focus: JSON.stringify(['discipline', 'self']),
+    difficulty: 'gentle',
+    is_featured: 1,
+    sort_order: 1,
+  },
+  {
+    id: 'prog-new-skills',
+    slug: 'new-skills',
+    name: 'New Skills',
+    tagline: '90 de zile. O abilitate nouă.',
+    description: 'Trei luni de misiuni zilnice pentru a stăpâni ceva nou — o abilitate, un domeniu, o versiune mai competentă a ta. Mara generează fiecare zi în funcție de progresul tău real.',
+    duration_days: 90,
+    price_cents: 6000,
+    pillar_focus: JSON.stringify(['discipline', 'self', 'hobby']),
+    difficulty: 'medium',
+    is_featured: 1,
+    sort_order: 2,
+  },
+  {
+    id: 'prog-new-body',
+    slug: 'new-body',
+    name: 'New Body',
+    tagline: '180 de zile. Un corp și o minte noi.',
+    description: 'Șase luni de transformare fizică și mentală autentică. Nu e o dietă și nu e un program de fitness standard — e o schimbare reală de identitate, construită zi cu zi prin misiuni personalizate de Mara.',
+    duration_days: 180,
+    price_cents: 16000,
+    pillar_focus: JSON.stringify(['life', 'discipline', 'self']),
+    difficulty: 'medium',
+    is_featured: 0,
+    sort_order: 3,
+  },
+  {
+    id: 'prog-new-life',
+    slug: 'new-life',
+    name: 'New Life',
+    tagline: '365 de zile. O viață nouă.',
+    description: 'Un an întreg de misiuni zilnice personalizate. Carieră, relații, sănătate, scop — toate reconstruite pas cu pas. La final, nu vei fi o versiune îmbunătățită a ta. Vei fi tu, din nou.',
+    duration_days: 365,
+    price_cents: 36000,
+    pillar_focus: JSON.stringify(['life', 'self', 'helping', 'discipline']),
+    difficulty: 'deep',
+    is_featured: 0,
+    sort_order: 4,
+  },
+  {
+    id: 'prog-new-you',
+    slug: 'new-you',
+    name: 'New You',
+    tagline: '1095 de zile. Un om nou.',
+    description: 'Trei ani. 1095 de misiuni zilnice. Calea completă de la cine ești acum la cine poți deveni. Cel mai ambițios program de transformare personală disponibil — pentru cei care au decis că vor cu adevărat să se schimbe.',
+    duration_days: 1095,
+    price_cents: 62000,
+    pillar_focus: JSON.stringify(['self', 'life', 'discipline', 'acceptance', 'creativity']),
+    difficulty: 'deep',
+    is_featured: 0,
+    sort_order: 5,
+  },
+];
+
+// ─── Cele 5 programe tematice ─────────────────────────────────────────────────
 
 const PROGRAMS = [
   {
@@ -583,7 +666,7 @@ const PROGRAMS = [
     pillar_focus: JSON.stringify(['discipline', 'self', 'life']),
     difficulty: 'gentle',
     is_featured: 1,
-    sort_order: 1,
+    sort_order: 10,
   },
   {
     id: 'prog-inner-work',
@@ -596,7 +679,7 @@ const PROGRAMS = [
     pillar_focus: JSON.stringify(['acceptance', 'self']),
     difficulty: 'deep',
     is_featured: 1,
-    sort_order: 2,
+    sort_order: 11,
   },
   {
     id: 'prog-creative-expression',
@@ -609,7 +692,7 @@ const PROGRAMS = [
     pillar_focus: JSON.stringify(['creativity', 'self']),
     difficulty: 'gentle',
     is_featured: 0,
-    sort_order: 3,
+    sort_order: 12,
   },
   {
     id: 'prog-story-of-you',
@@ -622,7 +705,7 @@ const PROGRAMS = [
     pillar_focus: JSON.stringify(['creativity', 'self', 'acceptance']),
     difficulty: 'medium',
     is_featured: 1,
-    sort_order: 4,
+    sort_order: 13,
   },
   {
     id: 'prog-legacy-builder',
@@ -635,7 +718,7 @@ const PROGRAMS = [
     pillar_focus: JSON.stringify(['discipline', 'self', 'helping', 'hobby']),
     difficulty: 'medium',
     is_featured: 0,
-    sort_order: 5,
+    sort_order: 14,
   },
 ];
 
@@ -682,11 +765,15 @@ export function seedMissions(): void {
         is_daily: m.is_daily,
       });
     }
+    for (const p of PROGRESSION_PROGRAMS) {
+      insertProgram.run(p);
+    }
     for (const p of PROGRAMS) {
       insertProgram.run(p);
     }
   });
 
+  const totalPrograms = PROGRESSION_PROGRAMS.length + PROGRAMS.length;
   insertAll();
-  console.log(`[missions] ✅ ${allMissions.length} misiuni + ${PROGRAMS.length} programe seed-uite`);
+  console.log(`[missions] ✅ ${allMissions.length} misiuni + ${totalPrograms} programe seed-uite (${PROGRESSION_PROGRAMS.length} progression + ${PROGRAMS.length} tematice)`);
 }
