@@ -143,7 +143,12 @@ let brainClientInstance: Anthropic | null = null;
 let brainClientKey: string | null = null;
 
 function getBrainClient(): Anthropic {
-  const apiKey = process.env.ANTHROPIC_BRAIN_API_KEY || process.env.ANTHROPIC_API_KEY;
+  const dedicated = process.env.ANTHROPIC_BRAIN_API_KEY;
+  if (!dedicated && process.env.NODE_ENV === 'production') {
+    // Warn once so operators know brain and chat share the same quota
+    console.warn('[anthropic] ANTHROPIC_BRAIN_API_KEY not set — brain shares ANTHROPIC_API_KEY quota with user chat');
+  }
+  const apiKey = dedicated || process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     throw new Error('No Anthropic key for brain. Set ANTHROPIC_BRAIN_API_KEY or ANTHROPIC_API_KEY.');
   }

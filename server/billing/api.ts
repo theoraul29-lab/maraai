@@ -192,15 +192,22 @@ export function registerBillingApi(app: Express): void {
       if (status !== 'COMPLETED' || !customId) {
         return res.redirect('/missions?payment=failed');
       }
-      const [userId, programId] = customId.split(':');
-      if (!userId || !programId) return res.redirect('/missions?payment=failed');
+      const [orderUserId, programId] = customId.split(':');
+      if (!orderUserId || !programId) return res.redirect('/missions?payment=failed');
+
+      // Security: verify the authenticated session user matches the order's owner
+      const sessionUserId = await getAuthenticatedUserId(req);
+      if (!sessionUserId || sessionUserId !== orderUserId) {
+        console.error('[billing] capture auth mismatch: session=%s order=%s', sessionUserId, orderUserId);
+        return res.redirect('/missions?payment=failed');
+      }
 
       rawSqlite
         .prepare(
           `UPDATE program_purchases SET status = 'completed', completed_at = unixepoch()
            WHERE paypal_order_id = ? AND user_id = ?`,
         )
-        .run(orderId, userId);
+        .run(orderId, orderUserId);
 
       return res.redirect(`/missions?payment=success&program=${programId}`);
     } catch (err) {
@@ -526,7 +533,9 @@ export function registerBillingApi(app: Express): void {
       return res.status(502).json({ error: 'paypal_verify_failed' });
     }
     if (!verified) {
-      return res.status(400).json({ error: 'invalid_signature' });
+      // Return 200 so PayPal doesn't retry indefinitely; log for investigation
+      console.error('[billing] paypal webhook: invalid signature — ignoring event');
+      return res.status(200).json({ received: false, error: 'invalid_signature' });
     }
     let event;
     try {

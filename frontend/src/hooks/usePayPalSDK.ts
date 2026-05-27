@@ -30,8 +30,10 @@ const SDK_URL = 'https://www.paypal.com/web-sdk/v6/core';
 let scriptLoadPromise: Promise<void> | null = null;
 
 function loadScript(): Promise<void> {
+  // Reset cached promise on error so the next mount can retry
   if (scriptLoadPromise) return scriptLoadPromise;
-  if (document.querySelector(`script[src="${SDK_URL}"]`)) {
+  const existing = document.querySelector(`script[src="${SDK_URL}"]`);
+  if (existing && !existing.getAttribute('data-error')) {
     scriptLoadPromise = Promise.resolve();
     return scriptLoadPromise;
   }
@@ -40,7 +42,11 @@ function loadScript(): Promise<void> {
     script.src = SDK_URL;
     script.async = true;
     script.onload = () => resolve();
-    script.onerror = () => reject(new Error('PayPal SDK v6 failed to load'));
+    script.onerror = () => {
+      script.setAttribute('data-error', '1');
+      scriptLoadPromise = null; // allow retry on next mount
+      reject(new Error('PayPal SDK v6 failed to load'));
+    };
     document.head.appendChild(script);
   });
   return scriptLoadPromise;

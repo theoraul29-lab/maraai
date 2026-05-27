@@ -1502,7 +1502,7 @@ experiments, and learning cycles. If asked about experiments or strategy, be spe
 
   app.get('/api/admin/dashboard/messages', requireAdmin, (req: any, res: any) => {
     const adminId = req.user?.uid;
-    const messages = sqlAll(`SELECT id, content, sender, created_at FROM chat_messages WHERE user_id='${adminId}' ORDER BY created_at DESC LIMIT 100`);
+    const messages = rawSqlite.prepare('SELECT id, content, sender, created_at FROM chat_messages WHERE user_id = ? ORDER BY created_at DESC LIMIT 100').all(adminId ?? '') as any[];
     res.json({ messages: messages.reverse() });
   });
 

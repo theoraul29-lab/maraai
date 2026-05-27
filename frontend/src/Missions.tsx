@@ -543,6 +543,7 @@ export default function Missions() {
       setPaymentProgram(params.get('program'));
       if (payment === 'success') {
         loadPurchasedPrograms();
+        loadEnrollments();
         setActiveTab('programs');
       }
       window.history.replaceState({}, '', location.pathname);
@@ -1103,7 +1104,9 @@ export default function Missions() {
                             programName={bp.name}
                             priceCents={bp.priceCents}
                             onSuccess={(id) => {
-                              setPurchasedPrograms((prev) => [...prev, id]);
+                              // Reload from server to get authoritative purchased list
+                              loadPurchasedPrograms();
+                              loadEnrollments();
                               setPaymentNotice('success');
                               setPaymentProgram(id);
                               setTimeout(() => setPaymentNotice(null), 6000);

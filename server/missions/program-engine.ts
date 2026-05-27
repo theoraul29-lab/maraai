@@ -207,13 +207,20 @@ Răspunde DOAR JSON valid:
 
   const response = await llmGenerate(prompt, { source: 'agent.program-generator' });
   const clean = response.replace(/```json|```/g, '').trim();
-  const gen = JSON.parse(clean);
+  let gen: Record<string, unknown>;
+  try {
+    gen = JSON.parse(clean) as Record<string, unknown>;
+  } catch {
+    // LLM returned malformed JSON — fall back to seed mission
+    const seed = seedMissions[day % seedMissions.length];
+    return { seedMissionId: seed?.id, isAiGenerated: false };
+  }
 
   return {
-    customTitle: gen.title,
-    customDescription: gen.description,
-    customProofPrompt: gen.proofPrompt,
-    intent: gen.intent,
+    customTitle: typeof gen.title === 'string' ? gen.title : undefined,
+    customDescription: typeof gen.description === 'string' ? gen.description : undefined,
+    customProofPrompt: typeof gen.proofPrompt === 'string' ? gen.proofPrompt : undefined,
+    intent: typeof gen.intent === 'string' ? gen.intent : undefined,
     isAiGenerated: true,
   };
 }
@@ -236,6 +243,11 @@ export async function getDayMission(
   if (!enrollment) return null;
 
   const currentDay = enrollment.current_day;
+
+  // Enforce paywall: check if user has access to this day before returning mission
+  if (!hasAccessToDay(userId, enrollment.program_slug, currentDay)) {
+    return { locked: true, currentDay, programSlug: enrollment.program_slug };
+  }
 
   const todayCompleted = rawSqlite
     .prepare(
@@ -280,7 +292,6 @@ export async function getDayMission(
       )
       .get(enrollment.program_id, currentDay) as any;
 
-    void personality; void seedMissions;
   }
 
   return {
@@ -368,43 +379,47 @@ export async function completeProgramDay(
 
   const journalId = crypto.randomUUID();
   const MILESTONES = [7, 14, 21, 30, 60, 90, 180, 365];
-  rawSqlite
-    .prepare(
-      `INSERT INTO journal_entries
-        (id, user_id, program_enrollment_id, day_number, raw_content,
-         mara_reflection, mara_page, mood, tags, visibility, is_milestone)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'private', ?)`,
-    )
-    .run(
-      journalId,
-      userId,
-      enrollmentId,
-      enrollment.current_day,
-      proof.content ?? '',
-      journalData.maraFeedback,
-      journalData.journalPage,
-      journalData.detectedMood ?? null,
-      JSON.stringify(journalData.tags ?? []),
-      MILESTONES.includes(enrollment.current_day) ? 1 : 0,
-    );
 
-  rawSqlite
-    .prepare(
-      `INSERT INTO mission_proofs
-        (id, user_mission_id, user_id, proof_type, content, media_url,
-         mara_feedback, mara_page, processing_status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'done')`,
-    )
-    .run(
-      crypto.randomUUID(),
-      dayMission.mission.id ?? 'unknown',
-      userId,
-      proof.type,
-      proof.content ?? null,
-      proof.mediaUrl ?? null,
-      journalData.maraFeedback,
-      journalData.journalPage,
-    );
+  // Atomic: journal entry + proof insert in single transaction to avoid orphaned records
+  rawSqlite.transaction(() => {
+    rawSqlite
+      .prepare(
+        `INSERT INTO journal_entries
+          (id, user_id, program_enrollment_id, day_number, raw_content,
+           mara_reflection, mara_page, mood, tags, visibility, is_milestone)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'private', ?)`,
+      )
+      .run(
+        journalId,
+        userId,
+        enrollmentId,
+        enrollment.current_day,
+        proof.content ?? '',
+        journalData.maraFeedback,
+        journalData.journalPage,
+        journalData.detectedMood ?? null,
+        JSON.stringify(journalData.tags ?? []),
+        MILESTONES.includes(enrollment.current_day) ? 1 : 0,
+      );
+
+    rawSqlite
+      .prepare(
+        `INSERT INTO mission_proofs
+          (id, user_mission_id, user_id, proof_type, content, media_url,
+           mara_feedback, mara_page, processing_status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'done')`,
+      )
+      .run(
+        crypto.randomUUID(),
+        dayMission.mission.id ?? 'unknown',
+        userId,
+        proof.type,
+        proof.content ?? null,
+        proof.mediaUrl ?? null,
+        journalData.maraFeedback,
+        journalData.journalPage,
+      );
+  })();
 
   const newDay = enrollment.current_day + 1;
   const newStreak = enrollment.streak + 1;
@@ -434,9 +449,19 @@ export async function completeProgramDay(
     .prepare(
       `INSERT INTO user_xp (user_id, xp, level, streak, updated_at)
        VALUES (?, ?, 1, 0, unixepoch())
-       ON CONFLICT(user_id) DO UPDATE SET xp = xp + ?, updated_at = unixepoch()`,
+       ON CONFLICT(user_id) DO UPDATE SET
+         xp = xp + ?,
+         level = CASE
+           WHEN xp + ? < 500   THEN 1
+           WHEN xp + ? < 1500  THEN 2
+           WHEN xp + ? < 3500  THEN 3
+           WHEN xp + ? < 7500  THEN 4
+           WHEN xp + ? < 15000 THEN 5
+           ELSE 6
+         END,
+         updated_at = unixepoch()`,
     )
-    .run(userId, xpGained, xpGained);
+    .run(userId, xpGained, xpGained, xpGained, xpGained, xpGained, xpGained, xpGained);
 
   if (programCompleted) {
     generateUserBook(userId, enrollmentId, enrollment).catch((err) =>

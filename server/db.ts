@@ -632,6 +632,9 @@ sqlite.exec(`
     ON program_purchases(user_id, program_id, status);
   CREATE INDEX IF NOT EXISTS idx_program_purchases_order
     ON program_purchases(paypal_order_id);
+  -- Prevent duplicate completed purchases: one completed row per (user, program)
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_program_purchases_completed_unique
+    ON program_purchases(user_id, program_id) WHERE status = 'completed';
 `);
 
 export const db = drizzle(sqlite, { schema });

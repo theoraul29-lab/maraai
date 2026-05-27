@@ -194,7 +194,6 @@ function flashBadRequest(res: Response, code: AuthErrorCode, message: string) {
 }
 
 async function signupHandler(req: Request, res: Response) {
-  const t0 = Date.now();
   const parsed = signupBodySchema.safeParse(req.body);
   if (!parsed.success) {
     return flashBadRequest(res, 'signup_body_invalid', 'Email, password (min 6 chars) and name are required.');
@@ -202,11 +201,6 @@ async function signupHandler(req: Request, res: Response) {
 
   const email = parsed.data.email.toLowerCase();
   const { password, name } = parsed.data;
-  // Intentionally do NOT log `email` — that's PII under GDPR and the
-  // log line would otherwise end up in Railway's stdout aggregator. The
-  // user.id from post-tx is the safe correlator across signup phases.
-  console.log('[auth] signup begin', { t: 0 });
-
   // Defence in depth: check both the users table and the credentials table.
   // A match in either means this email is unusable for a new signup (possibly
   // from a prior partial insert or a future OAuth-only user record).
@@ -214,7 +208,6 @@ async function signupHandler(req: Request, res: Response) {
     findCredentialsByEmail(email),
     findUserByEmail(email),
   ]);
-  console.log('[auth] signup post-existence-check', { ms: Date.now() - t0 });
   if (existingCreds || existingUser) {
     return authError(res, 409, 'email_exists', 'An account with this email already exists.');
   }
@@ -227,7 +220,6 @@ async function signupHandler(req: Request, res: Response) {
     console.error('[auth] bcrypt.hash failed:', err);
     return authError(res, 500, 'account_create_failed', 'Failed to create account. Please try again.');
   }
-  console.log('[auth] signup post-bcrypt', { ms: Date.now() - t0 });
 
   // Wrap both inserts in a single transaction so we never end up with an
   // orphaned `users` row if the `local_auth_credentials` insert fails. Drizzle
@@ -274,7 +266,6 @@ async function signupHandler(req: Request, res: Response) {
     return authError(res, 500, 'account_create_failed', 'Failed to create account. Please try again.');
   }
 
-  console.log('[auth] signup post-tx', { ms: Date.now() - t0, userId: user.id });
 
   try {
     await setSessionUser(req, user.id);
@@ -282,7 +273,6 @@ async function signupHandler(req: Request, res: Response) {
     console.error('[auth] session.regenerate failed after signup:', err);
     return authError(res, 500, 'session_create_failed', 'Failed to create session. Please try again.');
   }
-  console.log('[auth] signup done', { ms: Date.now() - t0, userId: user.id });
   void sendWelcomeEmail(email, name).catch((err) =>
     console.error('[auth] sendWelcomeEmail failed:', err),
   );
@@ -292,11 +282,8 @@ async function signupHandler(req: Request, res: Response) {
 }
 
 async function loginHandler(req: Request, res: Response) {
-  const t0 = Date.now();
-  console.log('[auth] login begin', { t: 0 });
   const parsed = loginBodySchema.safeParse(req.body);
   if (!parsed.success) {
-    console.log('[auth] login body-invalid', { ms: Date.now() - t0 });
     return flashBadRequest(res, 'login_body_invalid', 'Email and password are required.');
   }
 
@@ -304,18 +291,15 @@ async function loginHandler(req: Request, res: Response) {
   const { password } = parsed.data;
 
   const creds = await findCredentialsByEmail(email);
-  console.log('[auth] login post-creds-lookup', { ms: Date.now() - t0, found: Boolean(creds) });
   if (!creds) {
     // Uniform error message AND matching latency: run a dummy bcrypt.compare
     // so the "user not found" path takes the same ~100ms as a real compare.
     // Without this, an attacker could enumerate valid emails via timing.
     await bcrypt.compare(password, DUMMY_BCRYPT_HASH).catch(() => false);
-    console.log('[auth] login invalid-credentials (no user)', { ms: Date.now() - t0 });
     return authError(res, 401, 'invalid_credentials', 'Invalid email or password.');
   }
 
   const ok = await bcrypt.compare(password, creds.passwordHash);
-  console.log('[auth] login post-bcrypt', { ms: Date.now() - t0, ok });
   if (!ok) {
     return authError(res, 401, 'invalid_credentials', 'Invalid email or password.');
   }
@@ -336,9 +320,7 @@ async function loginHandler(req: Request, res: Response) {
     console.error('[auth] session.regenerate failed after login:', err);
     return authError(res, 500, 'session_create_failed', 'Failed to create session. Please try again.');
   }
-  console.log('[auth] login post-session', { ms: Date.now() - t0, userId: user[0].id });
   const language = await fetchUserLanguage(user[0].id);
-  console.log('[auth] login done', { ms: Date.now() - t0, userId: user[0].id });
   return res.status(200).json(toPayload({ ...user[0], preferredLanguage: language }));
 }
 
@@ -480,14 +462,20 @@ export async function confirmReset(req: Request, res: Response) {
 
   // Mark token as used and update password in a single transaction
   db.transaction((tx) => {
-    tx.update(passwordResetTokens)
-      .set({ usedAt: now })
+    // Delete token (not just mark used) to prevent replay attacks
+    tx.delete(passwordResetTokens)
       .where(eq(passwordResetTokens.id, tokenRow.id))
       .run();
     tx.update(localAuthCredentials)
       .set({ passwordHash: newHash })
       .where(eq(localAuthCredentials.userId, tokenRow.userId))
       .run();
+  });
+
+  // Session fixation fix: destroy existing session so old sessions are invalidated
+  // A fresh session (anonymous) will be created by the next request via setupSessionAuth
+  await new Promise<void>((resolve) => {
+    req.session.destroy(() => resolve());
   });
 
   return res.status(200).json({ ok: true });
