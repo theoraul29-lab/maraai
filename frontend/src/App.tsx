@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Route, Routes, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -81,8 +81,18 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
 
 function AuthedP2PBadge() {
   const { isAuthenticated, loading } = useAuth();
+  const [backgroundNodeEnabled, setBackgroundNodeEnabled] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    fetch('/api/consent', { credentials: 'include' })
+      .then((r) => r.json())
+      .then((d) => setBackgroundNodeEnabled(!!d?.consent?.backgroundNode))
+      .catch(() => {});
+  }, [isAuthenticated]);
+
   if (loading || !isAuthenticated) return null;
-  return <P2PContributingBadge />;
+  return <P2PContributingBadge backgroundNodeEnabled={backgroundNodeEnabled} />;
 }
 
 function App() {
