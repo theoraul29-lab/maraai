@@ -688,7 +688,7 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
             {tab === 'friends' && t('you.friends', 'Friends')}
             {tab === 'photos' && t('you.photos', 'Photos')}
             {tab === 'videos' && t('you.videos', 'Videos')}
-            {tab === 'stats' && '📊 Stats'}
+            {tab === 'stats' && t('you.stats', '📊 Stats')}
           </button>
         ))}
       </div>
@@ -1098,24 +1098,24 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
               <div className="you-fb-stats-grid">
                 <div className="you-fb-stat-card">
                   <div className="you-fb-stat-value">{missionStats.level}</div>
-                  <div className="you-fb-stat-label">Nivel</div>
+                  <div className="you-fb-stat-label">{t('you.statLevel', 'Level')}</div>
                 </div>
                 <div className="you-fb-stat-card">
                   <div className="you-fb-stat-value">{missionStats.xp.toLocaleString()}</div>
-                  <div className="you-fb-stat-label">XP Total</div>
+                  <div className="you-fb-stat-label">{t('you.statXp', 'Total XP')}</div>
                 </div>
                 <div className="you-fb-stat-card">
                   <div className="you-fb-stat-value">{missionStats.completed}</div>
-                  <div className="you-fb-stat-label">Misiuni completate</div>
+                  <div className="you-fb-stat-label">{t('you.statMissions', 'Missions completed')}</div>
                 </div>
                 <div className="you-fb-stat-card">
                   <div className="you-fb-stat-value">{missionStats.streak > 0 ? `🔥 ${missionStats.streak}` : '—'}</div>
-                  <div className="you-fb-stat-label">Streak (zile)</div>
+                  <div className="you-fb-stat-label">{t('you.statStreak', 'Streak (days)')}</div>
                 </div>
               </div>
               {missionStats.byPillar.length > 0 && (
                 <>
-                  <h3 className="you-fb-stats-section-title">Misiuni pe piloni</h3>
+                  <h3 className="you-fb-stats-section-title">{t('you.statByPillar', 'Missions by pillar')}</h3>
                   <div className="you-fb-pillar-bars">
                     {missionStats.byPillar.map((p) => {
                       const meta: Record<string, { icon: string; color: string }> = {
@@ -1132,7 +1132,7 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
                       return (
                         <div key={p.pillar} className="you-fb-pillar-row">
                           <span className="you-fb-pillar-icon">{m.icon}</span>
-                          <span className="you-fb-pillar-name">{p.pillar}</span>
+                          <span className="you-fb-pillar-name">{t(`missions.pillar.${p.pillar}`, p.pillar)}</span>
                           <div className="you-fb-pillar-bar-wrap">
                             <div
                               className="you-fb-pillar-bar-fill"
@@ -1148,7 +1148,7 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
               )}
             </>
           ) : (
-            <p className="you-fb-muted">Completează prima misiune pentru a vedea statistici.</p>
+            <p className="you-fb-muted">{t('you.statsEmpty', 'Complete your first mission to see statistics.')}</p>
           )}
         </div>
       )}
