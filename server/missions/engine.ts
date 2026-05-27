@@ -2,6 +2,34 @@ import { rawSqlite } from '../db.js';
 import { llmGenerate } from '../llm.js';
 import { randomUUID } from 'crypto';
 
+const LANG_NAMES: Record<string, string> = {
+  en: 'English', ro: 'Romanian', de: 'German', fr: 'French', es: 'Spanish',
+  it: 'Italian', pt: 'Portuguese', ru: 'Russian', uk: 'Ukrainian', nl: 'Dutch',
+  sv: 'Swedish', bg: 'Bulgarian', ja: 'Japanese', ko: 'Korean', pl: 'Polish',
+  cs: 'Czech', hu: 'Hungarian', hr: 'Croatian', sr: 'Serbian', tr: 'Turkish',
+  ar: 'Arabic', hi: 'Hindi', zh: 'Chinese (Simplified)', th: 'Thai', vi: 'Vietnamese',
+  da: 'Danish', el: 'Greek',
+};
+
+function normalizeLang(lang: string): string {
+  return (lang || 'ro').split('-')[0].toLowerCase();
+}
+
+// Persistent translation cache so each mission is only translated once per language.
+rawSqlite.exec(`
+  CREATE TABLE IF NOT EXISTS mission_translations (
+    mission_id TEXT NOT NULL,
+    lang TEXT NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    proof_prompt TEXT NOT NULL,
+    steps TEXT NOT NULL,
+    reflection TEXT,
+    translated_at INTEGER NOT NULL DEFAULT (unixepoch()),
+    PRIMARY KEY (mission_id, lang)
+  )
+`);
+
 const PILLAR_LABELS: Record<string, string> = {
   discipline: '🎯 Disciplină',
   creativity: '🎨 Creativitate',
@@ -136,25 +164,29 @@ export async function submitProof(
   userId: string,
   missionId: string,
   proof: { text?: string; mediaUrl?: string; reflectionAnswer?: string },
+  lang = 'ro',
 ) {
   const mission = rawSqlite.prepare(
     'SELECT xp_reward, title, reflection FROM missions WHERE id = ?'
   ).get(missionId) as { xp_reward: number; title: string; reflection: string } | undefined;
-  if (!mission) return { success: false, message: 'Misiunea nu există.' };
+  if (!mission) return { success: false, message: 'Mission not found.' };
+
+  const normalized = normalizeLang(lang);
+  const langName = LANG_NAMES[normalized] ?? normalized;
 
   let maraFeedback = '';
   try {
     const personality = getPersonality(userId);
-    const prompt = `Ești Mara — un coach de viață empatic și înțelept.
-Un utilizator tocmai a completat misiunea "${mission.title}".
-Ce a scris ca dovadă: "${proof.text ?? 'A uploadat o imagine/video'}"
-${personality ? `Ce știi despre el: îi place: ${personality['what_you_love'] ?? 'necunoscut'}, vrea să schimbe: ${personality['want_to_change'] ?? 'necunoscut'}` : ''}
-Scrie un răspuns personal în română de 2-3 propoziții.
-Recunoaște efortul, fii specific, inspiră-l să continue.
-Nu fi generic. Vorbește ca unui prieten apropiat.`;
+    const prompt = `You are Mara — an empathetic and wise life coach.
+A user just completed the mission "${mission.title}".
+What they wrote as proof: "${proof.text ?? '[uploaded a photo/video]'}"
+${personality ? `What you know about them: they love: ${personality['what_you_love'] ?? 'unknown'}, want to change: ${personality['want_to_change'] ?? 'unknown'}` : ''}
+Write a personal response in ${langName} in 2-3 sentences.
+Acknowledge the effort specifically, inspire them to continue.
+Be personal — reference something concrete from what they wrote.`;
     maraFeedback = await llmGenerate(prompt, { source: 'agent.missions.feedback' });
   } catch {
-    maraFeedback = 'Bravo că ai completat această misiune! Fiecare pas contează în călătoria ta.';
+    maraFeedback = 'Well done on completing this mission! Every step counts on your journey.';
   }
 
   // Wrap the proof write + XP award + audit log + knowledge note in a single
@@ -223,7 +255,7 @@ export function suggestMission(userId: string) {
   return preferred[0] ?? available[0] ?? null;
 }
 
-export async function generatePersonalizedMission(userId: string) {
+export async function generatePersonalizedMission(userId: string, lang = 'ro') {
   const personality = getPersonality(userId);
   const xpData = getUserXP(userId);
   const row = rawSqlite.prepare(
@@ -231,24 +263,28 @@ export async function generatePersonalizedMission(userId: string) {
   ).get(userId) as { cnt: number } | undefined;
   const completedCount = row?.cnt ?? 0;
 
-  const prompt = `Ești Mara — un coach de viață empatic. Generează o misiune personalizată.
-Nivel: ${xpData.level}, Misiuni completate: ${completedCount}
-Îi place: ${personality?.what_you_love ?? 'necunoscut'}
-Vrea să schimbe: ${personality?.want_to_change ?? 'necunoscut'}
-Hobbyuri: ${personality?.current_hobbies ?? 'necunoscut'}
-Piloni disponibili: discipline|creativity|life|acceptance|helping|self|hobby
-Dificultăți: gentle|medium|deep
-Răspunde DOAR cu JSON valid (fără markdown):
+  const normalized = normalizeLang(lang);
+  const langName = LANG_NAMES[normalized] ?? normalized;
+
+  const prompt = `You are Mara — an empathetic life coach. Generate a personalized mission.
+Level: ${xpData.level}, Completed missions: ${completedCount}
+User likes: ${personality?.what_you_love ?? 'unknown'}
+Wants to change: ${personality?.want_to_change ?? 'unknown'}
+Hobbies: ${personality?.current_hobbies ?? 'unknown'}
+Available pillars: discipline|creativity|life|acceptance|helping|self|hobby
+Difficulties: gentle|medium|deep
+Write ALL text fields in ${langName}.
+Respond ONLY with valid JSON (no markdown):
 {
-  "title": "titlu scurt și inspirant",
-  "description": "descriere 2-3 propoziții personalizată",
-  "pillar": "unul din piloni",
+  "title": "short inspiring title",
+  "description": "2-3 personalized sentences",
+  "pillar": "one of the pillars",
   "difficulty": "gentle|medium|deep",
   "xp_reward": 150,
   "proof_type": "text|photo|video|screenshot|any",
-  "proof_prompt": "întrebare specifică pentru reflecție",
-  "steps": ["pas 1", "pas 2", "pas 3"],
-  "reflection": "întrebare profundă de reflecție"
+  "proof_prompt": "specific reflection question",
+  "steps": ["step 1", "step 2", "step 3"],
+  "reflection": "deep reflection question"
 }`;
 
   try {
@@ -315,4 +351,98 @@ function logEvent(userId: string, missionId: string, type: string, meta: Record<
   rawSqlite.prepare(
     'INSERT INTO mission_events (id, user_id, mission_id, event_type, meta) VALUES (?, ?, ?, ?, ?)'
   ).run(id, userId, missionId, type, JSON.stringify(meta));
+}
+
+// ── Mission translation ───────────────────────────────────────────────────────
+
+type TranslatableMission = {
+  id: string;
+  title: string;
+  description: string;
+  proof_prompt: string;
+  steps: string;
+  reflection: string | null;
+  [key: string]: unknown;
+};
+
+/**
+ * Translate mission text fields to the requested language using the LLM.
+ * Results are cached in mission_translations so each mission/lang pair is
+ * only translated once.  Falls back to original Romanian on any error.
+ */
+export async function translateMissions<T extends TranslatableMission>(
+  missions: T[],
+  lang: string,
+): Promise<T[]> {
+  const normalized = normalizeLang(lang);
+  if (!normalized || normalized === 'ro') return missions;
+
+  const langName = LANG_NAMES[normalized] ?? normalized;
+
+  const placeholders = missions.map(() => '?').join(',');
+  const cached = (rawSqlite.prepare(
+    `SELECT mission_id, title, description, proof_prompt, steps, reflection
+     FROM mission_translations WHERE lang = ? AND mission_id IN (${placeholders})`
+  ).all(normalized, ...missions.map(m => m.id))) as Array<{
+    mission_id: string; title: string; description: string;
+    proof_prompt: string; steps: string; reflection: string | null;
+  }>;
+
+  const cacheMap = new Map(cached.map(c => [c.mission_id, c]));
+  const toTranslate = missions.filter(m => !cacheMap.has(m.id));
+
+  if (toTranslate.length > 0) {
+    const CHUNK = 10;
+    const insertStmt = rawSqlite.prepare(
+      `INSERT OR REPLACE INTO mission_translations
+       (mission_id, lang, title, description, proof_prompt, steps, reflection)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+    );
+
+    for (let i = 0; i < toTranslate.length; i += CHUNK) {
+      const chunk = toTranslate.slice(i, i + CHUNK);
+      const payload = chunk.map(m => ({
+        id: m.id,
+        title: m.title,
+        description: m.description,
+        proof_prompt: m.proof_prompt,
+        steps: m.steps,
+        reflection: m.reflection,
+      }));
+
+      try {
+        const prompt = `Translate the following JSON array from Romanian to ${langName}.
+Keep each "id" value unchanged. Translate only: title, description, proof_prompt, steps (it is a JSON array encoded as a string — translate the strings inside it but keep it as a JSON-encoded string), reflection.
+Return ONLY a valid JSON array, no markdown fences:
+${JSON.stringify(payload)}`;
+
+        const raw = await llmGenerate(prompt, { source: 'agent.missions.translate' });
+        const clean = raw.replace(/```json|```/g, '').trim();
+        const translated = JSON.parse(clean) as Array<{
+          id: string; title: string; description: string;
+          proof_prompt: string; steps: string; reflection: string | null;
+        }>;
+
+        if (Array.isArray(translated)) {
+          rawSqlite.transaction(() => {
+            for (const t of translated) {
+              const orig = chunk.find(m => m.id === t.id);
+              if (orig && t.title) {
+                insertStmt.run(t.id, normalized, t.title, t.description ?? orig.description, t.proof_prompt ?? orig.proof_prompt, t.steps ?? orig.steps, t.reflection ?? null);
+                cacheMap.set(t.id, { mission_id: t.id, title: t.title, description: t.description, proof_prompt: t.proof_prompt, steps: t.steps, reflection: t.reflection ?? null });
+              }
+            }
+          })();
+        }
+      } catch (err) {
+        console.warn(`[translateMissions] ${langName} chunk ${i}: ${(err as Error).message}`);
+      }
+    }
+  }
+
+  return missions.map(m => {
+    const c = cacheMap.get(m.id);
+    if (!c) return m;
+    return { ...m, title: c.title, description: c.description, proof_prompt: c.proof_prompt, steps: c.steps, reflection: c.reflection };
+  });
 }

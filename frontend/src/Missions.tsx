@@ -440,10 +440,11 @@ export default function Missions() {
     if (!isAuthenticated) return;
     setLoading(true);
     try {
-      const pillarQ = selectedPillar !== 'all' ? `?pillar=${selectedPillar}` : '';
+      const langQ = `lang=${encodeURIComponent(i18n.language)}`;
+      const pillarQ = selectedPillar !== 'all' ? `?pillar=${selectedPillar}&${langQ}` : `?${langQ}`;
       const [data, daily] = await Promise.all([
         apiFetchJson<{ missions: Mission[]; userXp: UserXp }>(`/api/missions${pillarQ}`),
-        apiFetchJson<{ missions: Mission[] }>('/api/missions/daily'),
+        apiFetchJson<{ missions: Mission[] }>(`/api/missions/daily?${langQ}`),
       ]);
       setMissions(data.missions);
       setUserXp(data.userXp);
@@ -479,7 +480,7 @@ export default function Missions() {
 
   async function loadDayMission(enrollmentId: string) {
     try {
-      const d = await apiFetchJson<DayMissionData>(`/api/programs/enrollment/${enrollmentId}/today`);
+      const d = await apiFetchJson<DayMissionData>(`/api/programs/enrollment/${enrollmentId}/today?lang=${encodeURIComponent(i18n.language)}`);
       setDayMissions((prev) => ({ ...prev, [enrollmentId]: d }));
     } catch {}
   }
@@ -608,7 +609,7 @@ export default function Missions() {
         success: boolean; maraFeedback: string; message: string; leveledUp: boolean;
       }>(`/api/missions/${activeMission.id}/proof`, {
         method: 'POST',
-        body: JSON.stringify({ text: proofText, reflectionAnswer: reflectionText || undefined }),
+        body: JSON.stringify({ text: proofText, reflectionAnswer: reflectionText || undefined, lang: i18n.language }),
       });
       if (result.success) {
         setCompletionResult(result);
@@ -626,7 +627,7 @@ export default function Missions() {
     setError('');
     try {
       const result = await apiFetchJson<{ mission: Mission }>('/api/missions/generate', {
-        method: 'POST', body: '{}',
+        method: 'POST', body: JSON.stringify({ lang: i18n.language }),
       });
       if (result.mission) setMissions((prev) => [result.mission, ...prev]);
     } catch { setError(t('missions.errorAI')); }

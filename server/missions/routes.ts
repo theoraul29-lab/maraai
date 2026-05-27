@@ -10,6 +10,7 @@ import {
   getUserXP,
   getPersonality,
   saveOnboarding,
+  translateMissions,
 } from './engine.js';
 import {
   enrollUserInProgram,
@@ -38,9 +39,9 @@ export function registerMissionRoutes(app: Express, requireAuth: any) {
 
   // ── MISIUNI ─────────────────────────────────────────────────────────────────
 
-  app.get('/api/missions', requireAuth, (req: any, res: any) => {
+  app.get('/api/missions', requireAuth, async (req: any, res: any) => {
     const userId = getUserId(req);
-    const { pillar } = req.query as { pillar?: string };
+    const { pillar, lang } = req.query as { pillar?: string; lang?: string };
     // Parameterized query — safe against injection
     const missions = pillar
       ? rawSqlite
@@ -63,11 +64,13 @@ export function registerMissionRoutes(app: Express, requireAuth: any) {
              ORDER BY m.xp_reward ASC`,
           )
           .all(userId);
-    res.json({ missions, userXp: getUserXP(userId) });
+    const translated = await translateMissions(missions as any[], lang || 'ro');
+    res.json({ missions: translated, userXp: getUserXP(userId) });
   });
 
-  app.get('/api/missions/daily', requireAuth, (req: any, res: any) => {
+  app.get('/api/missions/daily', requireAuth, async (req: any, res: any) => {
     const userId = getUserId(req);
+    const { lang } = req.query as { lang?: string };
     const today = new Date().toISOString().split('T')[0];
     const dailies = rawSqlite
       .prepare(
@@ -79,7 +82,8 @@ export function registerMissionRoutes(app: Express, requireAuth: any) {
          WHERE m.is_daily = 1 AND m.is_active = 1`,
       )
       .all(userId, today);
-    res.json({ missions: dailies });
+    const translated = await translateMissions(dailies as any[], lang || 'ro');
+    res.json({ missions: translated });
   });
 
   app.get('/api/missions/suggest', requireAuth, (req: any, res: any) => {
@@ -90,8 +94,9 @@ export function registerMissionRoutes(app: Express, requireAuth: any) {
 
   app.post('/api/missions/generate', requireAuth, async (req: any, res: any) => {
     const userId = getUserId(req);
-    const mission = await generatePersonalizedMission(userId);
-    if (!mission) return res.status(503).json({ message: 'AI indisponibil momentan.' });
+    const { lang } = req.body as { lang?: string };
+    const mission = await generatePersonalizedMission(userId, lang);
+    if (!mission) return res.status(503).json({ message: 'AI unavailable.' });
     res.json({ mission });
   });
 
@@ -103,7 +108,8 @@ export function registerMissionRoutes(app: Express, requireAuth: any) {
 
   app.post('/api/missions/:id/proof', requireAuth, async (req: any, res: any) => {
     const userId = getUserId(req);
-    const result = await submitProof(userId, req.params.id, req.body);
+    const { lang, ...proof } = req.body as { lang?: string; [key: string]: unknown };
+    const result = await submitProof(userId, req.params.id, proof as any, lang);
     res.json(result);
   });
 
@@ -238,9 +244,10 @@ export function registerMissionRoutes(app: Express, requireAuth: any) {
     requireAuth,
     async (req: any, res: any) => {
       const userId = getUserId(req);
-      const dayMission = await getDayMission(userId, req.params.enrollmentId);
+      const { lang } = req.query as { lang?: string };
+      const dayMission = await getDayMission(userId, req.params.enrollmentId, lang);
       if (!dayMission) {
-        return res.status(404).json({ message: 'Enrollment negăsit sau inactiv.' });
+        return res.status(404).json({ message: 'Enrollment not found or inactive.' });
       }
       res.json(dayMission);
     },

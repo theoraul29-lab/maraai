@@ -1,6 +1,7 @@
 import { rawSqlite } from '../db.js';
 import { llmGenerate, isLLMConfigured } from '../llm.js';
 import { PROGRAM_CATALOGUE } from '../billing/plans.js';
+import { translateMissions } from './engine.js';
 
 // ─── PROGRAM ACCESS ───────────────────────────────────────────────────────────
 
@@ -230,6 +231,7 @@ Răspunde DOAR JSON valid:
 export async function getDayMission(
   userId: string,
   enrollmentId: string,
+  lang?: string,
 ): Promise<any> {
   const enrollment = rawSqlite
     .prepare(
@@ -294,40 +296,73 @@ export async function getDayMission(
 
   }
 
+  // Translate the day mission's base fields (from the missions table) if needed.
+  // Custom fields (AI-generated at enroll time) are expected to already be in
+  // the enrollment's language, so we only translate the seed-based fallbacks.
+  let translatedBase: { title: string; description: string; proof_prompt: string; steps: string; reflection: string | null } | null = null;
+  if (dayMission && dayMission.mission_id && lang) {
+    const [t] = await translateMissions([{
+      id: dayMission.mission_id,
+      title: dayMission.title ?? '',
+      description: dayMission.description ?? '',
+      proof_prompt: dayMission.proof_prompt ?? '',
+      steps: dayMission.steps ?? '[]',
+      reflection: dayMission.reflection ?? null,
+    }], lang);
+    translatedBase = t;
+  }
+
   return {
     enrollment,
     currentDay,
     totalDays: enrollment.duration_days,
     percentComplete: Math.round((currentDay / enrollment.duration_days) * 100),
     isCompleted: !!todayCompleted,
-    streakMessage: getStreakMessage(enrollment.streak),
+    streakMessage: getStreakMessage(enrollment.streak, lang),
     mission: dayMission
       ? {
           id: dayMission.mission_id ?? dayMission.id,
-          title: dayMission.custom_title ?? dayMission.title,
-          description: dayMission.custom_description ?? dayMission.description,
-          proofPrompt: dayMission.custom_proof_prompt ?? dayMission.proof_prompt,
+          title: dayMission.custom_title ?? translatedBase?.title ?? dayMission.title,
+          description: dayMission.custom_description ?? translatedBase?.description ?? dayMission.description,
+          proofPrompt: dayMission.custom_proof_prompt ?? translatedBase?.proof_prompt ?? dayMission.proof_prompt,
           intent: dayMission.intent,
           pillar: dayMission.pillar,
           difficulty: dayMission.difficulty,
           xpReward: dayMission.xp_reward ?? 100,
           proofType: dayMission.proof_type ?? 'text',
-          steps: dayMission.steps ? JSON.parse(dayMission.steps) : [],
-          reflection: dayMission.reflection,
+          steps: dayMission.steps ? JSON.parse(translatedBase?.steps ?? dayMission.steps) : [],
+          reflection: translatedBase?.reflection ?? dayMission.reflection,
           isAiGenerated: !!dayMission.is_ai_generated,
         }
       : null,
   };
 }
 
-function getStreakMessage(streak: number): string {
+function getStreakMessage(streak: number, lang?: string): string {
   if (streak === 0) return '';
-  if (streak === 1) return '🔥 Prima zi — ai început!';
-  if (streak === 7) return '🔥🔥 7 zile — o săptămână completă!';
-  if (streak === 14) return '🔥🔥🔥 14 zile — două săptămâni!';
-  if (streak === 21) return '💎 21 de zile — habitoul e al tău!';
-  if (streak === 30) return '👑 30 de zile — un maestru al obiceiului!';
-  return `🔥 ${streak} zile consecutive — nu te opri!`;
+  const l = (lang || 'ro').split('-')[0].toLowerCase();
+
+  const msgs: Record<string, { 1?: string; 7?: string; 14?: string; 21?: string; 30?: string; default: string }> = {
+    ro: { 1: '🔥 Prima zi — ai început!', 7: '🔥🔥 7 zile — o săptămână completă!', 14: '🔥🔥🔥 14 zile — două săptămâni!', 21: '💎 21 de zile — habitoul e al tău!', 30: '👑 30 de zile — un maestru al obiceiului!', default: `🔥 ${streak} zile consecutive — nu te opri!` },
+    en: { 1: '🔥 Day one — you started!', 7: '🔥🔥 7 days — a full week!', 14: '🔥🔥🔥 14 days — two weeks strong!', 21: '💎 21 days — the habit is yours!', 30: '👑 30 days — a habit master!', default: `🔥 ${streak} consecutive days — keep going!` },
+    de: { 1: '🔥 Erster Tag — du hast begonnen!', 7: '🔥🔥 7 Tage — eine ganze Woche!', 14: '🔥🔥🔥 14 Tage — zwei Wochen!', 21: '💎 21 Tage — die Gewohnheit gehört dir!', 30: '👑 30 Tage — ein Gewohnheitsmeister!', default: `🔥 ${streak} Tage in Folge — hör nicht auf!` },
+    fr: { 1: '🔥 Premier jour — tu as commencé !', 7: '🔥🔥 7 jours — une semaine complète !', 14: '🔥🔥🔥 14 jours — deux semaines !', 21: '💎 21 jours — l\'habitude t\'appartient !', 30: '👑 30 jours — un maître de l\'habitude !', default: `🔥 ${streak} jours consécutifs — ne t'arrête pas !` },
+    es: { 1: '🔥 Primer día — ¡empezaste!', 7: '🔥🔥 7 días — ¡una semana completa!', 14: '🔥🔥🔥 14 días — ¡dos semanas!', 21: '💎 21 días — ¡el hábito es tuyo!', 30: '👑 30 días — ¡un maestro del hábito!', default: `🔥 ${streak} días consecutivos — ¡no te detengas!` },
+    it: { 1: '🔥 Primo giorno — hai iniziato!', 7: '🔥🔥 7 giorni — una settimana intera!', 14: '🔥🔥🔥 14 giorni — due settimane!', 21: '💎 21 giorni — l\'abitudine è tua!', 30: '👑 30 giorni — un maestro delle abitudini!', default: `🔥 ${streak} giorni consecutivi — non fermarti!` },
+    pt: { 1: '🔥 Primeiro dia — você começou!', 7: '🔥🔥 7 dias — uma semana completa!', 14: '🔥🔥🔥 14 dias — duas semanas!', 21: '💎 21 dias — o hábito é seu!', 30: '👑 30 dias — um mestre do hábito!', default: `🔥 ${streak} dias consecutivos — não pare!` },
+    ja: { 1: '🔥 1日目 — 始めました！', 7: '🔥🔥 7日間 — 1週間達成！', 14: '🔥🔥🔥 14日間 — 2週間！', 21: '💎 21日間 — 習慣が身についた！', 30: '👑 30日間 — 習慣の達人！', default: `🔥 ${streak}日連続 — 止まらないで！` },
+    ko: { 1: '🔥 첫 번째 날 — 시작했어요!', 7: '🔥🔥 7일 — 꼬박 한 주!', 14: '🔥🔥🔥 14일 — 2주!', 21: '💎 21일 — 습관이 생겼어요!', 30: '👑 30일 — 습관의 달인!', default: `🔥 ${streak}일 연속 — 멈추지 마세요!` },
+    zh: { 1: '🔥 第一天 — 你开始了！', 7: '🔥🔥 7天 — 整整一周！', 14: '🔥🔥🔥 14天 — 两周！', 21: '💎 21天 — 习惯已成！', 30: '👑 30天 — 习惯大师！', default: `🔥 ${streak}天连续 — 不要停！` },
+    ar: { 1: '🔥 اليوم الأول — لقد بدأت!', 7: '🔥🔥 7 أيام — أسبوع كامل!', 14: '🔥🔥🔥 14 يومًا — أسبوعان!', 21: '💎 21 يومًا — العادة أصبحت لك!', 30: '👑 30 يومًا — سيد العادات!', default: `🔥 ${streak} أيام متتالية — لا تتوقف!` },
+  };
+
+  const m = msgs[l] ?? msgs['en'];
+  if (streak === 1 && m[1]) return m[1];
+  if (streak === 7 && m[7]) return m[7];
+  if (streak === 14 && m[14]) return m[14];
+  if (streak === 21 && m[21]) return m[21];
+  if (streak === 30 && m[30]) return m[30];
+  return m.default;
 }
 
 // ─── COMPLETARE ZI ────────────────────────────────────────────────────────────
@@ -484,6 +519,7 @@ export async function completeProgramDay(
     }
   }
 
+  const proofLang = proof.language ?? 'ro';
   return {
     success: true,
     maraJournalPage: journalData.journalPage,
@@ -491,10 +527,10 @@ export async function completeProgramDay(
     xpGained,
     newDay,
     programCompleted,
-    streakMessage: getStreakMessage(newStreak),
+    streakMessage: getStreakMessage(newStreak, proofLang),
     message: programCompleted
-      ? `🎉 Ai completat programul "${enrollment.program_name}"!`
-      : `+${xpGained} XP · Ziua ${enrollment.current_day} completată!`,
+      ? `🎉 Program "${enrollment.program_name}" completed!`
+      : `+${xpGained} XP · Day ${enrollment.current_day} done!`,
   };
 }
 
@@ -515,13 +551,35 @@ async function generateJournalPage(
     .prepare('SELECT * FROM user_personality WHERE user_id = ?')
     .get(userId) as any;
 
-  const lang = proof.language ?? 'ro';
+  const lang = (proof.language ?? 'ro').split('-')[0].toLowerCase();
   const langInstruction: Record<string, string> = {
     ro: 'Scrie în română.',
     en: 'Write in English.',
     de: 'Schreibe auf Deutsch.',
     fr: 'Écris en français.',
     es: 'Escribe en español.',
+    it: 'Scrivi in italiano.',
+    pt: 'Escreve em português.',
+    ru: 'Пиши на русском.',
+    uk: 'Пиши українською.',
+    nl: 'Schrijf in het Nederlands.',
+    sv: 'Skriv på svenska.',
+    bg: 'Пиши на български.',
+    ja: '日本語で書いてください。',
+    ko: '한국어로 써주세요.',
+    pl: 'Napisz po polsku.',
+    cs: 'Piš česky.',
+    hu: 'Írj magyarul.',
+    hr: 'Piši na hrvatskom.',
+    sr: 'Piši na srpskom.',
+    tr: 'Türkçe yaz.',
+    ar: 'اكتب باللغة العربية.',
+    hi: 'हिंदी में लिखें।',
+    zh: '用中文写。',
+    th: 'เขียนเป็นภาษาไทย',
+    vi: 'Viết bằng tiếng Việt.',
+    da: 'Skriv på dansk.',
+    el: 'Γράψε στα ελληνικά.',
   };
 
   const prompt = `Ești Mara — coach empatic și scriitor talentat.
