@@ -228,7 +228,9 @@
     "dataLoadError": "Could not load data. Check your connection.",
     "deleteError": "Could not delete the video.",
     "publishError": "Error publishing. Try again.",
-    "loading": "⏳ Loading..."
+    "loading": "⏳ Loading...",
+    "titleRequired": "Naslov je obavezan.",
+    "videoRequired": "Priložite video datoteku ili zalijepite URL."
   },
   "writers": {
     "title": "WRITERS HUB",
@@ -335,7 +337,8 @@
       "imagePrompt": "URL slike (https://…)",
       "linkPrompt": "URL veze",
       "toolbar": "Oblikovanje"
-    }
+    },
+    "coverUploadFailed": "Prijenos naslovnice nije uspio. Pokušajte URL."
   },
   "reels": {
     "feed": "Feed",
@@ -892,6 +895,30 @@
       "whatsapp": "WhatsApp",
       "telegram": "Telegram",
       "link": "Copy Link"
+    }
+  },
+  "community": {
+    "subtitle": "Članci, misije i zajednički dnevnici",
+    "searchPlaceholder": "🔍 Pretraži feed...",
+    "loading": "Učitavanje feeda...",
+    "empty": "Nema pronađenih objava",
+    "emptySearch": "za ovu pretragu",
+    "articleBadge": "📚 Članak",
+    "missionBadge": "🎯 Misija",
+    "journalBadge": "📓 Dnevnik",
+    "completed": "je završio",
+    "anonymous": "Anonimno",
+    "day": "Dan",
+    "justNow": "sada",
+    "daySuffix": "d",
+    "like": "Sviđa mi se",
+    "alreadyLiked": "Već označeno",
+    "loginToLike": "Prijavite se za označavanje",
+    "tab": {
+      "all": "📋 Sve",
+      "articles": "📚 Članci",
+      "missions": "🎯 Misije",
+      "journal": "📓 Dnevnik"
     }
   }
 }

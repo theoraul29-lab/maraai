@@ -228,7 +228,9 @@
     "dataLoadError": "Could not load data. Check your connection.",
     "deleteError": "Could not delete the video.",
     "publishError": "Error publishing. Try again.",
-    "loading": "⏳ Loading..."
+    "loading": "⏳ Loading...",
+    "titleRequired": "Titel er påkrævet.",
+    "videoRequired": "Vedhæft en videofil eller indsæt en URL."
   },
   "writers": {
     "title": "WRITERS HUB",
@@ -335,7 +337,8 @@
       "imagePrompt": "Billed-URL (https://…)",
       "linkPrompt": "Link-URL",
       "toolbar": "Formatering"
-    }
+    },
+    "coverUploadFailed": "Forsidebillede upload mislykkedes. Prøv en URL."
   },
   "reels": {
     "feed": "Feed",
@@ -892,6 +895,30 @@
       "whatsapp": "WhatsApp",
       "telegram": "Telegram",
       "link": "Copy Link"
+    }
+  },
+  "community": {
+    "subtitle": "Artikler, missioner og fællesskabsdagbøger",
+    "searchPlaceholder": "🔍 Søg i feed...",
+    "loading": "Indlæser feed...",
+    "empty": "Ingen indlæg fundet",
+    "emptySearch": "for denne søgning",
+    "articleBadge": "📚 Artikel",
+    "missionBadge": "🎯 Mission",
+    "journalBadge": "📓 Dagbog",
+    "completed": "fuldførte",
+    "anonymous": "Anonym",
+    "day": "Dag",
+    "justNow": "nu",
+    "daySuffix": "d",
+    "like": "Synes godt om",
+    "alreadyLiked": "Allerede liked",
+    "loginToLike": "Log ind for at like",
+    "tab": {
+      "all": "📋 Alle",
+      "articles": "📚 Artikler",
+      "missions": "🎯 Missioner",
+      "journal": "📓 Dagbog"
     }
   }
 }

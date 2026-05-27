@@ -228,7 +228,9 @@
     "dataLoadError": "Could not load data. Check your connection.",
     "deleteError": "Could not delete the video.",
     "publishError": "Error publishing. Try again.",
-    "loading": "⏳ Loading..."
+    "loading": "⏳ Loading...",
+    "titleRequired": "Název je povinný.",
+    "videoRequired": "Přiložte video soubor nebo vložte URL."
   },
   "writers": {
     "title": "WRITERS HUB",
@@ -335,7 +337,8 @@
       "imagePrompt": "URL obrázku (https://…)",
       "linkPrompt": "URL odkazu",
       "toolbar": "Formátování"
-    }
+    },
+    "coverUploadFailed": "Nahrání obálky selhalo. Zkuste URL."
   },
   "reels": {
     "feed": "Feed",
@@ -892,6 +895,30 @@
       "whatsapp": "WhatsApp",
       "telegram": "Telegram",
       "link": "Copy Link"
+    }
+  },
+  "community": {
+    "subtitle": "Články, mise a komunitní deníky",
+    "searchPlaceholder": "🔍 Hledat ve feedu...",
+    "loading": "Načítání feedu...",
+    "empty": "Žádné příspěvky nenalezeny",
+    "emptySearch": "pro toto vyhledávání",
+    "articleBadge": "📚 Článek",
+    "missionBadge": "🎯 Mise",
+    "journalBadge": "📓 Deník",
+    "completed": "dokončil",
+    "anonymous": "Anonymní",
+    "day": "Den",
+    "justNow": "právě teď",
+    "daySuffix": "d",
+    "like": "To se mi líbí",
+    "alreadyLiked": "Již označeno",
+    "loginToLike": "Přihlaste se pro označení",
+    "tab": {
+      "all": "📋 Vše",
+      "articles": "📚 Články",
+      "missions": "🎯 Mise",
+      "journal": "📓 Deník"
     }
   }
 }

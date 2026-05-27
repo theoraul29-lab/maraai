@@ -271,7 +271,9 @@
     "dataLoadError": "Kunde inte ladda data. Kontrollera din anslutning.",
     "deleteError": "Kunde inte radera videon.",
     "publishError": "Fel vid publicering. Försök igen.",
-    "loading": "⏳ Laddar..."
+    "loading": "⏳ Laddar...",
+    "titleRequired": "Titel krävs.",
+    "videoRequired": "Bifoga en videofil eller klistra in en URL."
   },
   "writers": {
     "title": "FÖRFATTARHUB",
@@ -378,7 +380,8 @@
       "imagePrompt": "Bild-URL (https://…)",
       "linkPrompt": "Länk-URL",
       "toolbar": "Formatering"
-    }
+    },
+    "coverUploadFailed": "Omslagsuppladdning misslyckades. Prova en URL."
   },
   "reels": {
     "feed": "Flöde",
@@ -935,6 +938,30 @@
       "whatsapp": "WhatsApp",
       "telegram": "Telegram",
       "link": "Kopiera länk"
+    }
+  },
+  "community": {
+    "subtitle": "Artiklar, uppdrag och communityens dagböcker",
+    "searchPlaceholder": "🔍 Sök i flödet...",
+    "loading": "Laddar flöde...",
+    "empty": "Inga inlägg hittades",
+    "emptySearch": "för den här sökningen",
+    "articleBadge": "📚 Artikel",
+    "missionBadge": "🎯 Uppdrag",
+    "journalBadge": "📓 Dagbok",
+    "completed": "slutförde",
+    "anonymous": "Anonym",
+    "day": "Dag",
+    "justNow": "nu",
+    "daySuffix": "d",
+    "like": "Gilla",
+    "alreadyLiked": "Redan gillad",
+    "loginToLike": "Logga in för att gilla",
+    "tab": {
+      "all": "📋 Alla",
+      "articles": "📚 Artiklar",
+      "missions": "🎯 Uppdrag",
+      "journal": "📓 Dagbok"
     }
   }
 }

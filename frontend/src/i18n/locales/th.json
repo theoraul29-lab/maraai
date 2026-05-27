@@ -228,7 +228,9 @@
     "dataLoadError": "Could not load data. Check your connection.",
     "deleteError": "Could not delete the video.",
     "publishError": "Error publishing. Try again.",
-    "loading": "⏳ Loading..."
+    "loading": "⏳ Loading...",
+    "titleRequired": "ต้องระบุชื่อเรื่อง",
+    "videoRequired": "แนบไฟล์วิดีโอหรือวาง URL"
   },
   "writers": {
     "title": "WRITERS HUB",
@@ -335,7 +337,8 @@
       "imagePrompt": "URL รูปภาพ (https://…)",
       "linkPrompt": "URL ลิงก์",
       "toolbar": "การจัดรูปแบบ"
-    }
+    },
+    "coverUploadFailed": "อัปโหลดปกล้มเหลว ลองใช้ URL"
   },
   "reels": {
     "feed": "Feed",
@@ -892,6 +895,30 @@
       "whatsapp": "WhatsApp",
       "telegram": "Telegram",
       "link": "Copy Link"
+    }
+  },
+  "community": {
+    "subtitle": "บทความ ภารกิจ และสมุดบันทึกชุมชน",
+    "searchPlaceholder": "🔍 ค้นหาฟีด...",
+    "loading": "กำลังโหลดฟีด...",
+    "empty": "ไม่พบโพสต์",
+    "emptySearch": "สำหรับการค้นหานี้",
+    "articleBadge": "📚 บทความ",
+    "missionBadge": "🎯 ภารกิจ",
+    "journalBadge": "📓 สมุดบันทึก",
+    "completed": "ได้เสร็จสิ้น",
+    "anonymous": "ไม่ระบุชื่อ",
+    "day": "วัน",
+    "justNow": "ตอนนี้",
+    "daySuffix": "ว",
+    "like": "ถูกใจ",
+    "alreadyLiked": "ถูกใจแล้ว",
+    "loginToLike": "เข้าสู่ระบบเพื่อถูกใจ",
+    "tab": {
+      "all": "📋 ทั้งหมด",
+      "articles": "📚 บทความ",
+      "missions": "🎯 ภารกิจ",
+      "journal": "📓 สมุดบันทึก"
     }
   }
 }

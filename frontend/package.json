@@ -42,6 +42,7 @@
     "eslint": "^10.0.3",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
+    "playwright": "^1.60.0",
     "prettier": "^2.1.0",
     "stylelint": "^15.0.0",
     "stylelint-scss": "^5.0.1",

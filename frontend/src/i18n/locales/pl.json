@@ -228,7 +228,9 @@
     "dataLoadError": "Could not load data. Check your connection.",
     "deleteError": "Could not delete the video.",
     "publishError": "Error publishing. Try again.",
-    "loading": "⏳ Loading..."
+    "loading": "⏳ Loading...",
+    "titleRequired": "Tytuł jest wymagany.",
+    "videoRequired": "Dołącz plik wideo lub wklej URL."
   },
   "writers": {
     "title": "WRITERS HUB",
@@ -335,7 +337,8 @@
       "imagePrompt": "URL obrazu (https://…)",
       "linkPrompt": "URL linku",
       "toolbar": "Formatowanie"
-    }
+    },
+    "coverUploadFailed": "Przesyłanie okładki nie powiodło się. Spróbuj URL."
   },
   "reels": {
     "feed": "Feed",
@@ -892,6 +895,30 @@
       "whatsapp": "WhatsApp",
       "telegram": "Telegram",
       "link": "Copy Link"
+    }
+  },
+  "community": {
+    "subtitle": "Artykuły, misje i dzienniki społeczności",
+    "searchPlaceholder": "🔍 Szukaj w feedzie...",
+    "loading": "Ładowanie feedu...",
+    "empty": "Nie znaleziono postów",
+    "emptySearch": "dla tego wyszukiwania",
+    "articleBadge": "📚 Artykuł",
+    "missionBadge": "🎯 Misja",
+    "journalBadge": "📓 Dziennik",
+    "completed": "ukończył",
+    "anonymous": "Anonim",
+    "day": "Dzień",
+    "justNow": "teraz",
+    "daySuffix": "d",
+    "like": "Lubię to",
+    "alreadyLiked": "Już polubiono",
+    "loginToLike": "Zaloguj się, aby polubić",
+    "tab": {
+      "all": "📋 Wszystko",
+      "articles": "📚 Artykuły",
+      "missions": "🎯 Misje",
+      "journal": "📓 Dziennik"
     }
   }
 }

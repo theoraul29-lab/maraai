@@ -242,7 +242,9 @@
     "dataLoadError": "डेटा लोड नहीं हो सका। कनेक्शन जाँचें।",
     "deleteError": "वीडियो हटाया नहीं जा सका।",
     "publishError": "प्रकाशन में त्रुटि। पुनः प्रयास करें।",
-    "loading": "⏳ लोड हो रहा है..."
+    "loading": "⏳ लोड हो रहा है...",
+    "titleRequired": "शीर्षक आवश्यक है।",
+    "videoRequired": "वीडियो फ़ाइल संलग्न करें या URL पेस्ट करें।"
   },
   "writers": {
     "title": "लेखक हब",
@@ -349,7 +351,8 @@
       "imagePrompt": "छवि URL (https://…)",
       "linkPrompt": "लिंक URL",
       "toolbar": "स्वरूपण"
-    }
+    },
+    "coverUploadFailed": "कवर अपलोड विफल। एक URL आज़माएं।"
   },
   "reels": {
     "feed": "फ़ीड",
@@ -906,6 +909,30 @@
       "whatsapp": "WhatsApp",
       "telegram": "Telegram",
       "link": "Copy Link"
+    }
+  },
+  "community": {
+    "subtitle": "लेख, मिशन और समुदाय की डायरी",
+    "searchPlaceholder": "🔍 फ़ीड खोजें...",
+    "loading": "फ़ीड लोड हो रही है...",
+    "empty": "कोई पोस्ट नहीं मिली",
+    "emptySearch": "इस खोज के लिए",
+    "articleBadge": "📚 लेख",
+    "missionBadge": "🎯 मिशन",
+    "journalBadge": "📓 डायरी",
+    "completed": "ने पूरा किया",
+    "anonymous": "अज्ञात",
+    "day": "दिन",
+    "justNow": "अभी",
+    "daySuffix": "दि",
+    "like": "पसंद",
+    "alreadyLiked": "पहले से पसंद है",
+    "loginToLike": "पसंद करने के लिए लॉगिन करें",
+    "tab": {
+      "all": "📋 सभी",
+      "articles": "📚 लेख",
+      "missions": "🎯 मिशन",
+      "journal": "📓 डायरी"
     }
   }
 }

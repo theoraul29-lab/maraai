@@ -100,7 +100,7 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
 
   const handleUpload = async () => {
     if (!uploadTitle.trim()) {
-      setError(t('creator.titleUrlRequired'));
+      setError(t('creator.titleRequired', 'Title is required.'));
       return;
     }
     // Two valid paths: (a) attach a real video file → multipart upload
@@ -108,7 +108,7 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
     // volume); (b) paste an external URL (YouTube, Vimeo) → fall back to
     // /api/creator/post-reel which only stores the URL string.
     if (!videoFile && !uploadUrl.trim()) {
-      setError(t('creator.titleUrlRequired'));
+      setError(t('creator.videoRequired', 'Attach a video file or paste a URL.'));
       return;
     }
     if (!postStatus.canPost) {
@@ -123,7 +123,7 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
         title: uploadTitle,
         url: uploadUrl,
         description: uploadDesc,
-        tags: uploadTags.split(',').map(t => t.trim()).filter(Boolean),
+        tags: uploadTags.split(',').map(tag => tag.trim()).filter(Boolean),
       }, { withCredentials: true });
       setUploadSuccess(true);
       setUploadTitle('');

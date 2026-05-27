@@ -271,7 +271,9 @@
     "dataLoadError": "Не удалось загрузить данные. Проверь подключение.",
     "deleteError": "Не удалось удалить видео.",
     "publishError": "Ошибка публикации. Попробуй ещё раз.",
-    "loading": "⏳ Загрузка..."
+    "loading": "⏳ Загрузка...",
+    "titleRequired": "Название обязательно.",
+    "videoRequired": "Прикрепите видеофайл или вставьте URL."
   },
   "writers": {
     "title": "ЦЕНТР ПИСАТЕЛЕЙ",
@@ -378,7 +380,8 @@
       "imagePrompt": "URL изображения (https://…)",
       "linkPrompt": "URL ссылки",
       "toolbar": "Форматирование"
-    }
+    },
+    "coverUploadFailed": "Ошибка загрузки обложки. Попробуйте URL."
   },
   "reels": {
     "feed": "Лента",
@@ -935,6 +938,30 @@
       "whatsapp": "WhatsApp",
       "telegram": "Telegram",
       "link": "Скопировать ссылку"
+    }
+  },
+  "community": {
+    "subtitle": "Статьи, миссии и дневники сообщества",
+    "searchPlaceholder": "🔍 Поиск в ленте...",
+    "loading": "Загрузка ленты...",
+    "empty": "Публикаций не найдено",
+    "emptySearch": "по этому запросу",
+    "articleBadge": "📚 Статья",
+    "missionBadge": "🎯 Миссия",
+    "journalBadge": "📓 Дневник",
+    "completed": "выполнил",
+    "anonymous": "Аноним",
+    "day": "День",
+    "justNow": "сейчас",
+    "daySuffix": "д",
+    "like": "Нравится",
+    "alreadyLiked": "Уже нравится",
+    "loginToLike": "Войдите, чтобы поставить лайк",
+    "tab": {
+      "all": "📋 Все",
+      "articles": "📚 Статьи",
+      "missions": "🎯 Миссии",
+      "journal": "📓 Дневник"
     }
   }
 }

@@ -22,8 +22,7 @@ const You: React.FC = () => {
   const activeTab: YouTab = tabParam === 'messages' ? 'messages' : 'profile';
   const startWith = searchParams.get('startWith') || undefined;
 
-  // Fetch unread count for badge on Messages tab
-  useEffect(() => {
+  const refreshUnread = () => {
     axios
       .get<{ items: { unreadCount: number }[] }>(`${API_URL}/api/messenger/conversations`, { withCredentials: true })
       .then(res => {
@@ -31,6 +30,16 @@ const You: React.FC = () => {
         setUnreadCount(total);
       })
       .catch(() => {});
+  };
+
+  // Fetch on mount, on every tab switch, and every 60 s while on profile tab
+  useEffect(() => {
+    refreshUnread();
+  }, [activeTab]);
+
+  useEffect(() => {
+    const id = setInterval(refreshUnread, 60_000);
+    return () => clearInterval(id);
   }, []);
 
   const switchTab = (tab: YouTab) => {

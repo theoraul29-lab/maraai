@@ -228,7 +228,9 @@
     "dataLoadError": "Could not load data. Check your connection.",
     "deleteError": "Could not delete the video.",
     "publishError": "Error publishing. Try again.",
-    "loading": "⏳ Loading..."
+    "loading": "⏳ Loading...",
+    "titleRequired": "标题是必填项。",
+    "videoRequired": "附上视频文件或粘贴URL。"
   },
   "writers": {
     "title": "WRITERS HUB",
@@ -335,7 +337,8 @@
       "imagePrompt": "图片URL (https://…)",
       "linkPrompt": "链接URL",
       "toolbar": "格式"
-    }
+    },
+    "coverUploadFailed": "封面上传失败，请尝试URL。"
   },
   "reels": {
     "feed": "Feed",
@@ -892,6 +895,30 @@
       "whatsapp": "WhatsApp",
       "telegram": "Telegram",
       "link": "Copy Link"
+    }
+  },
+  "community": {
+    "subtitle": "文章、任务和社区日记",
+    "searchPlaceholder": "🔍 搜索动态...",
+    "loading": "加载动态中...",
+    "empty": "未找到帖子",
+    "emptySearch": "对于此搜索",
+    "articleBadge": "📚 文章",
+    "missionBadge": "🎯 任务",
+    "journalBadge": "📓 日记",
+    "completed": "已完成",
+    "anonymous": "匿名",
+    "day": "天",
+    "justNow": "刚刚",
+    "daySuffix": "天",
+    "like": "点赞",
+    "alreadyLiked": "已点赞",
+    "loginToLike": "登录以点赞",
+    "tab": {
+      "all": "📋 全部",
+      "articles": "📚 文章",
+      "missions": "🎯 任务",
+      "journal": "📓 日记"
     }
   }
 }

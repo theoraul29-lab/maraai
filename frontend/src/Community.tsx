@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useAuth } from './contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 import './styles/Community.css';
 
 const API_URL = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:5000');
@@ -64,23 +65,27 @@ const MOOD_EMOJI: Record<string, string> = {
   calm: '😌', curious: '🤔', neutral: '😐', grateful: '🙏',
 };
 
-function timeAgo(ts: number | string): string {
+function timeAgo(ts: number | string, nowLabel: string, daySuffix: string): string {
   const diff = Date.now() - (typeof ts === 'number' ? ts * 1000 : new Date(ts).getTime());
   const m = Math.floor(diff / 60000);
-  if (m < 1) return 'acum';
+  if (m < 1) return nowLabel;
   if (m < 60) return `${m}m`;
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h`;
-  return `${Math.floor(h / 24)}z`;
+  return `${Math.floor(h / 24)}${daySuffix}`;
 }
 
 export default function Community() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [tab, setTab] = useState<Tab>('all');
   const [feed, setFeed] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [likedIds, setLikedIds] = useState<Set<number>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
+
+  const nowLabel = t('community.justNow', 'now');
+  const daySuffix = t('community.daySuffix', 'd');
 
   const loadFeed = useCallback(async () => {
     setLoading(true);
@@ -156,11 +161,11 @@ export default function Community() {
     <div className="community-root">
       <div className="community-header">
         <h1 className="community-title">🌐 Community</h1>
-        <p className="community-subtitle">Articole, misiuni și jurnale ale comunității</p>
+        <p className="community-subtitle">{t('community.subtitle', 'Articles, missions and community journals')}</p>
         <div className="community-search-wrap">
           <input
             className="community-search"
-            placeholder="🔍 Caută în feed…"
+            placeholder={t('community.searchPlaceholder', '🔍 Search feed...')}
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
           />
@@ -174,7 +179,7 @@ export default function Community() {
             className={`community-tab ${tab === t2 ? 'active' : ''}`}
             onClick={() => setTab(t2)}
           >
-            {{ all: '📋 Toate', articles: '📚 Articole', missions: '🎯 Misiuni', journal: '📓 Jurnal' }[t2]}
+            {t(`community.tab.${t2}`, { all: '📋 All', articles: '📚 Articles', missions: '🎯 Missions', journal: '📓 Journal' }[t2])}
             <span className="community-tab-count">{counts[t2]}</span>
           </button>
         ))}
@@ -183,13 +188,13 @@ export default function Community() {
       {loading && (
         <div className="community-loading">
           <div className="community-spinner" />
-          <span>Se încarcă feed-ul…</span>
+          <span>{t('community.loading', 'Loading feed...')}</span>
         </div>
       )}
 
       {!loading && filtered.length === 0 && (
         <div className="community-empty">
-          <p>Nicio postare găsită{searchQuery ? ' pentru această căutare' : ''}.</p>
+          <p>{t('community.empty', 'No posts found')}{searchQuery ? ` ${t('community.emptySearch', 'for this search')}` : ''}.</p>
         </div>
       )}
 
@@ -204,12 +209,12 @@ export default function Community() {
                 )}
                 <div className="community-card-body">
                   <div className="community-card-meta">
-                    <span className="community-badge community-badge--article">📚 Articol</span>
+                    <span className="community-badge community-badge--article">{t('community.articleBadge', '📚 Article')}</span>
                     <span className="community-badge community-badge--cat">{a.category}</span>
                     {a.visibility !== 'public' && (
                       <span className="community-badge community-badge--vis">{a.visibility === 'vip' ? '👑 VIP' : '💎 Paid'}</span>
                     )}
-                    <span className="community-time">{timeAgo(item.ts)}</span>
+                    <span className="community-time">{timeAgo(item.ts, nowLabel, daySuffix)}</span>
                   </div>
                   <h3 className="community-card-title">{a.title}</h3>
                   {a.excerpt && <p className="community-card-excerpt">{a.excerpt}</p>}
@@ -220,6 +225,7 @@ export default function Community() {
                         className={`community-like-btn ${likedIds.has(a.id) ? 'liked' : ''}`}
                         onClick={() => likeArticle(a.id)}
                         disabled={likedIds.has(a.id) || !user}
+                        title={likedIds.has(a.id) ? t('community.alreadyLiked', 'Already liked') : !user ? t('community.loginToLike', 'Log in to like') : t('community.like', 'Like')}
                       >
                         {likedIds.has(a.id) ? '❤️' : '🤍'} {a.likes}
                       </button>
@@ -238,11 +244,11 @@ export default function Community() {
               <article key={item.id} className="community-card community-card--mission">
                 <div className="community-card-body">
                   <div className="community-card-meta">
-                    <span className="community-badge community-badge--mission">🎯 Misiune</span>
+                    <span className="community-badge community-badge--mission">{t('community.missionBadge', '🎯 Mission')}</span>
                     <span className="community-badge" style={{ background: `${pillarColor}22`, color: pillarColor, border: `1px solid ${pillarColor}55` }}>
                       {m.pillar}
                     </span>
-                    <span className="community-time">{timeAgo(item.ts)}</span>
+                    <span className="community-time">{timeAgo(item.ts, nowLabel, daySuffix)}</span>
                   </div>
                   <div className="community-user-row">
                     {m.profile_image_url ? (
@@ -250,8 +256,8 @@ export default function Community() {
                     ) : (
                       <div className="community-avatar-fallback">{(m.display_name || '?').charAt(0).toUpperCase()}</div>
                     )}
-                    <strong className="community-username">{m.display_name || 'Anonymous'}</strong>
-                    <span className="community-completed-label">a completat</span>
+                    <strong className="community-username">{m.display_name || t('community.anonymous', 'Anonymous')}</strong>
+                    <span className="community-completed-label">{t('community.completed', 'completed')}</span>
                   </div>
                   <h3 className="community-card-title">{m.mission_title}</h3>
                   {m.caption && <p className="community-card-excerpt">{m.caption}</p>}
@@ -273,16 +279,16 @@ export default function Community() {
               <article key={item.id} className="community-card community-card--journal">
                 <div className="community-card-body">
                   <div className="community-card-meta">
-                    <span className="community-badge community-badge--journal">📓 Jurnal</span>
+                    <span className="community-badge community-badge--journal">{t('community.journalBadge', '📓 Journal')}</span>
                     {j.mood && <span className="community-badge community-badge--mood">{MOOD_EMOJI[j.mood] || '😐'} {j.mood}</span>}
                     {j.program_name && <span className="community-badge community-badge--program">{j.program_name}</span>}
-                    <span className="community-time">{timeAgo(item.ts)}</span>
+                    <span className="community-time">{timeAgo(item.ts, nowLabel, daySuffix)}</span>
                   </div>
                   {j.display_name && (
                     <div className="community-user-row">
                       <div className="community-avatar-fallback">{j.display_name.charAt(0).toUpperCase()}</div>
                       <strong className="community-username">{j.display_name}</strong>
-                      {j.day_number && <span className="community-day-badge">Ziua {j.day_number}</span>}
+                      {j.day_number && <span className="community-day-badge">{t('community.day', 'Day')} {j.day_number}</span>}
                     </div>
                   )}
                   <p className="community-journal-text">{j.mara_page}</p>

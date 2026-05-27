@@ -271,7 +271,9 @@
     "dataLoadError": "Daten konnten nicht geladen werden. Prüfe deine Verbindung.",
     "deleteError": "Das Video konnte nicht gelöscht werden.",
     "publishError": "Fehler beim Veröffentlichen. Versuche es erneut.",
-    "loading": "⏳ Lädt..."
+    "loading": "⏳ Lädt...",
+    "titleRequired": "Titel ist erforderlich.",
+    "videoRequired": "Videodatei anhängen oder URL einfügen."
   },
   "writers": {
     "title": "AUTOREN-HUB",
@@ -378,7 +380,8 @@
       "imagePrompt": "Bild-URL (https://…)",
       "linkPrompt": "Link-URL",
       "toolbar": "Formatierung"
-    }
+    },
+    "coverUploadFailed": "Cover-Upload fehlgeschlagen. Versuche eine URL."
   },
   "reels": {
     "feed": "Feed",
@@ -935,6 +938,30 @@
       "whatsapp": "WhatsApp",
       "telegram": "Telegram",
       "link": "Link kopieren"
+    }
+  },
+  "community": {
+    "subtitle": "Artikel, Missionen und Community-Tagebücher",
+    "searchPlaceholder": "🔍 Feed durchsuchen...",
+    "loading": "Feed wird geladen...",
+    "empty": "Keine Beiträge gefunden",
+    "emptySearch": "für diese Suche",
+    "articleBadge": "📚 Artikel",
+    "missionBadge": "🎯 Mission",
+    "journalBadge": "📓 Tagebuch",
+    "completed": "hat abgeschlossen",
+    "anonymous": "Anonym",
+    "day": "Tag",
+    "justNow": "jetzt",
+    "daySuffix": "T",
+    "like": "Gefällt mir",
+    "alreadyLiked": "Bereits geliked",
+    "loginToLike": "Anmelden zum Liken",
+    "tab": {
+      "all": "📋 Alle",
+      "articles": "📚 Artikel",
+      "missions": "🎯 Missionen",
+      "journal": "📓 Tagebuch"
     }
   }
 }

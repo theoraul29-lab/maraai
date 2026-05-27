@@ -271,7 +271,9 @@
     "dataLoadError": "Не вдалося завантажити дані. Перевір підключення.",
     "deleteError": "Не вдалося видалити відео.",
     "publishError": "Помилка публікації. Спробуй ще раз.",
-    "loading": "⏳ Завантаження..."
+    "loading": "⏳ Завантаження...",
+    "titleRequired": "Назва обов'язкова.",
+    "videoRequired": "Прикріпіть відеофайл або вставте URL."
   },
   "writers": {
     "title": "ЦЕНТР ПИСЬМЕННИКІВ",
@@ -378,7 +380,8 @@
       "imagePrompt": "URL зображення (https://…)",
       "linkPrompt": "URL посилання",
       "toolbar": "Форматування"
-    }
+    },
+    "coverUploadFailed": "Помилка завантаження обкладинки. Спробуйте URL."
   },
   "reels": {
     "feed": "Стрічка",
@@ -935,6 +938,30 @@
       "whatsapp": "WhatsApp",
       "telegram": "Telegram",
       "link": "Скопіювати посилання"
+    }
+  },
+  "community": {
+    "subtitle": "Статті, місії та щоденники спільноти",
+    "searchPlaceholder": "🔍 Пошук у стрічці...",
+    "loading": "Завантаження стрічки...",
+    "empty": "Публікацій не знайдено",
+    "emptySearch": "за цим запитом",
+    "articleBadge": "📚 Стаття",
+    "missionBadge": "🎯 Місія",
+    "journalBadge": "📓 Щоденник",
+    "completed": "виконав",
+    "anonymous": "Анонім",
+    "day": "День",
+    "justNow": "зараз",
+    "daySuffix": "д",
+    "like": "Подобається",
+    "alreadyLiked": "Вже подобається",
+    "loginToLike": "Увійдіть, щоб поставити лайк",
+    "tab": {
+      "all": "📋 Усі",
+      "articles": "📚 Статті",
+      "missions": "🎯 Місії",
+      "journal": "📓 Щоденник"
     }
   }
 }

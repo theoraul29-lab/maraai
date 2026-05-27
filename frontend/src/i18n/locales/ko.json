@@ -271,7 +271,9 @@
     "dataLoadError": "데이터를 불러올 수 없습니다. 연결을 확인하세요.",
     "deleteError": "동영상을 삭제할 수 없습니다.",
     "publishError": "게시 오류. 다시 시도하세요.",
-    "loading": "⏳ 로딩 중..."
+    "loading": "⏳ 로딩 중...",
+    "titleRequired": "제목은 필수입니다.",
+    "videoRequired": "비디오 파일을 첨부하거나 URL을 붙여넣으세요."
   },
   "writers": {
     "title": "작가 허브",
@@ -378,7 +380,8 @@
       "imagePrompt": "이미지 URL (https://…)",
       "linkPrompt": "링크 URL",
       "toolbar": "서식"
-    }
+    },
+    "coverUploadFailed": "커버 업로드 실패. URL을 시도해 보세요."
   },
   "reels": {
     "feed": "피드",
@@ -935,6 +938,30 @@
       "whatsapp": "WhatsApp",
       "telegram": "Telegram",
       "link": "링크 복사"
+    }
+  },
+  "community": {
+    "subtitle": "기사, 미션 및 커뮤니티 저널",
+    "searchPlaceholder": "🔍 피드 검색...",
+    "loading": "피드 로딩 중...",
+    "empty": "게시물을 찾을 수 없습니다",
+    "emptySearch": "이 검색에 대한",
+    "articleBadge": "📚 기사",
+    "missionBadge": "🎯 미션",
+    "journalBadge": "📓 저널",
+    "completed": "완료했습니다",
+    "anonymous": "익명",
+    "day": "일",
+    "justNow": "방금",
+    "daySuffix": "일",
+    "like": "좋아요",
+    "alreadyLiked": "이미 좋아요",
+    "loginToLike": "좋아요를 누르려면 로그인하세요",
+    "tab": {
+      "all": "📋 전체",
+      "articles": "📚 기사",
+      "missions": "🎯 미션",
+      "journal": "📓 저널"
     }
   }
 }

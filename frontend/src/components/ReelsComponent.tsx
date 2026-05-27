@@ -56,6 +56,11 @@ const ReelsComponent: React.FC = () => {
   const [videoPreviewUrl, setVideoPreviewUrl] = useState<string>('');
   const videoFileRef = useRef<HTMLInputElement>(null);
 
+  // Comments panel inside modal
+  const [showComments, setShowComments] = useState(false);
+  const [commentText, setCommentText] = useState('');
+  const [commentPosting, setCommentPosting] = useState(false);
+
   // Fetch feed from API
   const fetchFeed = useCallback(async (reset = false) => {
     try {
@@ -228,6 +233,19 @@ const ReelsComponent: React.FC = () => {
       await axios.delete(`${API_URL}/api/creator/videos/${reelId}`, { withCredentials: true });
       setMyReels(prev => prev.filter(r => r.id !== reelId));
     } catch { /* silent */ }
+  };
+
+  const handlePostComment = async () => {
+    if (!commentText.trim() || !selectedReel) return;
+    setCommentPosting(true);
+    const text = commentText.trim();
+    setCommentText('');
+    try {
+      await axios.post(`${API_URL}/api/videos/${selectedReel.id}/comment`, { text }, { withCredentials: true });
+      setReels(prev => prev.map(r => r.id === selectedReel.id ? { ...r, comments: r.comments + 1 } : r));
+      setSelectedReel(prev => prev ? { ...prev, comments: prev.comments + 1 } : prev);
+    } catch { /* optimistic — count may not reflect server state */ }
+    finally { setCommentPosting(false); }
   };
 
   const formatNumber = (n: number) => {
@@ -410,9 +428,9 @@ const ReelsComponent: React.FC = () => {
 
       {/* Reel Detail Modal */}
       {selectedReel && (
-        <div className="reel-modal-overlay" onClick={() => setSelectedReel(null)}>
+        <div className="reel-modal-overlay" onClick={() => { setSelectedReel(null); setShowComments(false); setCommentText(''); }}>
           <div className="reel-modal" onClick={e => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setSelectedReel(null)}>✕</button>
+            <button className="modal-close" onClick={() => { setSelectedReel(null); setShowComments(false); setCommentText(''); }}>✕</button>
             <div className="reel-player">
               {(selectedReel.url.includes('youtube') || selectedReel.url.includes('youtu.be')) ? (
                 <iframe
@@ -442,7 +460,7 @@ const ReelsComponent: React.FC = () => {
               {selectedReel.description && <p className="reel-description">{selectedReel.description}</p>}
               <div className="reel-actions">
                 <button className={`action-btn ${selectedReel.isLiked ? 'liked' : ''}`} onClick={() => handleLike(selectedReel.id)}>❤️ {formatNumber(selectedReel.likes)}</button>
-                <button className="action-btn">💬 {selectedReel.comments}</button>
+                <button className={`action-btn ${showComments ? 'active' : ''}`} onClick={() => setShowComments(v => !v)}>💬 {selectedReel.comments}</button>
                 <button className={`action-btn ${selectedReel.isSaved ? 'liked' : ''}`} onClick={() => handleSave(selectedReel.id)}>🔖 {selectedReel.isSaved ? t('reels.saved') : t('reels.saveLabel')}</button>
                 <ShareButton
                   sourceModule="reel"
@@ -455,6 +473,27 @@ const ReelsComponent: React.FC = () => {
               <div className="reel-tags">
                 {selectedReel.tags.map(tag => <span key={tag} className="tag">#{tag}</span>)}
               </div>
+              {showComments && (
+                <div className="reel-comments-panel">
+                  <div className="reel-comments-input-row">
+                    <input
+                      className="reel-comment-input"
+                      placeholder={t('reels.addComment')}
+                      value={commentText}
+                      onChange={e => setCommentText(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handlePostComment(); } }}
+                      maxLength={300}
+                    />
+                    <button
+                      className="reel-comment-submit"
+                      onClick={handlePostComment}
+                      disabled={!commentText.trim() || commentPosting}
+                    >
+                      {commentPosting ? '…' : t('reels.postComment')}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

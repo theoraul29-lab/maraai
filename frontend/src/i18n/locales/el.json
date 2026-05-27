@@ -228,7 +228,9 @@
     "dataLoadError": "Could not load data. Check your connection.",
     "deleteError": "Could not delete the video.",
     "publishError": "Error publishing. Try again.",
-    "loading": "⏳ Loading..."
+    "loading": "⏳ Loading...",
+    "titleRequired": "Ο τίτλος είναι υποχρεωτικός.",
+    "videoRequired": "Επισυνάψτε αρχείο βίντεο ή επικολλήστε URL."
   },
   "writers": {
     "title": "WRITERS HUB",
@@ -335,7 +337,8 @@
       "imagePrompt": "URL εικόνας (https://…)",
       "linkPrompt": "URL συνδέσμου",
       "toolbar": "Μορφοποίηση"
-    }
+    },
+    "coverUploadFailed": "Αποτυχία μεταφόρτωσης εξωφύλλου. Δοκιμάστε URL."
   },
   "reels": {
     "feed": "Feed",
@@ -892,6 +895,30 @@
       "whatsapp": "WhatsApp",
       "telegram": "Telegram",
       "link": "Copy Link"
+    }
+  },
+  "community": {
+    "subtitle": "Άρθρα, αποστολές και ημερολόγια κοινότητας",
+    "searchPlaceholder": "🔍 Αναζήτηση στη ροή...",
+    "loading": "Φόρτωση ροής...",
+    "empty": "Δεν βρέθηκαν δημοσιεύσεις",
+    "emptySearch": "για αυτήν την αναζήτηση",
+    "articleBadge": "📚 Άρθρο",
+    "missionBadge": "🎯 Αποστολή",
+    "journalBadge": "📓 Ημερολόγιο",
+    "completed": "ολοκλήρωσε",
+    "anonymous": "Ανώνυμος",
+    "day": "Ημέρα",
+    "justNow": "τώρα",
+    "daySuffix": "η",
+    "like": "Μου αρέσει",
+    "alreadyLiked": "Ήδη αρέσει",
+    "loginToLike": "Συνδεθείτε για να αρέσει",
+    "tab": {
+      "all": "📋 Όλα",
+      "articles": "📚 Άρθρα",
+      "missions": "🎯 Αποστολές",
+      "journal": "📓 Ημερολόγιο"
     }
   }
 }

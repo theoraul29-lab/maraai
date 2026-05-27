@@ -606,7 +606,7 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
                     );
                     setCoverUrl(res.data.url);
                   } catch {
-                    /* surface no-op; the publish button will reflect the empty cover. */
+                    setShareToast(t('writers.coverUploadFailed', 'Cover upload failed. Try a URL instead.'));
                   } finally {
                     setCoverUploading(false);
                     if (coverFileRef.current) coverFileRef.current.value = '';

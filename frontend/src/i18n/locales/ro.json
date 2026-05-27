@@ -271,7 +271,9 @@
     "dataLoadError": "Nu s-au putut încărca datele. Verifică conexiunea.",
     "deleteError": "Nu s-a putut șterge videoclipul.",
     "publishError": "Eroare la publicare. Încearcă din nou.",
-    "loading": "⏳ Se încarcă..."
+    "loading": "⏳ Se încarcă...",
+    "titleRequired": "Titlul este obligatoriu.",
+    "videoRequired": "Atașează un fișier video sau lipește un URL."
   },
   "writers": {
     "title": "HUB SCRIITORI",
@@ -378,7 +380,8 @@
       "imagePrompt": "URL imagine (https://…)",
       "linkPrompt": "URL link",
       "toolbar": "Formatare"
-    }
+    },
+    "coverUploadFailed": "Upload copertă eșuat. Încearcă un URL."
   },
   "reels": {
     "feed": "Flux",
@@ -943,6 +946,30 @@
       "whatsapp": "WhatsApp",
       "telegram": "Telegram",
       "link": "Copiază Link"
+    }
+  },
+  "community": {
+    "subtitle": "Articole, misiuni și jurnale ale comunității",
+    "searchPlaceholder": "🔍 Caută în feed…",
+    "loading": "Se încarcă feed-ul…",
+    "empty": "Nicio postare găsită",
+    "emptySearch": "pentru această căutare",
+    "articleBadge": "📚 Articol",
+    "missionBadge": "🎯 Misiune",
+    "journalBadge": "📓 Jurnal",
+    "completed": "a completat",
+    "anonymous": "Anonim",
+    "day": "Ziua",
+    "justNow": "acum",
+    "daySuffix": "z",
+    "like": "Apreciază",
+    "alreadyLiked": "Ai apreciat deja",
+    "loginToLike": "Autentifică-te pentru a aprecia",
+    "tab": {
+      "all": "📋 Toate",
+      "articles": "📚 Articole",
+      "missions": "🎯 Misiuni",
+      "journal": "📓 Jurnal"
     }
   }
 }

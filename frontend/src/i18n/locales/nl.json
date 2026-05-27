@@ -271,7 +271,9 @@
     "dataLoadError": "Gegevens konden niet worden geladen. Controleer je verbinding.",
     "deleteError": "De video kon niet worden verwijderd.",
     "publishError": "Fout bij publiceren. Probeer opnieuw.",
-    "loading": "⏳ Laden..."
+    "loading": "⏳ Laden...",
+    "titleRequired": "Titel is vereist.",
+    "videoRequired": "Voeg een videobestand toe of plak een URL."
   },
   "writers": {
     "title": "SCHRIJVERSHUB",
@@ -378,7 +380,8 @@
       "imagePrompt": "Afbeeldings-URL (https://…)",
       "linkPrompt": "Link-URL",
       "toolbar": "Opmaak"
-    }
+    },
+    "coverUploadFailed": "Omslagupload mislukt. Probeer een URL."
   },
   "reels": {
     "feed": "Feed",
@@ -935,6 +938,30 @@
       "whatsapp": "WhatsApp",
       "telegram": "Telegram",
       "link": "Link kopiëren"
+    }
+  },
+  "community": {
+    "subtitle": "Artikelen, missies en community-dagboeken",
+    "searchPlaceholder": "🔍 Feed doorzoeken...",
+    "loading": "Feed laden...",
+    "empty": "Geen berichten gevonden",
+    "emptySearch": "voor deze zoekopdracht",
+    "articleBadge": "📚 Artikel",
+    "missionBadge": "🎯 Missie",
+    "journalBadge": "📓 Dagboek",
+    "completed": "heeft voltooid",
+    "anonymous": "Anoniem",
+    "day": "Dag",
+    "justNow": "nu",
+    "daySuffix": "d",
+    "like": "Vind ik leuk",
+    "alreadyLiked": "Al geliked",
+    "loginToLike": "Log in om te liken",
+    "tab": {
+      "all": "📋 Alles",
+      "articles": "📚 Artikelen",
+      "missions": "🎯 Missies",
+      "journal": "📓 Dagboek"
     }
   }
 }

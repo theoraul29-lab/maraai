@@ -271,7 +271,9 @@
     "dataLoadError": "Could not load data. Check your connection.",
     "deleteError": "Could not delete the video.",
     "publishError": "Error publishing. Try again.",
-    "loading": "⏳ Loading..."
+    "loading": "⏳ Loading...",
+    "titleRequired": "Title is required.",
+    "videoRequired": "Attach a video file or paste a URL."
   },
   "writers": {
     "title": "WRITERS HUB",
@@ -378,7 +380,8 @@
       "imagePrompt": "Image URL (https://…)",
       "linkPrompt": "Link URL",
       "toolbar": "Formatting"
-    }
+    },
+    "coverUploadFailed": "Cover upload failed. Try a URL instead."
   },
   "reels": {
     "feed": "Feed",
@@ -943,6 +946,30 @@
       "whatsapp": "WhatsApp",
       "telegram": "Telegram",
       "link": "Copy Link"
+    }
+  },
+  "community": {
+    "subtitle": "Articles, missions and community journals",
+    "searchPlaceholder": "🔍 Search feed...",
+    "loading": "Loading feed...",
+    "empty": "No posts found",
+    "emptySearch": "for this search",
+    "articleBadge": "📚 Article",
+    "missionBadge": "🎯 Mission",
+    "journalBadge": "📓 Journal",
+    "completed": "completed",
+    "anonymous": "Anonymous",
+    "day": "Day",
+    "justNow": "now",
+    "daySuffix": "d",
+    "like": "Like",
+    "alreadyLiked": "Already liked",
+    "loginToLike": "Log in to like",
+    "tab": {
+      "all": "📋 All",
+      "articles": "📚 Articles",
+      "missions": "🎯 Missions",
+      "journal": "📓 Journal"
     }
   }
 }

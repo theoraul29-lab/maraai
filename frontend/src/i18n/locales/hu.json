@@ -228,7 +228,9 @@
     "dataLoadError": "Could not load data. Check your connection.",
     "deleteError": "Could not delete the video.",
     "publishError": "Error publishing. Try again.",
-    "loading": "⏳ Loading..."
+    "loading": "⏳ Loading...",
+    "titleRequired": "A cím kötelező.",
+    "videoRequired": "Csatolj videofájlt vagy illeszd be az URL-t."
   },
   "writers": {
     "title": "WRITERS HUB",
@@ -335,7 +337,8 @@
       "imagePrompt": "Kép URL-je (https://…)",
       "linkPrompt": "Link URL-je",
       "toolbar": "Formázás"
-    }
+    },
+    "coverUploadFailed": "Borítókép feltöltése sikertelen. Próbálj URL-t."
   },
   "reels": {
     "feed": "Feed",
@@ -892,6 +895,30 @@
       "whatsapp": "WhatsApp",
       "telegram": "Telegram",
       "link": "Copy Link"
+    }
+  },
+  "community": {
+    "subtitle": "Cikkek, küldetések és közösségi naplók",
+    "searchPlaceholder": "🔍 Feed keresése...",
+    "loading": "Feed betöltése...",
+    "empty": "Nem találhatók bejegyzések",
+    "emptySearch": "erre a keresésre",
+    "articleBadge": "📚 Cikk",
+    "missionBadge": "🎯 Küldetés",
+    "journalBadge": "📓 Napló",
+    "completed": "teljesítette",
+    "anonymous": "Névtelen",
+    "day": "Nap",
+    "justNow": "most",
+    "daySuffix": "n",
+    "like": "Tetszik",
+    "alreadyLiked": "Már tetszett",
+    "loginToLike": "Lépj be a kedveléshez",
+    "tab": {
+      "all": "📋 Minden",
+      "articles": "📚 Cikkek",
+      "missions": "🎯 Küldetések",
+      "journal": "📓 Napló"
     }
   }
 }

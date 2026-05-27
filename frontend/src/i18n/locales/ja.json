@@ -271,7 +271,9 @@
     "dataLoadError": "データを読み込めませんでした。接続を確認してください。",
     "deleteError": "動画を削除できませんでした。",
     "publishError": "公開エラー。もう一度お試しください。",
-    "loading": "⏳ 読み込み中..."
+    "loading": "⏳ 読み込み中...",
+    "titleRequired": "タイトルは必須です。",
+    "videoRequired": "ビデオファイルを添付するかURLを貼り付けてください。"
   },
   "writers": {
     "title": "ライターハブ",
@@ -378,7 +380,8 @@
       "imagePrompt": "画像URL (https://…)",
       "linkPrompt": "リンクURL",
       "toolbar": "書式設定"
-    }
+    },
+    "coverUploadFailed": "カバーのアップロードに失敗しました。URLをお試しください。"
   },
   "reels": {
     "feed": "フィード",
@@ -935,6 +938,30 @@
       "whatsapp": "WhatsApp",
       "telegram": "Telegram",
       "link": "リンクをコピー"
+    }
+  },
+  "community": {
+    "subtitle": "記事、ミッション、コミュニティのジャーナル",
+    "searchPlaceholder": "🔍 フィードを検索...",
+    "loading": "フィードを読み込み中...",
+    "empty": "投稿が見つかりません",
+    "emptySearch": "この検索に対して",
+    "articleBadge": "📚 記事",
+    "missionBadge": "🎯 ミッション",
+    "journalBadge": "📓 ジャーナル",
+    "completed": "が完了しました",
+    "anonymous": "匿名",
+    "day": "日",
+    "justNow": "たった今",
+    "daySuffix": "日",
+    "like": "いいね",
+    "alreadyLiked": "いいね済み",
+    "loginToLike": "いいねするにはログイン",
+    "tab": {
+      "all": "📋 すべて",
+      "articles": "📚 記事",
+      "missions": "🎯 ミッション",
+      "journal": "📓 ジャーナル"
     }
   }
 }

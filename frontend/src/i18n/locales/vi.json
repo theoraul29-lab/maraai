@@ -228,7 +228,9 @@
     "dataLoadError": "Could not load data. Check your connection.",
     "deleteError": "Could not delete the video.",
     "publishError": "Error publishing. Try again.",
-    "loading": "⏳ Loading..."
+    "loading": "⏳ Loading...",
+    "titleRequired": "Tiêu đề là bắt buộc.",
+    "videoRequired": "Đính kèm tệp video hoặc dán URL."
   },
   "writers": {
     "title": "WRITERS HUB",
@@ -335,7 +337,8 @@
       "imagePrompt": "URL hình ảnh (https://…)",
       "linkPrompt": "URL liên kết",
       "toolbar": "Định dạng"
-    }
+    },
+    "coverUploadFailed": "Tải ảnh bìa thất bại. Thử URL."
   },
   "reels": {
     "feed": "Feed",
@@ -892,6 +895,30 @@
       "whatsapp": "WhatsApp",
       "telegram": "Telegram",
       "link": "Copy Link"
+    }
+  },
+  "community": {
+    "subtitle": "Bài viết, nhiệm vụ và nhật ký cộng đồng",
+    "searchPlaceholder": "🔍 Tìm kiếm trong feed...",
+    "loading": "Đang tải feed...",
+    "empty": "Không tìm thấy bài đăng",
+    "emptySearch": "cho tìm kiếm này",
+    "articleBadge": "📚 Bài viết",
+    "missionBadge": "🎯 Nhiệm vụ",
+    "journalBadge": "📓 Nhật ký",
+    "completed": "đã hoàn thành",
+    "anonymous": "Ẩn danh",
+    "day": "Ngày",
+    "justNow": "vừa xong",
+    "daySuffix": "ng",
+    "like": "Thích",
+    "alreadyLiked": "Đã thích",
+    "loginToLike": "Đăng nhập để thích",
+    "tab": {
+      "all": "📋 Tất cả",
+      "articles": "📚 Bài viết",
+      "missions": "🎯 Nhiệm vụ",
+      "journal": "📓 Nhật ký"
     }
   }
 }

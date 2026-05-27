@@ -271,7 +271,9 @@
     "dataLoadError": "No se pudieron cargar los datos. Revisa tu conexión.",
     "deleteError": "No se pudo eliminar el vídeo.",
     "publishError": "Error al publicar. Inténtalo de nuevo.",
-    "loading": "⏳ Cargando..."
+    "loading": "⏳ Cargando...",
+    "titleRequired": "El título es obligatorio.",
+    "videoRequired": "Adjunta un archivo de video o pega una URL."
   },
   "writers": {
     "title": "HUB DE ESCRITORES",
@@ -378,7 +380,8 @@
       "imagePrompt": "URL de imagen (https://…)",
       "linkPrompt": "URL del enlace",
       "toolbar": "Formato"
-    }
+    },
+    "coverUploadFailed": "Error al subir la portada. Intenta con una URL."
   },
   "reels": {
     "feed": "Feed",
@@ -935,6 +938,30 @@
       "whatsapp": "WhatsApp",
       "telegram": "Telegram",
       "link": "Copiar Enlace"
+    }
+  },
+  "community": {
+    "subtitle": "Artículos, misiones y diarios de la comunidad",
+    "searchPlaceholder": "🔍 Buscar en el feed...",
+    "loading": "Cargando feed...",
+    "empty": "No se encontraron publicaciones",
+    "emptySearch": "para esta búsqueda",
+    "articleBadge": "📚 Artículo",
+    "missionBadge": "🎯 Misión",
+    "journalBadge": "📓 Diario",
+    "completed": "completó",
+    "anonymous": "Anónimo",
+    "day": "Día",
+    "justNow": "ahora",
+    "daySuffix": "d",
+    "like": "Me gusta",
+    "alreadyLiked": "Ya te gustó",
+    "loginToLike": "Inicia sesión para dar me gusta",
+    "tab": {
+      "all": "📋 Todo",
+      "articles": "📚 Artículos",
+      "missions": "🎯 Misiones",
+      "journal": "📓 Diario"
     }
   }
 }

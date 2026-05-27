@@ -228,7 +228,9 @@
     "dataLoadError": "Could not load data. Check your connection.",
     "deleteError": "Could not delete the video.",
     "publishError": "Error publishing. Try again.",
-    "loading": "⏳ Loading..."
+    "loading": "⏳ Loading...",
+    "titleRequired": "Başlık zorunludur.",
+    "videoRequired": "Bir video dosyası ekleyin veya URL yapıştırın."
   },
   "writers": {
     "title": "WRITERS HUB",
@@ -335,7 +337,8 @@
       "imagePrompt": "Resim URL'si (https://…)",
       "linkPrompt": "Bağlantı URL'si",
       "toolbar": "Biçimlendirme"
-    }
+    },
+    "coverUploadFailed": "Kapak yüklenemedi. Bir URL deneyin."
   },
   "reels": {
     "feed": "Feed",
@@ -892,6 +895,30 @@
       "whatsapp": "WhatsApp",
       "telegram": "Telegram",
       "link": "Copy Link"
+    }
+  },
+  "community": {
+    "subtitle": "Makaleler, görevler ve topluluk günlükleri",
+    "searchPlaceholder": "🔍 Akışta ara...",
+    "loading": "Akış yükleniyor...",
+    "empty": "Gönderi bulunamadı",
+    "emptySearch": "bu arama için",
+    "articleBadge": "📚 Makale",
+    "missionBadge": "🎯 Görev",
+    "journalBadge": "📓 Günlük",
+    "completed": "tamamladı",
+    "anonymous": "Anonim",
+    "day": "Gün",
+    "justNow": "şimdi",
+    "daySuffix": "g",
+    "like": "Beğen",
+    "alreadyLiked": "Zaten beğenildi",
+    "loginToLike": "Beğenmek için giriş yapın",
+    "tab": {
+      "all": "📋 Tümü",
+      "articles": "📚 Makaleler",
+      "missions": "🎯 Görevler",
+      "journal": "📓 Günlük"
     }
   }
 }

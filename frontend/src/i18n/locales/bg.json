@@ -271,7 +271,9 @@
     "dataLoadError": "Не може да се зареди данни. Провери връзката си.",
     "deleteError": "Не може да се изтрие видеото.",
     "publishError": "Грешка при публикуване. Опитай отново.",
-    "loading": "⏳ Зареждане..."
+    "loading": "⏳ Зареждане...",
+    "titleRequired": "Заглавието е задължително.",
+    "videoRequired": "Прикачете видео файл или поставете URL."
   },
   "writers": {
     "title": "ХЪБ ЗА ПИСАТЕЛИ",
@@ -378,7 +380,8 @@
       "imagePrompt": "URL на изображение (https://…)",
       "linkPrompt": "URL на линк",
       "toolbar": "Форматиране"
-    }
+    },
+    "coverUploadFailed": "Грешка при качване на корицата. Опитайте URL."
   },
   "reels": {
     "feed": "Лента",
@@ -935,6 +938,30 @@
       "whatsapp": "WhatsApp",
       "telegram": "Telegram",
       "link": "Копирай връзката"
+    }
+  },
+  "community": {
+    "subtitle": "Статии, мисии и дневници на общността",
+    "searchPlaceholder": "🔍 Търсене в лентата...",
+    "loading": "Зареждане на лентата...",
+    "empty": "Няма намерени публикации",
+    "emptySearch": "за това търсене",
+    "articleBadge": "📚 Статия",
+    "missionBadge": "🎯 Мисия",
+    "journalBadge": "📓 Дневник",
+    "completed": "завърши",
+    "anonymous": "Анонимен",
+    "day": "Ден",
+    "justNow": "сега",
+    "daySuffix": "д",
+    "like": "Харесай",
+    "alreadyLiked": "Вече харесано",
+    "loginToLike": "Влезте, за да харесате",
+    "tab": {
+      "all": "📋 Всички",
+      "articles": "📚 Статии",
+      "missions": "🎯 Мисии",
+      "journal": "📓 Дневник"
     }
   }
 }
