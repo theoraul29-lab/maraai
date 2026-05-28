@@ -2,7 +2,7 @@
 
 ## Runtime overview
 
-MaraAI is a monorepo with a React/Vite SPA in `/tmp/workspace/theoraul29-lab/maraai/frontend` and a session-based Express server in `/tmp/workspace/theoraul29-lab/maraai/server`.
+MaraAI is a monorepo with a React/Vite SPA in `frontend` and a session-based Express server in `server`.
 
 ```text
 Browser SPA (React + Vite)
@@ -26,26 +26,26 @@ Persistence and integrations
 
 ## Main backend entry points
 
-- `/tmp/workspace/theoraul29-lab/maraai/server/index.ts`
+- `server/index.ts`
   - Bootstraps Express, security middleware, sessions, health/runtime routes, WebSocket server, migrations, and static serving.
-- `/tmp/workspace/theoraul29-lab/maraai/server/routes.ts`
+- `server/routes.ts`
   - Registers the application API surface and wires most feature modules into the main Express app.
-- `/tmp/workspace/theoraul29-lab/maraai/server/auth.ts`
+- `server/auth.ts`
   - Session auth, CSRF enforcement, and request user hydration.
-- `/tmp/workspace/theoraul29-lab/maraai/server/db.ts`
+- `server/db.ts`
   - SQLite connection setup and database bootstrap helpers.
-- `/tmp/workspace/theoraul29-lab/maraai/server/storage.ts`
+- `server/storage.ts`
   - Main persistence layer used by API handlers and background logic.
 
 ## Frontend structure
 
-- `/tmp/workspace/theoraul29-lab/maraai/frontend/src/main.tsx`
+- `frontend/src/main.tsx`
   - SPA bootstrap, router mount, PWA registration, and CSRF wrapper initialization.
-- `/tmp/workspace/theoraul29-lab/maraai/frontend/src/csrf.ts`
+- `frontend/src/csrf.ts`
   - Canonical CSRF token source. Fetches `/api/auth/csrf`, caches the token per session, injects headers into mutating `fetch`/`axios` requests, and retries once on CSRF failures.
-- `/tmp/workspace/theoraul29-lab/maraai/frontend/src/components`
+- `frontend/src/components`
   - UI components including PayPal purchase, sharing, chat, and module-specific flows.
-- `/tmp/workspace/theoraul29-lab/maraai/frontend/src/contexts/AuthContext.tsx`
+- `frontend/src/contexts/AuthContext.tsx`
   - Session-aware auth state and CSRF cache resets after login/signup/logout.
 
 ## Auth and request security
@@ -58,7 +58,7 @@ Persistence and integrations
 
 ## Rate limiting
 
-- Application rate limiting is centralized in `/tmp/workspace/theoraul29-lab/maraai/server/rate-limit.ts`.
+- Application rate limiting is centralized in `server/rate-limit.ts`.
 - The module contains:
   - chat message throttling,
   - auth/IP-based limiters,
@@ -67,19 +67,19 @@ Persistence and integrations
 
 ## Payments
 
-- PayPal program purchase/capture logic lives in `/tmp/workspace/theoraul29-lab/maraai/server/billing/paypal.ts`.
-- Frontend purchase initiation currently comes from `/tmp/workspace/theoraul29-lab/maraai/frontend/src/components/PayPalProgramButton.tsx`.
-- Stripe and PayPal provider abstractions also exist under `/tmp/workspace/theoraul29-lab/maraai/backend/src/payments`.
+- PayPal program purchase/capture logic lives in `server/billing/paypal.ts`.
+- Frontend purchase initiation currently comes from `frontend/src/components/PayPalProgramButton.tsx`.
+- Stripe and PayPal provider abstractions also exist under `backend/src/payments`.
 
 ## Mara subsystems
 
-- `/tmp/workspace/theoraul29-lab/maraai/server/mara-brain`
+- `server/mara-brain`
   - Brain-cycle orchestration, learning, experiments, code indexing, alerts, and supporting agents.
-- `/tmp/workspace/theoraul29-lab/maraai/server/mara-core`
+- `server/mara-core`
   - Shared reasoning state such as executive context and objective tracking.
-- `/tmp/workspace/theoraul29-lab/maraai/server/missions`
+- `server/missions`
   - Mission engine, routing, and seeding.
-- `/tmp/workspace/theoraul29-lab/maraai/server/maraai`
+- `server/maraai`
   - Additional Mara-specific routes and compute-peer coordination.
 
 ## Build and CI
@@ -87,8 +87,8 @@ Persistence and integrations
 - Root package scripts orchestrate repository-level commands.
 - Frontend dependencies are installed separately from the root install.
 - Frontend build runs from `frontend/package.json`.
-- CI is defined in `/tmp/workspace/theoraul29-lab/maraai/.github/workflows/ci.yml` and is expected to validate install, typecheck, frontend lint, build, and smoke coverage.
+- CI is defined in `.github/workflows/ci.yml` and is expected to validate install, typecheck, frontend lint, build, and smoke coverage.
 
 ## Current code organization note
 
-`/tmp/workspace/theoraul29-lab/maraai/server/routes.ts` is still a large integration point. Future refactoring should split it gradually by domain (auth, admin, billing, media, Mara internals) while preserving current route behavior and middleware ordering.
+`server/routes.ts` is still a large integration point. Future refactoring should split it gradually by domain (auth, admin, billing, media, Mara internals) while preserving current route behavior and middleware ordering.

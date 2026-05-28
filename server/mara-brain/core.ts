@@ -120,13 +120,22 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
       console.log('[MaraBrain] Phase 0: Reading from library...');
       try {
         await withTimeout((async () => {
-          const bookResult = await readNextLibraryBook();
-          if (bookResult) {
+          const progressBefore = await getLibraryProgress();
+          const unreadBefore = Math.max(progressBefore.total - progressBefore.read, 0);
+          const readsThisCycle = unreadBefore > 10 ? 2 : 1;
+
+          let readsDone = 0;
+          for (let i = 0; i < readsThisCycle; i += 1) {
+            const bookResult = await readNextLibraryBook();
+            if (!bookResult) break;
+            readsDone += 1;
             research.push(`📚 Read "${bookResult.title}": ${bookResult.totalIdeas} ideas extracted`);
             knowledgeLearned += bookResult.savedKnowledgeIds.length;
-          } else {
-            const progress = await getLibraryProgress();
-            research.push(`📚 Library complete: ${progress.read}/${progress.total} books read`);
+          }
+
+          if (readsDone === 0) {
+            const progressAfter = await getLibraryProgress();
+            research.push(`📚 Library complete: ${progressAfter.read}/${progressAfter.total} books read`);
           }
         })(), PHASE_TIMEOUT, 'Phase 0: Library');
       } catch (err) {

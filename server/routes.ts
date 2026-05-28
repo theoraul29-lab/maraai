@@ -84,7 +84,6 @@ import {
 } from './mara-brain/conflict-detector.js';
 import { resetLibraryReadState } from './mara-brain/library.js';
 import { listSingletonLocks } from './lib/singleton-lock.js';
-import { executive } from './mara-core/executive.js';
 import {
   chatRateLimit,
   signupRateLimit,
@@ -854,8 +853,9 @@ export async function registerRoutes(
   });
 
   // ExecutiveReasoning — shared cognitive state across all three brains
-  app.get('/api/admin/mara/executive', requireAdmin, (_req: any, res: any) => {
+  app.get('/api/admin/mara/executive', requireAdmin, async (_req: any, res: any) => {
     try {
+      const { executive } = await import('./mara-core/executive.js');
       res.json(executive.getStatus());
     } catch (err: any) {
       res.status(500).json({ error: err.message });

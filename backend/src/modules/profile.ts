@@ -674,7 +674,7 @@ export async function deleteAccount(req: Request, res: Response) {
       ['creator_payouts',         'creator_id'],
       ['creator_posts',           'creator_id'],
       ['writer_purchases',        'user_id'],
-      ['writer_pages',            'author_id'],
+      ['writer_pages',            'user_id'],
       ['premium_orders',          'user_id'],
       ['user_posts',              'user_id'],
       ['videos',                  'creator_id'],
