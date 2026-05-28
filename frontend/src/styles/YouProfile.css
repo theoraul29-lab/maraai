@@ -1383,7 +1383,11 @@
   gap: 4px;
   border-bottom: 1px solid #2a2a3a;
   margin: 24px 24px 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
+.you-fb-tabs::-webkit-scrollbar { display: none; }
 .you-fb-tab {
   background: transparent;
   color: #aaa;
@@ -1393,11 +1397,23 @@
   font-weight: 600;
   cursor: pointer;
   border-bottom: 2px solid transparent;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
 }
+.you-fb-tab-icon { display: flex; align-items: center; }
 .you-fb-tab:hover { color: #fff; }
 .you-fb-tab.active {
   color: #fff;
   border-bottom-color: #a855f7;
+}
+@media (max-width: 480px) {
+  .you-fb-tabs { margin: 12px 8px 0; gap: 0; }
+  .you-fb-tab { padding: 10px 12px; font-size: 13px; }
+  .you-fb-tab-label { display: none; }
+  .you-fb-tab-icon svg { width: 18px; height: 18px; }
 }
 
 .you-fb-timeline {

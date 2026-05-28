@@ -650,55 +650,77 @@ export async function deleteAccount(req: Request, res: Response) {
   }
   try {
     // Delete in dependency order (children first, then parents).
+    // Every entry is wrapped in try/catch inside the loop so a missing table
+    // never aborts the transaction.
     const tables: [string, string][] = [
-      ['post_likes',              'user_id'],
-      ['post_comments',           'user_id'],
-      ['video_comments',          'user_id'],
-      ['comments',                'user_id'],
-      ['likes',                   'user_id'],
-      ['saved_videos',            'user_id'],
-      ['notifications',           'user_id'],
-      ['push_subscriptions',      'user_id'],
-      ['user_feedback',           'user_id'],
-      ['mission_shares',          'user_id'],
-      ['trading_lesson_progress', 'user_id'],
-      ['trading_certificates',    'user_id'],
-      ['mission_events',          'user_id'],
-      ['user_missions',           'user_id'],
-      ['user_xp',                 'user_id'],
-      ['user_personality',        'user_id'],
-      ['user_preferences',        'user_id'],
-      ['mara_search_history',     'user_id'],
-      ['chat_messages',           'user_id'],
-      ['direct_messages',         'sender_id'],
-      ['creator_payouts',         'creator_id'],
-      ['creator_posts',           'creator_id'],
-      ['writer_purchases',        'user_id'],
-      ['writer_pages',            'author_id'],
-      ['premium_orders',          'user_id'],
-      ['user_posts',              'user_id'],
-      ['videos',                  'creator_id'],
+      // --- leaf nodes (reference content) ---
+      ['post_likes',                 'user_id'],
+      ['post_comments',              'user_id'],
+      ['video_comments',             'user_id'],
+      ['writer_comments',            'user_id'],
+      ['comments',                   'user_id'],
+      ['likes',                      'user_id'],
+      ['saved_videos',               'user_id'],
+      ['collection_videos',          'user_id'],
+      ['collections',                'user_id'],
+      ['mission_proofs',             'user_id'],
+      ['mission_feedback',           'user_id'],
+      ['mission_generation_queue',   'user_id'],
+      ['journal_entries',            'user_id'],
+      ['user_books',                 'user_id'],
+      ['content_shares',             'user_id'],
+      ['user_toxicity_state',        'user_id'],
+      ['referral_codes',             'user_id'],
+      ['referrals',                  'referrer_id'],
+      ['referrals',                  'referred_user_id'],
+      ['program_purchases',          'user_id'],
+      ['user_program_enrollments',   'user_id'],
+      // --- notifications / push ---
+      ['notifications',              'user_id'],
+      ['push_subscriptions',         'user_id'],
+      // --- feedback / support ---
+      ['user_feedback',              'user_id'],
+      // --- missions / XP ---
+      ['mission_shares',             'user_id'],
+      ['mission_events',             'user_id'],
+      ['user_missions',              'user_id'],
+      ['user_xp',                    'user_id'],
+      ['user_personality',           'user_id'],
+      // --- trading ---
+      ['trading_lesson_progress',    'user_id'],
+      ['trading_certificates',       'user_id'],
+      // --- preferences / history ---
+      ['user_preferences',           'user_id'],
+      ['mara_search_history',        'user_id'],
+      // --- chat ---
+      ['chat_messages',              'user_id'],
+      ['direct_messages',            'sender_id'],
+      // --- creator / writer content ---
+      ['creator_payouts',            'creator_id'],
+      ['creator_posts',              'creator_id'],
+      ['writer_purchases',           'user_id'],
+      ['writer_pages',               'user_id'],  // column is user_id, not author_id
+      ['premium_orders',             'user_id'],
+      ['user_posts',                 'user_id'],
+      ['videos',                     'creator_id'],
     ];
 
     rawSqlite.transaction(() => {
-      // Remove conversation memberships
-      rawSqlite.prepare(`
-        DELETE FROM conversations
-        WHERE user1_id = ? OR user2_id = ?
-      `).run(userId, userId);
+      // Wrap every delete so a missing table never aborts the transaction.
+      const safeRun = (sql: string, ...args: string[]) => {
+        try { rawSqlite.prepare(sql).run(...args); }
+        catch { /* table may not exist in this environment */ }
+      };
 
-      // Remove follow relationships in both directions
-      rawSqlite.prepare(`DELETE FROM followers WHERE follower_id = ? OR followed_id = ?`).run(userId, userId);
+      safeRun(`DELETE FROM conversations WHERE user1_id = ? OR user2_id = ?`, userId, userId);
+      safeRun(`DELETE FROM followers WHERE follower_id = ? OR followed_id = ?`, userId, userId);
 
       for (const [table, col] of tables) {
-        try {
-          rawSqlite.prepare(`DELETE FROM "${table}" WHERE "${col}" = ?`).run(userId);
-        } catch {
-          // Table might not exist in all environments — skip silently
-        }
+        safeRun(`DELETE FROM "${table}" WHERE "${col}" = ?`, userId);
       }
 
-      rawSqlite.prepare(`DELETE FROM users WHERE id = ?`).run(userId);
+      // User row last — all references have been cleaned up above.
+      safeRun(`DELETE FROM users WHERE id = ?`, userId);
     })();
 
     // Destroy session

@@ -693,8 +693,10 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
             key={tab}
             className={`you-fb-tab ${activeTab === tab ? 'active' : ''}`}
             onClick={() => setActiveTab(tab)}
+            title={label}
           >
-            {icon} {label}
+            <span className="you-fb-tab-icon">{icon}</span>
+            <span className="you-fb-tab-label">{label}</span>
           </button>
         ))}
       </div>

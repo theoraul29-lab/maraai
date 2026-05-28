@@ -120,13 +120,20 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
       console.log('[MaraBrain] Phase 0: Reading from library...');
       try {
         await withTimeout((async () => {
-          const bookResult = await readNextLibraryBook();
-          if (bookResult) {
-            research.push(`📚 Read "${bookResult.title}": ${bookResult.totalIdeas} ideas extracted`);
-            knowledgeLearned += bookResult.savedKnowledgeIds.length;
-          } else {
-            const progress = await getLibraryProgress();
-            research.push(`📚 Library complete: ${progress.read}/${progress.total} books read`);
+          const progress = await getLibraryProgress();
+          // Catch-up mode: read 2 books per cycle when many are unread (> 10),
+          // so a freshly expanded library (30+ new books) is absorbed in ~2 days
+          // instead of 3+. Falls back to 1/cycle once the backlog shrinks.
+          const booksThisCycle = progress.unread > 10 ? 2 : 1;
+          for (let i = 0; i < booksThisCycle; i++) {
+            const bookResult = await readNextLibraryBook();
+            if (bookResult) {
+              research.push(`📚 Read "${bookResult.title}": ${bookResult.totalIdeas} ideas extracted`);
+              knowledgeLearned += bookResult.savedKnowledgeIds.length;
+            } else {
+              research.push(`📚 Library complete: ${progress.read}/${progress.total} books read`);
+              break;
+            }
           }
         })(), PHASE_TIMEOUT, 'Phase 0: Library');
       } catch (err) {
