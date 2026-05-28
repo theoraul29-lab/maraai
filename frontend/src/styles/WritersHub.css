@@ -2,10 +2,10 @@
 
 .writers-container {
   position: fixed;
-  top: 0;
+  top: 56px;
   left: 0;
   width: 100vw;
-  height: 100vh;
+  height: calc(100vh - 56px);
   background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
   z-index: 100;
   display: flex;

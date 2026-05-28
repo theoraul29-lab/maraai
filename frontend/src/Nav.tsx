@@ -163,35 +163,8 @@ const Nav: React.FC = () => {
 					)}
 				</div>
 				<GlobalSearch />
-				<NotificationBell />
-				{isAuthenticated && (
-					<button
-						className="nav-messenger-btn"
-						onClick={() => setMessengerOpen(o => !o)}
-						aria-label="Mesaje"
-					>
-						💬
-						{messengerUnread > 0 && (
-							<span className="nav-messenger-badge">{messengerUnread > 99 ? '99+' : messengerUnread}</span>
-						)}
-					</button>
-				)}
 				<LanguageSelector compact />
-				{isAuthenticated && (
-					<button
-						className="nav-settings-btn"
-						onClick={() => setSettingsOpen(true)}
-						aria-label="Setări"
-					>
-						⚙️
-					</button>
-				)}
-			</div>
-
-			{/* Mobile Nav */}
-			<div className="nav-mobile">
-				<div className="nav-brand">{t('nav.brandMobile')}</div>
-				<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+				<div className="nav-icon-group">
 					<NotificationBell />
 					{isAuthenticated && (
 						<button
@@ -205,7 +178,6 @@ const Nav: React.FC = () => {
 							)}
 						</button>
 					)}
-					<LanguageSelector compact />
 					{isAuthenticated && (
 						<button
 							className="nav-settings-btn"
@@ -215,6 +187,38 @@ const Nav: React.FC = () => {
 							⚙️
 						</button>
 					)}
+				</div>
+			</div>
+
+			{/* Mobile Nav */}
+			<div className="nav-mobile">
+				<div className="nav-brand">{t('nav.brandMobile')}</div>
+				<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+					<LanguageSelector compact />
+					<div className="nav-icon-group">
+						<NotificationBell />
+						{isAuthenticated && (
+							<button
+								className="nav-messenger-btn"
+								onClick={() => setMessengerOpen(o => !o)}
+								aria-label="Mesaje"
+							>
+								💬
+								{messengerUnread > 0 && (
+									<span className="nav-messenger-badge">{messengerUnread > 99 ? '99+' : messengerUnread}</span>
+								)}
+							</button>
+						)}
+						{isAuthenticated && (
+							<button
+								className="nav-settings-btn"
+								onClick={() => setSettingsOpen(true)}
+								aria-label="Setări"
+							>
+								⚙️
+							</button>
+						)}
+					</div>
 					<button
 						className="hamburger-btn"
 						onClick={() => setMenuOpen(!menuOpen)}
