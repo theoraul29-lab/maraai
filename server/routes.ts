@@ -109,6 +109,8 @@ import {
 import { registerLaunchCountdown } from './modules/launch-countdown.js';
 import { registerMissionRoutes } from './missions/routes.js';
 import { registerShareRoutes } from './share/routes.js';
+import { callAgent, isBrainAgentEnabled } from './lib/anthropic-agents.js';
+import { getUserXP, getPersonality } from './missions/engine.js';
 import multer from 'multer';
 // pdf-parse v1 is CommonJS-only — load via createRequire to avoid ESM default-export issues
 import { createRequire } from 'module';
@@ -1577,6 +1579,65 @@ experiments, and learning cycles. If asked about experiments or strategy, be spe
       res.json({ ok: true, alerts, count: alerts.length });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ── Mara Brain Agent endpoint ─────────────────────────────────────────────
+  // POST /api/agent/brain  — builds user context from DB and sends to Mara
+  // Brain agent.  Returns personalized missions (JSON) + progress narrative.
+  app.post('/api/agent/brain', requireAuth, async (req: any, res: any) => {
+    if (!isBrainAgentEnabled()) {
+      return res.status(503).json({ error: 'Mara Brain agent not configured' });
+    }
+    const userId: string = req.user?.uid;
+    try {
+      const xp = getUserXP(userId);
+      const personality = getPersonality(userId);
+      const completed = (rawSqlite.prepare(
+        `SELECT m.title, m.pillar, m.difficulty FROM user_missions um
+         JOIN missions m ON m.id = um.mission_id
+         WHERE um.user_id = ? AND um.status = 'completed'
+         ORDER BY um.started_at DESC LIMIT 10`
+      ).all(userId) as Array<{ title: string; pillar: string; difficulty: string }>);
+      const skipped = (rawSqlite.prepare(
+        `SELECT m.title, m.pillar FROM user_missions um
+         JOIN missions m ON m.id = um.mission_id
+         WHERE um.user_id = ? AND um.status = 'skipped'
+         ORDER BY um.started_at DESC LIMIT 5`
+      ).all(userId) as Array<{ title: string; pillar: string }>);
+      const enrollment = (rawSqlite.prepare(
+        `SELECT p.name, pe.current_day, pe.streak FROM program_enrollments pe
+         JOIN programs p ON p.id = pe.program_id
+         WHERE pe.user_id = ? AND pe.status = 'active' LIMIT 1`
+      ).get(userId) as { name: string; current_day: number; streak: number } | undefined);
+
+      const userContext = `<user_context>
+${JSON.stringify({
+  xp: xp.xp,
+  level: xp.level,
+  streak: xp.streak,
+  personality: personality ?? null,
+  completedMissions: completed,
+  skippedMissions: skipped,
+  enrolledProgram: enrollment ?? null,
+}, null, 2)}
+</user_context>`;
+
+      const { task = 'generate_missions' } = req.body as { task?: string };
+      const prompt = task === 'generate_missions'
+        ? 'Based on my profile, generate 3-5 personalized missions as valid JSON.'
+        : task;
+
+      const reply = await callAgent(
+        process.env.MARA_BRAIN_AGENT_ID!,
+        [{ role: 'user', content: prompt }],
+        { systemExtra: userContext, maxTokens: 3000 },
+      );
+
+      res.json({ reply, userContext: { xp, level: xp.level, streak: xp.streak } });
+    } catch (err) {
+      console.error('[agent/brain]', err);
+      res.status(500).json({ error: 'Brain agent failed' });
     }
   });
 

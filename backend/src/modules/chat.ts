@@ -3,6 +3,9 @@ import { storage } from '../../../server/storage.js';
 import { route as routeAi } from '../../../server/maraai/ai-router.js';
 import { checkRateLimit } from '../../../server/rateLimit.js';
 import { isLaunched } from '../../../server/modules/launch-countdown.js';
+import { callAgent, isSupportAgentEnabled } from '../../../server/lib/anthropic-agents.js';
+import { getUserXP } from '../../../server/missions/engine.js';
+import { rawSqlite } from '../../../server/db.js';
 
 const PRE_LAUNCH_MSG_LIMIT = 20;
 
@@ -70,17 +73,81 @@ export async function sendChatMessage(req: Request, res: Response) {
     // Get user prefs for personality
     const prefs = await storage.getUserPreferences(userId);
 
-    // Get Mara response via the hybrid AI router (local → central → p2p).
-    // Behavior is identical to the previous direct getMaraResponse call when
-    // the user is in centralized mode (the default).
-    const { response, detectedMood, route, fallback, latencyMs } = await routeAi(message, {
-      userId,
-      module,
-      prefs: prefs
-        ? { personality: prefs.personality, language: language || prefs.language }
-        : { language },
-      history: formattedHistory,
-    });
+    // Route through Mara Support agent if configured, otherwise use hybrid router.
+    let response: string;
+    let detectedMood = 'calm';
+    let route = 'central';
+    let fallback = false;
+    let latencyMs = 0;
+
+    if (isSupportAgentEnabled()) {
+      const t0 = Date.now();
+      try {
+        const xp = getUserXP(userId);
+        const activeMissions = (rawSqlite.prepare(
+          `SELECT m.title, m.pillar, um.status FROM user_missions um
+           JOIN missions m ON m.id = um.mission_id
+           WHERE um.user_id = ? AND um.status = 'active' LIMIT 5`
+        ).all(userId) as Array<{ title: string; pillar: string; status: string }>);
+        const enrollment = (rawSqlite.prepare(
+          `SELECT p.name, pe.current_day, pe.status FROM program_enrollments pe
+           JOIN programs p ON p.id = pe.program_id
+           WHERE pe.user_id = ? AND pe.status = 'active' LIMIT 1`
+        ).get(userId) as { name: string; current_day: number; status: string } | undefined);
+
+        const userCtx = `<user_context>
+${JSON.stringify({
+  xp: xp.xp,
+  level: xp.level,
+  streak: xp.streak,
+  language: language || prefs?.language || 'ro',
+  activeMissions: activeMissions.map(m => m.title),
+  enrolledProgram: enrollment ? `${enrollment.name} (day ${enrollment.current_day})` : null,
+}, null, 2)}
+</user_context>`;
+
+        const agentMessages = [
+          ...formattedHistory.slice(-10).map(m => ({
+            role: m.role as 'user' | 'assistant',
+            content: m.content,
+          })),
+          { role: 'user' as const, content: message },
+        ];
+
+        response = await callAgent(
+          process.env.MARA_SUPPORT_AGENT_ID!,
+          agentMessages,
+          { systemExtra: userCtx },
+        );
+        route = 'agent';
+      } catch (agentErr) {
+        console.warn('[chat] Mara Support agent failed, falling back to router:', agentErr);
+        const result = await routeAi(message, {
+          userId, module,
+          prefs: prefs ? { personality: prefs.personality, language: language || prefs.language } : { language },
+          history: formattedHistory,
+        });
+        response = result.response;
+        detectedMood = result.detectedMood;
+        route = result.route;
+        fallback = true;
+      }
+      latencyMs = Date.now() - t0;
+    } else {
+      const result = await routeAi(message, {
+        userId,
+        module,
+        prefs: prefs
+          ? { personality: prefs.personality, language: language || prefs.language }
+          : { language },
+        history: formattedHistory,
+      });
+      response = result.response;
+      detectedMood = result.detectedMood;
+      route = result.route;
+      fallback = result.fallback;
+      latencyMs = result.latencyMs;
+    }
 
     // Save AI response
     const aiMsg = await storage.createChatMessage({
