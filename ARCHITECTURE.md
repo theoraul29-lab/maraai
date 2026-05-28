@@ -42,7 +42,7 @@ Persistence and integrations
 - `frontend/src/main.tsx`
   - SPA bootstrap, router mount, PWA registration, and CSRF wrapper initialization.
 - `frontend/src/csrf.ts`
-  - Canonical CSRF token source. Fetches `/api/auth/csrf`, caches the token per session, injects headers into mutating `fetch`/`axios` requests, and retries once on CSRF failures.
+  - Canonical CSRF token source. Reads `csrfToken` from `GET /api/auth/me`, caches the token per session, injects headers into mutating `fetch`/`axios` requests, and retries once on CSRF failures.
 - `frontend/src/components`
   - UI components including PayPal purchase, sharing, chat, and module-specific flows.
 - `frontend/src/contexts/AuthContext.tsx`
@@ -53,7 +53,7 @@ Persistence and integrations
 - Authentication is session-based, not JWT-centric.
 - The authenticated user is attached to `req.user` from the session.
 - CSRF protection is enforced server-side for mutating requests through `server/auth.ts`.
-- The SPA obtains the CSRF token from `GET /api/auth/csrf` and should not rely on an ad-hoc cookie value.
+- The SPA obtains the CSRF token from `GET /api/auth/me` and should not rely on an ad-hoc cookie value.
 - Admin-only routes are guarded in `server/routes.ts` by checking the authenticated session user against configured admin IDs.
 
 ## Rate limiting

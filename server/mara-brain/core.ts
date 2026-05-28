@@ -121,6 +121,11 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
       try {
         await withTimeout((async () => {
           const progressBefore = await getLibraryProgress();
+          if (progressBefore.read > progressBefore.total) {
+            console.warn(
+              `[MaraBrain] Library progress inconsistent: read=${progressBefore.read} total=${progressBefore.total}`,
+            );
+          }
           const unreadBefore = Math.max(progressBefore.total - progressBefore.read, 0);
           const readsThisCycle = unreadBefore > 10 ? 2 : 1;
 
