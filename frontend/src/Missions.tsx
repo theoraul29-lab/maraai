@@ -1133,7 +1133,6 @@ export default function Missions() {
                         ) : (
                           <PayPalProgramButton
                             programId={bp.id}
-                            programName={bp.name}
                             priceCents={bp.priceCents}
                             onSuccess={(id) => {
                               // Reload from server to get authoritative purchased list

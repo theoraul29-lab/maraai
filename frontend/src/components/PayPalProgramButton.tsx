@@ -6,7 +6,6 @@ const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID as string | undef
 
 interface Props {
   programId: string;
-  programName: string;
   priceCents: number;
   onSuccess: (programId: string) => void;
   onError?: (msg: string) => void;
@@ -103,7 +102,7 @@ export default function PayPalProgramButton({ programId, priceCents, onSuccess, 
   );
 }
 
-function FallbackButton({ programId, priceCents, disabled, onError }: Omit<Props, 'programName' | 'onSuccess'>) {
+function FallbackButton({ programId, priceCents, disabled, onError }: Omit<Props, 'onSuccess'>) {
   const [loading, setLoading] = useState(false);
 
   const handleClick = async () => {
