@@ -13,7 +13,7 @@
  */
 
 export type PlanTier = 'free' | 'trial' | 'pro' | 'vip' | 'creator';
-export type PlanPeriod = 'monthly' | 'yearly' | 'none';
+export type PlanPeriod = 'monthly' | 'yearly' | 'none'; // 'yearly' kept for existing DB rows; no new yearly plans are offered
 
 export interface PlanDefinition {
   id: string;
@@ -48,6 +48,7 @@ const VIP_FEATURES = [
   'writers.publish_vip',
   'chat.custom_personality',
   'reels.hd',
+  'programs.all',
 ] as const;
 
 const CREATOR_FEATURES = [
@@ -85,15 +86,7 @@ export const PLAN_CATALOGUE: readonly PlanDefinition[] = [
     id: 'pro_monthly',
     tier: 'pro',
     period: 'monthly',
-    priceCents: 799, // 7.99 EUR — 70% din media pieței
-    currency: 'EUR',
-    features: PRO_FEATURES,
-  },
-  {
-    id: 'pro_yearly',
-    tier: 'pro',
-    period: 'yearly',
-    priceCents: 5999, // 59.99 EUR — economisești 37%
+    priceCents: 1600, // €16.00/lună
     currency: 'EUR',
     features: PRO_FEATURES,
   },
@@ -101,15 +94,7 @@ export const PLAN_CATALOGUE: readonly PlanDefinition[] = [
     id: 'vip_monthly',
     tier: 'vip',
     period: 'monthly',
-    priceCents: 1199, // 11.99 EUR — 70% din media pieței
-    currency: 'EUR',
-    features: VIP_FEATURES,
-  },
-  {
-    id: 'vip_yearly',
-    tier: 'vip',
-    period: 'yearly',
-    priceCents: 8999, // 89.99 EUR — economisești 37%
+    priceCents: 2000, // €20.00/lună — include toate programele
     currency: 'EUR',
     features: VIP_FEATURES,
   },
@@ -117,15 +102,7 @@ export const PLAN_CATALOGUE: readonly PlanDefinition[] = [
     id: 'creator_monthly',
     tier: 'creator',
     period: 'monthly',
-    priceCents: 1699, // 16.99 EUR — 70% din media pieței
-    currency: 'EUR',
-    features: CREATOR_FEATURES,
-  },
-  {
-    id: 'creator_yearly',
-    tier: 'creator',
-    period: 'yearly',
-    priceCents: 12999, // 129.99 EUR — economisești 36%
+    priceCents: 1699, // €16.99/lună — ⚠️ sub VIP, de confirmat preț
     currency: 'EUR',
     features: CREATOR_FEATURES,
   },
@@ -134,7 +111,7 @@ export const PLAN_CATALOGUE: readonly PlanDefinition[] = [
 /** Creator revenue share (creator keeps 70%, platform keeps 30%). */
 export const CREATOR_REVENUE_SHARE = 0.7;
 
-// ─── Program catalogue (one-time purchases) ───────────────────────────────────
+// ─── Program catalogue (included with VIP) ────────────────────────────────────
 
 export type ProgramId =
   | 'new_mindset'
@@ -148,60 +125,13 @@ export interface ProgramDefinition {
   id: ProgramId;
   name: string;
   durationDays: number;
-  /** Cents in EUR. 0 = fully free. */
-  priceCents: number;
-  /** Days accessible without purchase. 0 = none (must purchase first). */
-  freeDays: number;
-  currency: 'EUR';
 }
 
 export const PROGRAM_CATALOGUE: readonly ProgramDefinition[] = [
-  {
-    id: 'new_mindset',
-    name: 'New Mindset',
-    durationDays: 1,
-    priceCents: 0,
-    freeDays: 1,
-    currency: 'EUR',
-  },
-  {
-    id: 'new_habit',
-    name: 'New Habit',
-    durationDays: 21,
-    priceCents: 600,   // €6.00
-    freeDays: 10,
-    currency: 'EUR',
-  },
-  {
-    id: 'new_skills',
-    name: 'New Skills',
-    durationDays: 90,
-    priceCents: 6000,  // €60.00
-    freeDays: 0,
-    currency: 'EUR',
-  },
-  {
-    id: 'new_body',
-    name: 'New Body',
-    durationDays: 180,
-    priceCents: 16000, // €160.00
-    freeDays: 0,
-    currency: 'EUR',
-  },
-  {
-    id: 'new_life',
-    name: 'New Life',
-    durationDays: 365,
-    priceCents: 36000, // €360.00
-    freeDays: 0,
-    currency: 'EUR',
-  },
-  {
-    id: 'new_you',
-    name: 'New You',
-    durationDays: 1095,
-    priceCents: 62000, // €620.00
-    freeDays: 0,
-    currency: 'EUR',
-  },
+  { id: 'new_mindset', name: 'New Mindset', durationDays: 1 },
+  { id: 'new_habit',   name: 'New Habit',   durationDays: 21 },
+  { id: 'new_skills',  name: 'New Skills',  durationDays: 90 },
+  { id: 'new_body',    name: 'New Body',    durationDays: 180 },
+  { id: 'new_life',    name: 'New Life',    durationDays: 365 },
+  { id: 'new_you',     name: 'New You',     durationDays: 1095 },
 ] as const;

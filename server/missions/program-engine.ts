@@ -1,38 +1,25 @@
 import { rawSqlite } from '../db.js';
 import { llmGenerate, isLLMConfigured } from '../llm.js';
 import { PROGRAM_CATALOGUE } from '../billing/plans.js';
+import { hasFeature } from '../billing/features.js';
 import { translateMissions } from './engine.js';
 
 // ─── PROGRAM ACCESS ───────────────────────────────────────────────────────────
 
 /**
  * Check if a user can access a specific day of a program.
- * - new_mindset: always free (1 day)
- * - new_habit: days 1-10 free, 11-21 require purchase
- * - all others: require purchase for any day
+ * Programs are now included with VIP (and Creator) subscriptions.
  */
-export function hasAccessToDay(userId: string, programSlug: string, day: number): boolean {
+export async function hasAccessToDay(userId: string, programSlug: string, day: number): Promise<boolean> {
   const programId = slugToProgramId(programSlug);
   const def = PROGRAM_CATALOGUE.find((p) => p.id === programId);
   if (!def) return false;
-  if (def.priceCents === 0) return true; // fully free
-  if (day <= def.freeDays) return true;  // within free tier
-  // Check purchase
-  const purchase = rawSqlite
-    .prepare(
-      "SELECT id FROM program_purchases WHERE user_id = ? AND program_id = ? AND status = 'completed' LIMIT 1",
-    )
-    .get(userId, programId) as { id: string } | undefined;
-  return !!purchase;
+  void day; // all days accessible once user has VIP
+  return hasFeature(userId, 'programs.all');
 }
 
-export function hasPurchasedProgram(userId: string, programId: string): boolean {
-  const purchase = rawSqlite
-    .prepare(
-      "SELECT id FROM program_purchases WHERE user_id = ? AND program_id = ? AND status = 'completed' LIMIT 1",
-    )
-    .get(userId, programId) as { id: string } | undefined;
-  return !!purchase;
+export async function hasPurchasedProgram(userId: string, _programId: string): Promise<boolean> {
+  return hasFeature(userId, 'programs.all');
 }
 
 function slugToProgramId(slug: string): string {
@@ -246,8 +233,8 @@ export async function getDayMission(
 
   const currentDay = enrollment.current_day;
 
-  // Enforce paywall: check if user has access to this day before returning mission
-  if (!hasAccessToDay(userId, enrollment.program_slug, currentDay)) {
+  // Enforce access: programs require VIP or Creator subscription
+  if (!(await hasAccessToDay(userId, enrollment.program_slug, currentDay))) {
     return { locked: true, currentDay, programSlug: enrollment.program_slug };
   }
 

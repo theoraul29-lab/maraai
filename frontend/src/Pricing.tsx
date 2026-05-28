@@ -1,165 +1,85 @@
 import { useNavigate } from 'react-router-dom';
 import './styles/Pricing.css';
 
-const PLATFORM_FEATURES = [
+const TIERS = [
   {
-    icon: '🤖',
-    name: 'Mara AI',
-    desc: 'Asistentul tău personal de creștere — disponibil 24/7 pentru conversații, sfaturi și suport emoțional.',
-    access: 'free' as const,
+    id: 'free',
+    name: 'Free',
+    price: 0,
+    color: '#888',
+    badge: null as string | null,
+    tagline: 'Începe fără card.',
+    features: [
+      'Chat de bază cu Mara AI',
+      'Vizionare reels comunitate',
+      'Citire articole publice',
+      'Acces comunitate',
+    ],
+    cta: 'Începe gratuit',
+    ctaPath: '/register',
   },
   {
-    icon: '🎬',
-    name: 'Reels',
-    desc: 'Video-uri scurte inspiraționale și educative create de comunitate și AI, curate zilnic.',
-    access: 'free' as const,
+    id: 'pro_monthly',
+    name: 'Pro',
+    price: 16,
+    color: '#60a5fa',
+    badge: null as string | null,
+    tagline: 'Tot ce ai nevoie pentru a crea și crește.',
+    features: [
+      'Chat nelimitat cu Mara AI',
+      'Upload reels',
+      'Publicare articole publice',
+      'Profil public',
+      'Acces la toate funcțiile Free',
+    ],
+    cta: 'Alege Pro',
+    ctaPath: '/billing?plan=pro_monthly',
   },
   {
-    icon: '🌐',
-    name: 'Comunitate',
-    desc: 'Conectează-te cu oameni pe același drum. Postează, comentează, inspiră și fii inspirat.',
-    access: 'free' as const,
+    id: 'vip_monthly',
+    name: 'VIP',
+    price: 20,
+    color: '#a855f7',
+    badge: 'Cel mai popular' as string | null,
+    tagline: 'Programe de transformare incluse.',
+    features: [
+      'Tot ce include Pro',
+      'Citire articole VIP',
+      'Publicare articole VIP',
+      'Personalitate AI custom',
+      'Upload HD',
+      '✦ Toate programele incluse — New Mindset, New Habit, New Skills, New Body, New Life, New You',
+    ],
+    cta: 'Alege VIP',
+    ctaPath: '/billing?plan=vip_monthly',
   },
   {
-    icon: '✍️',
-    name: 'Writers Hub',
-    desc: 'Scrie-ți cartea pas cu pas cu ajutorul AI. Structură, capitole, feedback instantaneu.',
-    access: 'free' as const,
-  },
-  {
-    icon: '✨',
-    name: 'Creator Panel',
-    desc: 'Creează și publică conținut pe platformă — reels, articole, misiuni pentru comunitate.',
-    access: 'free' as const,
-  },
-  {
-    icon: '🎯',
-    name: 'Misiuni zilnice AI',
-    desc: 'Provocări personalizate generate de Mara în fiecare zi, adaptate obiectivului tău.',
-    access: 'program' as const,
-  },
-  {
-    icon: '📊',
-    name: 'Streak & XP',
-    desc: 'Urmărește-ți progresul zilnic, câștigă XP și badge-uri pe măsură ce avansezi.',
-    access: 'program' as const,
-  },
-  {
-    icon: '📚',
-    name: 'Carte digitală',
-    desc: 'La finalul unui program, Mara generează cartea ta de viață — jurnalul tău transformat.',
-    access: 'program' as const,
+    id: 'creator_monthly',
+    name: 'Creator',
+    price: 16.99,
+    color: '#f59e0b',
+    badge: null as string | null,
+    tagline: 'Monetizează-ți conținutul.',
+    features: [
+      'Tot ce include VIP',
+      'Revenue share 70%',
+      'Retragere câștiguri',
+      'Analytics detaliate',
+      'Publicare articole plătite',
+      'Monetizare reels',
+    ],
+    cta: 'Alege Creator',
+    ctaPath: '/billing?plan=creator_monthly',
   },
 ];
 
 const PROGRAMS = [
-  {
-    id: 'new_mindset',
-    name: 'New Mindset',
-    tagline: 'O zi. O schimbare de perspectivă.',
-    days: 1,
-    price: 0,
-    freeDays: 1,
-    icon: '🧠',
-    color: '#a78bfa',
-    badge: null as string | null,
-    features: [
-      '1 misiune personalizată de Mara',
-      'Jurnal AI generat',
-      'XP + badge New Mindset',
-      'Complet gratuit, fără card',
-    ],
-  },
-  {
-    id: 'new_habit',
-    name: 'New Habit',
-    tagline: '21 de zile. Un obicei pentru viață.',
-    days: 21,
-    price: 6,
-    freeDays: 10,
-    icon: '🔁',
-    color: '#60a5fa',
-    badge: 'Cel mai popular' as string | null,
-    features: [
-      'Primele 10 zile gratuite',
-      '21 misiuni zilnice personalizate',
-      'Tracking streak + jurnal',
-      'Carte digitală la final',
-      'XP + badge New Habit',
-    ],
-  },
-  {
-    id: 'new_skills',
-    name: 'New Skills',
-    tagline: '90 de zile. O abilitate nouă.',
-    days: 90,
-    price: 60,
-    freeDays: 0,
-    icon: '⚡',
-    color: '#34d399',
-    badge: null,
-    features: [
-      '90 misiuni zilnice AI',
-      'Progres pe abilitate specifică',
-      'Jurnal complet + carte',
-      'Statistici detaliate XP',
-      'Badge New Skills',
-    ],
-  },
-  {
-    id: 'new_body',
-    name: 'New Body',
-    tagline: '180 de zile. Un corp și o minte noi.',
-    days: 180,
-    price: 160,
-    freeDays: 0,
-    icon: '💪',
-    color: '#f59e0b',
-    badge: null,
-    features: [
-      '180 misiuni personalizate',
-      'Focus: corp, minte, energie',
-      'Jurnal + carte completă',
-      'Milestone badges la 30/60/90/180',
-      'Suport comunitate',
-    ],
-  },
-  {
-    id: 'new_life',
-    name: 'New Life',
-    tagline: '365 de zile. O viață nouă.',
-    days: 365,
-    price: 360,
-    freeDays: 0,
-    icon: '🌅',
-    color: '#f472b6',
-    badge: 'Transformare completă' as string | null,
-    features: [
-      '365 misiuni zilnice AI',
-      'Carieră, relații, sănătate, scop',
-      'Carte anuală de viață',
-      'Check-in lunar cu Mara',
-      'Toate badge-urile anterioare',
-    ],
-  },
-  {
-    id: 'new_you',
-    name: 'New You',
-    tagline: '1095 de zile. Un om nou.',
-    days: 1095,
-    price: 620,
-    freeDays: 0,
-    icon: '✨',
-    color: '#c77dff',
-    badge: '3 ani · Calea completă' as string | null,
-    features: [
-      '1095 misiuni zilnice',
-      'Cel mai profund program disponibil',
-      '3 cărți de viață anuale',
-      'Acces la toate programele',
-      'Prioritate la funcții noi',
-    ],
-  },
+  { icon: '🧠', name: 'New Mindset',  days: 1,    desc: 'O zi. O schimbare de perspectivă.' },
+  { icon: '🔁', name: 'New Habit',    days: 21,   desc: '21 de zile. Un obicei pentru viață.' },
+  { icon: '⚡', name: 'New Skills',   days: 90,   desc: '90 de zile. O abilitate nouă.' },
+  { icon: '💪', name: 'New Body',     days: 180,  desc: '180 de zile. Un corp și o minte noi.' },
+  { icon: '🌅', name: 'New Life',     days: 365,  desc: '365 de zile. O viață nouă.' },
+  { icon: '✨', name: 'New You',      days: 1095, desc: '1095 de zile. Un om nou.' },
 ];
 
 export default function Pricing() {
@@ -170,80 +90,64 @@ export default function Pricing() {
       <div className="pricing-hero">
         <h1 className="pricing-title">Calea ta de transformare</h1>
         <p className="pricing-subtitle">
-          Fiecare zi contează. Alege cât de departe vrei să mergi.
+          Simplu. Lunar. Fără surprize.
         </p>
-      </div>
-
-      <div className="pricing-platform">
-        <h2 className="pricing-platform-title">Ce primești cu MaraAI</h2>
-        <p className="pricing-platform-subtitle">
-          Unele funcții sunt gratuite pentru toți. Altele se deblochează cu un program.
-        </p>
-        <div className="pricing-platform-grid">
-          {PLATFORM_FEATURES.map((f) => (
-            <div key={f.name} className={`pricing-platform-card pricing-platform-card--${f.access}`}>
-              <div className="pricing-platform-icon">{f.icon}</div>
-              <div className="pricing-platform-body">
-                <div className="pricing-platform-name">
-                  {f.name}
-                  <span className={`pricing-platform-badge pricing-platform-badge--${f.access}`}>
-                    {f.access === 'free' ? 'Gratuit' : 'Cu program'}
-                  </span>
-                </div>
-                <p className="pricing-platform-desc">{f.desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="pricing-section-divider">
-        <h2 className="pricing-section-title">Alege-ți programul de transformare</h2>
-        <p className="pricing-section-sub">O singură plată. Acces permanent. Nicio surpriză.</p>
       </div>
 
       <div className="pricing-grid">
-        {PROGRAMS.map((p) => (
+        {TIERS.map((tier) => (
           <div
-            key={p.id}
-            className={`pricing-card ${p.badge ? 'pricing-card--featured' : ''}`}
-            style={{ '--accent': p.color } as React.CSSProperties}
+            key={tier.id}
+            className={`pricing-card ${tier.badge ? 'pricing-card--featured' : ''}`}
+            style={{ '--accent': tier.color } as React.CSSProperties}
           >
-            {p.badge && <div className="pricing-badge">{p.badge}</div>}
-            <div className="pricing-card-icon">{p.icon}</div>
-            <h2 className="pricing-card-name">{p.name}</h2>
-            <p className="pricing-card-tagline">{p.tagline}</p>
-            <div className="pricing-card-days">{p.days} {p.days === 1 ? 'zi' : 'zile'}</div>
+            {tier.badge && <div className="pricing-badge">{tier.badge}</div>}
+            <h2 className="pricing-card-name">{tier.name}</h2>
+            <p className="pricing-card-tagline">{tier.tagline}</p>
 
             <div className="pricing-card-price">
-              {p.price === 0 ? (
+              {tier.price === 0 ? (
                 <span className="pricing-free">Gratuit</span>
               ) : (
                 <>
-                  <span className="pricing-amount">€{p.price}</span>
-                  <span className="pricing-once">o singură dată</span>
+                  <span className="pricing-amount">€{tier.price % 1 === 0 ? tier.price : tier.price.toFixed(2)}</span>
+                  <span className="pricing-once">/lună</span>
                 </>
               )}
             </div>
 
-            {p.freeDays > 0 && p.price > 0 && (
-              <div className="pricing-free-trial">
-                ✓ Primele {p.freeDays} zile gratuite
-              </div>
-            )}
-
             <ul className="pricing-features">
-              {p.features.map((f) => (
-                <li key={f}>✓ {f}</li>
+              {tier.features.map((f) => (
+                <li key={f}>{f.startsWith('✦') ? f : `✓ ${f}`}</li>
               ))}
             </ul>
 
             <button
               className="pricing-cta"
-              onClick={() => navigate('/missions?tab=programs')}
+              onClick={() => navigate(tier.ctaPath)}
             >
-              {p.price === 0 ? 'Începe gratuit' : `Deblochează ${p.name}`}
+              {tier.cta}
             </button>
+          </div>
+        ))}
+      </div>
+
+      <div className="pricing-section-divider">
+        <h2 className="pricing-section-title">Programele incluse în VIP</h2>
+        <p className="pricing-section-sub">
+          Toate cele 6 programe de transformare sunt incluse în abonamentul VIP. Nicio plată extra.
+        </p>
+      </div>
+
+      <div className="pricing-programs-grid">
+        {PROGRAMS.map((p) => (
+          <div key={p.name} className="pricing-program-item">
+            <span className="pricing-program-icon">{p.icon}</span>
+            <div>
+              <div className="pricing-program-name">{p.name}</div>
+              <div className="pricing-program-days">{p.days} {p.days === 1 ? 'zi' : 'zile'}</div>
+              <div className="pricing-program-desc">{p.desc}</div>
+            </div>
           </div>
         ))}
       </div>
@@ -251,20 +155,20 @@ export default function Pricing() {
       <div className="pricing-faq">
         <h2>Întrebări frecvente</h2>
         <div className="pricing-faq-item">
-          <strong>Plata e recurentă?</strong>
-          <p>Nu. Plătești o singură dată și ai accesul permanent la program.</p>
+          <strong>Pot anula oricând?</strong>
+          <p>Da. Anulezi oricând din setări, fără penalități. Accesul continuă până la sfârșitul lunii plătite.</p>
         </div>
         <div className="pricing-faq-item">
-          <strong>Pot să fac mai multe programe simultan?</strong>
-          <p>Da, poți cumpăra și rula orice combinație de programe în același timp.</p>
+          <strong>Cum funcționează programele în VIP?</strong>
+          <p>Cu VIP activ ai acces complet la toate cele 6 programe — de la New Mindset (1 zi) până la New You (3 ani). Le poți rula simultan sau succesiv.</p>
         </div>
         <div className="pricing-faq-item">
-          <strong>Ce se întâmplă dacă sar o zi?</strong>
+          <strong>Ce se întâmplă dacă sar o zi din program?</strong>
           <p>Nimic rău — Mara îți păstrează progresul. Streakul se resetează dar programul continuă.</p>
         </div>
         <div className="pricing-faq-item">
           <strong>Cum plătesc?</strong>
-          <p>PayPal — card sau cont PayPal. Tranzacție securizată.</p>
+          <p>Stripe (card) sau PayPal. Tranzacție securizată, factură automată.</p>
         </div>
       </div>
     </div>

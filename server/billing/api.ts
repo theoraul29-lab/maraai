@@ -27,14 +27,10 @@ import {
 import {
   isPayPalConfigured,
   checkPayPalConnection,
-  createPayPalOrder,
-  capturePayPalOrder,
   readWebhookHeaders as readPayPalHeaders,
   verifyWebhookEvent as verifyPayPalEvent,
   handlePayPalEvent,
 } from './paypal.js';
-import { PROGRAM_CATALOGUE } from './plans.js';
-import { rawSqlite } from '../db.js';
 
 function paymentsEnabled(): boolean {
   return process.env.PAYMENTS_ENABLED === 'true';
@@ -113,125 +109,6 @@ export function registerBillingApi(app: Express): void {
     } catch (err) {
       res.status(500).json({ error: String(err) });
     }
-  });
-
-  // -------------------------------------------------------------------------
-  // GET /api/billing/programs
-  // Public program catalogue with prices. Used by the pricing/missions page.
-  // -------------------------------------------------------------------------
-  app.get('/api/billing/programs', (_req: Request, res: Response) => {
-    res.json({ programs: PROGRAM_CATALOGUE });
-  });
-
-  // -------------------------------------------------------------------------
-  // POST /api/billing/program/purchase
-  // Authenticated. Creates a PayPal order and returns the approval URL.
-  // Body: { programId: string }
-  // -------------------------------------------------------------------------
-  app.post('/api/billing/program/purchase', async (req: Request, res: Response) => {
-    if (!paymentsEnabled()) {
-      return res.status(503).json({ error: 'payments_disabled' });
-    }
-    if (!paypalConfigured()) {
-      return res.status(503).json({ error: 'paypal_not_configured' });
-    }
-    const userId = await getAuthenticatedUserId(req);
-    if (!userId) return res.status(401).json({ error: 'unauthenticated' });
-
-    const { programId } = req.body as { programId?: string };
-    const program = PROGRAM_CATALOGUE.find((p) => p.id === programId);
-    if (!program) return res.status(400).json({ error: 'invalid_program' });
-    if (program.priceCents === 0) return res.status(400).json({ error: 'program_is_free' });
-
-    // Check already purchased
-    const existing = rawSqlite
-      .prepare(
-        "SELECT id FROM program_purchases WHERE user_id = ? AND program_id = ? AND status = 'completed' LIMIT 1",
-      )
-      .get(userId, program.id) as { id: string } | undefined;
-    if (existing) return res.status(409).json({ error: 'already_purchased' });
-
-    try {
-      const userRow = await db.select({ email: users.email }).from(users).where(eq(users.id, userId)).limit(1);
-      const userEmail = userRow[0]?.email ?? null;
-      const { orderId, approvalUrl } = await createPayPalOrder({
-        userId,
-        userEmail,
-        programId: program.id,
-        programName: program.name,
-        amountCents: program.priceCents,
-      });
-      // Store pending purchase
-      const purchaseId = crypto.randomUUID();
-      rawSqlite
-        .prepare(
-          `INSERT INTO program_purchases (id, user_id, program_id, amount_cents, currency, paypal_order_id, status)
-           VALUES (?, ?, ?, ?, 'EUR', ?, 'pending')`,
-        )
-        .run(purchaseId, userId, program.id, program.priceCents, orderId);
-
-      return res.json({ orderId, approvalUrl });
-    } catch (err) {
-      console.error('[billing] program purchase failed:', err);
-      return res.status(502).json({ error: 'paypal_error', detail: String(err) });
-    }
-  });
-
-  // -------------------------------------------------------------------------
-  // GET /api/billing/program/capture
-  // PayPal redirects here after user approves. Captures the order and marks
-  // the purchase as completed.
-  // Query: ?token=<paypal_order_id>
-  // -------------------------------------------------------------------------
-  app.get('/api/billing/program/capture', async (req: Request, res: Response) => {
-    const orderId = req.query['token'] as string | undefined;
-    if (!orderId) return res.redirect('/missions?payment=cancelled');
-
-    try {
-      const { status, customId } = await capturePayPalOrder(orderId);
-      if (status !== 'COMPLETED' || !customId) {
-        return res.redirect('/missions?payment=failed');
-      }
-      const [orderUserId, programId] = customId.split(':');
-      if (!orderUserId || !programId) return res.redirect('/missions?payment=failed');
-
-      // Security: verify the authenticated session user matches the order's owner
-      const sessionUserId = await getAuthenticatedUserId(req);
-      if (!sessionUserId || sessionUserId !== orderUserId) {
-        console.error('[billing] capture auth mismatch: session=%s order=%s', sessionUserId, orderUserId);
-        return res.redirect('/missions?payment=failed');
-      }
-
-      rawSqlite
-        .prepare(
-          `UPDATE program_purchases SET status = 'completed', completed_at = unixepoch()
-           WHERE paypal_order_id = ? AND user_id = ?`,
-        )
-        .run(orderId, orderUserId);
-
-      return res.redirect(`/missions?payment=success&program=${programId}`);
-    } catch (err) {
-      console.error('[billing] program capture failed:', err);
-      return res.redirect('/missions?payment=failed');
-    }
-  });
-
-  // -------------------------------------------------------------------------
-  // GET /api/billing/program/access
-  // Returns which programs the authenticated user has purchased.
-  // -------------------------------------------------------------------------
-  app.get('/api/billing/program/access', async (req: Request, res: Response) => {
-    const userId = await getAuthenticatedUserId(req);
-    if (!userId) return res.json({ purchased: [] });
-
-    const rows = rawSqlite
-      .prepare(
-        "SELECT program_id FROM program_purchases WHERE user_id = ? AND status = 'completed'",
-      )
-      .all(userId) as Array<{ program_id: string }>;
-
-    const purchased = rows.map((r) => r.program_id);
-    return res.json({ purchased });
   });
 
   // -------------------------------------------------------------------------

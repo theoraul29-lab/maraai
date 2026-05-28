@@ -46,6 +46,8 @@ export const FEATURE_KEYS = [
   'creator.revenue_share',
   'creator.payouts',
   'creator.analytics',
+  // programs
+  'programs.all',
 ] as const;
 
 export type FeatureKey = (typeof FEATURE_KEYS)[number];
