@@ -33,20 +33,23 @@ export async function sendChatMessage(req: Request, res: Response) {
       });
     }
 
-    // Pre-launch: every user gets 20 free Mara messages. After 01.07.2026
-    // the normal subscription tiers take over.
+    // Pre-launch: 20 messages per user per 24h. After 01.07.2026 normal tiers apply.
     if (!isLaunched()) {
+      const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
       const history = await storage.getChatMessages(userId);
-      const sentCount = history.filter((m) => m.sender === 'user').length;
-      if (sentCount >= PRE_LAUNCH_MSG_LIMIT) {
+      const sentLast24h = history.filter(
+        (m) => m.sender === 'user' && m.createdAt >= cutoff,
+      ).length;
+      if (sentLast24h >= PRE_LAUNCH_MSG_LIMIT) {
         return res.status(429).json({
           code: 'pre_launch_limit',
           message:
-            'Ai folosit cele 20 de mesaje gratuite din perioada de pre-lansare. ' +
-            'Platforma se lansează pe 1 iulie 2026 — revino atunci pentru acces nelimitat cu abonamentul tău.',
+            'Ai atins limita de 20 de mesaje pe zi. Revino mâine pentru alte 20 de mesaje gratuite. ' +
+            'Din 1 iulie 2026 accesul devine nelimitat cu abonamentul tău.',
           launchDate: '2026-07-01',
-          messagesUsed: sentCount,
+          messagesUsed: sentLast24h,
           messagesLimit: PRE_LAUNCH_MSG_LIMIT,
+          resetsAt: new Date(cutoff.getTime() + 24 * 60 * 60 * 1000).toISOString(),
         });
       }
     }
