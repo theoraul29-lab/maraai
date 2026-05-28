@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { AuthModal } from './AuthModal';
 import './MaraChatWidget.css';
+import i18n from '../i18n';
 
 // Converts Mara's plain-text/markdown responses to sanitized HTML.
 // Build the raw HTML first, then run it through DOMPurify so even
@@ -142,6 +143,7 @@ export function MaraChatWidget() {
         },
         body: JSON.stringify({
           message: messageText,
+          language: i18n.language,
         }),
       });
 

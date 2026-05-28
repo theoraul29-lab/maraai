@@ -27,6 +27,8 @@ function apiKey(): string {
   return key;
 }
 
+const AGENT_TIMEOUT_MS = 20_000;
+
 /**
  * Call a managed Anthropic agent and return the assistant text reply.
  * `messages` must start with a user turn.
@@ -45,16 +47,25 @@ export async function callAgent(
 
   const body = JSON.stringify({ messages: payload, max_tokens: maxTokens });
 
-  const res = await fetch(`${ANTHROPIC_API}/v1/agents/${agentId}/runs`, {
-    method: 'POST',
-    headers: {
-      'x-api-key': apiKey(),
-      'anthropic-version': ANTHROPIC_VERSION,
-      'anthropic-beta': BETA_HEADER,
-      'content-type': 'application/json',
-    },
-    body,
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), AGENT_TIMEOUT_MS);
+
+  let res: Response;
+  try {
+    res = await fetch(`${ANTHROPIC_API}/v1/agents/${agentId}/runs`, {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey(),
+        'anthropic-version': ANTHROPIC_VERSION,
+        'anthropic-beta': BETA_HEADER,
+        'content-type': 'application/json',
+      },
+      body,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
 
   if (!res.ok) {
     const err = await res.text().catch(() => res.statusText);

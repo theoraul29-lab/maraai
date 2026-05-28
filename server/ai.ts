@@ -151,7 +151,14 @@ export async function getMaraResponse(
 	try {
 		if (userId) {
 			const isAdmin = await isUserAdmin(userId);
-			const context = await buildUserContext(userId, message, module, isAdmin);
+			// Cap context-building at 3 s — knowledge-base search can be slow
+			// on cold cache; falling back to a language-aware prompt is better
+			// than leaving the user staring at a spinner for 10+ seconds.
+			const contextPromise = buildUserContext(userId, message, module, isAdmin);
+			const timeoutPromise = new Promise<never>((_, reject) =>
+				setTimeout(() => reject(new Error('context_timeout')), 3000),
+			);
+			const context = await Promise.race([contextPromise, timeoutPromise]);
 			systemInstruction = buildSystemInstruction(context, prefs?.language);
 
 			// Async: record learning from this interaction (non-blocking)

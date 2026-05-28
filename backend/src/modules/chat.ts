@@ -3,7 +3,7 @@ import { storage } from '../../../server/storage.js';
 import { route as routeAi } from '../../../server/maraai/ai-router.js';
 import { checkRateLimit } from '../../../server/rateLimit.js';
 import { isLaunched } from '../../../server/modules/launch-countdown.js';
-import { callAgent, isSupportAgentEnabled } from '../../../server/lib/anthropic-agents.js';
+import { callAgent, isSupportAgentEnabled, type AgentMessage } from '../../../server/lib/anthropic-agents.js';
 import { getUserXP } from '../../../server/missions/engine.js';
 import { rawSqlite } from '../../../server/db.js';
 
@@ -106,13 +106,29 @@ ${JSON.stringify({
 }, null, 2)}
 </user_context>`;
 
-        const agentMessages = [
-          ...formattedHistory.slice(-10).map(m => ({
-            role: m.role as 'user' | 'assistant',
+        // Normalize history roles: Anthropic requires 'user'/'assistant',
+        // but formattedHistory uses 'model' (Google format).
+        // Also ensure strict alternation starting with 'user'.
+        const normalizedHistory = formattedHistory
+          .slice(-10)
+          .map(m => ({
+            role: (m.role === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
             content: m.content,
-          })),
-          { role: 'user' as const, content: message },
-        ];
+          }))
+          .filter(m => m.content?.trim());
+
+        // Build strictly-alternating message list
+        const agentMessages: AgentMessage[] = [];
+        let lastRole: string | null = null;
+        for (const m of normalizedHistory) {
+          if (m.role !== lastRole) {
+            agentMessages.push(m);
+            lastRole = m.role;
+          }
+        }
+        // Ensure it starts with 'user' and ends with the current message
+        if (agentMessages[0]?.role !== 'user') agentMessages.shift();
+        agentMessages.push({ role: 'user', content: message });
 
         response = await callAgent(
           process.env.MARA_SUPPORT_AGENT_ID!,
