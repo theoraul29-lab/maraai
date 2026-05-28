@@ -163,12 +163,18 @@
   font-size: 14px;
   cursor: pointer;
   min-height: 44px;
+  width: 100%;
 }
 
 .writers-select:focus {
   outline: none;
   background: rgba(255, 255, 255, 0.08);
   border-color: #a855f7;
+}
+
+.writers-select option {
+  background: #1a1a2e;
+  color: #fff;
 }
 
 /* Buttons */
@@ -196,10 +202,10 @@
   border: 1px solid #8b5cf6;
 }
 
-/* Library Grid */
+/* Library — flex column so sections stack vertically, not as grid cells */
 .writers-library {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
 }
 
@@ -222,7 +228,9 @@
   font-weight: 600;
   font-size: 14px;
   margin-bottom: 6px;
+  cursor: pointer;
 }
+.writers-manuscript-title:hover { text-decoration: underline; }
 
 .writers-manuscript-author {
   color: #888;
@@ -278,7 +286,7 @@
     padding: 16px 32px;
   }
 
-  .writers-library {
+  .writers-cat-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 16px;
   }
@@ -290,7 +298,7 @@
 }
 
 @media (min-width: 1024px) {
-  .writers-library {
+  .writers-cat-grid {
     grid-template-columns: repeat(3, 1fr);
   }
 
@@ -328,11 +336,45 @@
 
 /* ===== NEW FEATURES ===== */
 
-/* Form row */
-.writers-form-row {
+/* Cover uploader */
+.writers-cover-uploader {
   display: flex;
-  gap: 10px;
   flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: rgba(139, 92, 246, 0.06);
+  border: 1px dashed rgba(139, 92, 246, 0.35);
+  border-radius: 8px;
+}
+
+.writers-cover-uploader .writers-input {
+  flex: 1;
+  min-width: 180px;
+}
+
+/* Secondary button (used for cover upload / remove) */
+.writers-btn-secondary {
+  padding: 9px 16px;
+  background: rgba(139, 92, 246, 0.15);
+  border: 1px solid rgba(139, 92, 246, 0.45);
+  border-radius: 8px;
+  color: #d9c9ff;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  min-height: 40px;
+  transition: background 0.15s, border-color 0.15s;
+  font-family: inherit;
+}
+.writers-btn-secondary:hover:not(:disabled) {
+  background: rgba(139, 92, 246, 0.28);
+  border-color: rgba(139, 92, 246, 0.7);
+}
+.writers-btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .writers-form-row .writers-select { flex: 0 0 auto; min-width: 140px; }
@@ -589,14 +631,65 @@
   font-size: 0.9rem;
 }
 
-.writers-reading-body {
+/* writers-rich-body: content rendered via dangerouslySetInnerHTML in read view */
+.writers-rich-body {
   font-size: 1.05rem;
   color: #ddd;
   line-height: 1.9;
+  max-width: 720px;
 }
 
-.writers-reading-body p {
-  margin-bottom: 16px;
+.writers-rich-body p { margin-bottom: 16px; }
+.writers-rich-body h1, .writers-rich-body h2, .writers-rich-body h3 {
+  color: #fff;
+  margin: 28px 0 10px;
+  line-height: 1.25;
+}
+.writers-rich-body h2 { font-size: 1.45rem; }
+.writers-rich-body h3 { font-size: 1.2rem; }
+.writers-rich-body blockquote {
+  border-left: 3px solid #8b5cf6;
+  margin: 16px 0;
+  padding: 8px 16px;
+  background: rgba(139, 92, 246, 0.06);
+  border-radius: 0 6px 6px 0;
+  color: #bbb;
+  font-style: italic;
+}
+.writers-rich-body code {
+  background: rgba(255,255,255,0.07);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+  color: #c4b5fd;
+}
+.writers-rich-body pre {
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(139,92,246,0.2);
+  border-radius: 8px;
+  padding: 14px;
+  overflow-x: auto;
+  margin: 16px 0;
+}
+.writers-rich-body pre code { background: none; padding: 0; }
+.writers-rich-body ul, .writers-rich-body ol {
+  margin: 12px 0 12px 20px;
+  color: #ddd;
+}
+.writers-rich-body li { margin-bottom: 6px; line-height: 1.7; }
+.writers-rich-body a { color: #a855f7; text-decoration: underline; }
+.writers-rich-body a:hover { color: #c77dff; }
+.writers-rich-body img {
+  max-width: 100%;
+  border-radius: 8px;
+  margin: 12px 0;
+  display: block;
+}
+.writers-rich-body hr {
+  border: none;
+  border-top: 1px solid rgba(139,92,246,0.2);
+  margin: 28px 0;
 }
 
 .writers-reading-footer {
@@ -839,12 +932,6 @@
   text-transform: uppercase;
   color: #9090a8;
   font-weight: 700;
-}
-
-.writers-form-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
 }
 
 .writers-section-title {
