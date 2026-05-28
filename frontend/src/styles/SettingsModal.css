@@ -381,3 +381,73 @@ html[data-theme="light"] .settings-header { border-bottom-color: rgba(0,0,0,0.08
   .settings-nav-btn { white-space: nowrap; flex-shrink: 0; font-size: 12px; padding: 7px 10px; }
   .settings-content { padding: 14px; }
 }
+
+/* ── GDPR / Delete account ──────────────────────────────────── */
+.settings-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.07);
+  margin: 20px 0;
+}
+
+.settings-danger-desc {
+  font-size: 13px;
+  color: rgba(226,232,240,0.65);
+  margin: 0 0 14px;
+  line-height: 1.6;
+}
+
+.settings-btn-delete {
+  background: transparent;
+  border: 1px solid rgba(239,68,68,0.4);
+  color: #f87171;
+  border-radius: 8px;
+  padding: 9px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+.settings-btn-delete:hover {
+  background: rgba(239,68,68,0.1);
+  border-color: rgba(239,68,68,0.7);
+}
+
+.settings-delete-confirm { margin-top: 4px; }
+
+.settings-delete-warn {
+  font-size: 13px;
+  color: #fca5a5;
+  margin: 0 0 12px;
+  font-weight: 600;
+}
+
+.settings-delete-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.settings-btn-ghost {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.15);
+  color: rgba(226,232,240,0.7);
+  border-radius: 8px;
+  padding: 9px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+.settings-btn-ghost:hover { background: rgba(255,255,255,0.06); }
+
+/* Privacy Policy link in settings footer */
+.settings-privacy-link {
+  display: block;
+  margin-top: 28px;
+  font-size: 12px;
+  color: rgba(167,139,250,0.7);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-align: center;
+}
+.settings-privacy-link:hover { color: #a78bfa; }

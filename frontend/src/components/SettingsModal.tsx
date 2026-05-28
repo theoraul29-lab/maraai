@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../i18n/useLanguage';
@@ -29,6 +30,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
   const [pwError, setPwError] = useState('');
   const [pwSuccess, setPwSuccess] = useState(false);
   const [pwSaving, setPwSaving] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
   const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -102,6 +106,26 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
   const handleLogout = async () => {
     await logout();
     onClose();
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!deleteConfirm) { setDeleteConfirm(true); return; }
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      const res = await fetch('/api/profile/me', {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error();
+      await logout();
+      onClose();
+      window.location.href = '/';
+    } catch {
+      setDeleteError('A apărut o eroare. Încearcă din nou.');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const sections: { key: typeof activeSection; label: string; icon: string }[] = [
@@ -190,6 +214,44 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                 <button className="settings-btn-danger" onClick={handleLogout}>
                   Deconectare
                 </button>
+
+                <div className="settings-divider" />
+
+                <h3 className="settings-section-title">Zona periculoasă</h3>
+                <p className="settings-danger-desc">
+                  Ștergerea contului este <strong>ireversibilă</strong>. Toate datele tale
+                  (postări, reels, misiuni, XP, mesaje) vor fi eliminate permanent.
+                </p>
+                {deleteError && <div className="settings-error">{deleteError}</div>}
+                {deleteConfirm ? (
+                  <div className="settings-delete-confirm">
+                    <p className="settings-delete-warn">Ești sigur? Această acțiune nu poate fi anulată.</p>
+                    <div className="settings-delete-actions">
+                      <button
+                        className="settings-btn-danger"
+                        onClick={handleDeleteAccount}
+                        disabled={deleting}
+                      >
+                        {deleting ? 'Se șterge…' : 'Da, șterge contul definitiv'}
+                      </button>
+                      <button
+                        className="settings-btn-ghost"
+                        onClick={() => { setDeleteConfirm(false); setDeleteError(''); }}
+                        disabled={deleting}
+                      >
+                        Anulează
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button className="settings-btn-delete" onClick={handleDeleteAccount}>
+                    Șterge contul
+                  </button>
+                )}
+
+                <Link to="/privacy" className="settings-privacy-link" onClick={onClose}>
+                  Politica de confidențialitate
+                </Link>
               </div>
             )}
 

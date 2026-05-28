@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import type { IStorage } from '../../../server/storage.js';
 import { notifyFollow } from '../../../server/notifications/producer.js';
+import { rawSqlite } from '../../../server/db.js';
 
 let deps: { storage: IStorage };
 
@@ -637,5 +638,78 @@ export async function deletePostComment(req: Request, res: Response) {
   } catch (error) {
     console.error('[profile] deletePostComment failed:', error);
     res.status(500).json({ error: 'comment_delete_failed', code: 'comment_delete_failed' });
+  }
+}
+
+// GDPR: delete all data for the authenticated user and log them out.
+export async function deleteAccount(req: Request, res: Response) {
+  const userId = currentUserId(req);
+  if (!userId) {
+    res.status(401).json({ error: 'unauthenticated' });
+    return;
+  }
+  try {
+    // Delete in dependency order (children first, then parents).
+    const tables: [string, string][] = [
+      ['post_likes',              'user_id'],
+      ['post_comments',           'user_id'],
+      ['video_comments',          'user_id'],
+      ['comments',                'user_id'],
+      ['likes',                   'user_id'],
+      ['saved_videos',            'user_id'],
+      ['notifications',           'user_id'],
+      ['push_subscriptions',      'user_id'],
+      ['user_feedback',           'user_id'],
+      ['mission_shares',          'user_id'],
+      ['trading_lesson_progress', 'user_id'],
+      ['trading_certificates',    'user_id'],
+      ['mission_events',          'user_id'],
+      ['user_missions',           'user_id'],
+      ['user_xp',                 'user_id'],
+      ['user_personality',        'user_id'],
+      ['user_preferences',        'user_id'],
+      ['mara_search_history',     'user_id'],
+      ['chat_messages',           'user_id'],
+      ['direct_messages',         'sender_id'],
+      ['creator_payouts',         'creator_id'],
+      ['creator_posts',           'creator_id'],
+      ['writer_purchases',        'user_id'],
+      ['writer_pages',            'author_id'],
+      ['premium_orders',          'user_id'],
+      ['user_posts',              'user_id'],
+      ['videos',                  'creator_id'],
+    ];
+
+    rawSqlite.transaction(() => {
+      // Remove conversation memberships
+      rawSqlite.prepare(`
+        DELETE FROM conversations
+        WHERE user1_id = ? OR user2_id = ?
+      `).run(userId, userId);
+
+      // Remove follow relationships in both directions
+      rawSqlite.prepare(`DELETE FROM followers WHERE follower_id = ? OR followed_id = ?`).run(userId, userId);
+
+      for (const [table, col] of tables) {
+        try {
+          rawSqlite.prepare(`DELETE FROM "${table}" WHERE "${col}" = ?`).run(userId);
+        } catch {
+          // Table might not exist in all environments — skip silently
+        }
+      }
+
+      rawSqlite.prepare(`DELETE FROM users WHERE id = ?`).run(userId);
+    })();
+
+    // Destroy session
+    const session = (req as unknown as { session?: { destroy?: (cb: () => void) => void } }).session;
+    if (session?.destroy) {
+      session.destroy(() => res.json({ ok: true }));
+    } else {
+      res.json({ ok: true });
+    }
+  } catch (error) {
+    console.error('[profile] deleteAccount failed:', error);
+    res.status(500).json({ error: 'delete_failed' });
   }
 }

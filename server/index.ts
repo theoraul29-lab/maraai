@@ -627,6 +627,18 @@ app.use((req, res, next) => {
 
   await registerRoutes(httpServer, app);
 
+  // GDPR: purge direct_messages and chat_messages older than 30 days.
+  function purgeOldMessages() {
+    const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    const iso = new Date(cutoff).toISOString();
+    try {
+      rawSqlite.prepare(`DELETE FROM direct_messages WHERE created_at < ?`).run(iso);
+      rawSqlite.prepare(`DELETE FROM chat_messages WHERE created_at < ?`).run(iso);
+    } catch { /* tables may not exist in all envs */ }
+  }
+  purgeOldMessages();
+  setInterval(purgeOldMessages, 24 * 60 * 60 * 1000);
+
   // Verifică la fiecare oră dacă sistemul de plăți trebuie activat automat.
   startPaymentActivationChecker();
 

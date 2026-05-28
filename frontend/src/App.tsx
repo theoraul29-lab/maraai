@@ -34,6 +34,8 @@ import { OnboardingFlow } from './maraai/OnboardingFlow';
 import { TransparencyDashboard } from './maraai/TransparencyDashboard';
 import { ThemeProvider } from './contexts/ThemeContext';
 import NotFound from './NotFound';
+import PrivacyPolicy from './PrivacyPolicy';
+import CookieBanner from './components/CookieBanner';
 
 /**
  * Redirectează userii noi la /onboarding dacă nu au completat flow-ul.
@@ -132,6 +134,7 @@ function App() {
                   element={<OnboardingFlow onClose={() => navigate('/')} />}
                 />
                 <Route path="/transparency" element={<TransparencyDashboard />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
@@ -144,6 +147,7 @@ function App() {
           <ErrorBoundary level="component">
             <AuthedP2PBadge />
           </ErrorBoundary>
+          <CookieBanner />
         </div>
         </ThemeProvider>
       </AuthProvider>

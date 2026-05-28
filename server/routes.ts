@@ -297,6 +297,7 @@ export async function registerRoutes(
     profileModule.deleteProfilePost,
   );
   app.post('/api/profile/:id/follow', requireAuth, profileModule.followUser);
+  app.delete('/api/profile/me', requireAuth, profileModule.deleteAccount);
 
   // Admin endpoints (require admin)
   app.get('/api/admin/stats', requireAdmin, adminModule.getStats);
