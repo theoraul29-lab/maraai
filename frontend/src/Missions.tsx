@@ -458,7 +458,7 @@ export default function Missions() {
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, selectedPillar, t]);
+  }, [isAuthenticated, selectedPillar, t, i18n.language]);
 
   async function loadPrograms() {
     try {
@@ -577,6 +577,13 @@ export default function Missions() {
   useEffect(() => {
     if (activeTab === 'leaderboard') loadLeaderboard();
   }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Re-fetch all translated content when user switches language
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    loadMissions();
+    loadEnrollments();
+  }, [i18n.language]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── handlers ──────────────────────────────────────────────────────────────
   const handleCardSelect = (mission: Mission, isLocked: boolean) => {
@@ -1421,7 +1428,7 @@ export default function Missions() {
                     <div className="leaderboard-name">{entry.displayName}</div>
                     <div className="leaderboard-meta">
                       {t('missions.levelShort')} {entry.level} · {t('missions.missionsCompleted', { count: entry.missionsCompleted })}
-                      {entry.streak > 0 && ` · 🔥 ${entry.streak}z`}
+                      {entry.streak > 0 && <> · <Fire size={13} weight="fill" style={{ color: '#f97316', verticalAlign: 'middle' }} /> {entry.streak}z</>}
                     </div>
                   </div>
                   <div className="leaderboard-xp">{entry.xp.toLocaleString()} XP</div>
