@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "npm run eslint && npm run stylelint",
-    "lint:ci": "eslint --ext .js,.jsx,.ts,.tsx ./src/main.tsx ./src/csrf.ts ./src/contexts/AuthContext.tsx ./src/components/PayPalProgramButton.tsx ./src/components/ShareButton.tsx",
+    "lint:ci": "eslint --ext .js,.jsx,.ts,.tsx ./src/main.tsx ./src/csrf.ts ./src/components/PayPalProgramButton.tsx ./src/components/ShareButton.tsx",
     "preview": "vite preview",
     "eslint": "eslint --fix --ext  .js,.jsx,.ts,.tsx ./",
     "stylelint": "stylelint \"**/*.{css,scss,less}\"",

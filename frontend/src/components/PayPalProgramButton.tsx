@@ -13,7 +13,7 @@ interface Props {
   disabled?: boolean;
 }
 
-export default function PayPalProgramButton({ programId, programName: _programName, priceCents, onSuccess, onError, disabled }: Props) {
+export default function PayPalProgramButton({ programId, priceCents, onSuccess, onError, disabled }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<'idle' | 'rendering' | 'ready' | 'paying' | 'error'>('idle');
   const [errMsg, setErrMsg] = useState('');
