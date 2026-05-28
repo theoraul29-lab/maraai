@@ -2,9 +2,8 @@
 
 .creator-container {
   position: fixed;
-  top: 56px; left: 0;
-  width: 100vw;
-  height: calc(100vh - 56px);
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
   background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
   z-index: 100;
   display: flex;

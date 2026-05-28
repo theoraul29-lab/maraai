@@ -101,13 +101,14 @@ function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const isHomePage = location.pathname === '/';
+  const isFullscreenPanel = ['/creator-panel', '/writers-hub'].includes(location.pathname);
 
   return (
     <ErrorBoundary level="page">
       <AuthProvider>
         <ThemeProvider>
         <div className="App">
-          {!isHomePage && <Nav />}
+          {!isHomePage && !isFullscreenPanel && <Nav />}
           <OnboardingGuard />
           <ErrorBoundary level="section">
             <Suspense fallback={null}>
