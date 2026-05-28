@@ -2,7 +2,6 @@ import type { Request, Response } from 'express';
 import { storage } from '../../../server/storage.js';
 import { route as routeAi } from '../../../server/maraai/ai-router.js';
 import { checkRateLimit } from '../../../server/rateLimit.js';
-import { isLaunched } from '../../../server/modules/launch-countdown.js';
 import { callAgent, isSupportAgentEnabled, type AgentMessage } from '../../../server/lib/anthropic-agents.js';
 import { getUserXP } from '../../../server/missions/engine.js';
 import { rawSqlite } from '../../../server/db.js';
@@ -36,23 +35,22 @@ export async function sendChatMessage(req: Request, res: Response) {
       });
     }
 
-    // Pre-launch: 20 messages per user per 24h. After 01.07.2026 normal tiers apply.
-    if (!isLaunched()) {
+    // 20 messages per user per 24h — applies always.
+    {
       const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
       const history = await storage.getChatMessages(userId);
       const sentLast24h = history.filter(
         (m) => m.sender === 'user' && m.createdAt >= cutoff,
       ).length;
       if (sentLast24h >= PRE_LAUNCH_MSG_LIMIT) {
+        const resetsAt = new Date(cutoff.getTime() + 24 * 60 * 60 * 1000);
         return res.status(429).json({
-          code: 'pre_launch_limit',
+          code: 'daily_limit',
           message:
-            'Ai atins limita de 20 de mesaje pe zi. Revino mâine pentru alte 20 de mesaje gratuite. ' +
-            'Din 1 iulie 2026 accesul devine nelimitat cu abonamentul tău.',
-          launchDate: '2026-07-01',
+            'Ai atins limita de 20 de mesaje pe zi. Revino după 24 de ore pentru alte 20 de mesaje gratuite.',
           messagesUsed: sentLast24h,
           messagesLimit: PRE_LAUNCH_MSG_LIMIT,
-          resetsAt: new Date(cutoff.getTime() + 24 * 60 * 60 * 1000).toISOString(),
+          resetsAt: resetsAt.toISOString(),
         });
       }
     }
