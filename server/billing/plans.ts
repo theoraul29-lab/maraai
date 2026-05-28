@@ -74,15 +74,6 @@ export const PLAN_CATALOGUE: readonly PlanDefinition[] = [
     features: FREE_FEATURES,
   },
   {
-    // 1-hour trial granted on every new signup. Same feature scope as pro.
-    id: 'trial',
-    tier: 'trial',
-    period: 'none',
-    priceCents: 0,
-    currency: 'EUR',
-    features: PRO_FEATURES,
-  },
-  {
     id: 'pro_monthly',
     tier: 'pro',
     period: 'monthly',

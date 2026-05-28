@@ -1,10 +1,10 @@
 import type { Request, Response } from 'express';
 import { storage } from '../../../server/storage.js';
-// Hybrid AI router (local → central → P2P). The legacy `getMaraResponse`
-// wrapper is still used inside the router itself for the central path, so
-// behaviour for centralized users is identical.
 import { route as routeAi } from '../../../server/maraai/ai-router.js';
 import { checkRateLimit } from '../../../server/rateLimit.js';
+import { isLaunched } from '../../../server/modules/launch-countdown.js';
+
+const PRE_LAUNCH_MSG_LIMIT = 20;
 
 export async function getChatHistory(req: Request, res: Response) {
   try {
@@ -31,6 +31,24 @@ export async function sendChatMessage(req: Request, res: Response) {
         message: 'Too many messages. Please try again in a moment.',
         retryAfterMs: rateLimitCheck.retryAfterMs,
       });
+    }
+
+    // Pre-launch: every user gets 20 free Mara messages. After 01.07.2026
+    // the normal subscription tiers take over.
+    if (!isLaunched()) {
+      const history = await storage.getChatMessages(userId);
+      const sentCount = history.filter((m) => m.sender === 'user').length;
+      if (sentCount >= PRE_LAUNCH_MSG_LIMIT) {
+        return res.status(429).json({
+          code: 'pre_launch_limit',
+          message:
+            'Ai folosit cele 20 de mesaje gratuite din perioada de pre-lansare. ' +
+            'Platforma se lansează pe 1 iulie 2026 — revino atunci pentru acces nelimitat cu abonamentul tău.',
+          launchDate: '2026-07-01',
+          messagesUsed: sentCount,
+          messagesLimit: PRE_LAUNCH_MSG_LIMIT,
+        });
+      }
     }
 
     // Save user message

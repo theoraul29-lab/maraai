@@ -83,16 +83,11 @@ export function validatePlanCatalogue(): void {
  */
 async function getUserTierPlanId(userId: string): Promise<string> {
   const rows = await db
-    .select({ tier: users.tier, trialEndsAt: users.trialEndsAt })
+    .select({ id: users.id })
     .from(users)
     .where(eq(users.id, userId))
     .limit(1);
-  const u = rows[0];
-  if (!u) return 'free';
-  if (u.tier === 'trial' && u.trialEndsAt && u.trialEndsAt > Date.now()) {
-    return 'trial';
-  }
-  return 'free';
+  return rows[0] ? 'free' : 'free';
 }
 
 /**

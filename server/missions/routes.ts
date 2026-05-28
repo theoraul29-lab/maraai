@@ -42,7 +42,6 @@ export function registerMissionRoutes(app: Express, requireAuth: any) {
   app.get('/api/missions', requireAuth, async (req: any, res: any) => {
     const userId = getUserId(req);
     const { pillar, lang } = req.query as { pillar?: string; lang?: string };
-    // Parameterized query — safe against injection
     const missions = pillar
       ? rawSqlite
           .prepare(
@@ -64,7 +63,14 @@ export function registerMissionRoutes(app: Express, requireAuth: any) {
              ORDER BY m.xp_reward ASC`,
           )
           .all(userId);
-    const translated = await translateMissions(missions as any[], lang || 'ro');
+
+    // Sequential unlock: mission N is locked until mission N-1 is completed.
+    const withLocked = (missions as any[]).map((m, i) => ({
+      ...m,
+      locked: i > 0 && (missions as any[])[i - 1].user_status !== 'completed',
+    }));
+
+    const translated = await translateMissions(withLocked, lang || 'ro');
     res.json({ missions: translated, userXp: getUserXP(userId) });
   });
 

@@ -225,8 +225,6 @@ async function signupHandler(req: Request, res: Response) {
   // orphaned `users` row if the `local_auth_credentials` insert fails. Drizzle
   // on better-sqlite3 exposes a synchronous transaction helper that rolls back
   // on any thrown error inside the callback.
-  const trialStartTime = Date.now();
-  const trialEndsAt = trialStartTime + 60 * 60 * 1000; // 1 hour trial
   let user: typeof users.$inferSelect;
   try {
     user = db.transaction((tx) => {
@@ -236,9 +234,7 @@ async function signupHandler(req: Request, res: Response) {
           email,
           firstName: name,
           displayName: name,
-          tier: 'trial',
-          trialStartTime,
-          trialEndsAt,
+          tier: 'free',
         })
         .returning()
         .all();
