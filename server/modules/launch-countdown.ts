@@ -29,7 +29,7 @@ import { createIPRateLimit } from '../rate-limit.js';
 import { sendWaitlistConfirmationEmail } from '../lib/email.js';
 
 const LAUNCH_DATE = new Date(
-  process.env.LAUNCH_DATE_ISO || '2026-07-01T00:00:00Z',
+  process.env.LAUNCH_DATE_ISO || '2026-05-28T00:00:00Z',
 );
 
 function getPreviewToken(): string | null {
