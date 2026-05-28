@@ -3,7 +3,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
-import './i18n';
+import { langReady } from './i18n';
 // Side-effect: install fetch + axios CSRF wrappers before any component
 // fires its first POST/PATCH. Production (`hellomara.net`) rejects every
 // state-changing request without an `X-CSRF-Token` header.
@@ -16,11 +16,16 @@ import { registerPWA } from './pwa/registerPWA';
 // Service worker — no-op in dev (devOptions.enabled=false in vite.config).
 registerPWA();
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <App />
-      <InstallPromptBanner />
-    </BrowserRouter>
-  </React.StrictMode>,
-);
+// Wait for the active language bundle to load before first render so the
+// user never sees a flash of English when a lazy language (fr, de, …) was
+// previously saved to localStorage.
+langReady.then(() => {
+  ReactDOM.createRoot(document.getElementById('root')!).render(
+    <React.StrictMode>
+      <BrowserRouter>
+        <App />
+        <InstallPromptBanner />
+      </BrowserRouter>
+    </React.StrictMode>,
+  );
+});

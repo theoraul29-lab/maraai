@@ -157,4 +157,16 @@ const savedLang = initialLang || i18n.language || 'en';
 document.documentElement.lang = savedLang;
 document.documentElement.dir = RTL_LANGUAGES.includes(savedLang) ? 'rtl' : 'ltr';
 
+// Boot-time lazy load: i18n only bundles `en` and `ro` eagerly.
+// If the user previously saved a lazy language (e.g. 'fr'), the
+// LanguageDetector will have restored `i18n.language = 'fr'` but
+// the bundle isn't loaded yet, so every t() call falls back to English.
+// We expose `langReady` so main.tsx can await it before mounting React,
+// preventing any flash of English content on the first render.
+export const langReady: Promise<void> = (savedLang && lazyLanguages.includes(savedLang))
+  ? loadLanguage(savedLang).then(loaded => {
+      if (loaded) void i18n.changeLanguage(savedLang);
+    })
+  : Promise.resolve();
+
 export default i18n;
