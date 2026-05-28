@@ -754,6 +754,163 @@ INTREBARE PENTRU HELLOMARA.NET: Care din cele 3 e moat-ul? Tools-of-the-trade pe
 Pattern repetat: fondatorii care construiesc companii de miliarde sunt OBSEDAȚI de un singur lucru — utilizatorul lor. Citesc fiecare review. Răspund fiecărui email. Își testează singuri produsul zilnic.
 APLICAȚIE: Setează-ți o regulă — 30 min/zi în care folosești hellomara.net ca utilizator obișnuit. Vezi friction-urile, scrie-le, repară-le. Asta nu se delegă, nici lui Mara.`,
     },
+    {
+      id: 'psych-atomic-habits-behavior-change',
+      title: 'Atomic Habits + Psihologia Schimbării Comportamentale — Aplicat pe Mara',
+      category: 'psychology',
+      priority: 1,
+      content: `Atomic Habits + Psihologia Schimbării Comportamentale — Aplicat pe Mara
+
+SURSE: James Clear (Atomic Habits), BJ Fogg (Tiny Habits), Nir Eyal (Indistractable), Charles Duhigg (The Power of Habit), Roy Baumeister (Willpower), Daniel Kahneman (Thinking Fast and Slow)
+
+CONCEPT CENTRAL: Schimbarea comportamentală nu vine din motivație sau voință — vine din SISTEME. Mara nu motivează, Mara CONSTRUIEȘTE SISTEME în viețile userilor. Asta e diferența dintre o aplicație de productivitate și o transformare reală.
+
+═══════════════════════════════════════════════════
+ATOMIC HABITS — JAMES CLEAR: CELE 4 LEGI
+═══════════════════════════════════════════════════
+
+1. MAKE IT OBVIOUS (Fă-l evident)
+Comportamentele se declanșează prin INDICII din mediu. Dacă vrei ca userul să facă misiunea zilnică, indiciul trebuie să fie vizibil și predictibil.
+APLICAȚIE MARA:
+- Notificarea de dimineață la 9 AM ("🎯 Misiunea ta de azi te așteaptă") = indica pentru habit
+- Prima pagină din Missions arată misiunea curentă IMEDIAT, fără scroll
+- Streakul zilnic (vizibil în XP/Level) = indicator de progres care creează commitment
+- Mara trimite o frază scurtă în chat când vede că userul e inactiv 48h
+
+2. MAKE IT ATTRACTIVE (Fă-l atractiv)
+Creierul eliberează dopamină ÎNAINTE de recompensă (anticipation > reward). Sistemul de XP, level-up, streaks sunt mașini de dopamină pre-recompensă.
+APLICAȚIE MARA:
+- Level-up vizual trebuie să fie spectaculos (animație, sunet, mesaj personalizat de la Mara)
+- Misiunile "DEEP" (dificile) trebuie marcate ca rare/exclusive — scarcity = mai attractive
+- Programele cu zile numerotate (Day 1/90) creează anticipare: "Ce urmează în Day 15?"
+- Mara trebuie să ANTICIPEZE recompensa: "Mâine e Day 21 — New Habit milestone!"
+
+3. MAKE IT EASY (Fă-l ușor)
+Legea Efortului Minim: creierul alege mereu calea cu cel mai mic efort. Dacă misiunea pare grea de completat, userul nu o începe.
+APLICAȚIE MARA:
+- Misiunile "gentle" sunt intrarea în sistem — NU le ascunde! Ele sunt onboarding-ul real
+- Proof de misiune: max 3 propoziții. Dacă ceri mai mult, scade completion rate cu 40%
+- Butonul "Completează azi" trebuie să fie tap-ul cel mai vizibil pe mobile
+- Mara trebuie să spargă misiunile mari în micro-pași de 2 minute
+
+4. MAKE IT SATISFYING (Fă-l satisfăcător)
+Creierul memorează comportamentele care sunt urmate imediat de o senzație plăcută. Recompensa IMEDIATĂ bate recompensa VIITOARE de 10x.
+APLICAȚIE MARA:
+- XP-ul trebuie să apară INSTANT după completarea misiunii, cu animație
+- Mara răspunde în max 1s după submit cu un mesaj cald și specific
+- "Streak saved today!" apare ca toast imediat după completare
+- Certificatele de milestone (Day 21, Day 90) sunt recompense tangibile de sharing
+
+═══════════════════════════════════════════════════
+BJ FOGG — TINY HABITS: FORMULA REALĂ A SCHIMBĂRII
+═══════════════════════════════════════════════════
+
+Formula: B = MAP
+- Motivation (fluctuantă, nu te baza pe ea)
+- Ability (abilitatea de a face comportamentul)
+- Prompt (declanșatorul)
+
+INSIGHT CRITIC: Motivația este NESIGURĂ. Abilitatea + Prompt-ul corect = comportament consistent chiar și când motivația e zero.
+
+APLICAȚIE MARA:
+- Nu construi misiuni care cer motivație ridicată pentru a fi START-uite
+- Misiunile "gentle" au ability MAXIMĂ (oricine poate face) + prompt clar
+- Mara trebuie să fie Prompt-ul pentru misiunile uitate (mesaj la 48h inactivitate)
+- Anchor Habits: "Fă asta DUPĂ ce faci X" — Mara poate sugera: "Fă această misiune după cafeaua de dimineață"
+
+═══════════════════════════════════════════════════
+THE HABIT LOOP — CHARLES DUHIGG
+═══════════════════════════════════════════════════
+
+CUE → ROUTINE → REWARD → (CRAVING)
+
+Odată ce loop-ul e instalat, craving-ul (dorința anticipatorie) devine automată.
+
+PENTRU MARA:
+- CUE: Notificarea de dimineață sau deschiderea aplicației
+- ROUTINE: Verificarea misiunii + completarea ei
+- REWARD: XP animat + mesaj de la Mara + streak update
+- CRAVING după 3 săptămâni: userul VREA să deschidă Mara dimineața
+
+Cum instalezi loop-ul:
+Săptămâna 1-2: Cue extern (notificare) + Reward mare (XP dublu pentru primele 14 zile)
+Săptămâna 3: Cue intern începe să se formeze (anxietate ușoară dacă nu verifică)
+Luna 2: Loop automat — nu mai ai nevoie de motivație
+
+═══════════════════════════════════════════════════
+WILLPOWER DEPLETION — ROY BAUMEISTER
+═══════════════════════════════════════════════════
+
+Voința este o resursă LIMITATĂ care se epuizează în decursul zilei (ego depletion).
+
+IMPLICAȚII PENTRU MARA:
+- Misiunile dificile trebuie recomandate DIMINEAȚA, nu seara
+- Mara trebuie să știe ora locală a userului și să sugereze timing optim
+- "Deep work" misiunile = matin. "Reflection" misiunile = seara.
+- Dacă userul e activ seara constant, oferă misiuni gentle/reflection pentru acea oră
+
+═══════════════════════════════════════════════════
+IDENTITY-BASED HABITS — JAMES CLEAR (CAP. 2)
+═══════════════════════════════════════════════════
+
+"Every action you take is a vote for the type of person you wish to become."
+
+Schimbarea durabilă nu vine din outcome goals ("vreau să slăbesc 10 kg") ci din identity goals ("sunt tipul de persoană care face sport zilnic").
+
+APLICAȚIE MARA (CRITIC):
+- Mara nu trebuie să spună "completează misiunea" ci "fii tipul de persoană care..."
+- Onboarding-ul trebuie să întrebe: "Ce tip de persoană vrei să devii în 90 de zile?"
+- Misiunile sunt cadrate ca "voturi pentru identitate": "Acesta este un vot pentru viitorul tău Self"
+- Level titles (în XP system) trebuie să fie identitare: "Disciplined Builder", "Creative Mind", "Resilient Spirit"
+- Mara în chat trebuie să reflecte identitatea: "Ca persoană care practică disciplina zilnic..."
+
+═══════════════════════════════════════════════════
+SISTEM PRACTIC — CE FACE MARA DIFERIT DE ALTE APPS
+═══════════════════════════════════════════════════
+
+Alte apps de productivitate: trackere de task-uri + gamification superficială
+Mara: SISTEM DE IDENTITATE + HABIT LOOP + CONTEXT ADAPTIV
+
+1. Mara știe CONTEXTUL userului (XP, streak, programul activ, dispoziția din chat)
+2. Mara adaptează DIFICULTATEA în timp real (după ce streakul e de 7+ zile, propune misiuni mai profunde)
+3. Mara leagă misiunile de IDENTITATE ("Tu ești deja cineva care...")
+4. Mara recunoaște RECĂDERILE fără judecată ("Ai sărit 3 zile — e normal. Hai să re-pornim cu o misiune mică")
+5. Mara creează MICRO-COMMITMENTS ("Spune-mi un singur lucru pe care îl vei face azi")
+
+═══════════════════════════════════════════════════
+METRICI DE SCHIMBARE COMPORTAMENTALĂ PENTRU MARA
+═══════════════════════════════════════════════════
+
+1. Habit Installation Rate: % useri care completează misiuni 7 zile consecutive în prima lună
+   TARGET: >25% din useri activi
+2. Streak Recovery Rate: % useri care revin după un streak break
+   TARGET: >40% revin în 48h după break
+3. Identity Adoption: % useri care folosesc limbaj identitar în chat ("Eu sunt...")
+   INDICATOR: engagement profund, risc scăzut de churn
+4. Mission Depth Progression: % misiuni trecute de la "gentle" la "deep" după 30 zile
+   TARGET: >30% din useri progresează în dificultate
+5. Time-to-First-Mission: cât durează de la signup la prima misiune completată
+   TARGET: <24h — dacă e >72h, userul e pierdut cu probabilitate 80%
+
+═══════════════════════════════════════════════════
+ANTI-PATTERNS — CE DISTRUGE HABITS
+═══════════════════════════════════════════════════
+
+1. Streakul prea prețios: dacă userul se teme să piardă streakul, evită misiunile dificile → stagnare
+   FIX: "Streak freeze" (1/săptămână gratis) + mesaj de la Mara că progresul e mai important decât streakul
+
+2. Prea multe misiuni disponibile: paradoxul alegerii — mai multe opțiuni = mai puțină acțiune
+   FIX: Recomandă activ 1-3 misiuni. "Mara recomandă azi:" e mai eficient decât o grilă de 69 misiuni
+
+3. Recompensele prea predictibile: dacă userul știe exact ce primește, dopamina scade
+   FIX: Occasional surprise rewards — "Streak bonus x2 surprise!" apărând random
+
+4. Feedback întârziat: dacă Mara răspunde în 30s, conexiunea emoțională se rupe
+   FIX: Răspuns Mara în <3s (deja implementat cu timeout-uri)
+
+5. One-size-fits-all: misiunile identice pentru toți = engagement scăzut pentru 80%
+   FIX: Personalizare pe pillar + dificultate + ora zilei + streakul curent`,
+    },
   ];
 }
 
@@ -1022,4 +1179,19 @@ export async function addAndReadCustomBook(
 ): Promise<DocumentReadResult> {
   console.log(`[Library] 📖 Admin uploaded new book: "${title}"`);
   return processDocument(content, title, `upload:${category}`);
+}
+
+/**
+ * Reset all "already read" markers so every built-in book will be re-read
+ * in upcoming brain cycles. Deletes stable `library_book:*` markers from DB
+ * and clears the in-memory cache. Use from the admin force-relearn endpoint.
+ */
+export async function resetLibraryReadState(): Promise<number> {
+  const { rawSqlite } = await import('../db.js');
+  const result = rawSqlite
+    .prepare(`DELETE FROM mara_knowledge_base WHERE topic LIKE 'library_book:%' OR topic LIKE 'Document:%'`)
+    .run();
+  readBookIds.clear();
+  console.log(`[Library] 🔄 Reset read state — deleted ${result.changes} markers, ${getBuiltInLibrary().length} books queued for re-read`);
+  return result.changes;
 }

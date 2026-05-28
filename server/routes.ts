@@ -82,6 +82,7 @@ import {
   listUnresolvedConflicts,
   resolveConflict,
 } from './mara-brain/conflict-detector.js';
+import { resetLibraryReadState } from './mara-brain/library.js';
 import { listSingletonLocks } from './lib/singleton-lock.js';
 import {
   chatRateLimit,
@@ -1106,6 +1107,26 @@ export async function registerRoutes(
       return res.status(500).json({ ok: false, message: 'Unknown trigger failure.' });
     } catch (error) {
       res.status(500).json({ error: 'Failed to trigger brain cycle' });
+    }
+  });
+
+  // Force-relearn: reset all "already read" markers + immediately trigger a cycle
+  app.post('/api/admin/brain/force-relearn', requireAdmin, async (_req: any, res: any) => {
+    try {
+      const deleted = await resetLibraryReadState();
+      const stats = await getLibraryProgress();
+      // Reset cooldown by directly triggering an internal cycle (bypass cooldown)
+      const triggerResult = await brainManager.triggerManual();
+      return res.json({
+        ok: true,
+        markersDeleted: deleted,
+        booksQueued: stats.unread,
+        totalBooks: stats.total,
+        cycleStarted: triggerResult.ok,
+        cycleMessage: triggerResult.ok ? 'Brain cycle started.' : `Cycle not started: ${(triggerResult as any).reason}`,
+      });
+    } catch (err) {
+      res.status(500).json({ ok: false, error: (err as Error).message });
     }
   });
 
