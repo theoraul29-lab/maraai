@@ -416,7 +416,7 @@ const runtimeState: RuntimeState = {
   startedAt: null,
 };
 
-// --- START RATE LIMITER LOGIC (moved to server/rateLimit.ts) ---
+// --- START RATE LIMITER LOGIC (moved to server/rate-limit.ts) ---
 // Re-imported for use in the WebSocket chat handler below.
 // --- END RATE LIMITER LOGIC ---
 
