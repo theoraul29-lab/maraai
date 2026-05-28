@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { usePayPalSDK } from '../hooks/usePayPalSDK';
+import { getCsrfToken } from '../csrf';
 
 const API = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:5000');
 const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID as string | undefined;
@@ -29,10 +30,14 @@ export default function PayPalProgramButton({ programId, priceCents, onSuccess, 
 
       createOrder: async () => {
         setStatus('paying');
+        const csrfToken = await getCsrfToken();
         const res = await fetch(`${API}/api/billing/program/purchase`, {
           method: 'POST',
           credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
+          },
           body: JSON.stringify({ programId }),
         });
         if (!res.ok) {
@@ -108,10 +113,14 @@ function FallbackButton({ programId, priceCents, disabled, onError }: Omit<Props
   const handleClick = async () => {
     setLoading(true);
     try {
+      const csrfToken = await getCsrfToken();
       const res = await fetch(`${API}/api/billing/program/purchase`, {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
+        },
         body: JSON.stringify({ programId }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
