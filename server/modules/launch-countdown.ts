@@ -148,6 +148,8 @@ export function startPaymentActivationChecker(): void {
 
   const threshold = Number(process.env.ACTIVE_USERS_THRESHOLD ?? 100);
 
+  let interval: ReturnType<typeof setInterval> | null = null;
+
   const check = () => {
     if (process.env.PAYMENT_SYSTEM_ACTIVE === 'true') return;
 
@@ -157,14 +159,14 @@ export function startPaymentActivationChecker(): void {
     if (launched) {
       process.env.PAYMENT_SYSTEM_ACTIVE = 'true';
       console.log(`[payments] ✅ Activat automat — data de lansare atinsă (${LAUNCH_DATE.toISOString()})`);
-      clearInterval(interval);
+      if (interval) clearInterval(interval);
       return;
     }
 
     if (activeUsers >= threshold) {
       process.env.PAYMENT_SYSTEM_ACTIVE = 'true';
       console.log(`[payments] ✅ Activat automat — ${activeUsers} useri activi >= threshold ${threshold}`);
-      clearInterval(interval);
+      if (interval) clearInterval(interval);
       return;
     }
 
@@ -173,7 +175,7 @@ export function startPaymentActivationChecker(): void {
 
   // Verificare imediată la boot, apoi la fiecare oră
   check();
-  const interval = setInterval(check, 60 * 60 * 1000);
+  interval = setInterval(check, 60 * 60 * 1000);
 }
 
 // SHA-256 hash of the client IP so we can rate-limit and dedupe without
