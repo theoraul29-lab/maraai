@@ -1,4 +1,3 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from '@phosphor-icons/react';
 import './styles/PrivacyPolicy.css';
