@@ -603,7 +603,7 @@ Rules:
   let raw: string;
   try {
     raw = (
-      await llmGenerate(prompt, { source: 'cycle.phase_4.growth-engineer' })
+      await llmGenerate(prompt, { source: 'cycle.phase_4.growth-engineer', thinkingBudget: 8000 })
     ).trim();
   } catch (err) {
     console.error('[GrowthEngineer] LLM call failed:', err);
@@ -867,6 +867,9 @@ export async function measureExperimentOutcome(
     // brain sees the result before the next tick() refreshes the full state.
     executive.recordExperimentOutcome(exp.id, !!succeeded, learnings);
 
+    // Auto-recommendation: generate next-step advice and notify admin
+    void generateAutoRecommendation(exp.id, !!succeeded, actualImpactPct, exp.hypothesis, learnings).catch(() => {});
+
     results.push({
       experimentId: exp.id,
       status: 'measured',
@@ -880,6 +883,68 @@ export async function measureExperimentOutcome(
   }
 
   return results;
+}
+
+async function generateAutoRecommendation(
+  experimentId: number,
+  succeeded: boolean,
+  actualImpactPct: number,
+  hypothesis: string,
+  learnings: string,
+): Promise<void> {
+  let recommendation: string;
+
+  if (isLLMConfigured()) {
+    try {
+      recommendation = await llmGenerate(
+        `Growth experiment #${experimentId} was just measured.
+Result: ${succeeded ? 'SUCCESS' : 'MISS'} — actual impact ${(actualImpactPct * 100).toFixed(0)}%.
+Hypothesis: "${hypothesis}"
+Learnings: "${learnings.slice(0, 400)}"
+
+Give a concise 2-sentence recommendation for next steps. Choose one: SCALE UP (double down), ITERATE (try a variant), STOP (revert, pursue different direction). Start with the action word.`,
+        { source: 'agent.experiment-auto-recommend' },
+      );
+    } catch {
+      recommendation = succeeded
+        ? `SCALE UP — experiment succeeded. Consider amplifying this change platform-wide.`
+        : `ITERATE — experiment missed target. Review hypothesis and try a modified variant.`;
+    }
+  } else {
+    recommendation = succeeded
+      ? `SCALE UP — experiment succeeded with ${(actualImpactPct * 100).toFixed(0)}% impact.`
+      : `ITERATE — experiment missed expected impact. Try a modified approach.`;
+  }
+
+  try {
+    rawSqlite
+      .prepare('UPDATE mara_growth_experiments SET auto_recommendation = ? WHERE id = ?')
+      .run(recommendation, experimentId);
+  } catch { /* non-fatal */ }
+
+  // Notify admin via push if any admin subscriptions exist
+  try {
+    const { db: dbConn } = await import('../../db.js');
+    const { pushSubscriptions } = await import('../../../shared/schema.js');
+    const { sendToUser } = await import('../../push/vapid.js');
+    const { isUserAdmin } = await import('../../lib/admin-check.js');
+    const { eq: eqOp } = await import('drizzle-orm');
+
+    const subs = await dbConn.selectDistinct({ userId: pushSubscriptions.userId }).from(pushSubscriptions);
+    for (const sub of subs) {
+      try {
+        const isAdmin = await isUserAdmin(sub.userId);
+        if (!isAdmin) continue;
+        await sendToUser(sub.userId, {
+          title: `📊 Experiment #${experimentId} measured — ${succeeded ? '✅ SUCCESS' : '⚠️ MISS'}`,
+          body: recommendation.slice(0, 120),
+          url: '/admin/mara',
+          icon: '/icons/icon-192.png',
+          tag: `experiment-${experimentId}`,
+        });
+      } catch { /* per-user failures non-fatal */ }
+    }
+  } catch { /* push non-fatal */ }
 }
 
 // === Orchestrator ===

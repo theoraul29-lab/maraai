@@ -82,6 +82,12 @@ export interface LLMCallOpts {
    * `learningRateLimiter` and counts against the daily cap.
    */
   source?: LLMSource;
+  /**
+   * Token budget for extended thinking (brain calls only). When > 0 the brain
+   * provider enables Claude's extended thinking mode for deeper reasoning.
+   * Has no effect on user_chat calls or Ollama.
+   */
+  thinkingBudget?: number;
 }
 
 /**
@@ -130,12 +136,13 @@ export function isLLMConfigured(): boolean {
 function normaliseOpts(
   opts: LLMCallOpts | number | undefined,
   defaultTemp: number,
-): { temperature: number; source: LLMSource } {
+): { temperature: number; source: LLMSource; thinkingBudget?: number } {
   if (opts == null) return { temperature: defaultTemp, source: 'user_chat' };
   if (typeof opts === 'number') return { temperature: opts, source: 'user_chat' };
   return {
     temperature: opts.temperature ?? defaultTemp,
     source: opts.source ?? 'user_chat',
+    ...(opts.thinkingBudget ? { thinkingBudget: opts.thinkingBudget } : {}),
   };
 }
 
@@ -143,7 +150,7 @@ export async function llmChat(
   messages: LLMMessage[],
   opts: LLMCallOpts | number = {},
 ): Promise<string> {
-  const { temperature, source } = normaliseOpts(opts, 0.95);
+  const { temperature, source, thinkingBudget } = normaliseOpts(opts, 0.95);
 
   if (source === 'user_chat') {
     // Chat cu userii → ANTHROPIC_API_KEY (cu fallback Ollama dacă e configurat)
@@ -151,7 +158,7 @@ export async function llmChat(
   }
 
   // Brain autonom → ANTHROPIC_BRAIN_API_KEY (fallback la ANTHROPIC_API_KEY)
-  const exec = async () => (await getBrainAIResponse(messages, { temperature })).text;
+  const exec = async () => (await getBrainAIResponse(messages, { temperature, thinkingBudget })).text;
   const result = await guardedLLMCall(source, exec);
   if (result === null) {
     throw new LLMRateLimitedError(source);

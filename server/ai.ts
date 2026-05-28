@@ -2,6 +2,7 @@ import { buildUserContext, buildSystemInstruction, recordLearningFromChat, getPl
 import { llmChat, llmGenerate, isLLMConfigured } from './llm.js';
 import { logError } from './logger.js';
 import { isUserAdmin } from './lib/admin-check.js';
+import { webSearch, formatSearchResultsForPrompt } from './lib/web-search.js';
 
 // Localized Mara "Guided Muse" persona used when the brain module is
 // unavailable. English is the canonical source; other languages are kept as
@@ -122,6 +123,22 @@ function degradeMessage(language?: string): string {
 	return DEGRADE_MESSAGES[key] || DEGRADE_MESSAGES.en;
 }
 
+const SEARCH_INTENT_RE = /\b(caută|search|găsește|știri|news|recent|latest|azi|astăzi|acum|cine este|who is|what is|when did|când|ce se întâmplă|ce știi despre|în 202\d)\b/i;
+
+async function fetchSearchContext(message: string): Promise<string> {
+	if (!SEARCH_INTENT_RE.test(message)) return '';
+	try {
+		const results = await Promise.race([
+			webSearch(message, 4),
+			new Promise<never>((_, reject) => setTimeout(() => reject(new Error('search_timeout')), 3500)),
+		]);
+		if (results.length === 0) return '';
+		return `\n\n<web_search_results>\n${formatSearchResultsForPrompt(results)}\n</web_search_results>\nUse these results to answer if relevant. Cite sources naturally in your reply.`;
+	} catch {
+		return '';
+	}
+}
+
 export async function getMaraResponse(
 	message: string,
 	history: { role: string; content: string }[],
@@ -169,6 +186,9 @@ export async function getMaraResponse(
 	} catch {
 		systemInstruction = getFallbackInstruction(prefs?.language);
 	}
+
+	const searchContext = await fetchSearchContext(message);
+	if (searchContext) systemInstruction += searchContext;
 
 	const conversationMessages: import('./llm.js').LLMMessage[] = [
 		{ role: 'system', content: systemInstruction },

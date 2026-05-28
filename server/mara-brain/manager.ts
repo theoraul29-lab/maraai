@@ -17,6 +17,10 @@ import { ensureAlertsTable, analyzePlatformAndAlert } from './alerts.js';
 import { db } from '../db.js';
 import { pushSubscriptions } from '../../shared/schema.js';
 import { sendToUser } from '../push/vapid.js';
+import { subscribeEvent, publishEvent } from '../maraai/kafka.js';
+
+export const BRAIN_EVENT_TOPIC = 'brain.event';
+export type BrainEventType = 'signup_spike' | 'experiment_completed' | 'engagement_drop' | 'feedback_negative';
 
 export type BrainStatus = {
   enabled: boolean;
@@ -66,6 +70,8 @@ class BrainManagerImpl {
   private _lastNotifDay: number | null = null;
   private _initialTimeout: NodeJS.Timeout | null = null;
   private _started = false;
+  private _lastEventTriggerAt: number | null = null;
+  private readonly EVENT_TRIGGER_COOLDOWN_MS = 30 * 60 * 1000; // 30min between event-triggered cycles
   // Cross-process advisory lock — prevents two instances (e.g. during a
   // Railway rolling deploy) from running brain cycles in parallel against
   // the same database. Lazily created in start() so unit tests can mock
@@ -221,6 +227,12 @@ class BrainManagerImpl {
       30 * 60 * 1000,
     );
 
+    // Subscribe to platform events — signup spike, experiment completed, etc.
+    subscribeEvent(BRAIN_EVENT_TOPIC, (payload) => {
+      const reason = (payload.reason as BrainEventType) ?? 'signup_spike';
+      this.triggerOnEvent(reason, logger);
+    });
+
     logger(
       `Mara auto-scheduler started: brain cycle every ${Math.round(this.cycleIntervalMs / 60000)}min${selfPostMsg}`,
       'mara-scheduler',
@@ -287,6 +299,17 @@ class BrainManagerImpl {
       manualTriggerCooldownMs: this.manualCooldownMs,
       manualTriggerAvailableAt: manualAvail,
     };
+  }
+
+  /** Trigger a brain cycle in response to a platform event (e.g. signup spike). */
+  triggerOnEvent(reason: BrainEventType, logger?: (msg: string, tag?: string) => void): void {
+    if (!this.isEnabled || this._passive || this._running) return;
+    const now = Date.now();
+    if (this._lastEventTriggerAt !== null && now - this._lastEventTriggerAt < this.EVENT_TRIGGER_COOLDOWN_MS) return;
+    this._lastEventTriggerAt = now;
+    const log = logger ?? console.log.bind(console, '[mara-event]');
+    log(`Event-triggered brain cycle: ${reason}`, 'mara-brain');
+    void this._runCycleInternal(log);
   }
 
   /** Manually trigger a cycle. Returns the trigger outcome for the admin UI. */
@@ -386,6 +409,16 @@ class BrainManagerImpl {
         if (deleted > 0) logger(`KB cleanup removed ${deleted} old entries.`, 'mara-brain');
       } catch { /* non-fatal */ }
       try { await analyzePlatformAndAlert(); } catch { /* non-fatal */ }
+      // Check if any experiments have been running 7+ days and need measurement
+      try {
+        const { rawSqlite: db2 } = await import('../db.js');
+        const pending = (db2 as typeof import('../db.js').rawSqlite)
+          .prepare(`SELECT COUNT(*) as cnt FROM mara_growth_experiments WHERE status='implemented' AND created_at < unixepoch()-604800`)
+          .get() as { cnt: number } | undefined;
+        if ((pending?.cnt ?? 0) > 0) {
+          void publishEvent(BRAIN_EVENT_TOPIC, { reason: 'experiment_completed' }, {});
+        }
+      } catch { /* non-fatal */ }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       this._lastError = msg;

@@ -19,6 +19,7 @@ export interface UserMemoryContext {
   knowledgeContext: string;
   personalityPrompt: string;
   investigatorContext: string;
+  userMemories: string;
 }
 
 function getDefaultToxicityState(): ToxicityState {
@@ -132,6 +133,9 @@ export async function buildUserContext(
   //    Skipped for admin sessions (not relevant for internal testing).
   const investigatorContext = isAdmin ? '' : getInvestigatorContext(userId);
 
+  // 9. Per-user long-term memories (goals, preferences, personal facts shared in past chats)
+  const userMemories = isAdmin ? '' : getUserMemories(userId);
+
   return {
     userId,
     isAdmin,
@@ -142,6 +146,7 @@ export async function buildUserContext(
     knowledgeContext,
     personalityPrompt,
     investigatorContext,
+    userMemories,
   };
 }
 
@@ -176,6 +181,11 @@ export function buildSystemInstruction(context: UserMemoryContext, language?: st
 
   // Qualitative investigator signals (mission abandoned, returning user, not activated)
   if (context.investigatorContext) parts.push(context.investigatorContext);
+
+  // Per-user long-term memories — things the user has shared in past conversations
+  if (context.userMemories) {
+    parts.push(`\n# CE ȘTI DESPRE ACEST USER\n${context.userMemories}\nFolosește aceste informații pentru a personaliza răspunsurile. Nu repeta mecanic faptele — referă-te natural la ele când e relevant.`);
+  }
 
   return parts.join('\n');
 }
@@ -231,6 +241,11 @@ export async function recordLearningFromChat(
       });
     }
 
+    // 0) Extract and persist personal facts shared by the user (no LLM call — heuristic only)
+    for (const { fact, category } of extractPersonalFacts(userMessage)) {
+      storeUserMemory(userId, fact, category);
+    }
+
     // 2) Also queue unknown topics for deeper research. We still gate on
     //    `searchKnowledge` first so we don't pile up tasks for things Mara
     //    already knows about — Phase 1 will dedupe internally too, but
@@ -251,7 +266,66 @@ export async function recordLearningFromChat(
   }
 }
 
-// Extract conversation topics from a message 
+// ─── Per-user long-term memory ────────────────────────────────────────────────
+
+export type MemoryCategory = 'goal' | 'preference' | 'personal_info' | 'interest' | 'achievement' | 'general';
+
+const PERSONAL_PATTERNS: Array<{ re: RegExp; category: MemoryCategory }> = [
+  { re: /\b(mă numesc|numele meu e|my name is|me llamo|je m'appelle|ich heiße)\b/i, category: 'personal_info' },
+  { re: /\b(am \d+ ani|i'm \d+ years|tengo \d+ años|j'ai \d+ ans)\b/i, category: 'personal_info' },
+  { re: /\b(lucrez|work at|trabajo en|je travaille|ich arbeite)\b/i, category: 'personal_info' },
+  { re: /\b(sunt (scriitor|creator|developer|designer|antreprenor|student|profesor|doctor)|i am a |i'm a )\b/i, category: 'personal_info' },
+  { re: /\b(îmi place|îmi plac|iubesc|ador|my favorite|i love|i like|me encanta|j'aime|ich liebe)\b/i, category: 'preference' },
+  { re: /\b(vreau să|want to|quiero|je veux|ich will|my goal is|obiectivul meu)\b/i, category: 'goal' },
+  { re: /\b(lucrez la|building|construiesc|am un proiect|my project|working on)\b/i, category: 'goal' },
+  { re: /\b(îmi place să scriu|love writing|pasionat de|passionate about|hobby|interesat de|interested in)\b/i, category: 'interest' },
+  { re: /\b(am terminat|am finalizat|am reușit|i finished|i completed|i achieved)\b/i, category: 'achievement' },
+];
+
+export function extractPersonalFacts(message: string): Array<{ fact: string; category: MemoryCategory }> {
+  const facts: Array<{ fact: string; category: MemoryCategory }> = [];
+  const trimmed = message.trim();
+  if (trimmed.length < 10 || trimmed.length > 500) return facts;
+
+  for (const { re, category } of PERSONAL_PATTERNS) {
+    if (re.test(trimmed)) {
+      facts.push({ fact: trimmed.slice(0, 300), category });
+      break;
+    }
+  }
+  return facts;
+}
+
+export function storeUserMemory(userId: string, fact: string, category: MemoryCategory = 'general'): void {
+  try {
+    const existing = rawSqlite
+      .prepare('SELECT id FROM user_memories WHERE user_id = ? AND fact = ?')
+      .get(userId, fact);
+    if (existing) return;
+    rawSqlite
+      .prepare('INSERT INTO user_memories (user_id, fact, category) VALUES (?, ?, ?)')
+      .run(userId, fact.slice(0, 500), category);
+  } catch (err) {
+    console.warn('[Memory] Failed to store user memory:', err);
+  }
+}
+
+export function getUserMemories(userId: string, limit = 12): string {
+  try {
+    const rows = rawSqlite
+      .prepare('SELECT fact, category FROM user_memories WHERE user_id = ? ORDER BY last_accessed DESC, created_at DESC LIMIT ?')
+      .all(userId, limit) as Array<{ fact: string; category: string }>;
+    if (rows.length === 0) return '';
+    rawSqlite
+      .prepare('UPDATE user_memories SET last_accessed = unixepoch() WHERE user_id = ?')
+      .run(userId);
+    return rows.map((r) => `[${r.category}] ${r.fact}`).join('\n');
+  } catch {
+    return '';
+  }
+}
+
+// Extract conversation topics from a message
 function extractConversationTopics(message: string, module?: string): string[] {
   const topics: string[] = [];
   const lower = message.toLowerCase();

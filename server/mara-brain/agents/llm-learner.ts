@@ -134,7 +134,7 @@ Fii sincer — dacă o idee e slabă, spune de ce.`;
 
   try {
     const text = (
-      await llmGenerate(prompt, { source: 'agent.llm-learner.validate-ideas' })
+      await llmGenerate(prompt, { source: 'agent.llm-learner.validate-ideas', thinkingBudget: 5000 })
     ).trim();
     const jsonMatch = text.match(/\[[\s\S]*\]/);
     if (!jsonMatch) return ideas.map((idea) => ({ original: idea, validation: 'Could not parse', score: 5 }));

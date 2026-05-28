@@ -38,6 +38,14 @@ export interface AIChatOptions {
    * The provider itself owns that translation.
    */
   systemPrompt?: string;
+
+  /**
+   * Token budget for extended thinking (Claude only). When set, Anthropic's
+   * extended thinking mode is enabled — the model reasons silently for up to
+   * `thinkingBudget` tokens before producing its final answer. Ignored by
+   * Ollama. Set to 0 or omit to disable.
+   */
+  thinkingBudget?: number;
 }
 
 export interface AIProvider {

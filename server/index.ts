@@ -9,6 +9,7 @@ import { serveStatic } from './static.js';
 import { createServer } from 'http';
 import { brainManager } from './mara-brain/index.js';
 import { getMaraResponse } from './ai.js';
+import { route as routeAi } from './maraai/ai-router.js';
 import { WebSocketServer } from 'ws';
 import { storage } from './storage.js';
 import { setupSessionAuth, csrfProtection } from './auth.js';
@@ -141,6 +142,10 @@ function runMigrations() {
 
   ensureColumns('user_preferences', [
     ["theme", "text NOT NULL DEFAULT 'dark'"],
+  ]);
+
+  ensureColumns('mara_growth_experiments', [
+    ['auto_recommendation', 'text'],
   ]);
 
   // user_posts: source_kind / source_id were added by migration
@@ -386,6 +391,24 @@ function runMigrations() {
       \`created_at\` integer NOT NULL DEFAULT (CURRENT_TIMESTAMP)
     );`,
     ['CREATE INDEX IF NOT EXISTS `IDX_direct_messages_conv` ON `direct_messages` (`conversation_id`);'],
+  );
+
+  ensureTable(
+    'user_memories',
+    `CREATE TABLE IF NOT EXISTS \`user_memories\` (
+      \`id\` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+      \`user_id\` text NOT NULL,
+      \`fact\` text NOT NULL,
+      \`category\` text NOT NULL DEFAULT 'general',
+      \`confidence\` real NOT NULL DEFAULT 0.8,
+      \`source\` text NOT NULL DEFAULT 'chat',
+      \`created_at\` integer NOT NULL DEFAULT (unixepoch()),
+      \`last_accessed\` integer NOT NULL DEFAULT (unixepoch())
+    );`,
+    [
+      'CREATE INDEX IF NOT EXISTS `IDX_user_memories_user` ON `user_memories` (`user_id`);',
+      'CREATE INDEX IF NOT EXISTS `IDX_user_memories_user_cat` ON `user_memories` (`user_id`, `category`);',
+    ],
   );
 }
 
@@ -863,13 +886,12 @@ app.use((req, res, next) => {
                 language: input.language || prefs?.language,
               };
 
-              const { response: aiResponseContent, detectedMood } = await getMaraResponse(
-                input.message,
-                conversationHistory,
-                userPrefs,
-                input.module,
-                ws.userId,
-              );
+              const { response: aiResponseContent, detectedMood } = await routeAi(input.message, {
+                userId: ws.userId,
+                module: input.module,
+                prefs: userPrefs,
+                history: conversationHistory,
+              });
 
               const aiMsg = await storage.createChatMessage({
                 content: aiResponseContent,

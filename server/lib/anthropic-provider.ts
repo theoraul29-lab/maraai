@@ -175,13 +175,18 @@ class AnthropicBrainProvider implements AIProvider {
       throw new Error('Anthropic brain chat requires at least one user or assistant message.');
     }
 
+    const budget = opts.thinkingBudget && opts.thinkingBudget > 0 ? opts.thinkingBudget : 0;
+    const maxTokens = budget > 0 ? Math.max(getMaxTokens(), budget + 2000) : getMaxTokens();
+
     const res = await client.messages.create({
       model,
-      max_tokens: getMaxTokens(),
-      ...(typeof opts.temperature === 'number' ? { temperature: opts.temperature } : {}),
+      max_tokens: maxTokens,
+      // Extended thinking requires temperature=1; otherwise honour caller's value.
+      temperature: budget > 0 ? 1 : (typeof opts.temperature === 'number' ? opts.temperature : undefined),
+      ...(budget > 0 ? { thinking: { type: 'enabled' as const, budget_tokens: budget } } : {}),
       ...(system ? { system } : {}),
       messages: turns,
-    });
+    } as Parameters<typeof client.messages.create>[0]);
 
     const text = res.content
       .filter((block): block is Anthropic.TextBlock => block.type === 'text')

@@ -23,6 +23,8 @@ import { users, localAuthCredentials, passwordResetTokens, userPreferences } fro
 import { sendPasswordResetEmail, sendWelcomeEmail } from '../lib/email.js';
 import { eq, sql, and, gt } from 'drizzle-orm';
 import { z } from 'zod';
+import { publishEvent } from '../maraai/kafka.js';
+import { BRAIN_EVENT_TOPIC } from '../mara-brain/manager.js';
 
 // 8 rounds gives ~25-50ms hash on commodity Railway CPUs while still being
 // well within the OWASP-recommended bcrypt cost. 10 rounds was burning
@@ -272,6 +274,8 @@ async function signupHandler(req: Request, res: Response) {
   void sendWelcomeEmail(email, name).catch((err) =>
     console.error('[auth] sendWelcomeEmail failed:', err),
   );
+  // Signal brain to react to new signup (30-min cooldown in manager prevents spam)
+  void publishEvent(BRAIN_EVENT_TOPIC, { reason: 'signup_spike', userId: user.id }, { userId: user.id }).catch(() => {});
   // Brand-new user has no language preference yet; return null so the
   // client falls back to localStorage / browser-detected language.
   return res.status(201).json(toPayload({ ...user, preferredLanguage: null }));
