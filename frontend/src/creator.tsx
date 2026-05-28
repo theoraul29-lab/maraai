@@ -107,7 +107,7 @@ interface Props { onClose: () => void; }
 
 export const Creator: React.FC<Props> = ({ onClose }) => {
   const { user } = useAuth();
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
 
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [studioTab, setStudioTab] = useState<StudioTab>('music');
@@ -155,7 +155,6 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
   // ─── Studio: Photo Editor ──────────────────────────────────────────────────
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState('');
   const [photoBrightness, setPhotoBrightness] = useState(100);
   const [photoContrast, setPhotoContrast] = useState(100);
@@ -167,7 +166,6 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
   const photoImgRef = useRef<HTMLImageElement | null>(null);
 
   // ─── Studio: Video Thumbnail Extractor ────────────────────────────────────
-  const [thumbVideo, setThumbVideo] = useState<File | null>(null);
   const [thumbVideoUrl, setThumbVideoUrl] = useState('');
   const [thumbText, setThumbText] = useState('');
   const thumbVideoRef = useRef<HTMLVideoElement>(null);
@@ -1122,7 +1120,6 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
                       if (photoPreview) URL.revokeObjectURL(photoPreview);
                       const url = URL.createObjectURL(f);
                       setPhotoPreview(url);
-                      setPhotoFile(f);
                       const img = new Image();
                       img.onload = () => {
                         photoImgRef.current = img;
@@ -1175,7 +1172,6 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
                       const f = e.target.files?.[0];
                       if (!f) return;
                       if (thumbVideoUrl) URL.revokeObjectURL(thumbVideoUrl);
-                      setThumbVideo(f);
                       setThumbVideoUrl(URL.createObjectURL(f));
                     }} />
                 </label>
@@ -1315,7 +1311,3 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
   );
 };
 
-function extractYouTubeId(url: string): string {
-  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{11})/);
-  return match ? match[1] : '';
-}

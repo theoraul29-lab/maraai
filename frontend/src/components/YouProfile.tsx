@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import Messenger from './Messenger';
 import {
   ChatCircle, ChartBar, FilmStrip, Image, UsersThree, Article, Clock,
-  Heart, ThumbsUp, VideoCamera,
+  Heart, VideoCamera,
 } from '@phosphor-icons/react';
 import '../styles/YouProfile.css';
 

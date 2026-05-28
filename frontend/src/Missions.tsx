@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from './contexts/AuthContext';
 import {
   Target, Books, NotePencil, BookOpen, UsersThree, Trophy,
-  Lock, CheckCircle, ArrowLeft, Fire, Sparkle,
+  Lock, CheckCircle, ArrowLeft, Fire,
 } from '@phosphor-icons/react';
 import ShareButton from './components/ShareButton';
 import PayPalProgramButton from './components/PayPalProgramButton';
