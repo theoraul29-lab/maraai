@@ -650,6 +650,8 @@ export async function deleteAccount(req: Request, res: Response) {
   }
   try {
     // Delete in dependency order (children first, then parents).
+    // Every entry is wrapped in try/catch inside the loop so a missing table
+    // never aborts the transaction.
     const tables: [string, string][] = [
       ['post_likes',              'user_id'],
       ['post_comments',           'user_id'],
@@ -681,24 +683,21 @@ export async function deleteAccount(req: Request, res: Response) {
     ];
 
     rawSqlite.transaction(() => {
-      // Remove conversation memberships
-      rawSqlite.prepare(`
-        DELETE FROM conversations
-        WHERE user1_id = ? OR user2_id = ?
-      `).run(userId, userId);
+      // Wrap every delete so a missing table never aborts the transaction.
+      const safeRun = (sql: string, ...args: string[]) => {
+        try { rawSqlite.prepare(sql).run(...args); }
+        catch { /* table may not exist in this environment */ }
+      };
 
-      // Remove follow relationships in both directions
-      rawSqlite.prepare(`DELETE FROM followers WHERE follower_id = ? OR followed_id = ?`).run(userId, userId);
+      safeRun(`DELETE FROM conversations WHERE user1_id = ? OR user2_id = ?`, userId, userId);
+      safeRun(`DELETE FROM followers WHERE follower_id = ? OR followed_id = ?`, userId, userId);
 
       for (const [table, col] of tables) {
-        try {
-          rawSqlite.prepare(`DELETE FROM "${table}" WHERE "${col}" = ?`).run(userId);
-        } catch {
-          // Table might not exist in all environments — skip silently
-        }
+        safeRun(`DELETE FROM "${table}" WHERE "${col}" = ?`, userId);
       }
 
-      rawSqlite.prepare(`DELETE FROM users WHERE id = ?`).run(userId);
+      // User row last — all references have been cleaned up above.
+      safeRun(`DELETE FROM users WHERE id = ?`, userId);
     })();
 
     // Destroy session
