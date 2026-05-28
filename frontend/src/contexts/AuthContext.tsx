@@ -420,6 +420,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       localStorage.setItem('user', JSON.stringify(sessionUser));
       setUser(sessionUser);
       setIsAuthenticated(true);
+      void applyServerLanguage(payload.user.preferredLanguage);
     } catch {
       /* ignore */
     }

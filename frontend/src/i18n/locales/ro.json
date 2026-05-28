@@ -971,5 +971,160 @@
       "missions": "🎯 Misiuni",
       "journal": "📓 Jurnal"
     }
+  },
+  "settings": {
+    "title": "Setări",
+    "close": "Închide",
+    "saving": "Se salvează…",
+    "loading": "Se încarcă…",
+    "loadError": "Nu s-au putut încărca setările.",
+    "privacyLoadError": "Nu s-au putut încărca setările de confidențialitate.",
+    "sections": {
+      "account": "Cont",
+      "maraai": "MaraAI & Confidențialitate",
+      "notifications": "Notificări",
+      "preferences": "Preferințe"
+    },
+    "changePassword": {
+      "title": "Schimbă parola",
+      "success": "Parola a fost schimbată cu succes!",
+      "current": "Parola curentă",
+      "new": "Parolă nouă",
+      "confirm": "Confirmă parola nouă",
+      "mismatch": "Parolele noi nu se potrivesc.",
+      "tooShort": "Parola trebuie să aibă cel puțin 8 caractere.",
+      "error": "Eroare la schimbarea parolei.",
+      "networkError": "Eroare de rețea.",
+      "submit": "Schimbă parola"
+    },
+    "dangerZone": {
+      "title": "Zona periculoasă",
+      "description": "Ștergerea contului este <1>ireversibilă</1>. Toate datele tale (postări, reels, misiuni, XP, mesaje) vor fi eliminate permanent.",
+      "error": "A apărut o eroare. Încearcă din nou.",
+      "confirmMsg": "Ești sigur? Această acțiune nu poate fi anulată.",
+      "confirmDelete": "Da, șterge contul definitiv",
+      "cancel": "Anulează",
+      "delete": "Șterge contul"
+    },
+    "maraMode": {
+      "title": "Mod MaraAI",
+      "centralizedLabel": "🏢 Centralizat",
+      "hybridLabel": "⚡ Hybrid",
+      "advancedLabel": "🌐 Avansat",
+      "centralizedDesc": "Toate procesările prin serverele Mara. Simplu și sigur.",
+      "hybridDesc": "Combină serverele Mara cu rețeaua P2P. Recomandat.",
+      "advancedDesc": "Prioritizează P2P și routing avansat. Contribuie maxim."
+    },
+    "p2p": {
+      "title": "Rețea P2P",
+      "participation": "Participare P2P",
+      "participationDesc": "Ajuți rețeaua Mara procesând cereri de la alți utilizatori.",
+      "backgroundNode": "Nod de fundal",
+      "backgroundNodeDesc": "Mara rulează în fundal chiar și când nu ești activ.",
+      "advancedRouting": "Routing AI avansat",
+      "advancedRoutingDesc": "Mara alege automat cel mai bun model AI pentru fiecare cerere.",
+      "bandwidth": "Bandwidth partajat",
+      "gbPerMonth": "GB/lună"
+    },
+    "notifications": {
+      "title": "Notificări în aplicație",
+      "label": "Notificări activate",
+      "desc": "Primești notificări despre misiuni, update-uri și activitate."
+    },
+    "theme": {
+      "title": "Temă"
+    },
+    "language": {
+      "title": "Limbă"
+    },
+    "privacyLink": "Politica de confidențialitate",
+    "logout": "Deconectare"
+  },
+  "cookie": {
+    "ariaLabel": "Informare cookie-uri",
+    "text": "Folosim exclusiv cookie-uri esențiale pentru sesiunea ta. Niciun tracking, niciun marketing.",
+    "learnMore": "Află mai multe",
+    "accept": "Am înțeles",
+    "close": "Închide"
+  },
+  "pricing": {
+    "title": "Planuri & Prețuri",
+    "perMonth": "/lună",
+    "mostPopular": "Cel mai popular",
+    "tiers": {
+      "free": {
+        "tagline": "Începe fără card.",
+        "feature0": "Chat de bază cu Mara AI",
+        "feature1": "Vizionare reels comunitate",
+        "feature2": "Citire articole publice",
+        "feature3": "Acces comunitate",
+        "cta": "Începe gratuit"
+      },
+      "pro_monthly": {
+        "tagline": "Tot ce ai nevoie pentru a crea și crește.",
+        "feature0": "Chat nelimitat cu Mara AI",
+        "feature1": "Upload reels",
+        "feature2": "Publicare articole publice",
+        "feature3": "Profil public",
+        "feature4": "Acces la toate funcțiile Free",
+        "cta": "Alege Pro"
+      },
+      "vip_monthly": {
+        "tagline": "Programe de transformare incluse.",
+        "feature0": "Tot ce include Pro",
+        "feature1": "Citire articole VIP",
+        "feature2": "Publicare articole VIP",
+        "feature3": "Personalitate AI custom",
+        "feature4": "Upload HD",
+        "feature5": "✦ Toate programele incluse — New Mindset, New Habit, New Skills, New Body, New Life, New You",
+        "cta": "Alege VIP"
+      },
+      "creator_monthly": {
+        "tagline": "Monetizează-ți conținutul.",
+        "feature0": "Tot ce include VIP",
+        "feature1": "Revenue share 70%",
+        "feature2": "Retragere câștiguri",
+        "feature3": "Analytics detaliate",
+        "feature4": "Publicare articole plătite",
+        "feature5": "Monetizare reels",
+        "cta": "Alege Creator"
+      }
+    },
+    "programs": {
+      "newMindsetDesc": "O zi. O schimbare de perspectivă.",
+      "newHabitDesc": "21 de zile. Un obicei pentru viață.",
+      "newSkillsDesc": "90 de zile. O abilitate nouă.",
+      "newBodyDesc": "180 de zile. Un corp și o minte noi.",
+      "newLifeDesc": "365 de zile. O viață nouă.",
+      "newYouDesc": "3 ani. Un tu complet nou.",
+      "programsTitle": "Programe incluse",
+      "programsSubtitle": "Călătorii de transformare personală, ghidate de Mara AI",
+      "days": "zile"
+    },
+    "faqTitle": "Întrebări frecvente",
+    "ctaTitle": "Ești gata să-ți începi transformarea?",
+    "ctaDesc": "Alătură-te miilor de oameni care folosesc deja Mara AI pentru a crește în fiecare zi.",
+    "ctaBtn": "Începe gratuit",
+    "currentPlan": "Planul curent",
+    "choosePlan": "Alege planul",
+    "annualBadge": "Anual — economisești 20%",
+    "faq": {
+      "q1": "Pot anula oricând?",
+      "a1": "Da. Anulezi oricând din setări, fără penalități. Accesul continuă până la sfârșitul lunii plătite.",
+      "q2": "Cum funcționează programele în VIP?",
+      "a2": "Cu VIP activ ai acces complet la toate cele 6 programe — de la New Mindset (1 zi) până la New You (3 ani). Le poți rula simultan sau succesiv.",
+      "q3": "Ce se întâmplă dacă sar o zi din program?",
+      "a3": "Nimic rău — Mara îți păstrează progresul. Streakul se resetează dar programul continuă.",
+      "q4": "Cum plătesc?",
+      "a4": "Stripe (card) sau PayPal. Tranzacție securizată, factură automată."
+    },
+    "hero": {
+      "title": "Calea ta de transformare",
+      "subtitle": "Simplu. Lunar. Fără surprize."
+    },
+    "freeBadge": "Gratuit",
+    "vipIncludesTitle": "Programele incluse în VIP",
+    "vipIncludesSub": "Toate cele 6 programe de transformare sunt incluse în abonamentul VIP. Nicio plată extra.",
+    "day": "zi"
   }
 }

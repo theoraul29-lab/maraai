@@ -438,7 +438,8 @@
       "music": "Musik",
       "comedy": "Komedi",
       "tutorial": "Tutorial"
-    }
+    },
+    "deleteConfirm": "Ta bort denna reel?"
   },
   "you": {
     "profileTab": "📊 Profil",
@@ -903,7 +904,14 @@
       "newBody": "Ny Kropp",
       "newLife": "Nytt Liv",
       "newYou": "Ny Du"
-    }
+    },
+    "freeDaysLabel": "Första {{count}} dagarna gratis",
+    "levelMetaFull": "Niv {{level}} · {{count}} uppdrag",
+    "paymentCancelled": "↩️ Betalning avbruten.",
+    "paymentFailed": "❌ Betalning misslyckades. Försök igen eller kontakta support.",
+    "paymentSuccess": "✅ Betalning lyckades! {{name}}",
+    "transformationPath": "🚀 Din transformationsresa",
+    "unlocked": "✅ Upplåst"
   },
   "missionShare": {
     "cardLabel": "Uppdrag slutfört",
@@ -963,5 +971,160 @@
       "missions": "🎯 Uppdrag",
       "journal": "📓 Dagbok"
     }
+  },
+  "settings": {
+    "title": "Inställningar",
+    "close": "Stäng",
+    "saving": "Sparar…",
+    "loading": "Laddar…",
+    "loadError": "Det gick inte att ladda inställningar.",
+    "privacyLoadError": "Det gick inte att ladda sekretessinställningar.",
+    "sections": {
+      "account": "Konto",
+      "maraai": "MaraAI & Sekretess",
+      "notifications": "Aviseringar",
+      "preferences": "Inställningar"
+    },
+    "changePassword": {
+      "title": "Ändra lösenord",
+      "success": "Lösenordet har ändrats!",
+      "current": "Nuvarande lösenord",
+      "new": "Nytt lösenord",
+      "confirm": "Bekräfta nytt lösenord",
+      "mismatch": "De nya lösenorden stämmer inte överens.",
+      "tooShort": "Lösenordet måste vara minst 8 tecken.",
+      "error": "Fel vid ändring av lösenord.",
+      "networkError": "Nätverksfel.",
+      "submit": "Ändra lösenord"
+    },
+    "dangerZone": {
+      "title": "Farlig zon",
+      "description": "Att ta bort ditt konto är <1>oåterkalleligt</1>. All din data raderas permanent.",
+      "error": "Ett fel uppstod. Försök igen.",
+      "confirmMsg": "Är du säker? Den här åtgärden kan inte ångras.",
+      "confirmDelete": "Ja, radera konto permanent",
+      "cancel": "Avbryt",
+      "delete": "Radera konto"
+    },
+    "maraMode": {
+      "title": "MaraAI-läge",
+      "centralizedLabel": "🏢 Centraliserad",
+      "hybridLabel": "⚡ Hybrid",
+      "advancedLabel": "🌐 Avancerad",
+      "centralizedDesc": "All bearbetning via Maras servrar. Enkelt och säkert.",
+      "hybridDesc": "Kombinerar Maras servrar med P2P-nätverk. Rekommenderat.",
+      "advancedDesc": "Prioriterar P2P och avancerad routing. Maximalt bidrag."
+    },
+    "p2p": {
+      "title": "P2P-nätverk",
+      "participation": "P2P-deltagande",
+      "participationDesc": "Du hjälper Mara-nätverket genom att bearbeta förfrågningar från andra användare.",
+      "backgroundNode": "Bakgrundsnod",
+      "backgroundNodeDesc": "Mara körs i bakgrunden även när du inte är aktiv.",
+      "advancedRouting": "Avancerad AI-routing",
+      "advancedRoutingDesc": "Mara väljer automatiskt den bästa AI-modellen för varje förfrågan.",
+      "bandwidth": "Delad bandbredd",
+      "gbPerMonth": "GB/månad"
+    },
+    "notifications": {
+      "title": "In-app aviseringar",
+      "label": "Aviseringar aktiverade",
+      "desc": "Du får aviseringar om uppdrag, uppdateringar och aktivitet."
+    },
+    "theme": {
+      "title": "Tema"
+    },
+    "language": {
+      "title": "Språk"
+    },
+    "privacyLink": "Integritetspolicy",
+    "logout": "Logga ut"
+  },
+  "cookie": {
+    "ariaLabel": "Cookie-information",
+    "text": "Vi använder bara nödvändiga cookies för din session. Ingen spårning, ingen marknadsföring.",
+    "learnMore": "Läs mer",
+    "accept": "Förstått",
+    "close": "Stäng"
+  },
+  "pricing": {
+    "title": "Planer och priser",
+    "perMonth": "/månad",
+    "mostPopular": "Mest populär",
+    "tiers": {
+      "free": {
+        "tagline": "Börja utan kort.",
+        "feature0": "Grundläggande chatt med Mara AI",
+        "feature1": "Se communityreels",
+        "feature2": "Läs offentliga artiklar",
+        "feature3": "Communityåtkomst",
+        "cta": "Börja gratis"
+      },
+      "pro_monthly": {
+        "tagline": "Allt du behöver för att skapa och växa.",
+        "feature0": "Obegränsad chatt med Mara AI",
+        "feature1": "Ladda upp reels",
+        "feature2": "Publicera offentliga artiklar",
+        "feature3": "Offentlig profil",
+        "feature4": "Tillgång till alla Free-funktioner",
+        "cta": "Välj Pro"
+      },
+      "vip_monthly": {
+        "tagline": "Transformationsprogram ingår.",
+        "feature0": "Allt i Pro",
+        "feature1": "Läs VIP-artiklar",
+        "feature2": "Publicera VIP-artiklar",
+        "feature3": "Anpassad AI-personlighet",
+        "feature4": "HD-uppladdning",
+        "feature5": "✦ Alla program ingår",
+        "cta": "Välj VIP"
+      },
+      "creator_monthly": {
+        "tagline": "Tjäna pengar på ditt innehåll.",
+        "feature0": "Allt i VIP",
+        "feature1": "Revenue share 70%",
+        "feature2": "Ta ut intäkter",
+        "feature3": "Detaljerad analys",
+        "feature4": "Publicera betalartiklar",
+        "feature5": "Tjäna pengar på reels",
+        "cta": "Välj Creator"
+      }
+    },
+    "programs": {
+      "newMindsetDesc": "En dag. En perspektivförändring.",
+      "newHabitDesc": "21 dagar. En vana för livet.",
+      "newSkillsDesc": "90 dagar. En ny färdighet.",
+      "newBodyDesc": "180 dagar. En ny kropp och ett nytt sinne.",
+      "newLifeDesc": "365 dagar. Ett nytt liv.",
+      "newYouDesc": "3 år. En helt ny du.",
+      "programsTitle": "Ingående program",
+      "programsSubtitle": "Personliga transformationsresor, guidade av Mara AI",
+      "days": "dagar"
+    },
+    "faqTitle": "Vanliga frågor",
+    "ctaTitle": "Redo att börja din transformation?",
+    "ctaDesc": "Gå med tusentals människor som redan använder Mara AI för att växa varje dag.",
+    "ctaBtn": "Börja gratis",
+    "currentPlan": "Nuvarande plan",
+    "choosePlan": "Välj plan",
+    "annualBadge": "Årlig — spara 20%",
+    "faq": {
+      "q1": "Kan jag avsluta när som helst?",
+      "a1": "Ja. Avsluta när som helst i inställningarna, utan straffavgifter. Åtkomst fortsätter till slutet av den betalda månaden.",
+      "q2": "Hur fungerar programmen i VIP?",
+      "a2": "Med aktivt VIP har du full tillgång till alla 6 program — från New Mindset (1 dag) till New You (3 år).",
+      "q3": "Vad händer om jag hoppar över en dag i programmet?",
+      "a3": "Inget dåligt — Mara sparar dina framsteg. Strimman återställs men programmet fortsätter.",
+      "q4": "Hur betalar jag?",
+      "a4": "Stripe (kort) eller PayPal. Säker transaktion, automatisk faktura."
+    },
+    "hero": {
+      "title": "Din transformationsresa",
+      "subtitle": "Enkelt. Månadsvis. Inga överraskningar."
+    },
+    "freeBadge": "Gratis",
+    "vipIncludesTitle": "Program ingår i VIP",
+    "vipIncludesSub": "Alla 6 transformationsprogram ingår i VIP-prenumerationen. Ingen extra kostnad.",
+    "day": "dag"
   }
 }

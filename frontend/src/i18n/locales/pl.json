@@ -47,7 +47,10 @@
     "missions": "Missions",
     "programs": "Programy",
     "creators": "Creators",
-    "writers": "Writers"
+    "writers": "Writers",
+    "createAccount": "Utwórz konto",
+    "mobileAriaLabel": "Mobilny selektor Mara AI",
+    "subsystemSettings": "Ustawienia podsystemów"
   },
   "auth": {
     "welcomeBack": "Witaj ponownie",
@@ -80,7 +83,47 @@
     "switchToSignup": "Switch to sign up",
     "switchToLogin": "Switch to login",
     "or": "LUB",
-    "forgotPassword": "Zapomniałeś hasła?"
+    "forgotPassword": "Zapomniałeś hasła?",
+    "creatorAriaLabel": "Otwórz panel twórcy",
+    "creatorPanel": "Panel twórcy",
+    "earnings": "Zarobki",
+    "errors": {
+      "account_create_failed": "Nie udało się utworzyć konta. Spróbuj ponownie.",
+      "email_exists": "Konto z tym adresem e-mail już istnieje.",
+      "invalid_credentials": "Nieprawidłowy e-mail lub hasło.",
+      "login_body_invalid": "Wymagany jest e-mail i hasło.",
+      "logout_failed": "Wylogowanie nie powiodło się.",
+      "network_error": "Błąd sieci. Spróbuj ponownie.",
+      "oauth_email_not_verified": "Twój e-mail nie jest zweryfikowany przez dostawcę. Zweryfikuj go i spróbuj ponownie.",
+      "oauth_exchange_failed": "Nie mogliśmy zweryfikować Twojego konta u dostawcy. Spróbuj ponownie.",
+      "oauth_generic": "Logowanie nie powiodło się. Spróbuj ponownie.",
+      "oauth_missing_code": "Logowanie zostało anulowane lub jest niekompletne. Spróbuj ponownie.",
+      "oauth_missing_email": "Twoje konto nie ma zweryfikowanego e-maila. Przyznaj uprawnienia e-mail i spróbuj ponownie.",
+      "oauth_not_configured": "Ta opcja logowania nie jest jeszcze skonfigurowana. Skontaktuj się z pomocą techniczną.",
+      "oauth_not_enabled": "Logowanie OAuth nie jest jeszcze włączone. Użyj e-maila i hasła.",
+      "oauth_session_failed": "Logowanie się powiodło, ale nie można było utworzyć sesji. Spróbuj ponownie.",
+      "oauth_state_mismatch": "Sesja logowania wygasła. Spróbuj ponownie.",
+      "oauth_unsupported": "Nieobsługiwany dostawca OAuth.",
+      "oauth_user_upsert_failed": "Nie mogliśmy utworzyć Twojego profilu. Spróbuj ponownie.",
+      "session_create_failed": "Nie udało się utworzyć sesji. Spróbuj ponownie.",
+      "signup_body_invalid": "Wymagany jest e-mail, hasło (min. 6 znaków) i imię.",
+      "unknown": "Coś poszło nie tak. Spróbuj ponownie.",
+      "user_missing": "Brak rekordu użytkownika."
+    },
+    "helpMara": {
+      "confirm": "Tak, chcę pomóc Marze rosnąć",
+      "learnMore": "Dowiedz się więcej o trybie P2P →",
+      "p1": "Mara to hybrydowa AI: działa częściowo w chmurze, a częściowo na urządzeniach użytkowników. Włączając to, mała część mocy zapasowej Twojego telefonu lub laptopa pomaga kierować pytaniami innych — sprawiając, że cała sieć jest szybsza.",
+      "p2": "W zamian zarabiasz Mara Credits, które możesz wydać na funkcje premium. Nic nie działa w tle, chyba że sam to wybierzesz. Limity przepustowości i wyłącznik są zawsze dostępne jednym dotknięciem.",
+      "p3": "Możesz zmienić zdanie w dowolnym momencie w ustawieniach. Mara nigdy nie udostępnia Twoich danych innym użytkownikom — przez sieć przechodzą tylko zaszyfrowane zadania obliczeniowe.",
+      "title": "Pomóż Marze rosnąć"
+    },
+    "loginOrSignup": "Zaloguj się lub zarejestruj",
+    "logout": "Wyloguj",
+    "logoutAriaLabel": "Wyloguj z konta",
+    "profileMenuFor": "Menu profilu dla {{name}}",
+    "upgradeAriaLabel": "Przejdź na subskrypcję Premium",
+    "upgradeToPremium": "Przejdź na Premium"
   },
   "vip": {
     "title": "PREMIUM VIP MODULE",
@@ -395,7 +438,8 @@
       "music": "Muzyka",
       "comedy": "Komedia",
       "tutorial": "Samouczek"
-    }
+    },
+    "deleteConfirm": "Usunąć ten reel?"
   },
   "you": {
     "profileTab": "📊 Profile",
@@ -860,7 +904,14 @@
       "newBody": "Nowe Ciało",
       "newLife": "Nowe Życie",
       "newYou": "Nowy Ty"
-    }
+    },
+    "freeDaysLabel": "Pierwsze {{count}} dni za darmo",
+    "levelMetaFull": "Poz {{level}} · {{count}} misji",
+    "paymentCancelled": "↩️ Płatność anulowana.",
+    "paymentFailed": "❌ Płatność nieudana. Spróbuj ponownie lub skontaktuj się z pomocą techniczną.",
+    "paymentSuccess": "✅ Płatność zakończona sukcesem! {{name}}",
+    "transformationPath": "🚀 Twoja ścieżka transformacji",
+    "unlocked": "✅ Odblokowano"
   },
   "missionShare": {
     "cardLabel": "Mission complete",
@@ -920,5 +971,160 @@
       "missions": "🎯 Misje",
       "journal": "📓 Dziennik"
     }
+  },
+  "settings": {
+    "title": "Ustawienia",
+    "close": "Zamknij",
+    "saving": "Zapisywanie…",
+    "loading": "Ładowanie…",
+    "loadError": "Nie udało się załadować ustawień.",
+    "privacyLoadError": "Nie udało się załadować ustawień prywatności.",
+    "sections": {
+      "account": "Konto",
+      "maraai": "MaraAI i prywatność",
+      "notifications": "Powiadomienia",
+      "preferences": "Preferencje"
+    },
+    "changePassword": {
+      "title": "Zmień hasło",
+      "success": "Hasło zostało zmienione!",
+      "current": "Obecne hasło",
+      "new": "Nowe hasło",
+      "confirm": "Potwierdź nowe hasło",
+      "mismatch": "Nowe hasła nie są zgodne.",
+      "tooShort": "Hasło musi mieć co najmniej 8 znaków.",
+      "error": "Błąd podczas zmiany hasła.",
+      "networkError": "Błąd sieci.",
+      "submit": "Zmień hasło"
+    },
+    "dangerZone": {
+      "title": "Strefa niebezpieczna",
+      "description": "Usunięcie konta jest <1>nieodwracalne</1>. Wszystkie dane zostaną trwale usunięte.",
+      "error": "Wystąpił błąd. Spróbuj ponownie.",
+      "confirmMsg": "Jesteś pewny? Tej czynności nie można cofnąć.",
+      "confirmDelete": "Tak, usuń konto na stałe",
+      "cancel": "Anuluj",
+      "delete": "Usuń konto"
+    },
+    "maraMode": {
+      "title": "Tryb MaraAI",
+      "centralizedLabel": "🏢 Scentralizowany",
+      "hybridLabel": "⚡ Hybrydowy",
+      "advancedLabel": "🌐 Zaawansowany",
+      "centralizedDesc": "Całe przetwarzanie przez serwery Mara. Proste i bezpieczne.",
+      "hybridDesc": "Łączy serwery Mara z siecią P2P. Zalecane.",
+      "advancedDesc": "Priorytet P2P i zaawansowanego routingu. Maksymalny wkład."
+    },
+    "p2p": {
+      "title": "Sieć P2P",
+      "participation": "Uczestnictwo P2P",
+      "participationDesc": "Pomagasz sieci Mara przetwarzając żądania innych użytkowników.",
+      "backgroundNode": "Węzeł w tle",
+      "backgroundNodeDesc": "Mara działa w tle nawet gdy nie jesteś aktywny.",
+      "advancedRouting": "Zaawansowany routing AI",
+      "advancedRoutingDesc": "Mara automatycznie wybiera najlepszy model AI dla każdego żądania.",
+      "bandwidth": "Udostępniona przepustowość",
+      "gbPerMonth": "GB/miesiąc"
+    },
+    "notifications": {
+      "title": "Powiadomienia w aplikacji",
+      "label": "Powiadomienia włączone",
+      "desc": "Otrzymujesz powiadomienia o misjach, aktualizacjach i aktywności."
+    },
+    "theme": {
+      "title": "Motyw"
+    },
+    "language": {
+      "title": "Język"
+    },
+    "privacyLink": "Polityka prywatności",
+    "logout": "Wyloguj"
+  },
+  "cookie": {
+    "ariaLabel": "Informacje o plikach cookie",
+    "text": "Używamy tylko niezbędnych plików cookie dla Twojej sesji. Bez śledzenia, bez marketingu.",
+    "learnMore": "Dowiedz się więcej",
+    "accept": "Rozumiem",
+    "close": "Zamknij"
+  },
+  "pricing": {
+    "title": "Plany i ceny",
+    "perMonth": "/miesiąc",
+    "mostPopular": "Najpopularniejszy",
+    "tiers": {
+      "free": {
+        "tagline": "Zacznij bez karty.",
+        "feature0": "Podstawowy czat z Mara AI",
+        "feature1": "Przeglądaj reels społeczności",
+        "feature2": "Czytaj publiczne artykuły",
+        "feature3": "Dostęp do społeczności",
+        "cta": "Zacznij za darmo"
+      },
+      "pro_monthly": {
+        "tagline": "Wszystko, czego potrzebujesz do tworzenia i rozwoju.",
+        "feature0": "Nieograniczony czat z Mara AI",
+        "feature1": "Przesyłaj reels",
+        "feature2": "Publikuj publiczne artykuły",
+        "feature3": "Publiczny profil",
+        "feature4": "Dostęp do wszystkich funkcji Free",
+        "cta": "Wybierz Pro"
+      },
+      "vip_monthly": {
+        "tagline": "Programy transformacji w zestawie.",
+        "feature0": "Wszystko z Pro",
+        "feature1": "Czytaj artykuły VIP",
+        "feature2": "Publikuj artykuły VIP",
+        "feature3": "Spersonalizowana osobowość AI",
+        "feature4": "Przesyłanie HD",
+        "feature5": "✦ Wszystkie programy w zestawie",
+        "cta": "Wybierz VIP"
+      },
+      "creator_monthly": {
+        "tagline": "Monetyzuj swoje treści.",
+        "feature0": "Wszystko z VIP",
+        "feature1": "Revenue share 70%",
+        "feature2": "Wypłacaj zarobki",
+        "feature3": "Szczegółowe analizy",
+        "feature4": "Publikuj płatne artykuły",
+        "feature5": "Monetyzuj reels",
+        "cta": "Wybierz Creator"
+      }
+    },
+    "programs": {
+      "newMindsetDesc": "Jeden dzień. Zmiana perspektywy.",
+      "newHabitDesc": "21 dni. Nawyk na całe życie.",
+      "newSkillsDesc": "90 dni. Nowa umiejętność.",
+      "newBodyDesc": "180 dni. Nowe ciało i umysł.",
+      "newLifeDesc": "365 dni. Nowe życie.",
+      "newYouDesc": "3 lata. Zupełnie nowa wersja siebie.",
+      "programsTitle": "Dołączone programy",
+      "programsSubtitle": "Podróże osobistej transformacji, prowadzone przez Mara AI",
+      "days": "dni"
+    },
+    "faqTitle": "Często zadawane pytania",
+    "ctaTitle": "Gotowy, aby rozpocząć transformację?",
+    "ctaDesc": "Dołącz do tysięcy osób, które już używają Mara AI do codziennego rozwoju.",
+    "ctaBtn": "Zacznij za darmo",
+    "currentPlan": "Aktualny plan",
+    "choosePlan": "Wybierz plan",
+    "annualBadge": "Roczny — oszczędź 20%",
+    "faq": {
+      "q1": "Czy mogę anulować w dowolnym momencie?",
+      "a1": "Tak. Anuluj w dowolnym momencie z ustawień, bez opłat. Dostęp trwa do końca opłaconego miesiąca.",
+      "q2": "Jak działają programy w VIP?",
+      "a2": "Z aktywnym VIP masz pełny dostęp do wszystkich 6 programów — od New Mindset (1 dzień) do New You (3 lata).",
+      "q3": "Co się stanie, jeśli opuszczę dzień w programie?",
+      "a3": "Nic złego — Mara zachowuje Twój postęp. Seria się resetuje, ale program trwa nadal.",
+      "q4": "Jak płacę?",
+      "a4": "Stripe (karta) lub PayPal. Bezpieczna transakcja, automatyczna faktura."
+    },
+    "hero": {
+      "title": "Twoja ścieżka transformacji",
+      "subtitle": "Prosto. Co miesiąc. Bez niespodzianek."
+    },
+    "freeBadge": "Darmowy",
+    "vipIncludesTitle": "Programy zawarte w VIP",
+    "vipIncludesSub": "Wszystkie 6 programów transformacji zawartych jest w planie VIP. Bez dodatkowych opłat.",
+    "day": "dzień"
   }
 }
