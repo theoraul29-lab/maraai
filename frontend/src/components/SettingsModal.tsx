@@ -221,7 +221,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
 
                 <h3 className="settings-section-title">{t('settings.dangerZone.title')}</h3>
                 <p className="settings-danger-desc">
-                  {t('settings.dangerZone.description', { defaultValue: 'Deleting your account is irreversible. All your data (posts, reels, missions, XP, messages) will be permanently deleted.' })}
+                  {t('settings.dangerZone.description')}
                 </p>
                 {deleteError && <div className="settings-error">{deleteError}</div>}
                 {deleteConfirm ? (
