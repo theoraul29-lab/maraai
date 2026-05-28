@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../i18n/useLanguage';
@@ -19,6 +20,7 @@ interface SettingsModalProps {
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
   const { language, available, setLanguage } = useLanguage();
@@ -74,11 +76,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     e.preventDefault();
     setPwError('');
     if (pwForm.next !== pwForm.confirm) {
-      setPwError('Parolele noi nu se potrivesc.');
+      setPwError(t('settings.passwordMismatch', { defaultValue: 'New passwords do not match.' }));
       return;
     }
     if (pwForm.next.length < 8) {
-      setPwError('Parola trebuie să aibă cel puțin 8 caractere.');
+      setPwError(t('settings.passwordMin', { defaultValue: 'Password must have at least 8 characters.' }));
       return;
     }
     setPwSaving(true);
@@ -91,13 +93,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
-        setPwError(d.message || 'Eroare la schimbarea parolei.');
+        setPwError(d.message || t('settings.passwordChangeError', { defaultValue: 'Error changing password.' }));
       } else {
         setPwSuccess(true);
         setPwForm({ current: '', next: '', confirm: '' });
       }
     } catch {
-      setPwError('Eroare de rețea.');
+      setPwError(t('settings.networkError', { defaultValue: 'Network error.' }));
     } finally {
       setPwSaving(false);
     }
@@ -122,25 +124,25 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
       onClose();
       window.location.href = '/';
     } catch {
-      setDeleteError('A apărut o eroare. Încearcă din nou.');
+      setDeleteError(t('settings.deleteError', { defaultValue: 'An error occurred. Please try again.' }));
     } finally {
       setDeleting(false);
     }
   };
 
   const sections: { key: typeof activeSection; label: string; icon: string }[] = [
-    { key: 'cont', label: 'Cont', icon: '👤' },
+    { key: 'cont', label: t('settings.account', { defaultValue: 'Account' }), icon: '👤' },
     { key: 'maraai', label: 'MaraAI & Privacy', icon: '🧠' },
-    { key: 'notificari', label: 'Notificări', icon: '🔔' },
-    { key: 'preferinte', label: 'Preferințe', icon: '🎨' },
+    { key: 'notificari', label: t('settings.notifications', { defaultValue: 'Notifications' }), icon: '🔔' },
+    { key: 'preferinte', label: t('settings.preferences', { defaultValue: 'Preferences' }), icon: '🎨' },
   ];
 
   return (
     <div className="settings-overlay" ref={overlayRef} onClick={e => { if (e.target === overlayRef.current) onClose(); }}>
-      <div className="settings-modal" role="dialog" aria-modal="true" aria-label="Setări">
+      <div className="settings-modal" role="dialog" aria-modal="true" aria-label={t('settings.title', { defaultValue: 'Settings' })}>
         <div className="settings-header">
-          <span className="settings-title">⚙️ Setări</span>
-          <button className="settings-close" onClick={onClose} aria-label="Închide">✕</button>
+          <span className="settings-title">{t('settings.titleWithIcon', { defaultValue: '⚙️ Settings' })}</span>
+          <button className="settings-close" onClick={onClose} aria-label={t('common.close', { defaultValue: 'Close' })}>✕</button>
         </div>
 
         <div className="settings-body">
@@ -169,13 +171,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                   </div>
                 </div>
 
-                <h3 className="settings-section-title">Schimbă parola</h3>
+                <h3 className="settings-section-title">{t('settings.changePassword', { defaultValue: 'Change password' })}</h3>
                 {pwSuccess ? (
-                  <div className="settings-success">Parola a fost schimbată cu succes!</div>
+                  <div className="settings-success">{t('settings.passwordChanged', { defaultValue: 'Password changed successfully!' })}</div>
                 ) : (
                   <form onSubmit={handleChangePassword} className="settings-form">
                     <label className="settings-label">
-                      Parola curentă
+                      {t('settings.currentPassword', { defaultValue: 'Current password' })}
                       <input
                         type="password"
                         value={pwForm.current}
@@ -185,7 +187,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                       />
                     </label>
                     <label className="settings-label">
-                      Parolă nouă
+                      {t('settings.newPassword', { defaultValue: 'New password' })}
                       <input
                         type="password"
                         value={pwForm.next}
@@ -195,7 +197,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                       />
                     </label>
                     <label className="settings-label">
-                      Confirmă parola nouă
+                      {t('settings.confirmNewPassword', { defaultValue: 'Confirm new password' })}
                       <input
                         type="password"
                         value={pwForm.confirm}
@@ -206,51 +208,52 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                     </label>
                     {pwError && <div className="settings-error">{pwError}</div>}
                     <button type="submit" className="settings-btn-primary" disabled={pwSaving}>
-                      {pwSaving ? 'Se salvează…' : 'Schimbă parola'}
+                      {pwSaving ? t('common.loading', { defaultValue: 'Loading...' }) : t('settings.changePassword', { defaultValue: 'Change password' })}
                     </button>
                   </form>
                 )}
 
                 <button className="settings-btn-danger" onClick={handleLogout}>
-                  Deconectare
+                  {t('auth.logout', { defaultValue: 'Logout' })}
                 </button>
 
                 <div className="settings-divider" />
 
-                <h3 className="settings-section-title">Zona periculoasă</h3>
+                <h3 className="settings-section-title">{t('settings.dangerZone', { defaultValue: 'Danger zone' })}</h3>
                 <p className="settings-danger-desc">
-                  Ștergerea contului este <strong>ireversibilă</strong>. Toate datele tale
-                  (postări, reels, misiuni, XP, mesaje) vor fi eliminate permanent.
+                  {t('settings.deleteWarning', { defaultValue: 'Deleting your account is ' })}
+                  <strong>{t('settings.irreversible', { defaultValue: 'irreversible' })}</strong>
+                  {t('settings.deleteWarningSuffix', { defaultValue: '. All your data will be permanently removed.' })}
                 </p>
                 {deleteError && <div className="settings-error">{deleteError}</div>}
                 {deleteConfirm ? (
                   <div className="settings-delete-confirm">
-                    <p className="settings-delete-warn">Ești sigur? Această acțiune nu poate fi anulată.</p>
+                    <p className="settings-delete-warn">{t('settings.deleteConfirm', { defaultValue: 'Are you sure? This action cannot be undone.' })}</p>
                     <div className="settings-delete-actions">
                       <button
                         className="settings-btn-danger"
                         onClick={handleDeleteAccount}
                         disabled={deleting}
                       >
-                        {deleting ? 'Se șterge…' : 'Da, șterge contul definitiv'}
+                        {deleting ? t('settings.deleting', { defaultValue: 'Deleting…' }) : t('settings.deleteAccountConfirm', { defaultValue: 'Yes, delete account permanently' })}
                       </button>
                       <button
                         className="settings-btn-ghost"
                         onClick={() => { setDeleteConfirm(false); setDeleteError(''); }}
                         disabled={deleting}
                       >
-                        Anulează
+                        {t('common.cancel', { defaultValue: 'Cancel' })}
                       </button>
                     </div>
                   </div>
                 ) : (
                   <button className="settings-btn-delete" onClick={handleDeleteAccount}>
-                    Șterge contul
+                    {t('settings.deleteAccount', { defaultValue: 'Delete account' })}
                   </button>
                 )}
 
                 <Link to="/privacy" className="settings-privacy-link" onClick={onClose}>
-                  Politica de confidențialitate
+                  {t('settings.privacyPolicy', { defaultValue: 'Privacy policy' })}
                 </Link>
               </div>
             )}
@@ -259,10 +262,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
             {activeSection === 'maraai' && (
               <div className="settings-section">
                 {loadingConsent ? (
-                  <div className="settings-loading">Se încarcă…</div>
+                  <div className="settings-loading">{t('common.loading', { defaultValue: 'Loading...' })}</div>
                 ) : consent ? (
                   <>
-                    <h3 className="settings-section-title">Mod MaraAI</h3>
+                    <h3 className="settings-section-title">{t('settings.maraMode', { defaultValue: 'MaraAI Mode' })}</h3>
                     <div className="settings-radio-group">
                       {(['centralized', 'hybrid', 'advanced'] as const).map(m => (
                         <label key={m} className={`settings-radio ${consent.mode === m ? 'is-selected' : ''}`}>
@@ -289,7 +292,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                       ))}
                     </div>
 
-                    <h3 className="settings-section-title">Rețea P2P</h3>
+                    <h3 className="settings-section-title">{t('settings.p2pNetwork', { defaultValue: 'P2P Network' })}</h3>
                     <ToggleRow
                       label="Participare P2P"
                       desc="Ajuți rețeaua Mara procesând cereri de la alți utilizatori."
@@ -313,7 +316,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
 
                     {consent.backgroundNode && (
                       <>
-                        <h3 className="settings-section-title">Bandwidth partajat</h3>
+                        <h3 className="settings-section-title">{t('settings.sharedBandwidth', { defaultValue: 'Shared bandwidth' })}</h3>
                         <div className="settings-slider-row">
                           <span>{consent.bandwidthShareGbMonth} GB/lună</span>
                           <input
@@ -332,10 +335,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                       </>
                     )}
 
-                    {savingConsent && <div className="settings-saving">Se salvează…</div>}
+                    {savingConsent && <div className="settings-saving">{t('common.loading', { defaultValue: 'Loading...' })}</div>}
                   </>
                 ) : (
-                  <div className="settings-error">Nu s-au putut încărca setările de confidențialitate.</div>
+                  <div className="settings-error">{t('settings.privacyLoadError', { defaultValue: 'Could not load privacy settings.' })}</div>
                 )}
               </div>
             )}
@@ -344,20 +347,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
             {activeSection === 'notificari' && (
               <div className="settings-section">
                 {loadingConsent ? (
-                  <div className="settings-loading">Se încarcă…</div>
+                  <div className="settings-loading">{t('common.loading', { defaultValue: 'Loading...' })}</div>
                 ) : consent ? (
                   <>
-                    <h3 className="settings-section-title">Notificări în aplicație</h3>
+                    <h3 className="settings-section-title">{t('settings.inAppNotifications', { defaultValue: 'In-app notifications' })}</h3>
                     <ToggleRow
                       label="Notificări activate"
                       desc="Primești notificări despre misiuni, update-uri și activitate."
                       checked={consent.notificationsEnabled}
                       onChange={v => saveConsent({ notificationsEnabled: v })}
                     />
-                    {savingConsent && <div className="settings-saving">Se salvează…</div>}
+                    {savingConsent && <div className="settings-saving">{t('common.loading', { defaultValue: 'Loading...' })}</div>}
                   </>
                 ) : (
-                  <div className="settings-error">Nu s-au putut încărca setările.</div>
+                  <div className="settings-error">{t('settings.loadError', { defaultValue: 'Could not load settings.' })}</div>
                 )}
               </div>
             )}
@@ -365,7 +368,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
             {/* ── PREFERINȚE ───────────────────────────────────── */}
             {activeSection === 'preferinte' && (
               <div className="settings-section">
-                <h3 className="settings-section-title">Temă</h3>
+                <h3 className="settings-section-title">{t('settings.theme', { defaultValue: 'Theme' })}</h3>
                 <div className="settings-theme-toggle">
                   <button
                     className={`settings-theme-btn ${theme === 'dark' ? 'is-active' : ''}`}
@@ -381,7 +384,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                   </button>
                 </div>
 
-                <h3 className="settings-section-title" style={{ marginTop: '20px' }}>Limbă</h3>
+                <h3 className="settings-section-title" style={{ marginTop: '20px' }}>{t('settings.language', { defaultValue: 'Language' })}</h3>
                 <div className="settings-lang-grid">
                   {available.map(lang => (
                     <button

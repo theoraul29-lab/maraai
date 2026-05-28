@@ -14,7 +14,7 @@
 
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { changeLanguage as changeI18nLanguage, SUPPORTED_LANGUAGES } from './index';
+import { changeLanguage as changeI18nLanguage, normalizeLanguageCode, SUPPORTED_LANGUAGES } from './index';
 
 export type LanguageCode = string;
 
@@ -52,17 +52,18 @@ export function useLanguage(): UseLanguageReturn {
 
   const setLanguage = useCallback(
     async (code: LanguageCode, opts?: { skipServerSync?: boolean }) => {
-      await changeI18nLanguage(code);
+      const normalized = normalizeLanguageCode(code);
+      await changeI18nLanguage(normalized);
       if (!opts?.skipServerSync) {
         // Fire-and-forget: don't await network on the UI path.
-        void syncLanguageToServer(code);
+        void syncLanguageToServer(normalized);
       }
     },
     [],
   );
 
   return {
-    language: i18n.language || 'en',
+    language: normalizeLanguageCode(i18n.language || 'en'),
     available: SUPPORTED_LANGUAGES,
     setLanguage,
   };

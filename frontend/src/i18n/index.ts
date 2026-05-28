@@ -50,6 +50,17 @@ export const SUPPORTED_LANGUAGES = [
   { code: 'el', name: 'Ελληνικά', flag: '🇬🇷' },
 ];
 
+const SUPPORTED_LANGUAGE_CODES = new Set(SUPPORTED_LANGUAGES.map(l => l.code));
+
+export function normalizeLanguageCode(lang: string | null | undefined): string {
+  if (!lang || typeof lang !== 'string') return 'en';
+  const normalized = lang.trim().toLowerCase();
+  const base = normalized.split(/[-_]/)[0];
+  if (SUPPORTED_LANGUAGE_CODES.has(base)) return base;
+  if (SUPPORTED_LANGUAGE_CODES.has(normalized)) return normalized;
+  return 'en';
+}
+
 // localStorage key for the user's chosen language. Single source of
 // truth; legacy keys are read on first boot below for backward
 // compatibility, then migrated.
@@ -81,13 +92,14 @@ function migrateLegacyLanguageKey(): string | null {
  * Returns true on success, false if the JSON file is missing.
  */
 export async function loadLanguage(lang: string): Promise<boolean> {
-  if (i18n.hasResourceBundle(lang, 'translation')) return true;
+  const code = normalizeLanguageCode(lang);
+  if (i18n.hasResourceBundle(code, 'translation')) return true;
   try {
-    const module = await import(`./locales/${lang}.json`);
-    i18n.addResourceBundle(lang, 'translation', module.default, true, true);
+    const module = await import(`./locales/${code}.json`);
+    i18n.addResourceBundle(code, 'translation', module.default, true, true);
     return true;
   } catch {
-    console.warn(`[i18n] Translation for "${lang}" not found, falling back to English.`);
+    console.warn(`[i18n] Translation for "${code}" not found, falling back to English.`);
     return false;
   }
 }
@@ -98,14 +110,15 @@ export async function loadLanguage(lang: string): Promise<boolean> {
  * is handled separately by `useLanguage` in `./useLanguage.ts`.
  */
 export async function changeLanguage(lang: string): Promise<void> {
-  await loadLanguage(lang);
-  await i18n.changeLanguage(lang);
+  const code = normalizeLanguageCode(lang);
+  await loadLanguage(code);
+  await i18n.changeLanguage(code);
   // Update HTML attributes so RTL languages render correctly.
-  document.documentElement.lang = lang;
-  document.documentElement.dir = RTL_LANGUAGES.includes(lang) ? 'rtl' : 'ltr';
+  document.documentElement.lang = code;
+  document.documentElement.dir = RTL_LANGUAGES.includes(code) ? 'rtl' : 'ltr';
   // Persist choice (single source of truth).
   try {
-    localStorage.setItem(LANG_STORAGE_KEY, lang);
+    localStorage.setItem(LANG_STORAGE_KEY, code);
   } catch {
     // Storage quota / privacy mode — ignore.
   }
@@ -120,6 +133,8 @@ i18n
     resources,
     fallbackLng: 'en',
     supportedLngs: ['en', 'ro', ...lazyLanguages],
+    nonExplicitSupportedLngs: true,
+    load: 'languageOnly',
     interpolation: {
       escapeValue: false,
     },
@@ -152,7 +167,7 @@ i18n
   });
 
 // Set initial dir/lang on HTML element.
-const savedLang = initialLang || i18n.language || 'en';
+const savedLang = normalizeLanguageCode(initialLang || i18n.language || 'en');
 document.documentElement.lang = savedLang;
 document.documentElement.dir = RTL_LANGUAGES.includes(savedLang) ? 'rtl' : 'ltr';
 
