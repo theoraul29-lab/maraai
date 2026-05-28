@@ -62,10 +62,10 @@ export async function sendChatMessage(req: Request, res: Response) {
       userId,
     });
 
-    // Get chat history for context
+    // Get chat history for context — keep last 12 messages (6 turns) for speed
     const history = await storage.getChatMessages(userId);
     const formattedHistory = history
-      .slice(-20)
+      .slice(-12)
       .map((m) => ({ role: m.sender === 'user' ? 'user' : 'model', content: m.content }));
 
     // Get user prefs for personality
@@ -108,7 +108,7 @@ ${JSON.stringify({
         // but formattedHistory uses 'model' (Google format).
         // Also ensure strict alternation starting with 'user'.
         const normalizedHistory = formattedHistory
-          .slice(-10)
+          .slice(-6)
           .map(m => ({
             role: (m.role === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
             content: m.content,

@@ -416,7 +416,10 @@ Keep each "id" value unchanged. Translate only: title, description, proof_prompt
 Return ONLY a valid JSON array, no markdown fences:
 ${JSON.stringify(payload)}`;
 
-        const raw = await llmGenerate(prompt, { source: 'agent.missions.translate' });
+        const raw = await Promise.race([
+          llmGenerate(prompt, { source: 'agent.missions.translate' }),
+          new Promise<never>((_, reject) => setTimeout(() => reject(new Error('translate_timeout')), 8000)),
+        ]);
         const clean = raw.replace(/```json|```/g, '').trim();
         const translated = JSON.parse(clean) as Array<{
           id: string; title: string; description: string;

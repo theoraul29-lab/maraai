@@ -541,16 +541,16 @@ export default function Missions() {
 
   useEffect(() => {
     if (!isAuthenticated) return;
-    apiFetchJson<{ done: boolean }>('/api/missions/onboarding')
-      .then((res) => { if (!res.done) setView('onboarding'); else loadMissions(); })
-      .catch(() => loadMissions());
+    // Start missions immediately — don't block on onboarding check
+    loadMissions();
     loadPrograms();
     loadEnrollments();
-    loadJournal();
-    loadBooks();
-    loadCommunity();
-    loadStatsDetailed();
     loadPurchasedPrograms();
+    // Onboarding check in parallel; if not done, switch view (missions already in flight)
+    apiFetchJson<{ done: boolean }>('/api/missions/onboarding')
+      .then((res) => { if (!res.done) setView('onboarding'); })
+      .catch(() => {});
+    // journal, books, community, stats are lazy — loaded on first tab visit below
   }, [isAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle PayPal redirect back (?payment=success&program=new_habit)
@@ -575,8 +575,13 @@ export default function Missions() {
   }, [selectedPillar, view, loadMissions]);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
     if (activeTab === 'leaderboard') loadLeaderboard();
-  }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (activeTab === 'journal') loadJournal();
+    if (activeTab === 'book') loadBooks();
+    if (activeTab === 'community') loadCommunity();
+    if (activeTab === 'missions') loadStatsDetailed();
+  }, [activeTab, isAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Re-fetch all translated content when user switches language
   useEffect(() => {

@@ -156,7 +156,7 @@ export async function getMaraResponse(
 			// than leaving the user staring at a spinner for 10+ seconds.
 			const contextPromise = buildUserContext(userId, message, module, isAdmin);
 			const timeoutPromise = new Promise<never>((_, reject) =>
-				setTimeout(() => reject(new Error('context_timeout')), 3000),
+				setTimeout(() => reject(new Error('context_timeout')), 2000),
 			);
 			const context = await Promise.race([contextPromise, timeoutPromise]);
 			systemInstruction = buildSystemInstruction(context, prefs?.language);

@@ -27,7 +27,7 @@ function apiKey(): string {
   return key;
 }
 
-const AGENT_TIMEOUT_MS = 20_000;
+const AGENT_TIMEOUT_MS = 12_000;
 
 /**
  * Call a managed Anthropic agent and return the assistant text reply.
