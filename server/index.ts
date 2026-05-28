@@ -12,7 +12,7 @@ import { getMaraResponse } from './ai.js';
 import { WebSocketServer } from 'ws';
 import { storage } from './storage.js';
 import { setupSessionAuth, csrfProtection } from './auth.js';
-import { checkRateLimit } from './rateLimit.js';
+import { checkRateLimit } from './rate-limit.js';
 import { z } from 'zod';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { db, rawSqlite } from './db.js';

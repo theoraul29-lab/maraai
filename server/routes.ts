@@ -84,6 +84,7 @@ import {
 } from './mara-brain/conflict-detector.js';
 import { resetLibraryReadState } from './mara-brain/library.js';
 import { listSingletonLocks } from './lib/singleton-lock.js';
+import { executive } from './mara-core/executive.js';
 import {
   chatRateLimit,
   signupRateLimit,
@@ -257,12 +258,6 @@ export async function registerRoutes(
   app.post('/api/auth/logout', authLogout);
   // Full user payload (matches the AuthContext's expected shape).
   app.get('/api/auth/me', authMe);
-  // CSRF token for the current session. Called by frontend/src/csrf.ts
-  // before every mutating request. Returns the token that csrfProtection()
-  // validates — without this endpoint login/signup 403 in production.
-  app.get('/api/auth/csrf', (req: any, res: any) => {
-    return res.json({ csrfToken: req.session?.csrfToken ?? null });
-  });
   // Password reset: backend handlers existed in auth-api.ts but were never
   // routed. The forgot-password UI link is a separate follow-up (PR II);
   // wiring the backend here means the endpoints are reachable + rate-limited
@@ -848,7 +843,6 @@ export async function registerRoutes(
   // can become active on the next cycle (30 s warm-up after restart).
   app.post('/api/admin/mara/locks/release', requireAdmin, (req: any, res: any) => {
     try {
-      const { rawSqlite } = require('./db.js');
       rawSqlite
         .prepare("DELETE FROM mara_singleton_locks WHERE lock_name = 'brain_cycle'")
         .run();
@@ -862,7 +856,6 @@ export async function registerRoutes(
   // ExecutiveReasoning — shared cognitive state across all three brains
   app.get('/api/admin/mara/executive', requireAdmin, (_req: any, res: any) => {
     try {
-      const { executive } = require('./mara-core/executive.js');
       res.json(executive.getStatus());
     } catch (err: any) {
       res.status(500).json({ error: err.message });

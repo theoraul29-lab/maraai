@@ -30,11 +30,10 @@ export default function PayPalProgramButton({ programId, programName: _programNa
 
       createOrder: async () => {
         setStatus('paying');
-        const csrf = document.cookie.match(/csrf_token=([^;]+)/)?.[1] ?? '';
         const res = await fetch(`${API}/api/billing/program/purchase`, {
           method: 'POST',
           credentials: 'include',
-          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ programId }),
         });
         if (!res.ok) {
@@ -110,11 +109,10 @@ function FallbackButton({ programId, priceCents, disabled, onError }: Omit<Props
   const handleClick = async () => {
     setLoading(true);
     try {
-      const csrf = document.cookie.match(/csrf_token=([^;]+)/)?.[1] ?? '';
       const res = await fetch(`${API}/api/billing/program/purchase`, {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ programId }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);

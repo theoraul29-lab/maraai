@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "tsx server/index.ts",
     "build": "npm run build:frontend",
-    "build:frontend": "cd frontend && npm install && npm run build",
+    "build:frontend": "npm --prefix frontend run build",
+    "install:frontend": "npm --prefix frontend ci",
+    "lint:frontend": "npm --prefix frontend run lint",
     "start": "tsx server/index.ts",
     "start:backend": "tsx server/index.ts",
     "smoke:runtime": "node scripts/smoke-runtime.mjs",
