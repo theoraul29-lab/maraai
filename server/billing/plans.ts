@@ -102,7 +102,7 @@ export const PLAN_CATALOGUE: readonly PlanDefinition[] = [
     id: 'creator_monthly',
     tier: 'creator',
     period: 'monthly',
-    priceCents: 1699, // €16.99/lună — ⚠️ sub VIP, de confirmat preț
+    priceCents: 2500, // €25.00/lună
     currency: 'EUR',
     features: CREATOR_FEATURES,
   },

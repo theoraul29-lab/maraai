@@ -56,7 +56,7 @@ const TIERS = [
   {
     id: 'creator_monthly',
     name: 'Creator',
-    price: 16.99,
+    price: 25,
     color: '#f59e0b',
     badge: null as string | null,
     tagline: 'Monetizează-ți conținutul.',
