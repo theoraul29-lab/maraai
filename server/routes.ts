@@ -434,6 +434,9 @@ export async function registerRoutes(
   app.post('/api/creator/post-reel', requireAuth, videoModule.creatorPostReel);
   app.get('/api/creator/analytics', requireAuth, videoModule.creatorAnalytics);
   app.delete('/api/creator/videos/:id', requireAuth, videoModule.deleteCreatorVideo);
+  app.get('/api/creator/creator-xp', requireAuth, creatorsModule.getCreatorXP);
+  app.post('/api/creator/share-to-you', requireAuth, creatorsModule.shareToYou);
+  app.get('/api/creator/my-comments', requireAuth, creatorsModule.getMyComments);
 
   // Chat endpoints (require auth)
   app.get(api.chat.list.path, requireAuth, chatModule.getChatHistory);

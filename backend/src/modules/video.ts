@@ -4,6 +4,7 @@ import { insertVideoSchema } from '../../../shared/schema.js';
 import { eq, sql } from 'drizzle-orm';
 import { notifyReelLike } from '../../../server/notifications/producer.js';
 import { rawSqlite } from '../../../server/db.js';
+import { addXP } from '../../../server/missions/engine.js';
 
 let deps: {
   storage: IStorage;
@@ -183,6 +184,7 @@ export async function creatorPostReel(req: Request, res: Response) {
       creatorId: userId,
     });
     await deps.storage.recordCreatorPost(userId, video.id);
+    try { addXP(userId, 50); } catch {}
     res.status(201).json(video);
   } catch (error) {
     res.status(500).json({ message: 'Failed to post reel' });

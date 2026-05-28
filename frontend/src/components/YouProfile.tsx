@@ -3,6 +3,10 @@ import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import Messenger from './Messenger';
+import {
+  ChatCircle, ChartBar, FilmStrip, Image, UsersThree, Article, Clock,
+  Heart, ThumbsUp, VideoCamera,
+} from '@phosphor-icons/react';
 import '../styles/YouProfile.css';
 
 const API_URL = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:5000');
@@ -668,7 +672,7 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
                   setMessengerOpen(true);
                 }}
               >
-                💬 {t('you.message', 'Message')}
+                <ChatCircle size={15} weight="bold" /> {t('you.message', 'Message')}
               </button>
             </>
           )}
@@ -677,18 +681,20 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
 
       {/* --- Tab bar ---------------------------------------------------- */}
       <div className="you-fb-tabs">
-        {(['timeline', 'about', 'friends', 'photos', 'videos', 'stats'] as const).map(tab => (
+        {([
+            { key: 'timeline', icon: <Clock size={14} />,       label: t('you.timeline', 'Timeline') },
+            { key: 'about',    icon: <Article size={14} />,     label: t('you.about', 'About') },
+            { key: 'friends',  icon: <UsersThree size={14} />,  label: t('you.friends', 'Friends') },
+            { key: 'photos',   icon: <Image size={14} />,       label: t('you.photos', 'Photos') },
+            { key: 'videos',   icon: <VideoCamera size={14} />, label: t('you.videos', 'Videos') },
+            { key: 'stats',    icon: <ChartBar size={14} />,    label: t('you.stats', 'Stats') },
+          ] as const).map(({ key: tab, icon, label }) => (
           <button
             key={tab}
             className={`you-fb-tab ${activeTab === tab ? 'active' : ''}`}
             onClick={() => setActiveTab(tab)}
           >
-            {tab === 'timeline' && t('you.timeline', 'Timeline')}
-            {tab === 'about' && t('you.about', 'About')}
-            {tab === 'friends' && t('you.friends', 'Friends')}
-            {tab === 'photos' && t('you.photos', 'Photos')}
-            {tab === 'videos' && t('you.videos', 'Videos')}
-            {tab === 'stats' && t('you.stats', '📊 Stats')}
+            {icon} {label}
           </button>
         ))}
       </div>
@@ -838,13 +844,13 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
                       className={`you-fb-post-action-btn${likeInfo.liked ? ' you-fb-post-action-active' : ''}`}
                       onClick={() => toggleLike(p.id)}
                     >
-                      {likeInfo.liked ? '❤️' : '🤍'} {likeInfo.count > 0 ? likeInfo.count : ''} {t('you.like', 'Like')}
+                      <Heart size={15} weight={likeInfo.liked ? 'fill' : 'regular'} /> {likeInfo.count > 0 ? likeInfo.count : ''} {t('you.like', 'Like')}
                     </button>
                     <button
                       className="you-fb-post-action-btn"
                       onClick={() => toggleComments(p.id)}
                     >
-                      💬 {(comments.length || p.commentCount || 0) > 0
+                      <ChatCircle size={15} /> {(comments.length || p.commentCount || 0) > 0
                         ? (comments.length || p.commentCount)
                         : ''} {t('you.comment', 'Comment')}
                     </button>
@@ -902,7 +908,7 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
                       )}
                       {p.sourceKind === 'reel' && (
                         <span className="you-fb-post-source-badge">
-                          🎬 {t('you.sourceReel', 'From Reels')}
+                          <FilmStrip size={13} /> {t('you.sourceReel', 'From Reels')}
                         </span>
                       )}
                     </div>

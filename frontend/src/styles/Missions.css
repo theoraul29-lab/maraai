@@ -124,6 +124,9 @@
 }
 .missions-tabs::-webkit-scrollbar { display: none; }
 .missions-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   padding: 6px 14px;
   border-radius: 8px;
   border: none;
@@ -144,6 +147,8 @@
   background: rgba(168,85,247,0.18);
   color: #c4b5fd;
 }
+.missions-tab-icon { display: flex; align-items: center; line-height: 1; }
+.missions-tab-label { line-height: 1; }
 
 /* ── Split screen ────────────────────────────────────────── */
 .missions-split {

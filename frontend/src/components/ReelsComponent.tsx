@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
+import {
+  FilmStrip, Television, Plus, VideoCamera, ChartBar,
+  Heart, ChatCircle, Bookmark, Eye, UsersThree, Trash,
+  Warning, X as PhX,
+} from '@phosphor-icons/react';
 import TikTokFeed from './TikTokFeed';
 import type { TikTokReel } from './TikTokFeed';
 import ShareButton from './ShareButton';
@@ -260,19 +265,19 @@ const ReelsComponent: React.FC = () => {
     <div className="reels-container">
       {/* Header */}
       <div className="reels-header">
-        <h1>🎬 {t('reels.headerTitle', 'REELS')}</h1>
+        <h1><FilmStrip size={22} weight="bold" style={{ verticalAlign: 'middle', marginRight: 6 }} />{t('reels.headerTitle', 'REELS')}</h1>
         <div className="reels-header-actions">
-          <button className={`header-btn ${activeMode === 'feed' ? 'active' : ''}`} onClick={() => setActiveMode('feed')}>📺 {t('reels.feed')}</button>
-          <button className={`header-btn ${activeMode === 'create' ? 'active' : ''}`} onClick={() => setActiveMode('create')}>➕ {t('reels.create')}</button>
-          <button className={`header-btn ${activeMode === 'myreels' ? 'active' : ''}`} onClick={() => setActiveMode('myreels')}>📹 {t('reels.myReels')}</button>
-          <button className={`header-btn ${activeMode === 'stats' ? 'active' : ''}`} onClick={() => setActiveMode('stats')}>📊 {t('reels.stats')}</button>
+          <button className={`header-btn ${activeMode === 'feed' ? 'active' : ''}`} onClick={() => setActiveMode('feed')}><Television size={16} style={{ verticalAlign: 'middle', marginRight: 4 }} />{t('reels.feed')}</button>
+          <button className={`header-btn ${activeMode === 'create' ? 'active' : ''}`} onClick={() => setActiveMode('create')}><Plus size={16} style={{ verticalAlign: 'middle', marginRight: 4 }} />{t('reels.create')}</button>
+          <button className={`header-btn ${activeMode === 'myreels' ? 'active' : ''}`} onClick={() => setActiveMode('myreels')}><VideoCamera size={16} style={{ verticalAlign: 'middle', marginRight: 4 }} />{t('reels.myReels')}</button>
+          <button className={`header-btn ${activeMode === 'stats' ? 'active' : ''}`} onClick={() => setActiveMode('stats')}><ChartBar size={16} style={{ verticalAlign: 'middle', marginRight: 4 }} />{t('reels.stats')}</button>
         </div>
       </div>
 
       {error && (
         <div style={{ background: 'rgba(255,34,34,0.15)', border: '1px solid rgba(255,34,34,0.4)', borderRadius: '8px', padding: '10px 14px', margin: '8px 16px', color:'#ff6b6b', fontSize:'13px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-          <span>⚠️ {error}</span>
-          <button onClick={() => setError('')} style={{ background:'none', border:'none', color:'#ff6b6b', cursor:'pointer', fontSize:'16px' }}>✕</button>
+          <span style={{ display:'flex', alignItems:'center', gap:6 }}><Warning size={16} />{error}</span>
+          <button onClick={() => setError('')} style={{ background:'none', border:'none', color:'#ff6b6b', cursor:'pointer', display:'flex', alignItems:'center' }}><PhX size={18} /></button>
         </div>
       )}
 
@@ -393,17 +398,17 @@ const ReelsComponent: React.FC = () => {
                     {(reel.url.includes('youtube') || reel.url.includes('youtu.be')) ? (
                       <img src={`https://img.youtube.com/vi/${extractYouTubeId(reel.url)}/mqdefault.jpg`} alt={reel.title} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
                     ) : (
-                      <span className="reel-duration">🎬</span>
+                      <span className="reel-duration"><FilmStrip size={28} /></span>
                     )}
                   </div>
                   <div className="myreel-info">
                     <h4>{reel.title}</h4>
                     <div className="myreel-stats">
-                      <span>👁️ {formatNumber(reel.views)}</span>
-                      <span>❤️ {formatNumber(reel.likes)}</span>
+                      <span style={{ display:'flex', alignItems:'center', gap:3 }}><Eye size={14} />{formatNumber(reel.views)}</span>
+                      <span style={{ display:'flex', alignItems:'center', gap:3 }}><Heart size={14} />{formatNumber(reel.likes)}</span>
                     </div>
                     <small>{new Date(reel.createdAt).toLocaleDateString(i18n.language)}</small>
-                    <button className="myreel-delete-btn" onClick={() => handleDeleteReel(reel.id)}>🗑️</button>
+                    <button className="myreel-delete-btn" onClick={() => handleDeleteReel(reel.id)}><Trash size={16} /></button>
                   </div>
                 </div>
               ))}
@@ -417,11 +422,11 @@ const ReelsComponent: React.FC = () => {
         <div className="reels-stats">
           <h2>{t('reels.statsTitle')}</h2>
           <div className="stats-overview">
-            <div className="stat-card"><div className="stat-icon">📹</div><div className="stat-details"><div className="stat-value">{creatorStats.totalReels}</div><div className="stat-label">{t('reels.totalReels')}</div></div></div>
-            <div className="stat-card"><div className="stat-icon">👁️</div><div className="stat-details"><div className="stat-value">{formatNumber(creatorStats.totalViews)}</div><div className="stat-label">{t('reels.totalViews')}</div></div></div>
-            <div className="stat-card"><div className="stat-icon">❤️</div><div className="stat-details"><div className="stat-value">{formatNumber(creatorStats.totalLikes)}</div><div className="stat-label">{t('reels.totalLikes')}</div></div></div>
-            <div className="stat-card"><div className="stat-icon">👥</div><div className="stat-details"><div className="stat-value">{formatNumber(creatorStats.followers)}</div><div className="stat-label">{t('reels.followersLabel')}</div></div></div>
-            <div className="stat-card"><div className="stat-icon">📊</div><div className="stat-details"><div className="stat-value">{creatorStats.engagementRate.toFixed(1)}%</div><div className="stat-label">{t('reels.engagementLabel')}</div></div></div>
+            <div className="stat-card"><div className="stat-icon"><VideoCamera size={22} /></div><div className="stat-details"><div className="stat-value">{creatorStats.totalReels}</div><div className="stat-label">{t('reels.totalReels')}</div></div></div>
+            <div className="stat-card"><div className="stat-icon"><Eye size={22} /></div><div className="stat-details"><div className="stat-value">{formatNumber(creatorStats.totalViews)}</div><div className="stat-label">{t('reels.totalViews')}</div></div></div>
+            <div className="stat-card"><div className="stat-icon"><Heart size={22} /></div><div className="stat-details"><div className="stat-value">{formatNumber(creatorStats.totalLikes)}</div><div className="stat-label">{t('reels.totalLikes')}</div></div></div>
+            <div className="stat-card"><div className="stat-icon"><UsersThree size={22} /></div><div className="stat-details"><div className="stat-value">{formatNumber(creatorStats.followers)}</div><div className="stat-label">{t('reels.followersLabel')}</div></div></div>
+            <div className="stat-card"><div className="stat-icon"><ChartBar size={22} /></div><div className="stat-details"><div className="stat-value">{creatorStats.engagementRate.toFixed(1)}%</div><div className="stat-label">{t('reels.engagementLabel')}</div></div></div>
           </div>
         </div>
       )}
@@ -430,7 +435,7 @@ const ReelsComponent: React.FC = () => {
       {selectedReel && (
         <div className="reel-modal-overlay" onClick={() => { setSelectedReel(null); setShowComments(false); setCommentText(''); }}>
           <div className="reel-modal" onClick={e => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => { setSelectedReel(null); setShowComments(false); setCommentText(''); }}>✕</button>
+            <button className="modal-close" onClick={() => { setSelectedReel(null); setShowComments(false); setCommentText(''); }}><PhX size={20} /></button>
             <div className="reel-player">
               {(selectedReel.url.includes('youtube') || selectedReel.url.includes('youtu.be')) ? (
                 <iframe
@@ -454,14 +459,14 @@ const ReelsComponent: React.FC = () => {
                     <div className="creator-name">{selectedReel.creator}</div>
                   </div>
                 </div>
-                <span className="reel-duration">👁️ {formatNumber(selectedReel.views)}</span>
+                <span className="reel-duration" style={{ display:'flex', alignItems:'center', gap:4 }}><Eye size={16} />{formatNumber(selectedReel.views)}</span>
               </div>
               <h3>{selectedReel.title}</h3>
               {selectedReel.description && <p className="reel-description">{selectedReel.description}</p>}
               <div className="reel-actions">
-                <button className={`action-btn ${selectedReel.isLiked ? 'liked' : ''}`} onClick={() => handleLike(selectedReel.id)}>❤️ {formatNumber(selectedReel.likes)}</button>
-                <button className={`action-btn ${showComments ? 'active' : ''}`} onClick={() => setShowComments(v => !v)}>💬 {selectedReel.comments}</button>
-                <button className={`action-btn ${selectedReel.isSaved ? 'liked' : ''}`} onClick={() => handleSave(selectedReel.id)}>🔖 {selectedReel.isSaved ? t('reels.saved') : t('reels.saveLabel')}</button>
+                <button className={`action-btn ${selectedReel.isLiked ? 'liked' : ''}`} onClick={() => handleLike(selectedReel.id)} style={{ display:'flex', alignItems:'center', gap:5 }}><Heart size={18} weight={selectedReel.isLiked ? 'fill' : 'regular'} />{formatNumber(selectedReel.likes)}</button>
+                <button className={`action-btn ${showComments ? 'active' : ''}`} onClick={() => setShowComments(v => !v)} style={{ display:'flex', alignItems:'center', gap:5 }}><ChatCircle size={18} />{selectedReel.comments}</button>
+                <button className={`action-btn ${selectedReel.isSaved ? 'liked' : ''}`} onClick={() => handleSave(selectedReel.id)} style={{ display:'flex', alignItems:'center', gap:5 }}><Bookmark size={18} weight={selectedReel.isSaved ? 'fill' : 'regular'} />{selectedReel.isSaved ? t('reels.saved') : t('reels.saveLabel')}</button>
                 <ShareButton
                   sourceModule="reel"
                   sourceId={selectedReel.id}

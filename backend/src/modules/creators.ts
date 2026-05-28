@@ -32,6 +32,8 @@
 import type { Request, Response } from 'express';
 import type { IStorage } from '../../../server/storage.js';
 import { hasFeature, type FeatureKey } from '../../../server/billing/features.js';
+import { getUserXP, addXP } from '../../../server/missions/engine.js';
+import { rawSqlite } from '../../../server/db.js';
 
 let deps: {
   storage: IStorage;
@@ -274,6 +276,50 @@ export const adminUpdatePayout = requireAdmin(async (req, res) => {
     return;
   }
   res.json(updated);
+});
+
+// --- Creator XP & Share endpoints -------------------------------------------
+
+export const getCreatorXP = requireAuth(async (_req, res, userId) => {
+  const xp = getUserXP(userId);
+  res.json(xp);
+});
+
+export const shareToYou = requireAuth(async (req, res, userId) => {
+  const { content, imageUrl, sourceKind, sourceId } = req.body ?? {};
+  if (!content || typeof content !== 'string' || content.trim().length === 0) {
+    res.status(400).json({ error: 'content_required' });
+    return;
+  }
+  await deps.storage.createUserPost({
+    userId,
+    content: content.slice(0, 2000),
+    imageUrl: typeof imageUrl === 'string' ? imageUrl : null,
+    sourceKind: ['writers', 'missions', 'reel'].includes(sourceKind) ? sourceKind : null,
+    sourceId: typeof sourceId === 'number' ? sourceId : null,
+  });
+  // If also shared to Reels (sourceKind='reel'), award 10 XP (reel already gave 50, total=60).
+  // Otherwise award 30 XP for sharing only to You.
+  const xpAmount = sourceKind === 'reel' ? 10 : 30;
+  try { addXP(userId, xpAmount); } catch {}
+  res.json({ success: true, xpGained: xpAmount });
+});
+
+export const getMyComments = requireAuth(async (req, res, userId) => {
+  const limit = Math.min(Number.parseInt(String(req.query.limit ?? '50'), 10), 100);
+  const offset = Math.max(Number.parseInt(String(req.query.offset ?? '0'), 10), 0);
+  const comments = rawSqlite.prepare(`
+    SELECT vc.id, vc.content, vc.created_at as createdAt,
+           v.id as videoId, v.title as videoTitle,
+           u.display_name as userName, u.profile_image_url as userAvatar
+    FROM video_comments vc
+    JOIN videos v ON v.id = vc.video_id
+    LEFT JOIN users u ON u.id = vc.user_id
+    WHERE v.creator_id = ?
+    ORDER BY vc.created_at DESC
+    LIMIT ? OFFSET ?
+  `).all(userId, limit, offset);
+  res.json({ items: comments });
 });
 
 // --- Utils -------------------------------------------------------------------

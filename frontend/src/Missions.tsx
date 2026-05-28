@@ -2,6 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from './contexts/AuthContext';
+import {
+  Target, Books, NotePencil, BookOpen, UsersThree, Trophy,
+  Lock, CheckCircle, ArrowLeft, Fire, Sparkle,
+} from '@phosphor-icons/react';
 import ShareButton from './components/ShareButton';
 import PayPalProgramButton from './components/PayPalProgramButton';
 import './styles/Missions.css';
@@ -370,10 +374,10 @@ function MissionCardNew({
       {index >= 0 && <div className="mc-num">#{index + 1}</div>}
       {isFree && index >= 0 && index < 10 && !isCompleted && <div className="mc-free">{t('missions.freeBadge', 'FREE')}</div>}
       <div className="mc-icon">
-        {isLocked ? '🔒' : pillarMeta.icon}
+        {isLocked ? <Lock size={22} /> : pillarMeta.icon}
       </div>
       <div className="mc-title">{isLocked ? '???' : mission.title}</div>
-      {isCompleted && <div className="mc-done-check">✓</div>}
+      {isCompleted && <div className="mc-done-check"><CheckCircle size={18} weight="fill" /></div>}
       {isActive && <div className="mc-active-ring" />}
     </button>
   );
@@ -703,13 +707,13 @@ export default function Missions() {
 
   const xpProgress = (userXp.xp % 1000) / 1000 * 100;
 
-  const TABS: { key: Tab; label: string }[] = [
-    { key: 'missions',    label: t('missions.tabMissions') },
-    { key: 'programs',    label: t('missions.tabPrograms') },
-    { key: 'journal',     label: t('missions.tabJournal') },
-    { key: 'book',        label: t('missions.tabBook') },
-    { key: 'community',   label: t('missions.tabCommunity') },
-    { key: 'leaderboard', label: t('missions.tabLeaderboard') },
+  const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
+    { key: 'missions',    label: t('missions.tabMissions'),    icon: <Target size={15} /> },
+    { key: 'programs',    label: t('missions.tabPrograms'),    icon: <Books size={15} /> },
+    { key: 'journal',     label: t('missions.tabJournal'),     icon: <NotePencil size={15} /> },
+    { key: 'book',        label: t('missions.tabBook'),        icon: <BookOpen size={15} /> },
+    { key: 'community',   label: t('missions.tabCommunity'),   icon: <UsersThree size={15} /> },
+    { key: 'leaderboard', label: t('missions.tabLeaderboard'), icon: <Trophy size={15} /> },
   ];
 
   // ── auth wall ─────────────────────────────────────────────────────────────
@@ -793,14 +797,14 @@ export default function Missions() {
 
       {/* Compact header */}
       <div className="missions-header-v4">
-        <button className="missions-back-btn" onClick={() => navigate('/')}>{t('missions.backHome')}</button>
+        <button className="missions-back-btn" onClick={() => navigate('/')} style={{ display:'flex', alignItems:'center', gap:5 }}><ArrowLeft size={15} />{t('missions.backHome')}</button>
         <div className="missions-xp-strip">
           <span className="missions-level-badge">Lvl {userXp.level}</span>
           <div className="missions-xp-bar">
             <div className="missions-xp-fill" style={{ width: `${xpProgress}%` }} />
           </div>
           <span className="missions-xp-num">{userXp.xp} XP</span>
-          {userXp.streak > 0 && <span className="missions-streak-badge">🔥 {userXp.streak}</span>}
+          {userXp.streak > 0 && <span className="missions-streak-badge" style={{ display:'inline-flex', alignItems:'center', gap:3 }}><Fire size={13} weight="fill" />{userXp.streak}</span>}
         </div>
       </div>
 
@@ -810,7 +814,8 @@ export default function Missions() {
           <button key={tab.key}
             className={`missions-tab-btn ${activeTab === tab.key ? 'active' : ''}`}
             onClick={() => setActiveTab(tab.key)}>
-            {tab.label}
+            <span className="missions-tab-icon">{tab.icon}</span>
+            <span className="missions-tab-label">{tab.label}</span>
           </button>
         ))}
       </div>
