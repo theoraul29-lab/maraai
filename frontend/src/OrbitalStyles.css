@@ -446,6 +446,35 @@
   --hologram-color: rgba(139, 92, 246, 0.5);
 }
 
+/* Programs — vibrant pink/fuchsia */
+.orb[data-module="programs"] {
+  border-color: #ec4899;
+  background: radial-gradient(circle at 35% 35%, rgba(236, 72, 153, 0.55), rgba(190, 24, 93, 0.25));
+  color: #fce7f3;
+  --hologram-color: rgba(236, 72, 153, 0.6);
+  box-shadow:
+    0 0 22px rgba(236, 72, 153, 0.5),
+    0 0 44px rgba(236, 72, 153, 0.2),
+    inset 0 0 18px rgba(236, 72, 153, 0.2);
+}
+
+/* Programs locked overlay */
+.orb[data-module="programs"].orb--locked {
+  cursor: not-allowed;
+  opacity: 0.75;
+  filter: grayscale(0.3);
+}
+.orb[data-module="programs"].orb--locked .orb-icon::after {
+  content: '🔒';
+  position: absolute;
+  top: -6px;
+  right: -10px;
+  font-size: 14px;
+}
+.orb[data-module="programs"] .orb-icon {
+  position: relative;
+}
+
 /* Missions — yin-yang black & red */
 .orb[data-module="missions"] {
   border-color: #ef4444;

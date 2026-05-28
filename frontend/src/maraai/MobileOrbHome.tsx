@@ -151,6 +151,10 @@ export function MobileOrbHome({ items = ITEMS }: MobileOrbHomeProps) {
   // mobile-only "Create account" CTA.
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [showProgramsLock, setShowProgramsLock] = useState(false);
+
+  const PROGRAMS_LAUNCH = new Date('2026-07-01T00:00:00Z');
+  const isProgramsLocked = () => Date.now() < PROGRAMS_LAUNCH.getTime();
 
   // Continuous offset in "items". Integer values mean an item is exactly
   // centred. We allow negative + unbounded; we mod-it-back when picking
@@ -370,7 +374,12 @@ export function MobileOrbHome({ items = ITEMS }: MobileOrbHomeProps) {
               el.classList.add('mara-orb--tap');
               setTimeout(() => el?.classList.remove('mara-orb--tap'), 180);
             }
-            window.setTimeout(() => navigate(item.to), 160);
+            if (item.to === '/pricing' && isProgramsLocked()) {
+                setShowProgramsLock(true);
+                setTimeout(() => setShowProgramsLock(false), 3500);
+              } else {
+                window.setTimeout(() => navigate(item.to), 160);
+              }
           } else {
             startSnap(Math.round(offsetRef.current) + slot);
             ensureRunning();
@@ -528,6 +537,22 @@ export function MobileOrbHome({ items = ITEMS }: MobileOrbHomeProps) {
       <span className="visually-hidden" aria-live="polite">
         {items[activeIndex].label} selected
       </span>
+
+      {showProgramsLock && (
+        <div style={{
+          position: 'fixed', bottom: 28, left: '50%', transform: 'translateX(-50%)',
+          background: 'rgba(14,10,26,0.97)', border: '1px solid rgba(236,72,153,0.4)',
+          borderRadius: 14, padding: '12px 20px', color: '#fce7f3',
+          fontSize: 13, fontWeight: 600, zIndex: 9999, textAlign: 'center',
+          boxShadow: '0 8px 32px rgba(236,72,153,0.25)',
+          width: 'calc(100vw - 48px)', maxWidth: 340,
+        }}>
+          🔒 Programs — disponibil din <strong>1 iulie 2026</strong>
+          <div style={{ fontSize: 11, fontWeight: 400, opacity: 0.7, marginTop: 4 }}>
+            Explorează celelalte module până atunci.
+          </div>
+        </div>
+      )}
     </main>
   );
 }

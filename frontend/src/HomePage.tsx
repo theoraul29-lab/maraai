@@ -16,6 +16,9 @@ import { AuthButton } from './components/AuthButton';
 import { LanguageSelector } from './components/LanguageSelector';
 import { MobileOrbHome } from './maraai/MobileOrbHome';
 
+const PROGRAMS_LAUNCH = new Date('2026-07-01T00:00:00Z');
+const programsLocked = () => Date.now() < PROGRAMS_LAUNCH.getTime();
+
 const moduleKeys = [
   { id: 'you', titleKey: 'home.you', to: '/you', icon: '👤', color: '#a855f7' },
   { id: 'reels', titleKey: 'home.reels', to: '/reels', icon: '🎬', color: '#06b6d4' },
@@ -74,6 +77,7 @@ function HomePage() {
   const [rotationAngle, setRotationAngle] = useState(0);
   const [particles, setParticles] = useState<Particle[]>([]);
   const [glowIntensity, setGlowIntensity] = useState(1);
+  const [showProgramsLock, setShowProgramsLock] = useState(false);
 
   // Refs for animation and gesture tracking
   const containerRef = useRef<HTMLDivElement>(null);
@@ -294,6 +298,11 @@ function HomePage() {
   const handleOrbClick = useCallback(
     (path: string) => {
       try {
+        if (path === '/pricing' && programsLocked()) {
+          setShowProgramsLock(true);
+          setTimeout(() => setShowProgramsLock(false), 3500);
+          return;
+        }
         if (!isMobile) {
           setTremor({ active: true, intensity: 10 });
         }
@@ -383,7 +392,11 @@ function HomePage() {
           return (
             <button
               key={module.id}
-              className={`orb ${isMobile ? 'mobile-orb' : ''}`}
+              className={[
+                'orb',
+                isMobile ? 'mobile-orb' : '',
+                module.id === 'programs' && programsLocked() ? 'orb--locked' : '',
+              ].filter(Boolean).join(' ')}
               data-module={module.id}
               onClick={() => handleOrbClick(module.to)}
               title={t('home.navigateTo', { module: title })}
@@ -401,7 +414,10 @@ function HomePage() {
               <span className="orb-icon" aria-hidden="true">
                 {module.icon}
               </span>
-              <span className="orb-label">{title}</span>
+              <span className="orb-label">
+                {title}
+                {module.id === 'programs' && programsLocked() && ' 🔒'}
+              </span>
             </button>
           );
         })}
@@ -434,6 +450,23 @@ function HomePage() {
         <AuthButton />
         <LanguageSelector compact />
       </div>
+
+      {/* Programs lock toast */}
+      {showProgramsLock && (
+        <div style={{
+          position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)',
+          background: 'rgba(14,10,26,0.97)', border: '1px solid rgba(236,72,153,0.4)',
+          borderRadius: 14, padding: '14px 22px', color: '#fce7f3',
+          fontSize: 14, fontWeight: 600, zIndex: 9999, textAlign: 'center',
+          boxShadow: '0 8px 32px rgba(236,72,153,0.25)',
+          animation: 'slideUp .3s ease',
+        }}>
+          🔒 Programs se activează pe <strong>1 iulie 2026</strong>
+          <div style={{ fontSize: 12, fontWeight: 400, opacity: 0.7, marginTop: 4 }}>
+            Continuă să explorezi celelalte module până atunci.
+          </div>
+        </div>
+      )}
 
       {/* Chat surface is provided globally by <MaraChatWidget /> in App.tsx. */}
     </main>
