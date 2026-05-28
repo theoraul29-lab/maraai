@@ -438,7 +438,8 @@
       "music": "Música",
       "comedy": "Comedia",
       "tutorial": "Tutorial"
-    }
+    },
+    "deleteConfirm": "¿Eliminar este reel?"
   },
   "you": {
     "profileTab": "📊 Perfil",
@@ -903,7 +904,14 @@
       "newBody": "Nuevo Cuerpo",
       "newLife": "Nueva Vida",
       "newYou": "Nuevo Tú"
-    }
+    },
+    "freeDaysLabel": "Primeros {{count}} días gratis",
+    "levelMetaFull": "Niv {{level}} · {{count}} misiones",
+    "paymentCancelled": "↩️ Pago cancelado.",
+    "paymentFailed": "❌ Pago fallido. Inténtalo de nuevo o contacta soporte.",
+    "paymentSuccess": "✅ ¡Pago exitoso! {{name}}",
+    "transformationPath": "🚀 Tu camino de transformación",
+    "unlocked": "✅ Desbloqueado"
   },
   "missionShare": {
     "cardLabel": "Misión completada",
@@ -963,5 +971,160 @@
       "missions": "🎯 Misiones",
       "journal": "📓 Diario"
     }
+  },
+  "settings": {
+    "title": "Configuración",
+    "close": "Cerrar",
+    "saving": "Guardando…",
+    "loading": "Cargando…",
+    "loadError": "Error al cargar la configuración.",
+    "privacyLoadError": "Error al cargar la configuración de privacidad.",
+    "sections": {
+      "account": "Cuenta",
+      "maraai": "MaraAI y privacidad",
+      "notifications": "Notificaciones",
+      "preferences": "Preferencias"
+    },
+    "changePassword": {
+      "title": "Cambiar contraseña",
+      "success": "¡Contraseña cambiada con éxito!",
+      "current": "Contraseña actual",
+      "new": "Nueva contraseña",
+      "confirm": "Confirmar nueva contraseña",
+      "mismatch": "Las nuevas contraseñas no coinciden.",
+      "tooShort": "La contraseña debe tener al menos 8 caracteres.",
+      "error": "Error al cambiar la contraseña.",
+      "networkError": "Error de red.",
+      "submit": "Cambiar contraseña"
+    },
+    "dangerZone": {
+      "title": "Zona de peligro",
+      "description": "Eliminar tu cuenta es <1>irreversible</1>. Todos tus datos serán eliminados permanentemente.",
+      "error": "Ocurrió un error. Inténtalo de nuevo.",
+      "confirmMsg": "¿Estás seguro? Esta acción no se puede deshacer.",
+      "confirmDelete": "Sí, eliminar cuenta definitivamente",
+      "cancel": "Cancelar",
+      "delete": "Eliminar cuenta"
+    },
+    "maraMode": {
+      "title": "Modo MaraAI",
+      "centralizedLabel": "🏢 Centralizado",
+      "hybridLabel": "⚡ Híbrido",
+      "advancedLabel": "🌐 Avanzado",
+      "centralizedDesc": "Todo el procesamiento a través de los servidores de Mara. Simple y seguro.",
+      "hybridDesc": "Combina servidores de Mara con red P2P. Recomendado.",
+      "advancedDesc": "Prioriza P2P y enrutamiento avanzado. Contribución máxima."
+    },
+    "p2p": {
+      "title": "Red P2P",
+      "participation": "Participación P2P",
+      "participationDesc": "Ayudas a la red Mara procesando solicitudes de otros usuarios.",
+      "backgroundNode": "Nodo en segundo plano",
+      "backgroundNodeDesc": "Mara funciona en segundo plano incluso cuando no estás activo.",
+      "advancedRouting": "Enrutamiento AI avanzado",
+      "advancedRoutingDesc": "Mara elige automáticamente el mejor modelo AI para cada solicitud.",
+      "bandwidth": "Ancho de banda compartido",
+      "gbPerMonth": "GB/mes"
+    },
+    "notifications": {
+      "title": "Notificaciones en la app",
+      "label": "Notificaciones activadas",
+      "desc": "Recibirás notificaciones sobre misiones, actualizaciones y actividad."
+    },
+    "theme": {
+      "title": "Tema"
+    },
+    "language": {
+      "title": "Idioma"
+    },
+    "privacyLink": "Política de privacidad",
+    "logout": "Cerrar sesión"
+  },
+  "cookie": {
+    "ariaLabel": "Información sobre cookies",
+    "text": "Solo usamos cookies esenciales para tu sesión. Sin seguimiento, sin marketing.",
+    "learnMore": "Saber más",
+    "accept": "Entendido",
+    "close": "Cerrar"
+  },
+  "pricing": {
+    "title": "Planes y precios",
+    "perMonth": "/mes",
+    "mostPopular": "Más popular",
+    "tiers": {
+      "free": {
+        "tagline": "Empieza sin tarjeta.",
+        "feature0": "Chat básico con Mara AI",
+        "feature1": "Ver reels de la comunidad",
+        "feature2": "Leer artículos públicos",
+        "feature3": "Acceso a la comunidad",
+        "cta": "Empezar gratis"
+      },
+      "pro_monthly": {
+        "tagline": "Todo lo que necesitas para crear y crecer.",
+        "feature0": "Chat ilimitado con Mara AI",
+        "feature1": "Subir reels",
+        "feature2": "Publicar artículos públicos",
+        "feature3": "Perfil público",
+        "feature4": "Acceso a todas las funciones Free",
+        "cta": "Elegir Pro"
+      },
+      "vip_monthly": {
+        "tagline": "Programas de transformación incluidos.",
+        "feature0": "Todo lo de Pro",
+        "feature1": "Leer artículos VIP",
+        "feature2": "Publicar artículos VIP",
+        "feature3": "Personalidad AI personalizada",
+        "feature4": "Carga HD",
+        "feature5": "✦ Todos los programas incluidos",
+        "cta": "Elegir VIP"
+      },
+      "creator_monthly": {
+        "tagline": "Monetiza tu contenido.",
+        "feature0": "Todo lo de VIP",
+        "feature1": "Revenue share 70%",
+        "feature2": "Retirar ganancias",
+        "feature3": "Analíticas detalladas",
+        "feature4": "Publicar artículos de pago",
+        "feature5": "Monetizar reels",
+        "cta": "Elegir Creator"
+      }
+    },
+    "programs": {
+      "newMindsetDesc": "Un día. Un cambio de perspectiva.",
+      "newHabitDesc": "21 días. Un hábito de por vida.",
+      "newSkillsDesc": "90 días. Una nueva habilidad.",
+      "newBodyDesc": "180 días. Un nuevo cuerpo y mente.",
+      "newLifeDesc": "365 días. Una vida nueva.",
+      "newYouDesc": "3 años. Un tú completamente nuevo.",
+      "programsTitle": "Programas incluidos",
+      "programsSubtitle": "Viajes de transformación personal, guiados por Mara AI",
+      "days": "días"
+    },
+    "faqTitle": "Preguntas frecuentes",
+    "ctaTitle": "¿Listo para comenzar tu transformación?",
+    "ctaDesc": "Únete a miles de personas que ya usan Mara AI para crecer cada día.",
+    "ctaBtn": "Empezar gratis",
+    "currentPlan": "Plan actual",
+    "choosePlan": "Elegir plan",
+    "annualBadge": "Anual — ahorra 20%",
+    "faq": {
+      "q1": "¿Puedo cancelar en cualquier momento?",
+      "a1": "Sí. Cancela en cualquier momento desde la configuración, sin penalizaciones. El acceso continúa hasta el final del mes pagado.",
+      "q2": "¿Cómo funcionan los programas en VIP?",
+      "a2": "Con VIP activo tienes acceso completo a los 6 programas — desde New Mindset (1 día) hasta New You (3 años).",
+      "q3": "¿Qué pasa si salto un día del programa?",
+      "a3": "Nada malo — Mara guarda tu progreso. La racha se reinicia pero el programa continúa.",
+      "q4": "¿Cómo pago?",
+      "a4": "Stripe (tarjeta) o PayPal. Transacción segura, factura automática."
+    },
+    "hero": {
+      "title": "Tu camino de transformación",
+      "subtitle": "Simple. Mensual. Sin sorpresas."
+    },
+    "freeBadge": "Gratis",
+    "vipIncludesTitle": "Programas incluidos en VIP",
+    "vipIncludesSub": "Los 6 programas de transformación están incluidos en el plan VIP. Sin cargo extra.",
+    "day": "día"
   }
 }

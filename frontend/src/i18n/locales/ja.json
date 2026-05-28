@@ -438,7 +438,8 @@
       "music": "音楽",
       "comedy": "コメディ",
       "tutorial": "チュートリアル"
-    }
+    },
+    "deleteConfirm": "このリールを削除しますか？"
   },
   "you": {
     "profileTab": "📊 プロフィール",
@@ -903,7 +904,14 @@
       "newBody": "新しい体",
       "newLife": "新しい人生",
       "newYou": "新しいあなた"
-    }
+    },
+    "freeDaysLabel": "最初の{{count}}日間無料",
+    "levelMetaFull": "Lv {{level}} · {{count}}ミッション",
+    "paymentCancelled": "↩️ 支払いがキャンセルされました。",
+    "paymentFailed": "❌ 支払いに失敗しました。再試行するかサポートに連絡してください。",
+    "paymentSuccess": "✅ 支払いが完了しました！{{name}}",
+    "transformationPath": "🚀 あなたの変革の道",
+    "unlocked": "✅ 解放済み"
   },
   "missionShare": {
     "cardLabel": "ミッション完了",
@@ -963,5 +971,160 @@
       "missions": "🎯 ミッション",
       "journal": "📓 ジャーナル"
     }
+  },
+  "settings": {
+    "title": "設定",
+    "close": "閉じる",
+    "saving": "保存中…",
+    "loading": "読み込み中…",
+    "loadError": "設定の読み込みに失敗しました。",
+    "privacyLoadError": "プライバシー設定の読み込みに失敗しました。",
+    "sections": {
+      "account": "アカウント",
+      "maraai": "MaraAIとプライバシー",
+      "notifications": "通知",
+      "preferences": "設定"
+    },
+    "changePassword": {
+      "title": "パスワード変更",
+      "success": "パスワードが変更されました！",
+      "current": "現在のパスワード",
+      "new": "新しいパスワード",
+      "confirm": "新しいパスワードを確認",
+      "mismatch": "新しいパスワードが一致しません。",
+      "tooShort": "パスワードは8文字以上必要です。",
+      "error": "パスワード変更エラー。",
+      "networkError": "ネットワークエラー。",
+      "submit": "パスワードを変更"
+    },
+    "dangerZone": {
+      "title": "危険ゾーン",
+      "description": "アカウントの削除は<1>取り消せません</1>。すべてのデータが完全に削除されます。",
+      "error": "エラーが発生しました。もう一度お試しください。",
+      "confirmMsg": "本当によろしいですか？この操作は元に戻せません。",
+      "confirmDelete": "はい、アカウントを完全に削除する",
+      "cancel": "キャンセル",
+      "delete": "アカウントを削除"
+    },
+    "maraMode": {
+      "title": "MaraAIモード",
+      "centralizedLabel": "🏢 集中型",
+      "hybridLabel": "⚡ ハイブリッド",
+      "advancedLabel": "🌐 高度",
+      "centralizedDesc": "Maraサーバーで全処理。シンプルで安全。",
+      "hybridDesc": "MaraサーバーとP2Pネットワークを組み合わせ。推奨。",
+      "advancedDesc": "P2Pと高度なルーティングを優先。最大貢献。"
+    },
+    "p2p": {
+      "title": "P2Pネットワーク",
+      "participation": "P2P参加",
+      "participationDesc": "他のユーザーのリクエストを処理してMaraネットワークを支援します。",
+      "backgroundNode": "バックグラウンドノード",
+      "backgroundNodeDesc": "非アクティブ時もMaraはバックグラウンドで動作します。",
+      "advancedRouting": "高度なAIルーティング",
+      "advancedRoutingDesc": "Maraは各リクエストに最適なAIモデルを自動選択します。",
+      "bandwidth": "共有帯域幅",
+      "gbPerMonth": "GB/月"
+    },
+    "notifications": {
+      "title": "アプリ内通知",
+      "label": "通知有効",
+      "desc": "ミッション、更新、アクティビティに関する通知を受け取ります。"
+    },
+    "theme": {
+      "title": "テーマ"
+    },
+    "language": {
+      "title": "言語"
+    },
+    "privacyLink": "プライバシーポリシー",
+    "logout": "ログアウト"
+  },
+  "cookie": {
+    "ariaLabel": "Cookie情報",
+    "text": "セッションに必要なCookieのみ使用します。トラッキングやマーケティングはありません。",
+    "learnMore": "詳細を見る",
+    "accept": "了解",
+    "close": "閉じる"
+  },
+  "pricing": {
+    "title": "プランと料金",
+    "perMonth": "/月",
+    "mostPopular": "最人気",
+    "tiers": {
+      "free": {
+        "tagline": "カード不要で始める。",
+        "feature0": "Mara AIとの基本チャット",
+        "feature1": "コミュニティReels視聴",
+        "feature2": "公開記事の閲覧",
+        "feature3": "コミュニティアクセス",
+        "cta": "無料で始める"
+      },
+      "pro_monthly": {
+        "tagline": "作成と成長に必要なすべて。",
+        "feature0": "Mara AIとの無制限チャット",
+        "feature1": "Reelsアップロード",
+        "feature2": "公開記事の投稿",
+        "feature3": "公開プロフィール",
+        "feature4": "Free機能すべてへのアクセス",
+        "cta": "Proを選ぶ"
+      },
+      "vip_monthly": {
+        "tagline": "変革プログラム付き。",
+        "feature0": "Proのすべて",
+        "feature1": "VIP記事の閲覧",
+        "feature2": "VIP記事の投稿",
+        "feature3": "カスタムAIパーソナリティ",
+        "feature4": "HDアップロード",
+        "feature5": "✦ 全プログラム含む",
+        "cta": "VIPを選ぶ"
+      },
+      "creator_monthly": {
+        "tagline": "コンテンツを収益化。",
+        "feature0": "VIPのすべて",
+        "feature1": "収益シェア70%",
+        "feature2": "収益の引き出し",
+        "feature3": "詳細な分析",
+        "feature4": "有料記事の投稿",
+        "feature5": "Reelsの収益化",
+        "cta": "Creatorを選ぶ"
+      }
+    },
+    "programs": {
+      "newMindsetDesc": "1日。視点の転換。",
+      "newHabitDesc": "21日。一生の習慣。",
+      "newSkillsDesc": "90日。新しいスキル。",
+      "newBodyDesc": "180日。新しい体と心。",
+      "newLifeDesc": "365日。新しい人生。",
+      "newYouDesc": "3年。全く新しい自分。",
+      "programsTitle": "含まれるプログラム",
+      "programsSubtitle": "Mara AIが導く個人変革の旅",
+      "days": "日"
+    },
+    "faqTitle": "よくある質問",
+    "ctaTitle": "変革を始める準備はできましたか？",
+    "ctaDesc": "毎日成長するためにMara AIを使っている何千人もの人々に参加しましょう。",
+    "ctaBtn": "無料で始める",
+    "currentPlan": "現在のプラン",
+    "choosePlan": "プランを選ぶ",
+    "annualBadge": "年間 — 20%お得",
+    "faq": {
+      "q1": "Can I cancel at any time?",
+      "a1": "Yes. Cancel at any time from settings, with no penalties. Access continues until the end of the paid month.",
+      "q2": "How do programs work in VIP?",
+      "a2": "With VIP active you have full access to all 6 programs — from New Mindset (1 day) to New You (3 years). You can run them simultaneously or sequentially.",
+      "q3": "What if I skip a day in a program?",
+      "a3": "Nothing bad — Mara keeps your progress. The streak resets but the program continues.",
+      "q4": "How do I pay?",
+      "a4": "Stripe (card) or PayPal. Secure transaction, automatic invoice."
+    },
+    "hero": {
+      "title": "Your transformation path",
+      "subtitle": "Simple. Monthly. No surprises."
+    },
+    "freeBadge": "Free",
+    "vipIncludesTitle": "Programs included in VIP",
+    "vipIncludesSub": "All 6 transformation programs are included in the VIP plan. No extra charge.",
+    "day": "day"
   }
 }

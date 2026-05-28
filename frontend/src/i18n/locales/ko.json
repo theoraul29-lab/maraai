@@ -438,7 +438,8 @@
       "music": "음악",
       "comedy": "코미디",
       "tutorial": "튜토리얼"
-    }
+    },
+    "deleteConfirm": "이 릴을 삭제하시겠습니까?"
   },
   "you": {
     "profileTab": "📊 프로필",
@@ -903,7 +904,14 @@
       "newBody": "새로운 몸",
       "newLife": "새로운 삶",
       "newYou": "새로운 나"
-    }
+    },
+    "freeDaysLabel": "처음 {{count}}일 무료",
+    "levelMetaFull": "Lv {{level}} · {{count}}개 미션",
+    "paymentCancelled": "↩️ 결제가 취소되었습니다.",
+    "paymentFailed": "❌ 결제에 실패했습니다. 다시 시도하거나 지원팀에 문의하세요.",
+    "paymentSuccess": "✅ 결제가 완료되었습니다! {{name}}",
+    "transformationPath": "🚀 당신의 변화 여정",
+    "unlocked": "✅ 잠금 해제됨"
   },
   "missionShare": {
     "cardLabel": "미션 완료",
@@ -963,5 +971,160 @@
       "missions": "🎯 미션",
       "journal": "📓 저널"
     }
+  },
+  "settings": {
+    "title": "설정",
+    "close": "닫기",
+    "saving": "저장 중…",
+    "loading": "로딩 중…",
+    "loadError": "설정을 불러오지 못했습니다.",
+    "privacyLoadError": "개인정보 설정을 불러오지 못했습니다.",
+    "sections": {
+      "account": "계정",
+      "maraai": "MaraAI & 개인정보",
+      "notifications": "알림",
+      "preferences": "환경설정"
+    },
+    "changePassword": {
+      "title": "비밀번호 변경",
+      "success": "비밀번호가 변경되었습니다!",
+      "current": "현재 비밀번호",
+      "new": "새 비밀번호",
+      "confirm": "새 비밀번호 확인",
+      "mismatch": "새 비밀번호가 일치하지 않습니다.",
+      "tooShort": "비밀번호는 최소 8자 이상이어야 합니다.",
+      "error": "비밀번호 변경 오류.",
+      "networkError": "네트워크 오류.",
+      "submit": "비밀번호 변경"
+    },
+    "dangerZone": {
+      "title": "위험 구역",
+      "description": "계정 삭제는 <1>되돌릴 수 없습니다</1>. 모든 데이터가 영구적으로 삭제됩니다.",
+      "error": "오류가 발생했습니다. 다시 시도하세요.",
+      "confirmMsg": "확실합니까? 이 작업은 취소할 수 없습니다.",
+      "confirmDelete": "예, 계정을 영구 삭제합니다",
+      "cancel": "취소",
+      "delete": "계정 삭제"
+    },
+    "maraMode": {
+      "title": "MaraAI 모드",
+      "centralizedLabel": "🏢 중앙화",
+      "hybridLabel": "⚡ 하이브리드",
+      "advancedLabel": "🌐 고급",
+      "centralizedDesc": "Mara 서버를 통한 모든 처리. 간단하고 안전합니다.",
+      "hybridDesc": "Mara 서버와 P2P 네트워크 결합. 권장.",
+      "advancedDesc": "P2P 및 고급 라우팅 우선. 최대 기여."
+    },
+    "p2p": {
+      "title": "P2P 네트워크",
+      "participation": "P2P 참여",
+      "participationDesc": "다른 사용자의 요청을 처리하여 Mara 네트워크를 돕습니다.",
+      "backgroundNode": "백그라운드 노드",
+      "backgroundNodeDesc": "활성화되지 않을 때도 Mara가 백그라운드에서 실행됩니다.",
+      "advancedRouting": "고급 AI 라우팅",
+      "advancedRoutingDesc": "Mara가 각 요청에 가장 적합한 AI 모델을 자동으로 선택합니다.",
+      "bandwidth": "공유 대역폭",
+      "gbPerMonth": "GB/월"
+    },
+    "notifications": {
+      "title": "앱 내 알림",
+      "label": "알림 활성화",
+      "desc": "미션, 업데이트 및 활동에 대한 알림을 받습니다."
+    },
+    "theme": {
+      "title": "테마"
+    },
+    "language": {
+      "title": "언어"
+    },
+    "privacyLink": "개인정보 처리방침",
+    "logout": "로그아웃"
+  },
+  "cookie": {
+    "ariaLabel": "쿠키 정보",
+    "text": "세션에 필요한 쿠키만 사용합니다. 추적이나 마케팅은 없습니다.",
+    "learnMore": "자세히 알아보기",
+    "accept": "확인",
+    "close": "닫기"
+  },
+  "pricing": {
+    "title": "플랜 및 가격",
+    "perMonth": "/월",
+    "mostPopular": "가장 인기",
+    "tiers": {
+      "free": {
+        "tagline": "카드 없이 시작하세요.",
+        "feature0": "Mara AI와의 기본 채팅",
+        "feature1": "커뮤니티 릴스 보기",
+        "feature2": "공개 기사 읽기",
+        "feature3": "커뮤니티 접근",
+        "cta": "무료로 시작"
+      },
+      "pro_monthly": {
+        "tagline": "창작과 성장에 필요한 모든 것.",
+        "feature0": "Mara AI와의 무제한 채팅",
+        "feature1": "릴스 업로드",
+        "feature2": "공개 기사 게시",
+        "feature3": "공개 프로필",
+        "feature4": "모든 Free 기능 접근",
+        "cta": "Pro 선택"
+      },
+      "vip_monthly": {
+        "tagline": "변환 프로그램 포함.",
+        "feature0": "Pro의 모든 것",
+        "feature1": "VIP 기사 읽기",
+        "feature2": "VIP 기사 게시",
+        "feature3": "맞춤 AI 성격",
+        "feature4": "HD 업로드",
+        "feature5": "✦ 모든 프로그램 포함",
+        "cta": "VIP 선택"
+      },
+      "creator_monthly": {
+        "tagline": "콘텐츠를 수익화하세요.",
+        "feature0": "VIP의 모든 것",
+        "feature1": "수익 공유 70%",
+        "feature2": "수익 출금",
+        "feature3": "상세 분석",
+        "feature4": "유료 기사 게시",
+        "feature5": "릴스 수익화",
+        "cta": "Creator 선택"
+      }
+    },
+    "programs": {
+      "newMindsetDesc": "하루. 관점의 전환.",
+      "newHabitDesc": "21일. 평생의 습관.",
+      "newSkillsDesc": "90일. 새로운 기술.",
+      "newBodyDesc": "180일. 새로운 몸과 마음.",
+      "newLifeDesc": "365일. 새로운 삶.",
+      "newYouDesc": "3년. 완전히 새로운 당신.",
+      "programsTitle": "포함된 프로그램",
+      "programsSubtitle": "Mara AI가 안내하는 개인 변환 여정",
+      "days": "일"
+    },
+    "faqTitle": "자주 묻는 질문",
+    "ctaTitle": "변환을 시작할 준비가 되셨나요?",
+    "ctaDesc": "매일 성장하기 위해 Mara AI를 이미 사용하는 수천 명과 함께하세요.",
+    "ctaBtn": "무료로 시작",
+    "currentPlan": "현재 플랜",
+    "choosePlan": "플랜 선택",
+    "annualBadge": "연간 — 20% 절약",
+    "faq": {
+      "q1": "Can I cancel at any time?",
+      "a1": "Yes. Cancel at any time from settings, with no penalties. Access continues until the end of the paid month.",
+      "q2": "How do programs work in VIP?",
+      "a2": "With VIP active you have full access to all 6 programs — from New Mindset (1 day) to New You (3 years). You can run them simultaneously or sequentially.",
+      "q3": "What if I skip a day in a program?",
+      "a3": "Nothing bad — Mara keeps your progress. The streak resets but the program continues.",
+      "q4": "How do I pay?",
+      "a4": "Stripe (card) or PayPal. Secure transaction, automatic invoice."
+    },
+    "hero": {
+      "title": "Your transformation path",
+      "subtitle": "Simple. Monthly. No surprises."
+    },
+    "freeBadge": "Free",
+    "vipIncludesTitle": "Programs included in VIP",
+    "vipIncludesSub": "All 6 transformation programs are included in the VIP plan. No extra charge.",
+    "day": "day"
   }
 }

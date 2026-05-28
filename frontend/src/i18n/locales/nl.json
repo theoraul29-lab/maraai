@@ -438,7 +438,8 @@
       "music": "Muziek",
       "comedy": "Komedie",
       "tutorial": "Tutorial"
-    }
+    },
+    "deleteConfirm": "Deze reel verwijderen?"
   },
   "you": {
     "profileTab": "📊 Profiel",
@@ -903,7 +904,14 @@
       "newBody": "Nieuw Lichaam",
       "newLife": "Nieuw Leven",
       "newYou": "Nieuw Jij"
-    }
+    },
+    "freeDaysLabel": "Eerste {{count}} dagen gratis",
+    "levelMetaFull": "Niv {{level}} · {{count}} missies",
+    "paymentCancelled": "↩️ Betaling geannuleerd.",
+    "paymentFailed": "❌ Betaling mislukt. Probeer opnieuw of neem contact op met ondersteuning.",
+    "paymentSuccess": "✅ Betaling geslaagd! {{name}}",
+    "transformationPath": "🚀 Jouw transformatiepad",
+    "unlocked": "✅ Ontgrendeld"
   },
   "missionShare": {
     "cardLabel": "Missie voltooid",
@@ -963,5 +971,160 @@
       "missions": "🎯 Missies",
       "journal": "📓 Dagboek"
     }
+  },
+  "settings": {
+    "title": "Instellingen",
+    "close": "Sluiten",
+    "saving": "Opslaan…",
+    "loading": "Laden…",
+    "loadError": "Instellingen konden niet worden geladen.",
+    "privacyLoadError": "Privacy-instellingen konden niet worden geladen.",
+    "sections": {
+      "account": "Account",
+      "maraai": "MaraAI & Privacy",
+      "notifications": "Meldingen",
+      "preferences": "Voorkeuren"
+    },
+    "changePassword": {
+      "title": "Wachtwoord wijzigen",
+      "success": "Wachtwoord succesvol gewijzigd!",
+      "current": "Huidig wachtwoord",
+      "new": "Nieuw wachtwoord",
+      "confirm": "Bevestig nieuw wachtwoord",
+      "mismatch": "Nieuwe wachtwoorden komen niet overeen.",
+      "tooShort": "Wachtwoord moet minimaal 8 tekens zijn.",
+      "error": "Fout bij het wijzigen van het wachtwoord.",
+      "networkError": "Netwerkfout.",
+      "submit": "Wachtwoord wijzigen"
+    },
+    "dangerZone": {
+      "title": "Gevarenzone",
+      "description": "Het verwijderen van uw account is <1>onomkeerbaar</1>. Alle gegevens worden permanent verwijderd.",
+      "error": "Er is een fout opgetreden. Probeer opnieuw.",
+      "confirmMsg": "Weet u het zeker? Deze actie kan niet ongedaan worden gemaakt.",
+      "confirmDelete": "Ja, account definitief verwijderen",
+      "cancel": "Annuleren",
+      "delete": "Account verwijderen"
+    },
+    "maraMode": {
+      "title": "MaraAI-modus",
+      "centralizedLabel": "🏢 Gecentraliseerd",
+      "hybridLabel": "⚡ Hybride",
+      "advancedLabel": "🌐 Geavanceerd",
+      "centralizedDesc": "Alle verwerking via Mara-servers. Eenvoudig en veilig.",
+      "hybridDesc": "Combineert Mara-servers met P2P-netwerk. Aanbevolen.",
+      "advancedDesc": "Prioriteert P2P en geavanceerde routering. Maximale bijdrage."
+    },
+    "p2p": {
+      "title": "P2P-netwerk",
+      "participation": "P2P-deelname",
+      "participationDesc": "U helpt het Mara-netwerk door verzoeken van andere gebruikers te verwerken.",
+      "backgroundNode": "Achtergrondknooppunt",
+      "backgroundNodeDesc": "Mara draait op de achtergrond, ook als u niet actief bent.",
+      "advancedRouting": "Geavanceerde AI-routering",
+      "advancedRoutingDesc": "Mara kiest automatisch het beste AI-model voor elk verzoek.",
+      "bandwidth": "Gedeelde bandbreedte",
+      "gbPerMonth": "GB/maand"
+    },
+    "notifications": {
+      "title": "In-app meldingen",
+      "label": "Meldingen ingeschakeld",
+      "desc": "U ontvangt meldingen over missies, updates en activiteiten."
+    },
+    "theme": {
+      "title": "Thema"
+    },
+    "language": {
+      "title": "Taal"
+    },
+    "privacyLink": "Privacybeleid",
+    "logout": "Uitloggen"
+  },
+  "cookie": {
+    "ariaLabel": "Cookie-informatie",
+    "text": "We gebruiken alleen essentiële cookies voor uw sessie. Geen tracking, geen marketing.",
+    "learnMore": "Meer weten",
+    "accept": "Begrepen",
+    "close": "Sluiten"
+  },
+  "pricing": {
+    "title": "Plannen en prijzen",
+    "perMonth": "/maand",
+    "mostPopular": "Meest populair",
+    "tiers": {
+      "free": {
+        "tagline": "Begin zonder kaart.",
+        "feature0": "Basis chat met Mara AI",
+        "feature1": "Bekijk community reels",
+        "feature2": "Lees publieke artikelen",
+        "feature3": "Communitytoegang",
+        "cta": "Gratis starten"
+      },
+      "pro_monthly": {
+        "tagline": "Alles wat je nodig hebt om te creëren en te groeien.",
+        "feature0": "Onbeperkte chat met Mara AI",
+        "feature1": "Reels uploaden",
+        "feature2": "Publieke artikelen publiceren",
+        "feature3": "Openbaar profiel",
+        "feature4": "Toegang tot alle Free-functies",
+        "cta": "Pro kiezen"
+      },
+      "vip_monthly": {
+        "tagline": "Transformatieprogramma's inbegrepen.",
+        "feature0": "Alles in Pro",
+        "feature1": "VIP-artikelen lezen",
+        "feature2": "VIP-artikelen publiceren",
+        "feature3": "Aangepaste AI-persoonlijkheid",
+        "feature4": "HD-upload",
+        "feature5": "✦ Alle programma's inbegrepen",
+        "cta": "VIP kiezen"
+      },
+      "creator_monthly": {
+        "tagline": "Monetariseer je content.",
+        "feature0": "Alles in VIP",
+        "feature1": "Revenue share 70%",
+        "feature2": "Inkomsten opnemen",
+        "feature3": "Gedetailleerde analyses",
+        "feature4": "Betaalde artikelen publiceren",
+        "feature5": "Reels monetariseren",
+        "cta": "Creator kiezen"
+      }
+    },
+    "programs": {
+      "newMindsetDesc": "Één dag. Een perspectiefswijziging.",
+      "newHabitDesc": "21 dagen. Een gewoonte voor het leven.",
+      "newSkillsDesc": "90 dagen. Een nieuwe vaardigheid.",
+      "newBodyDesc": "180 dagen. Een nieuw lichaam en geest.",
+      "newLifeDesc": "365 dagen. Een nieuw leven.",
+      "newYouDesc": "3 jaar. Een volledig nieuw jij.",
+      "programsTitle": "Inbegrepen programma's",
+      "programsSubtitle": "Persoonlijke transformatiereizen, begeleid door Mara AI",
+      "days": "dagen"
+    },
+    "faqTitle": "Veelgestelde vragen",
+    "ctaTitle": "Klaar om je transformatie te beginnen?",
+    "ctaDesc": "Sluit je aan bij duizenden mensen die Mara AI al gebruiken om elke dag te groeien.",
+    "ctaBtn": "Gratis starten",
+    "currentPlan": "Huidig plan",
+    "choosePlan": "Plan kiezen",
+    "annualBadge": "Jaarlijks — bespaar 20%",
+    "faq": {
+      "q1": "Kan ik op elk moment opzeggen?",
+      "a1": "Ja. Opzeggen wanneer u wilt via instellingen, zonder boetes. Toegang loopt door tot einde van de betaalde maand.",
+      "q2": "Hoe werken de programma's in VIP?",
+      "a2": "Met actief VIP heeft u volledige toegang tot alle 6 programma's — van New Mindset (1 dag) tot New You (3 jaar).",
+      "q3": "Wat als ik een dag oversta in het programma?",
+      "a3": "Niets ergs — Mara bewaart uw voortgang. De reeks wordt gereset maar het programma gaat verder.",
+      "q4": "Hoe betaal ik?",
+      "a4": "Stripe (kaart) of PayPal. Veilige transactie, automatische factuur."
+    },
+    "hero": {
+      "title": "Uw transformatiepad",
+      "subtitle": "Eenvoudig. Maandelijks. Geen verrassingen."
+    },
+    "freeBadge": "Gratis",
+    "vipIncludesTitle": "Programma's inbegrepen in VIP",
+    "vipIncludesSub": "Alle 6 transformatieprogramma's zijn inbegrepen in het VIP-abonnement. Geen extra kosten.",
+    "day": "dag"
   }
 }

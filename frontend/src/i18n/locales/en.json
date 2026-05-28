@@ -1,4 +1,4 @@
-﻿{
+{
   "common": {
     "close": "Close",
     "save": "Save",
@@ -971,5 +971,160 @@
       "missions": "🎯 Missions",
       "journal": "📓 Journal"
     }
+  },
+  "settings": {
+    "title": "Settings",
+    "close": "Close",
+    "saving": "Saving…",
+    "loading": "Loading…",
+    "loadError": "Failed to load settings.",
+    "privacyLoadError": "Failed to load privacy settings.",
+    "sections": {
+      "account": "Account",
+      "maraai": "MaraAI & Privacy",
+      "notifications": "Notifications",
+      "preferences": "Preferences"
+    },
+    "changePassword": {
+      "title": "Change password",
+      "success": "Password changed successfully!",
+      "current": "Current password",
+      "new": "New password",
+      "confirm": "Confirm new password",
+      "mismatch": "New passwords do not match.",
+      "tooShort": "Password must be at least 8 characters.",
+      "error": "Error changing password.",
+      "networkError": "Network error.",
+      "submit": "Change password"
+    },
+    "dangerZone": {
+      "title": "Danger zone",
+      "description": "Deleting your account is <1>irreversible</1>. All your data (posts, reels, missions, XP, messages) will be permanently deleted.",
+      "error": "An error occurred. Please try again.",
+      "confirmMsg": "Are you sure? This action cannot be undone.",
+      "confirmDelete": "Yes, permanently delete account",
+      "cancel": "Cancel",
+      "delete": "Delete account"
+    },
+    "maraMode": {
+      "title": "MaraAI Mode",
+      "centralizedLabel": "🏢 Centralized",
+      "hybridLabel": "⚡ Hybrid",
+      "advancedLabel": "🌐 Advanced",
+      "centralizedDesc": "All processing through Mara servers. Simple and secure.",
+      "hybridDesc": "Combines Mara servers with P2P network. Recommended.",
+      "advancedDesc": "Prioritizes P2P and advanced routing. Maximum contribution."
+    },
+    "p2p": {
+      "title": "P2P Network",
+      "participation": "P2P participation",
+      "participationDesc": "You help the Mara network by processing requests from other users.",
+      "backgroundNode": "Background node",
+      "backgroundNodeDesc": "Mara runs in the background even when you are not active.",
+      "advancedRouting": "Advanced AI routing",
+      "advancedRoutingDesc": "Mara automatically chooses the best AI model for each request.",
+      "bandwidth": "Shared bandwidth",
+      "gbPerMonth": "GB/month"
+    },
+    "notifications": {
+      "title": "In-app notifications",
+      "label": "Notifications enabled",
+      "desc": "You receive notifications about missions, updates and activity."
+    },
+    "theme": {
+      "title": "Theme"
+    },
+    "language": {
+      "title": "Language"
+    },
+    "privacyLink": "Privacy policy",
+    "logout": "Logout"
+  },
+  "cookie": {
+    "ariaLabel": "Cookie information",
+    "text": "We use only essential cookies for your session. No tracking, no marketing.",
+    "learnMore": "Learn more",
+    "accept": "Got it",
+    "close": "Close"
+  },
+  "pricing": {
+    "title": "Plans & Pricing",
+    "perMonth": "/month",
+    "mostPopular": "Most popular",
+    "tiers": {
+      "free": {
+        "tagline": "Start without a card.",
+        "feature0": "Basic chat with Mara AI",
+        "feature1": "View community reels",
+        "feature2": "Read public articles",
+        "feature3": "Community access",
+        "cta": "Start free"
+      },
+      "pro_monthly": {
+        "tagline": "Everything you need to create and grow.",
+        "feature0": "Unlimited chat with Mara AI",
+        "feature1": "Upload reels",
+        "feature2": "Publish public articles",
+        "feature3": "Public profile",
+        "feature4": "Access to all Free features",
+        "cta": "Choose Pro"
+      },
+      "vip_monthly": {
+        "tagline": "Transformation programs included.",
+        "feature0": "Everything in Pro",
+        "feature1": "Read VIP articles",
+        "feature2": "Publish VIP articles",
+        "feature3": "Custom AI personality",
+        "feature4": "HD upload",
+        "feature5": "✦ All programs included — New Mindset, New Habit, New Skills, New Body, New Life, New You",
+        "cta": "Choose VIP"
+      },
+      "creator_monthly": {
+        "tagline": "Monetize your content.",
+        "feature0": "Everything in VIP",
+        "feature1": "Revenue share 70%",
+        "feature2": "Withdraw earnings",
+        "feature3": "Detailed analytics",
+        "feature4": "Publish paid articles",
+        "feature5": "Monetize reels",
+        "cta": "Choose Creator"
+      }
+    },
+    "programs": {
+      "newMindsetDesc": "One day. One shift in perspective.",
+      "newHabitDesc": "21 days. A habit for life.",
+      "newSkillsDesc": "90 days. A new skill.",
+      "newBodyDesc": "180 days. A new body and mind.",
+      "newLifeDesc": "365 days. A new life.",
+      "newYouDesc": "3 years. A completely new you.",
+      "programsTitle": "Included Programs",
+      "programsSubtitle": "Personal transformation journeys, guided by Mara AI",
+      "days": "days"
+    },
+    "faqTitle": "Frequently asked questions",
+    "ctaTitle": "Ready to start your transformation?",
+    "ctaDesc": "Join thousands of people who already use Mara AI to grow every day.",
+    "ctaBtn": "Start free",
+    "currentPlan": "Current plan",
+    "choosePlan": "Choose plan",
+    "annualBadge": "Annual — save 20%",
+    "faq": {
+      "q1": "Can I cancel at any time?",
+      "a1": "Yes. Cancel at any time from settings, with no penalties. Access continues until the end of the paid month.",
+      "q2": "How do programs work in VIP?",
+      "a2": "With VIP active you have full access to all 6 programs — from New Mindset (1 day) to New You (3 years). You can run them simultaneously or sequentially.",
+      "q3": "What if I skip a day in a program?",
+      "a3": "Nothing bad — Mara keeps your progress. The streak resets but the program continues.",
+      "q4": "How do I pay?",
+      "a4": "Stripe (card) or PayPal. Secure transaction, automatic invoice."
+    },
+    "hero": {
+      "title": "Your transformation path",
+      "subtitle": "Simple. Monthly. No surprises."
+    },
+    "freeBadge": "Free",
+    "vipIncludesTitle": "Programs included in VIP",
+    "vipIncludesSub": "All 6 transformation programs are included in the VIP plan. No extra charge.",
+    "day": "day"
   }
 }

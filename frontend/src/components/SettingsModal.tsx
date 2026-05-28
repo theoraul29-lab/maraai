@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../i18n/useLanguage';
@@ -19,6 +20,7 @@ interface SettingsModalProps {
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
   const { language, available, setLanguage } = useLanguage();
@@ -74,11 +76,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     e.preventDefault();
     setPwError('');
     if (pwForm.next !== pwForm.confirm) {
-      setPwError('Parolele noi nu se potrivesc.');
+      setPwError(t('settings.changePassword.mismatch'));
       return;
     }
     if (pwForm.next.length < 8) {
-      setPwError('Parola trebuie să aibă cel puțin 8 caractere.');
+      setPwError(t('settings.changePassword.tooShort'));
       return;
     }
     setPwSaving(true);
@@ -91,13 +93,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
       });
       if (!res.ok) {
         const d = await res.json().catch(() => ({}));
-        setPwError(d.message || 'Eroare la schimbarea parolei.');
+        setPwError(d.message || t('settings.changePassword.error'));
       } else {
         setPwSuccess(true);
         setPwForm({ current: '', next: '', confirm: '' });
       }
     } catch {
-      setPwError('Eroare de rețea.');
+      setPwError(t('settings.changePassword.networkError'));
     } finally {
       setPwSaving(false);
     }
@@ -122,25 +124,25 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
       onClose();
       window.location.href = '/';
     } catch {
-      setDeleteError('A apărut o eroare. Încearcă din nou.');
+      setDeleteError(t('settings.dangerZone.error'));
     } finally {
       setDeleting(false);
     }
   };
 
   const sections: { key: typeof activeSection; label: string; icon: string }[] = [
-    { key: 'cont', label: 'Cont', icon: '👤' },
-    { key: 'maraai', label: 'MaraAI & Privacy', icon: '🧠' },
-    { key: 'notificari', label: 'Notificări', icon: '🔔' },
-    { key: 'preferinte', label: 'Preferințe', icon: '🎨' },
+    { key: 'cont', label: t('settings.sections.account'), icon: '👤' },
+    { key: 'maraai', label: t('settings.sections.maraai'), icon: '🧠' },
+    { key: 'notificari', label: t('settings.sections.notifications'), icon: '🔔' },
+    { key: 'preferinte', label: t('settings.sections.preferences'), icon: '🎨' },
   ];
 
   return (
     <div className="settings-overlay" ref={overlayRef} onClick={e => { if (e.target === overlayRef.current) onClose(); }}>
-      <div className="settings-modal" role="dialog" aria-modal="true" aria-label="Setări">
+      <div className="settings-modal" role="dialog" aria-modal="true" aria-label={t('settings.title')}>
         <div className="settings-header">
-          <span className="settings-title">⚙️ Setări</span>
-          <button className="settings-close" onClick={onClose} aria-label="Închide">✕</button>
+          <span className="settings-title">⚙️ {t('settings.title')}</span>
+          <button className="settings-close" onClick={onClose} aria-label={t('settings.close')}>✕</button>
         </div>
 
         <div className="settings-body">
@@ -169,13 +171,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                   </div>
                 </div>
 
-                <h3 className="settings-section-title">Schimbă parola</h3>
+                <h3 className="settings-section-title">{t('settings.changePassword.title')}</h3>
                 {pwSuccess ? (
-                  <div className="settings-success">Parola a fost schimbată cu succes!</div>
+                  <div className="settings-success">{t('settings.changePassword.success')}</div>
                 ) : (
                   <form onSubmit={handleChangePassword} className="settings-form">
                     <label className="settings-label">
-                      Parola curentă
+                      {t('settings.changePassword.current')}
                       <input
                         type="password"
                         value={pwForm.current}
@@ -185,7 +187,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                       />
                     </label>
                     <label className="settings-label">
-                      Parolă nouă
+                      {t('settings.changePassword.new')}
                       <input
                         type="password"
                         value={pwForm.next}
@@ -195,7 +197,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                       />
                     </label>
                     <label className="settings-label">
-                      Confirmă parola nouă
+                      {t('settings.changePassword.confirm')}
                       <input
                         type="password"
                         value={pwForm.confirm}
@@ -206,51 +208,50 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                     </label>
                     {pwError && <div className="settings-error">{pwError}</div>}
                     <button type="submit" className="settings-btn-primary" disabled={pwSaving}>
-                      {pwSaving ? 'Se salvează…' : 'Schimbă parola'}
+                      {pwSaving ? t('settings.saving') : t('settings.changePassword.submit')}
                     </button>
                   </form>
                 )}
 
                 <button className="settings-btn-danger" onClick={handleLogout}>
-                  Deconectare
+                  {t('settings.logout')}
                 </button>
 
                 <div className="settings-divider" />
 
-                <h3 className="settings-section-title">Zona periculoasă</h3>
+                <h3 className="settings-section-title">{t('settings.dangerZone.title')}</h3>
                 <p className="settings-danger-desc">
-                  Ștergerea contului este <strong>ireversibilă</strong>. Toate datele tale
-                  (postări, reels, misiuni, XP, mesaje) vor fi eliminate permanent.
+                  {t('settings.dangerZone.description', { defaultValue: 'Deleting your account is irreversible. All your data (posts, reels, missions, XP, messages) will be permanently deleted.' })}
                 </p>
                 {deleteError && <div className="settings-error">{deleteError}</div>}
                 {deleteConfirm ? (
                   <div className="settings-delete-confirm">
-                    <p className="settings-delete-warn">Ești sigur? Această acțiune nu poate fi anulată.</p>
+                    <p className="settings-delete-warn">{t('settings.dangerZone.confirmMsg')}</p>
                     <div className="settings-delete-actions">
                       <button
                         className="settings-btn-danger"
                         onClick={handleDeleteAccount}
                         disabled={deleting}
                       >
-                        {deleting ? 'Se șterge…' : 'Da, șterge contul definitiv'}
+                        {deleting ? t('settings.saving') : t('settings.dangerZone.confirmDelete')}
                       </button>
                       <button
                         className="settings-btn-ghost"
                         onClick={() => { setDeleteConfirm(false); setDeleteError(''); }}
                         disabled={deleting}
                       >
-                        Anulează
+                        {t('settings.dangerZone.cancel')}
                       </button>
                     </div>
                   </div>
                 ) : (
                   <button className="settings-btn-delete" onClick={handleDeleteAccount}>
-                    Șterge contul
+                    {t('settings.dangerZone.delete')}
                   </button>
                 )}
 
                 <Link to="/privacy" className="settings-privacy-link" onClick={onClose}>
-                  Politica de confidențialitate
+                  {t('settings.privacyLink')}
                 </Link>
               </div>
             )}
@@ -259,10 +260,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
             {activeSection === 'maraai' && (
               <div className="settings-section">
                 {loadingConsent ? (
-                  <div className="settings-loading">Se încarcă…</div>
+                  <div className="settings-loading">{t('settings.loading')}</div>
                 ) : consent ? (
                   <>
-                    <h3 className="settings-section-title">Mod MaraAI</h3>
+                    <h3 className="settings-section-title">{t('settings.maraMode.title')}</h3>
                     <div className="settings-radio-group">
                       {(['centralized', 'hybrid', 'advanced'] as const).map(m => (
                         <label key={m} className={`settings-radio ${consent.mode === m ? 'is-selected' : ''}`}>
@@ -275,47 +276,47 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                           />
                           <div>
                             <div className="settings-radio-title">
-                              {m === 'centralized' && '🏢 Centralizat'}
-                              {m === 'hybrid' && '⚡ Hybrid'}
-                              {m === 'advanced' && '🌐 Avansat'}
+                              {m === 'centralized' && t('settings.maraMode.centralizedLabel')}
+                              {m === 'hybrid' && t('settings.maraMode.hybridLabel')}
+                              {m === 'advanced' && t('settings.maraMode.advancedLabel')}
                             </div>
                             <div className="settings-radio-desc">
-                              {m === 'centralized' && 'Toate procesările prin serverele Mara. Simplu și sigur.'}
-                              {m === 'hybrid' && 'Combină serverele Mara cu rețeaua P2P. Recomandat.'}
-                              {m === 'advanced' && 'Prioritizează P2P și routing avansat. Contribuie maxim.'}
+                              {m === 'centralized' && t('settings.maraMode.centralizedDesc')}
+                              {m === 'hybrid' && t('settings.maraMode.hybridDesc')}
+                              {m === 'advanced' && t('settings.maraMode.advancedDesc')}
                             </div>
                           </div>
                         </label>
                       ))}
                     </div>
 
-                    <h3 className="settings-section-title">Rețea P2P</h3>
+                    <h3 className="settings-section-title">{t('settings.p2p.title')}</h3>
                     <ToggleRow
-                      label="Participare P2P"
-                      desc="Ajuți rețeaua Mara procesând cereri de la alți utilizatori."
+                      label={t('settings.p2p.participation')}
+                      desc={t('settings.p2p.participationDesc')}
                       checked={consent.p2pEnabled}
                       disabled={consent.mode === 'centralized'}
                       onChange={v => saveConsent({ p2pEnabled: v })}
                     />
                     <ToggleRow
-                      label="Nod de fundal"
-                      desc="Mara rulează în fundal chiar și când nu ești activ."
+                      label={t('settings.p2p.backgroundNode')}
+                      desc={t('settings.p2p.backgroundNodeDesc')}
                       checked={consent.backgroundNode}
                       disabled={consent.mode === 'centralized'}
                       onChange={v => saveConsent({ backgroundNode: v })}
                     />
                     <ToggleRow
-                      label="Routing AI avansat"
-                      desc="Mara alege automat cel mai bun model AI pentru fiecare cerere."
+                      label={t('settings.p2p.advancedRouting')}
+                      desc={t('settings.p2p.advancedRoutingDesc')}
                       checked={consent.advancedAiRouting}
                       onChange={v => saveConsent({ advancedAiRouting: v })}
                     />
 
                     {consent.backgroundNode && (
                       <>
-                        <h3 className="settings-section-title">Bandwidth partajat</h3>
+                        <h3 className="settings-section-title">{t('settings.p2p.bandwidth')}</h3>
                         <div className="settings-slider-row">
-                          <span>{consent.bandwidthShareGbMonth} GB/lună</span>
+                          <span>{consent.bandwidthShareGbMonth} {t('settings.p2p.gbPerMonth')}</span>
                           <input
                             type="range"
                             min={0}
@@ -332,10 +333,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                       </>
                     )}
 
-                    {savingConsent && <div className="settings-saving">Se salvează…</div>}
+                    {savingConsent && <div className="settings-saving">{t('settings.saving')}</div>}
                   </>
                 ) : (
-                  <div className="settings-error">Nu s-au putut încărca setările de confidențialitate.</div>
+                  <div className="settings-error">{t('settings.privacyLoadError')}</div>
                 )}
               </div>
             )}
@@ -344,20 +345,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
             {activeSection === 'notificari' && (
               <div className="settings-section">
                 {loadingConsent ? (
-                  <div className="settings-loading">Se încarcă…</div>
+                  <div className="settings-loading">{t('settings.loading')}</div>
                 ) : consent ? (
                   <>
-                    <h3 className="settings-section-title">Notificări în aplicație</h3>
+                    <h3 className="settings-section-title">{t('settings.notifications.title')}</h3>
                     <ToggleRow
-                      label="Notificări activate"
-                      desc="Primești notificări despre misiuni, update-uri și activitate."
+                      label={t('settings.notifications.label')}
+                      desc={t('settings.notifications.desc')}
                       checked={consent.notificationsEnabled}
                       onChange={v => saveConsent({ notificationsEnabled: v })}
                     />
-                    {savingConsent && <div className="settings-saving">Se salvează…</div>}
+                    {savingConsent && <div className="settings-saving">{t('settings.saving')}</div>}
                   </>
                 ) : (
-                  <div className="settings-error">Nu s-au putut încărca setările.</div>
+                  <div className="settings-error">{t('settings.loadError')}</div>
                 )}
               </div>
             )}
@@ -365,7 +366,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
             {/* ── PREFERINȚE ───────────────────────────────────── */}
             {activeSection === 'preferinte' && (
               <div className="settings-section">
-                <h3 className="settings-section-title">Temă</h3>
+                <h3 className="settings-section-title">{t('settings.theme.title')}</h3>
                 <div className="settings-theme-toggle">
                   <button
                     className={`settings-theme-btn ${theme === 'dark' ? 'is-active' : ''}`}
@@ -381,7 +382,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                   </button>
                 </div>
 
-                <h3 className="settings-section-title" style={{ marginTop: '20px' }}>Limbă</h3>
+                <h3 className="settings-section-title" style={{ marginTop: '20px' }}>{t('settings.language.title')}</h3>
                 <div className="settings-lang-grid">
                   {available.map(lang => (
                     <button
