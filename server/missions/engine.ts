@@ -416,9 +416,12 @@ Keep each "id" value unchanged. Translate only: title, description, proof_prompt
 Return ONLY a valid JSON array, no markdown fences:
 ${JSON.stringify(payload)}`;
 
+        // source: 'user_chat' bypasses the brain rate-limiter (autonomous cap).
+        // Mission translation is triggered by a live user request, so it must
+        // not compete with the daily autonomous-brain call budget.
         const raw = await Promise.race([
-          llmGenerate(prompt, { source: 'agent.missions.translate' }),
-          new Promise<never>((_, reject) => setTimeout(() => reject(new Error('translate_timeout')), 8000)),
+          llmGenerate(prompt, { source: 'user_chat' }),
+          new Promise<never>((_, reject) => setTimeout(() => reject(new Error('translate_timeout')), 12000)),
         ]);
         const clean = raw.replace(/```json|```/g, '').trim();
         const translated = JSON.parse(clean) as Array<{

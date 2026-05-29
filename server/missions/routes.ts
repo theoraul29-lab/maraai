@@ -39,9 +39,24 @@ export function registerMissionRoutes(app: Express, requireAuth: any) {
 
   // ── MISIUNI ─────────────────────────────────────────────────────────────────
 
+  // Helper: read the user's stored language preference from user_preferences.
+  // Used as a fallback when the frontend doesn't send a ?lang= query param.
+  function getUserLang(userId: string, queryLang?: string): string {
+    if (queryLang) return queryLang;
+    try {
+      const prefs = rawSqlite.prepare(
+        "SELECT language FROM user_preferences WHERE user_id = ? LIMIT 1"
+      ).get(userId) as { language: string } | undefined;
+      return prefs?.language || 'ro';
+    } catch {
+      return 'ro';
+    }
+  }
+
   app.get('/api/missions', requireAuth, async (req: any, res: any) => {
     const userId = getUserId(req);
-    const { pillar, lang } = req.query as { pillar?: string; lang?: string };
+    const { pillar, lang: rawLang } = req.query as { pillar?: string; lang?: string };
+    const lang = getUserLang(userId, rawLang);
     const missions = pillar
       ? rawSqlite
           .prepare(
@@ -70,13 +85,14 @@ export function registerMissionRoutes(app: Express, requireAuth: any) {
       locked: i > 0 && (missions as any[])[i - 1].user_status !== 'completed',
     }));
 
-    const translated = await translateMissions(withLocked, lang || 'ro');
+    const translated = await translateMissions(withLocked, lang);
     res.json({ missions: translated, userXp: getUserXP(userId) });
   });
 
   app.get('/api/missions/daily', requireAuth, async (req: any, res: any) => {
     const userId = getUserId(req);
-    const { lang } = req.query as { lang?: string };
+    const { lang: rawLang } = req.query as { lang?: string };
+    const lang = getUserLang(userId, rawLang);
     const today = new Date().toISOString().split('T')[0];
     const dailies = rawSqlite
       .prepare(
@@ -88,7 +104,7 @@ export function registerMissionRoutes(app: Express, requireAuth: any) {
          WHERE m.is_daily = 1 AND m.is_active = 1`,
       )
       .all(userId, today);
-    const translated = await translateMissions(dailies as any[], lang || 'ro');
+    const translated = await translateMissions(dailies as any[], lang);
     res.json({ missions: translated });
   });
 
