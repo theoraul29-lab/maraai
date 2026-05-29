@@ -14,7 +14,7 @@ import { SingletonLock } from '../lib/singleton-lock.js';
 import { cleanupKnowledgeBase } from './knowledge-base.js';
 import { decayAllToxicity } from './memory.js';
 import { ensureAlertsTable, analyzePlatformAndAlert } from './alerts.js';
-import { db } from '../db.js';
+import { db, rawSqlite } from '../db.js';
 import { pushSubscriptions } from '../../shared/schema.js';
 import { sendToUser } from '../push/vapid.js';
 import { subscribeEvent, publishEvent } from '../maraai/kafka.js';
@@ -194,14 +194,29 @@ class BrainManagerImpl {
       }
     })();
 
-    // First cycle after 30s (give the server time to boot and settle)
-    const firstCycleDelay = 30 * 1000;
-    this._nextRunAt = Date.now() + firstCycleDelay;
+    // Warmup: fire exactly once — 60s after the very first startup ever.
+    // Once brain_logs has at least one row, all future restarts skip the
+    // warmup and rely solely on the regular interval below.
+    let hasRunBefore = false;
+    try {
+      const row = rawSqlite
+        .prepare('SELECT COUNT(*) as cnt FROM brain_logs')
+        .get() as { cnt: number } | undefined;
+      hasRunBefore = (row?.cnt ?? 0) > 0;
+    } catch { /* table may not exist yet on very first deploy — treat as first run */ }
 
-    this._initialTimeout = setTimeout(() => {
-      this._initialTimeout = null;
-      void this._scheduledCycle(logger);
-    }, firstCycleDelay);
+    if (!hasRunBefore) {
+      const warmupDelay = 60_000;
+      this._nextRunAt = Date.now() + warmupDelay;
+      logger('First-ever brain run — warmup in 60s', 'mara-scheduler');
+      this._initialTimeout = setTimeout(() => {
+        this._initialTimeout = null;
+        void this._scheduledCycle(logger);
+      }, warmupDelay);
+    } else {
+      this._nextRunAt = Date.now() + this.cycleIntervalMs;
+    }
+
     this._cycleTimer = setInterval(
       () => void this._scheduledCycle(logger),
       this.cycleIntervalMs,

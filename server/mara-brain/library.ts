@@ -8,6 +8,7 @@ import { llmGenerate, isLLMConfigured, LLMRateLimitedError } from '../llm.js';
 import { db } from '../db.js';
 import { maraKnowledgeBase } from '../../shared/schema.js';
 import { like } from 'drizzle-orm';
+import { webSearch } from '../lib/web-search.js';
 
 export interface LibraryBook {
   id: string;
@@ -2491,6 +2492,94 @@ export async function getNextUnreadBook(): Promise<LibraryBook | null> {
   return unread.length > 0 ? unread[0] : null;
 }
 
+// ─── Web reading — fallback when built-in library is exhausted ───────────────
+
+const WEB_TOPICS = [
+  { id: 'web:atomic-habits',        query: 'atomic habits behavior change james clear key concepts',           title: 'Atomic Habits — schimbare de comportament' },
+  { id: 'web:stoicism-practice',    query: 'stoicism daily practice personal development modern life',         title: 'Stoicism — practică zilnică modernă' },
+  { id: 'web:deep-work',            query: 'deep work cal newport focus productivity techniques',              title: 'Deep Work — focus și productivitate' },
+  { id: 'web:growth-mindset',       query: 'growth mindset carol dweck research fixed vs growth',             title: 'Growth Mindset — cercetare Carol Dweck' },
+  { id: 'web:habit-loop',           query: 'habit loop cue routine reward charles duhigg neuroscience',       title: 'Habit Loop — neuroștiința obiceiurilor' },
+  { id: 'web:ikigai',               query: 'ikigai japanese concept purpose life meaning framework',          title: 'Ikigai — sensul vieții conform filosofiei japoneze' },
+  { id: 'web:flow-state',           query: 'flow state mihaly csikszentmihalyi optimal experience psychology', title: 'Flow — starea de performanță maximă' },
+  { id: 'web:resilience-science',   query: 'resilience science psychology bouncing back adversity research',  title: 'Reziliență — știința revenirilor' },
+  { id: 'web:self-determination',   query: 'self-determination theory intrinsic motivation deci ryan',        title: 'Self-Determination Theory — motivație intrinsecă' },
+  { id: 'web:cognitive-behavioral', query: 'cognitive behavioral techniques self improvement anxiety habits',  title: 'CBT — tehnici de auto-îmbunătățire' },
+  { id: 'web:willpower-science',    query: 'willpower science ego depletion self control research',           title: 'Voința — știința autocontrolului' },
+  { id: 'web:identity-change',      query: 'identity-based habits behavior change who you want to become',    title: 'Schimbare de identitate — cine vrei să devii' },
+  { id: 'web:purpose-driven',       query: 'purpose driven life meaning psychology Viktor Frankl logotherapy', title: 'Viața cu scop — psihologia sensului' },
+  { id: 'web:neuroplasticity',      query: 'neuroplasticity brain change habits learning new skills adults',  title: 'Neuroplasticitate — creierul se poate schimba' },
+  { id: 'web:community-change',     query: 'community support behavior change accountability social bonds',   title: 'Comunitate și schimbare — puterea grupului' },
+  { id: 'web:morning-routines',     query: 'morning routine high performers habits research productivity',    title: 'Rutine matinale — obiceiurile persoanlor de succes' },
+  { id: 'web:journaling-science',   query: 'journaling science mental health self reflection benefits',       title: 'Jurnal — beneficiile reflecției scrise' },
+  { id: 'web:digital-minimalism',   query: 'digital minimalism technology habits focus attention economy',    title: 'Minimalism digital — atenție și focus' },
+  { id: 'web:deliberate-practice',  query: 'deliberate practice Anders Ericsson skill acquisition mastery',   title: 'Practică deliberată — Anders Ericsson' },
+  { id: 'web:gratitude-science',    query: 'gratitude practice science happiness well-being research',        title: 'Recunoștința — știința fericirii' },
+];
+
+const readWebTopicIds = new Set<string>();
+
+async function getReadWebTopicIds(): Promise<Set<string>> {
+  const ids = new Set<string>(readWebTopicIds);
+  const rows = await db
+    .select()
+    .from(maraKnowledgeBase)
+    .where(like(maraKnowledgeBase.topic, 'web_topic:%'));
+  for (const row of rows) {
+    const id = row.topic.slice('web_topic:'.length).trim();
+    if (id) ids.add(id);
+  }
+  return ids;
+}
+
+async function markWebTopicAsRead(id: string): Promise<void> {
+  readWebTopicIds.add(id);
+  await storeKnowledge(
+    'web_read_marker',
+    `web_topic:${id}`,
+    `Web topic read on ${new Date().toISOString()}: ${id}`,
+    'document',
+    100,
+    { webTopicId: id },
+  );
+}
+
+async function readNextWebTopic(): Promise<DocumentReadResult | null> {
+  const alreadyRead = await getReadWebTopicIds();
+  let topic = WEB_TOPICS.find((t) => !alreadyRead.has(t.id));
+
+  if (!topic) {
+    // All web topics exhausted — reset markers and start over with fresh results
+    console.log('[Library] 🌐 All web topics read — resetting for a new round of web learning');
+    try {
+      await db.delete(maraKnowledgeBase).where(like(maraKnowledgeBase.topic, 'web_topic:%'));
+    } catch { /* non-fatal */ }
+    readWebTopicIds.clear();
+    topic = WEB_TOPICS[0];
+  }
+
+  console.log(`[Library] 🌐 Web search: "${topic.title}"`);
+  try {
+    const results = await webSearch(topic.query, 6);
+    if (results.length === 0) {
+      console.warn(`[Library] Web search returned no results for topic: ${topic.id}`);
+      await markWebTopicAsRead(topic.id);
+      return null;
+    }
+    const content = results
+      .map((r) => `## ${r.title}\n${r.snippet}`)
+      .join('\n\n');
+    const document = `# ${topic.title}\n\nSursă: internet (${new Date().toLocaleDateString('ro-RO')})\n\n${content}`;
+    const result = await processDocument(document, topic.title, 'web:personal_development');
+    await markWebTopicAsRead(topic.id);
+    return result;
+  } catch (err) {
+    console.warn(`[Library] Web topic read failed for "${topic.id}":`, err instanceof Error ? err.message : err);
+    await markWebTopicAsRead(topic.id);
+    return null;
+  }
+}
+
 /**
  * Read the next book from the library — called during brain cycle
  * Reads one book per cycle to stay within rate limits
@@ -2498,8 +2587,8 @@ export async function getNextUnreadBook(): Promise<LibraryBook | null> {
 export async function readNextLibraryBook(): Promise<DocumentReadResult | null> {
   const book = await getNextUnreadBook();
   if (!book) {
-    console.log('[Library] 📚 All library books have been read!');
-    return null;
+    console.log('[Library] 📚 All library books read — switching to web learning');
+    return readNextWebTopic();
   }
 
   console.log(`[Library] 📚 Reading: "${book.title}" [${book.category}]`);
