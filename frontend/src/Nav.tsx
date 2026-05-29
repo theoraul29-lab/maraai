@@ -170,7 +170,7 @@ const Nav: React.FC = () => {
 						<button
 							className="nav-messenger-btn"
 							onClick={() => setMessengerOpen(o => !o)}
-							aria-label="Mesaje"
+							aria-label={t('messenger.title')}
 						>
 							💬
 							{messengerUnread > 0 && (
@@ -182,7 +182,7 @@ const Nav: React.FC = () => {
 						<button
 							className="nav-settings-btn"
 							onClick={() => setSettingsOpen(true)}
-							aria-label="Setări"
+							aria-label={t('settings.title')}
 						>
 							⚙️
 						</button>
@@ -201,7 +201,7 @@ const Nav: React.FC = () => {
 							<button
 								className="nav-messenger-btn"
 								onClick={() => setMessengerOpen(o => !o)}
-								aria-label="Mesaje"
+								aria-label={t('messenger.title')}
 							>
 								💬
 								{messengerUnread > 0 && (
@@ -213,7 +213,7 @@ const Nav: React.FC = () => {
 							<button
 								className="nav-settings-btn"
 								onClick={() => setSettingsOpen(true)}
-								aria-label="Setări"
+								aria-label={t('settings.title')}
 							>
 								⚙️
 							</button>

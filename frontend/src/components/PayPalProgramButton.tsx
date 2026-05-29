@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { usePayPalSDK } from '../hooks/usePayPalSDK';
 
 const API = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:5000');
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export default function PayPalProgramButton({ programId, programName: _programName, priceCents, onSuccess, onError, disabled }: Props) {
+  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<'idle' | 'rendering' | 'ready' | 'paying' | 'error'>('idle');
   const [errMsg, setErrMsg] = useState('');
@@ -90,7 +92,7 @@ export default function PayPalProgramButton({ programId, programName: _programNa
   return (
     <div className="paypal-btn-wrap">
       {sdkState === 'loading' && (
-        <div className="paypal-btn-loading">⏳ Se încarcă PayPal…</div>
+        <div className="paypal-btn-loading">⏳ {t('common.loading')}</div>
       )}
       {status === 'error' && (
         <p className="paypal-btn-error">{errMsg}</p>

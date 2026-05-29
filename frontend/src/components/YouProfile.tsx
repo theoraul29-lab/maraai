@@ -633,7 +633,7 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
           </div>
           {missionStats && (
             <div className="you-fb-xp-row">
-              <span className="you-fb-xp-badge">Lvl {missionStats.level}</span>
+              <span className="you-fb-xp-badge">{t('missions.levelShort')} {missionStats.level}</span>
               <div className="you-fb-xp-bar-wrap">
                 <div className="you-fb-xp-bar">
                   <div className="you-fb-xp-fill" style={{ width: `${(missionStats.xp % 1000) / 10}%` }} />

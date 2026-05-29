@@ -1,96 +1,98 @@
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import './styles/Pricing.css';
-
-const TIERS = [
-  {
-    id: 'free',
-    name: 'Free',
-    price: 0,
-    color: '#888',
-    badge: null as string | null,
-    tagline: 'Începe fără card.',
-    features: [
-      'Chat de bază cu Mara AI',
-      'Vizionare reels comunitate',
-      'Citire articole publice',
-      'Acces comunitate',
-    ],
-    cta: 'Începe gratuit',
-    ctaPath: '/register',
-  },
-  {
-    id: 'pro_monthly',
-    name: 'Pro',
-    price: 16,
-    color: '#60a5fa',
-    badge: null as string | null,
-    tagline: 'Tot ce ai nevoie pentru a crea și crește.',
-    features: [
-      'Chat nelimitat cu Mara AI',
-      'Upload reels',
-      'Publicare articole publice',
-      'Profil public',
-      'Acces la toate funcțiile Free',
-    ],
-    cta: 'Alege Pro',
-    ctaPath: '/billing?plan=pro_monthly',
-  },
-  {
-    id: 'vip_monthly',
-    name: 'VIP',
-    price: 20,
-    color: '#a855f7',
-    badge: 'Cel mai popular' as string | null,
-    tagline: 'Programe de transformare incluse.',
-    features: [
-      'Tot ce include Pro',
-      'Citire articole VIP',
-      'Publicare articole VIP',
-      'Personalitate AI custom',
-      'Upload HD',
-      '✦ Toate programele incluse — New Mindset, New Habit, New Skills, New Body, New Life, New You',
-    ],
-    cta: 'Alege VIP',
-    ctaPath: '/billing?plan=vip_monthly',
-  },
-  {
-    id: 'creator_monthly',
-    name: 'Creator',
-    price: 25,
-    color: '#f59e0b',
-    badge: null as string | null,
-    tagline: 'Monetizează-ți conținutul.',
-    features: [
-      'Tot ce include VIP',
-      'Revenue share 70%',
-      'Retragere câștiguri',
-      'Analytics detaliate',
-      'Publicare articole plătite',
-      'Monetizare reels',
-    ],
-    cta: 'Alege Creator',
-    ctaPath: '/billing?plan=creator_monthly',
-  },
-];
-
-const PROGRAMS = [
-  { icon: '🧠', name: 'New Mindset',  days: 1,    desc: 'O zi. O schimbare de perspectivă.' },
-  { icon: '🔁', name: 'New Habit',    days: 21,   desc: '21 de zile. Un obicei pentru viață.' },
-  { icon: '⚡', name: 'New Skills',   days: 90,   desc: '90 de zile. O abilitate nouă.' },
-  { icon: '💪', name: 'New Body',     days: 180,  desc: '180 de zile. Un corp și o minte noi.' },
-  { icon: '🌅', name: 'New Life',     days: 365,  desc: '365 de zile. O viață nouă.' },
-  { icon: '✨', name: 'New You',      days: 1095, desc: '1095 de zile. Un om nou.' },
-];
 
 export default function Pricing() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+
+  const TIERS = [
+    {
+      id: 'free',
+      name: 'Free',
+      price: 0,
+      color: '#888',
+      badge: null as string | null,
+      tagline: t('pricing.tierFreeTagline'),
+      features: [
+        t('pricing.tierFreeChat'),
+        t('pricing.tierFreeReels'),
+        t('pricing.tierFreeArticles'),
+        t('pricing.tierFreeCommunity'),
+      ],
+      cta: t('pricing.tierFreeCta'),
+      ctaPath: '/register',
+    },
+    {
+      id: 'pro_monthly',
+      name: 'Pro',
+      price: 16,
+      color: '#60a5fa',
+      badge: null as string | null,
+      tagline: t('pricing.tierProTagline'),
+      features: [
+        t('pricing.tierProChat'),
+        t('pricing.tierProReels'),
+        t('pricing.tierProArticles'),
+        t('pricing.tierProProfile'),
+        t('pricing.tierProAll'),
+      ],
+      cta: t('pricing.tierProCta'),
+      ctaPath: '/billing?plan=pro_monthly',
+    },
+    {
+      id: 'vip_monthly',
+      name: 'VIP',
+      price: 20,
+      color: '#a855f7',
+      badge: t('pricing.tierVipBadge') as string | null,
+      tagline: t('pricing.tierVipTagline'),
+      features: [
+        t('pricing.tierVipAll'),
+        t('pricing.tierVipReadVip'),
+        t('pricing.tierVipPublishVip'),
+        t('pricing.tierVipAI'),
+        t('pricing.tierVipHD'),
+        t('pricing.tierVipPrograms'),
+      ],
+      cta: t('pricing.tierVipCta'),
+      ctaPath: '/billing?plan=vip_monthly',
+    },
+    {
+      id: 'creator_monthly',
+      name: 'Creator',
+      price: 25,
+      color: '#f59e0b',
+      badge: null as string | null,
+      tagline: t('pricing.tierCreatorTagline'),
+      features: [
+        t('pricing.tierCreatorAll'),
+        t('pricing.tierCreatorRevenue'),
+        t('pricing.tierCreatorWithdraw'),
+        t('pricing.tierCreatorAnalytics'),
+        t('pricing.tierCreatorPaid'),
+        t('pricing.tierCreatorMonetize'),
+      ],
+      cta: t('pricing.tierCreatorCta'),
+      ctaPath: '/billing?plan=creator_monthly',
+    },
+  ];
+
+  const PROGRAMS = [
+    { icon: '🧠', name: 'New Mindset',  days: 1,    desc: t('pricing.mindsetDesc') },
+    { icon: '🔁', name: 'New Habit',    days: 21,   desc: t('pricing.habitDesc') },
+    { icon: '⚡', name: 'New Skills',   days: 90,   desc: t('pricing.skillsDesc') },
+    { icon: '💪', name: 'New Body',     days: 180,  desc: t('pricing.bodyDesc') },
+    { icon: '🌅', name: 'New Life',     days: 365,  desc: t('pricing.lifeDesc') },
+    { icon: '✨', name: 'New You',      days: 1095, desc: t('pricing.youDesc') },
+  ];
 
   return (
     <div className="pricing-root">
       <div className="pricing-hero">
-        <h1 className="pricing-title">Calea ta de transformare</h1>
+        <h1 className="pricing-title">{t('pricing.heroTitle')}</h1>
         <p className="pricing-subtitle">
-          Simplu. Lunar. Fără surprize.
+          {t('pricing.heroSubtitle')}
         </p>
       </div>
 
@@ -107,11 +109,11 @@ export default function Pricing() {
 
             <div className="pricing-card-price">
               {tier.price === 0 ? (
-                <span className="pricing-free">Gratuit</span>
+                <span className="pricing-free">{t('pricing.free')}</span>
               ) : (
                 <>
                   <span className="pricing-amount">€{tier.price % 1 === 0 ? tier.price : tier.price.toFixed(2)}</span>
-                  <span className="pricing-once">/lună</span>
+                  <span className="pricing-once">{t('pricing.perMonth')}</span>
                 </>
               )}
             </div>
@@ -133,9 +135,9 @@ export default function Pricing() {
       </div>
 
       <div className="pricing-section-divider">
-        <h2 className="pricing-section-title">Programele incluse în VIP</h2>
+        <h2 className="pricing-section-title">{t('pricing.programsTitle')}</h2>
         <p className="pricing-section-sub">
-          Toate cele 6 programe de transformare sunt incluse în abonamentul VIP. Nicio plată extra.
+          {t('pricing.programsSubtitle')}
         </p>
       </div>
 
@@ -145,7 +147,7 @@ export default function Pricing() {
             <span className="pricing-program-icon">{p.icon}</span>
             <div>
               <div className="pricing-program-name">{p.name}</div>
-              <div className="pricing-program-days">{p.days} {p.days === 1 ? 'zi' : 'zile'}</div>
+              <div className="pricing-program-days">{p.days} {p.days === 1 ? t('pricing.day') : t('pricing.days')}</div>
               <div className="pricing-program-desc">{p.desc}</div>
             </div>
           </div>
@@ -153,22 +155,22 @@ export default function Pricing() {
       </div>
 
       <div className="pricing-faq">
-        <h2>Întrebări frecvente</h2>
+        <h2>{t('pricing.faqTitle')}</h2>
         <div className="pricing-faq-item">
-          <strong>Pot anula oricând?</strong>
-          <p>Da. Anulezi oricând din setări, fără penalități. Accesul continuă până la sfârșitul lunii plătite.</p>
+          <strong>{t('pricing.faq1Q')}</strong>
+          <p>{t('pricing.faq1A')}</p>
         </div>
         <div className="pricing-faq-item">
-          <strong>Cum funcționează programele în VIP?</strong>
-          <p>Cu VIP activ ai acces complet la toate cele 6 programe — de la New Mindset (1 zi) până la New You (3 ani). Le poți rula simultan sau succesiv.</p>
+          <strong>{t('pricing.faq2Q')}</strong>
+          <p>{t('pricing.faq2A')}</p>
         </div>
         <div className="pricing-faq-item">
-          <strong>Ce se întâmplă dacă sar o zi din program?</strong>
-          <p>Nimic rău — Mara îți păstrează progresul. Streakul se resetează dar programul continuă.</p>
+          <strong>{t('pricing.faq3Q')}</strong>
+          <p>{t('pricing.faq3A')}</p>
         </div>
         <div className="pricing-faq-item">
-          <strong>Cum plătesc?</strong>
-          <p>Stripe (card) sau PayPal. Tranzacție securizată, factură automată.</p>
+          <strong>{t('pricing.faq4Q')}</strong>
+          <p>{t('pricing.faq4A')}</p>
         </div>
       </div>
     </div>

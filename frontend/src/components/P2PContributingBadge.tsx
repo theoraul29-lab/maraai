@@ -13,6 +13,7 @@
 //   • Tab hidden → stop
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import './P2PContributingBadge.css';
 
 import P2PWorker from '../pwa/p2pComputeWorker?worker';
@@ -67,6 +68,7 @@ type Props = {
 };
 
 export default function P2PContributingBadge({ backgroundNodeEnabled }: Props) {
+  const { t } = useTranslation();
   const workerRef = useRef<Worker | null>(null);
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [contributing, setContributing] = useState(false);
@@ -151,9 +153,9 @@ export default function P2PContributingBadge({ backgroundNodeEnabled }: Props) {
   return (
     <>
       {visible && (
-        <div className="p2p-badge" title={`Contribui la Mara: ${tasksCompleted} taskuri, ${xpEarned} XP`}>
+        <div className="p2p-badge" title={t('p2p.badgeTitle', { tasks: tasksCompleted, xp: xpEarned })}>
           <span className="p2p-badge-dot" />
-          <span className="p2p-badge-text">Contribui la Mara</span>
+          <span className="p2p-badge-text">{t('p2p.contributing')}</span>
           {tasksCompleted > 0 && (
             <span className="p2p-badge-xp">+{xpEarned} XP</span>
           )}

@@ -107,7 +107,7 @@ interface Props { onClose: () => void; }
 
 export const Creator: React.FC<Props> = ({ onClose }) => {
   const { user } = useAuth();
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [studioTab, setStudioTab] = useState<StudioTab>('music');
@@ -571,16 +571,16 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
 
   // ─── Tabs config ──────────────────────────────────────────────────────────
   const TABS: { id: Tab; icon: React.ReactNode; label: string }[] = [
-    { id: 'dashboard', icon: <ChartBar size={15} />,      label: 'Dashboard' },
-    { id: 'create',    icon: <Sparkle size={15} />,       label: 'Create' },
-    { id: 'upload',    icon: <Upload size={15} />,        label: 'Upload' },
-    { id: 'articles',  icon: <Article size={15} />,       label: 'Articles' },
-    { id: 'analytics', icon: <TrendUp size={15} />,       label: 'Analytics' },
-    { id: 'earnings',  icon: <CurrencyEur size={15} />,   label: 'Earnings' },
-    { id: 'studio',    icon: <PaintBrush size={15} />,    label: 'Studio' },
-    { id: 'content',   icon: <Folder size={15} />,        label: 'Content' },
-    { id: 'comments',  icon: <ChatCircle size={15} />,    label: 'Comments' },
-    { id: 'profile',   icon: <UserCircle size={15} />,    label: 'Profile' },
+    { id: 'dashboard', icon: <ChartBar size={15} />,      label: t('creatorExtra.tabDashboard') },
+    { id: 'create',    icon: <Sparkle size={15} />,       label: t('creatorExtra.tabCreate') },
+    { id: 'upload',    icon: <Upload size={15} />,        label: t('creatorExtra.tabUpload') },
+    { id: 'articles',  icon: <Article size={15} />,       label: t('creatorExtra.tabArticles') },
+    { id: 'analytics', icon: <TrendUp size={15} />,       label: t('creatorExtra.tabAnalytics') },
+    { id: 'earnings',  icon: <CurrencyEur size={15} />,   label: t('creatorExtra.tabEarnings') },
+    { id: 'studio',    icon: <PaintBrush size={15} />,    label: t('creatorExtra.tabStudio') },
+    { id: 'content',   icon: <Folder size={15} />,        label: t('creatorExtra.tabContent') },
+    { id: 'comments',  icon: <ChatCircle size={15} />,    label: t('creatorExtra.tabComments') },
+    { id: 'profile',   icon: <UserCircle size={15} />,    label: t('creatorExtra.tabProfile') },
   ];
 
   // ─── Render ────────────────────────────────────────────────────────────────
@@ -623,44 +623,44 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
           <>
             <div className="creator-welcome">
               <div className="creator-welcome-title">
-                Bun venit, {user?.name || 'Creator'} 👋
+                {t('creatorExtra.welcomeGreeting', { name: user?.name || 'Creator' })}
               </div>
               <div className="creator-welcome-text">
-                <span className="creator-orange">Mara AI</span> — panoul tău complet de creator.
+                <span className="creator-orange">Mara AI</span> — {t('creatorExtra.creatorPanelSub')}
               </div>
             </div>
 
             <div className="creator-stats">
               <div className="creator-stat-card">
                 <div className="creator-stat-value">{formatNum(analytics.totalReels)}</div>
-                <div className="creator-stat-label">Reels</div>
+                <div className="creator-stat-label">{t('creator.totalReels')}</div>
               </div>
               <div className="creator-stat-card">
                 <div className="creator-stat-value">{formatNum(analytics.totalViews)}</div>
-                <div className="creator-stat-label">Views</div>
+                <div className="creator-stat-label">{t('creator.totalViews')}</div>
               </div>
               <div className="creator-stat-card">
                 <div className="creator-stat-value">{formatNum(analytics.totalLikes)}</div>
-                <div className="creator-stat-label">Likes</div>
+                <div className="creator-stat-label">{t('creator.totalLikes')}</div>
               </div>
               <div className="creator-stat-card">
                 <div className="creator-stat-value">{analytics.followers}</div>
-                <div className="creator-stat-label">Followers</div>
+                <div className="creator-stat-label">{t('creator.followers')}</div>
               </div>
               <div className="creator-stat-card creator-stat-xp">
                 <div className="creator-stat-value">⚡ {formatNum(creatorXP.xp)}</div>
-                <div className="creator-stat-label">XP Creator · Lv {creatorXP.level}</div>
+                <div className="creator-stat-label">{t('creatorExtra.xpCreatorLvl', { level: creatorXP.level })}</div>
               </div>
               <div className="creator-stat-card">
                 <div className="creator-stat-value">{analytics.engagementRate.toFixed(1)}%</div>
-                <div className="creator-stat-label">Engagement</div>
+                <div className="creator-stat-label">{t('creator.engagement')}</div>
               </div>
             </div>
 
             <div className="creator-xp-bar-wrap">
               <div className="creator-xp-bar-label">
-                <span>XP Progress: {creatorXP.xp % 1000} / 1000</span>
-                <span>Level {creatorXP.level} → {creatorXP.level + 1}</span>
+                <span>{t('creatorExtra.xpProgressLabel', { current: creatorXP.xp % 1000, total: 1000 })}</span>
+                <span>{t('creatorExtra.levelArrow', { from: creatorXP.level, to: creatorXP.level + 1 })}</span>
               </div>
               <div className="creator-xp-bar-track">
                 <div className="creator-xp-bar-fill" style={{ width: `${(creatorXP.xp % 1000) / 10}%` }} />
@@ -669,12 +669,12 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
 
             <div className="creator-actions-grid">
               {([
-                { icon: <Sparkle size={22} />,     label: 'Create & Share', tab: 'create' as Tab },
-                { icon: <Upload size={22} />,       label: 'Upload Reel',   tab: 'upload' as Tab },
-                { icon: <PaintBrush size={22} />,   label: 'Studio',        tab: 'studio' as Tab },
-                { icon: <Article size={22} />,      label: 'Articles',      tab: 'articles' as Tab },
-                { icon: <TrendUp size={22} />,      label: 'Analytics',     tab: 'analytics' as Tab },
-                { icon: <CurrencyEur size={22} />,  label: 'Earnings',      tab: 'earnings' as Tab },
+                { icon: <Sparkle size={22} />,     label: t('creatorExtra.createShare'),      tab: 'create' as Tab },
+                { icon: <Upload size={22} />,       label: t('creatorExtra.tabUpload'),        tab: 'upload' as Tab },
+                { icon: <PaintBrush size={22} />,   label: t('creatorExtra.tabStudio'),        tab: 'studio' as Tab },
+                { icon: <Article size={22} />,      label: t('creatorExtra.tabArticles'),      tab: 'articles' as Tab },
+                { icon: <TrendUp size={22} />,      label: t('creatorExtra.tabAnalytics'),     tab: 'analytics' as Tab },
+                { icon: <CurrencyEur size={22} />,  label: t('creatorExtra.tabEarnings'),      tab: 'earnings' as Tab },
               ] as { icon: React.ReactNode; label: string; tab: Tab }[]).map(a => (
                 <div key={a.tab} className="creator-action-card" onClick={() => setActiveTab(a.tab)}>
                   <div className="creator-action-icon">{a.icon}</div>
@@ -685,7 +685,7 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
 
             {videos.length > 0 && (
               <div className="creator-recent">
-                <h3 className="creator-section-title">Conținut recent</h3>
+                <h3 className="creator-section-title">{t('creatorExtra.recentContent')}</h3>
                 {videos.slice(0, 4).map(v => (
                   <div key={v.id} className="creator-feature-item" onClick={() => setActiveTab('content')}>
                     <div className="creator-feature-icon">🎬</div>
@@ -703,7 +703,7 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
         {/* ═══════════════════ CREATE & SHARE ═══════════════════ */}
         {activeTab === 'create' && (
           <div className="creator-upload-form">
-            <h3 className="creator-section-title">Creează & Distribuie</h3>
+            <h3 className="creator-section-title">{t('creatorExtra.createShare')}</h3>
 
             <div className="creator-type-selector">
               {(['reel', 'photo', 'article'] as const).map(type => (
@@ -720,10 +720,10 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
             {/* Title (reel + article) */}
             {createType !== 'photo' && (
               <label className="creator-form-label">
-                Titlu
+                {t('creator.uploadTitle')}
                 <input type="text" className="creator-form-input" maxLength={100}
                   value={createTitle} onChange={e => setCreateTitle(e.target.value)}
-                  placeholder={createType === 'reel' ? 'Titlul reelului...' : 'Titlul articolului...'}
+                  placeholder={createType === 'reel' ? t('creatorExtra.reelTitlePlaceholder') : t('creatorExtra.articleTitlePlaceholder')}
                 />
               </label>
             )}
@@ -732,14 +732,14 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
             {createType === 'reel' && (
               <>
                 <label className="creator-form-label">
-                  Video (URL sau fișier)
+                  {t('creatorExtra.videoFileLabel')}
                   <input type="url" className="creator-form-input"
                     value={createUrl} onChange={e => setCreateUrl(e.target.value)}
                     disabled={!!createFile}
-                    placeholder="https://youtube.com/..." />
+                    placeholder={t('creatorExtra.videoUrlPlaceholder2')} />
                 </label>
                 <label className="creator-form-label">
-                  Sau atașează fișier
+                  {t('creatorExtra.attachFileLabel')}
                   <input ref={createFileRef} type="file" accept="video/*" className="creator-form-input"
                     onChange={e => {
                       const f = e.target.files?.[0] || null;
@@ -755,7 +755,7 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
             {/* Photo: image upload */}
             {createType === 'photo' && (
               <label className="creator-form-label">
-                Imagine
+                {t('creatorExtra.imageLabel')}
                 <input ref={createFileRef} type="file" accept="image/*" className="creator-form-input"
                   onChange={e => {
                     const f = e.target.files?.[0] || null;
@@ -770,7 +770,7 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
             {/* Article type */}
             {createType === 'article' && (
               <div className="creator-form-label">
-                Tip articol
+                {t('creatorExtra.articleTypeLabel')}
                 <div className="creator-type-selector" style={{ marginTop: 6 }}>
                   {(['public', 'vip', 'paid'] as const).map(at => (
                     <button key={at} className={`creator-type-btn${articleType === at ? ' active' : ''}`}
@@ -784,52 +784,52 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
 
             {/* Content / caption */}
             <label className="creator-form-label">
-              {createType === 'article' ? 'Conținut articol' : 'Descriere / Caption'}
+              {createType === 'article' ? t('creatorExtra.articleContentLabel') : t('creatorExtra.captionLabel')}
               <textarea className="creator-form-textarea" rows={createType === 'article' ? 8 : 3}
                 maxLength={createType === 'article' ? 50000 : 500}
                 value={createContent} onChange={e => setCreateContent(e.target.value)}
-                placeholder={createType === 'article' ? 'Scrie articolul tău...' : 'Descriere...'} />
+                placeholder={createType === 'article' ? t('creatorExtra.articlePlaceholder') : t('creatorExtra.captionPlaceholder')} />
             </label>
 
             {/* Tags */}
             <label className="creator-form-label">
-              Tags (separate cu virgulă)
+              {t('creatorExtra.tagsLabel2')}
               <input type="text" className="creator-form-input"
                 value={createTags} onChange={e => setCreateTags(e.target.value)}
-                placeholder="motivatie, lifestyle, tips..." />
+                placeholder={t('creatorExtra.tagsPlaceholder2')} />
             </label>
 
             {/* Share destinations */}
             <div className="creator-share-destinations">
-              <h4 className="creator-share-title">Distribuie pe:</h4>
+              <h4 className="creator-share-title">{t('creatorExtra.shareDestinations')}</h4>
               <div className="creator-share-options">
                 {createType === 'reel' && (
                   <label className="creator-checkbox-label">
                     <input type="checkbox" checked={shareToReels} onChange={e => setShareToReels(e.target.checked)} />
-                    <span>🎬 Reels Feed (+50 XP)</span>
+                    <span>{t('creatorExtra.shareToReelsLabel')}</span>
                   </label>
                 )}
                 <label className="creator-checkbox-label">
                   <input type="checkbox" checked={shareToYou} onChange={e => setShareToYou(e.target.checked)} />
-                  <span>👤 Profilul tău (You) (+{createType === 'reel' && shareToReels ? 10 : 30} XP)</span>
+                  <span>{t('creatorExtra.shareToYouLabel', { xp: createType === 'reel' && shareToReels ? 10 : 30 })}</span>
                 </label>
               </div>
               <div className="creator-xp-preview">
-                ⚡ Estimat: <strong>+{estimatedXP()} XP</strong>
+                {t('creatorExtra.estimatedXP', { xp: estimatedXP() })}
               </div>
             </div>
 
             <div className="creator-button-group">
               <button className={`creator-button${creating ? ' disabled' : ''}`}
                 onClick={handleCreate} disabled={creating}>
-                {creating ? 'Se publică...' : '🚀 Publică'}
+                {creating ? t('creatorExtra.publishingBtn') : t('creatorExtra.publishBtn')}
               </button>
               <button className="creator-button secondary" onClick={() => {
                 setCreateTitle(''); setCreateContent(''); setCreateTags(''); setCreateUrl('');
                 if (createFilePreview) URL.revokeObjectURL(createFilePreview);
                 setCreateFile(null); setCreateFilePreview('');
                 if (createFileRef.current) createFileRef.current.value = '';
-              }}>Reset</button>
+              }}>{t('creatorExtra.resetBtn')}</button>
             </div>
           </div>
         )}
@@ -837,22 +837,22 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
         {/* ═══════════════════ UPLOAD REEL ═══════════════════ */}
         {activeTab === 'upload' && (
           <div className="creator-upload-form">
-            <h3 className="creator-section-title">Upload Reel Direct</h3>
+            <h3 className="creator-section-title">{t('creatorExtra.uploadDirectTitle')}</h3>
             <div className="creator-welcome">
               <div className="creator-welcome-text">
                 {postStatus.canPost
-                  ? `Mai poți posta ${postStatus.maxDaily - postStatus.postsToday} reels azi`
-                  : `Limita zilnică atinsă (${postStatus.maxDaily})`}
+                  ? t('creatorExtra.canPostMoreStatus', { remaining: postStatus.maxDaily - postStatus.postsToday })
+                  : t('creatorExtra.limitReachedStatus', { max: postStatus.maxDaily })}
               </div>
             </div>
             <label className="creator-form-label">
-              Titlu *
+              {t('creatorExtra.reelTitleStar')}
               <input type="text" className="creator-form-input" maxLength={100}
                 value={uploadTitle} onChange={e => setUploadTitle(e.target.value)}
-                placeholder="Titlul reelului..." />
+                placeholder={t('creatorExtra.reelTitlePlaceholder')} />
             </label>
             <label className="creator-form-label">
-              Fișier video
+              {t('creatorExtra.videoFileInput')}
               <input ref={videoFileRef} type="file" accept="video/mp4,video/webm,video/quicktime" className="creator-form-input"
                 onChange={e => {
                   const f = e.target.files?.[0] || null;
@@ -862,32 +862,32 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
               {videoPreviewUrl && <video src={videoPreviewUrl} controls style={{ maxWidth: '100%', borderRadius: 8, marginTop: 8 }} />}
             </label>
             <label className="creator-form-label">
-              Sau URL extern (YouTube, Vimeo...)
+              {t('creatorExtra.externalUrlLabel')}
               <input type="url" className="creator-form-input"
                 value={uploadUrl} onChange={e => setUploadUrl(e.target.value)}
                 disabled={!!videoFile} placeholder="https://..." />
             </label>
             <label className="creator-form-label">
-              Descriere
+              {t('creatorExtra.descriptionLabel')}
               <textarea className="creator-form-textarea" rows={3} maxLength={500}
-                value={uploadDesc} onChange={e => setUploadDesc(e.target.value)} placeholder="Descriere..." />
+                value={uploadDesc} onChange={e => setUploadDesc(e.target.value)} placeholder={t('creatorExtra.captionPlaceholder')} />
             </label>
             <label className="creator-form-label">
-              Tags
+              {t('creatorExtra.tagsLabel2')}
               <input type="text" className="creator-form-input"
                 value={uploadTags} onChange={e => setUploadTags(e.target.value)} placeholder="tag1, tag2..." />
             </label>
             <div className="creator-button-group">
               <button className={`creator-button${(!postStatus.canPost || uploading) ? ' disabled' : ''}`}
                 onClick={handleUpload} disabled={!postStatus.canPost || uploading}>
-                {uploading ? 'Se publică...' : '📤 Publică Reel (+50 XP)'}
+                {uploading ? t('creatorExtra.uploadingBtn') : t('creatorExtra.uploadReelBtn')}
               </button>
               <button className="creator-button secondary" onClick={() => {
                 setUploadTitle(''); setUploadDesc(''); setUploadUrl(''); setUploadTags('');
                 if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl);
                 setVideoFile(null); setVideoPreviewUrl('');
                 if (videoFileRef.current) videoFileRef.current.value = '';
-              }}>Reset</button>
+              }}>{t('creatorExtra.resetBtn')}</button>
             </div>
           </div>
         )}
@@ -895,14 +895,14 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
         {/* ═══════════════════ ARTICLES ═══════════════════ */}
         {activeTab === 'articles' && (
           <>
-            <h3 className="creator-section-title">Articolele Mele</h3>
-            {loading ? <div className="creator-loading">Se încarcă...</div> :
+            <h3 className="creator-section-title">{t('creatorExtra.myArticlesTitle')}</h3>
+            {loading ? <div className="creator-loading">{t('creator.loading')}</div> :
               articles.length === 0 ? (
                 <div className="creator-empty">
-                  <div>📝 Nu ai articole publicate încă.</div>
+                  <div>{t('creatorExtra.noArticlesYet')}</div>
                   <button className="creator-button" style={{ marginTop: 12 }}
                     onClick={() => window.location.href = '/writers-hub'}>
-                    Deschide Writers Hub
+                    {t('creatorExtra.openWritersHub')}
                   </button>
                 </div>
               ) : (
@@ -920,7 +920,7 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
                           · {new Date(art.createdAt).toLocaleDateString(i18n.language)}
                         </div>
                       </div>
-                      <a href="/writers-hub" className="creator-video-btn view" style={{ textDecoration: 'none' }}>Edit</a>
+                      <a href="/writers-hub" className="creator-video-btn view" style={{ textDecoration: 'none' }}>{t('creatorExtra.editBtn')}</a>
                     </div>
                   ))}
                 </div>
@@ -931,15 +931,15 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
         {/* ═══════════════════ ANALYTICS ═══════════════════ */}
         {activeTab === 'analytics' && (
           <>
-            <h3 className="creator-section-title">Analytics</h3>
+            <h3 className="creator-section-title">{t('creatorExtra.analyticsTitle')}</h3>
             <div className="creator-analytics-grid">
               {([
-                { label: 'Total Reels', value: formatNum(analytics.totalReels), icon: <FilmStrip size={22} /> },
-                { label: 'Total Views', value: formatNum(analytics.totalViews), icon: <Eye size={22} /> },
-                { label: 'Total Likes', value: formatNum(analytics.totalLikes), icon: <Heart size={22} /> },
-                { label: 'Followers',   value: formatNum(analytics.followers),   icon: <UsersThree size={22} /> },
-                { label: 'Engagement',  value: `${analytics.engagementRate.toFixed(1)}%`, icon: <ChartBar size={22} /> },
-                { label: 'Articole',    value: String(articles.length),           icon: <Article size={22} /> },
+                { label: t('creator.totalReels'), value: formatNum(analytics.totalReels), icon: <FilmStrip size={22} /> },
+                { label: t('creator.totalViews'), value: formatNum(analytics.totalViews), icon: <Eye size={22} /> },
+                { label: t('creator.totalLikes'), value: formatNum(analytics.totalLikes), icon: <Heart size={22} /> },
+                { label: t('creator.followers'),  value: formatNum(analytics.followers),  icon: <UsersThree size={22} /> },
+                { label: t('creator.engagement'), value: `${analytics.engagementRate.toFixed(1)}%`, icon: <ChartBar size={22} /> },
+                { label: t('creatorExtra.articlesStatLabel'), value: String(articles.length), icon: <Article size={22} /> },
               ] as { label: string; value: string; icon: React.ReactNode }[]).map(s => (
                 <div key={s.label} className="creator-analytics-card">
                   <div className="creator-analytics-icon">{s.icon}</div>
@@ -950,7 +950,7 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
             </div>
             {videos.length > 0 && (
               <>
-                <h4 className="creator-section-subtitle">Top Content</h4>
+                <h4 className="creator-section-subtitle">{t('creatorExtra.topContentTitle')}</h4>
                 <div className="creator-top-content">
                   {[...videos].sort((a, b) => (b.views || 0) - (a.views || 0)).slice(0, 5).map((v, i) => {
                     const maxViews = videos.reduce((m, x) => Math.max(m, x.views || 0), 1);
@@ -979,27 +979,27 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
           const launched = days === 0;
           return (
             <>
-              <h3 className="creator-section-title">Earnings & XP</h3>
+              <h3 className="creator-section-title">{t('creatorExtra.earningsTitle')}</h3>
               <div className="creator-xp-card">
-                <div className="creator-xp-card-label">XP Creator câștigat</div>
+                <div className="creator-xp-card-label">{t('creatorExtra.xpEarnedLabel')}</div>
                 <div className="creator-xp-card-value">⚡ {formatNum(creatorXP.xp)} XP</div>
-                <div className="creator-xp-card-level">Level {creatorXP.level} · Streak {creatorXP.streak} zile</div>
+                <div className="creator-xp-card-level">{t('creatorExtra.levelStreakInfo', { level: creatorXP.level, streak: creatorXP.streak })}</div>
                 <div className="creator-xp-bar-track" style={{ marginTop: 12 }}>
                   <div className="creator-xp-bar-fill" style={{ width: `${(creatorXP.xp % 1000) / 10}%` }} />
                 </div>
                 <div className="creator-xp-bar-label" style={{ marginTop: 4 }}>
-                  <span>{creatorXP.xp % 1000}/1000 pentru Level {creatorXP.level + 1}</span>
+                  <span>{t('creatorExtra.xpForNextLevel', { current: creatorXP.xp % 1000, next: creatorXP.level + 1 })}</span>
                 </div>
               </div>
 
               <div className="creator-earnings-xp-table">
-                <h4 className="creator-section-subtitle">Cum câștigi XP ca Creator</h4>
+                <h4 className="creator-section-subtitle">{t('creatorExtra.howToEarnTitle')}</h4>
                 {[
-                  { action: 'Upload Reel pe Feeds', xp: '+50 XP' },
-                  { action: 'Share pe profilul tău (You)', xp: '+30 XP' },
-                  { action: 'Ambele (Reels + You)', xp: '+60 XP' },
-                  { action: 'Publică articol Public', xp: '+40 XP' },
-                  { action: 'Publică articol VIP/Paid', xp: '+80 XP' },
+                  { action: t('creatorExtra.xpActionReel'), xp: '+50 XP' },
+                  { action: t('creatorExtra.xpActionShare'), xp: '+30 XP' },
+                  { action: t('creatorExtra.xpActionBoth'), xp: '+60 XP' },
+                  { action: t('creatorExtra.xpActionPublic'), xp: '+40 XP' },
+                  { action: t('creatorExtra.xpActionPaid'), xp: '+80 XP' },
                 ].map(row => (
                   <div key={row.action} className="creator-earnings-row">
                     <span className="creator-earnings-action">{row.action}</span>
@@ -1011,33 +1011,33 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
               {!launched ? (
                 <div className="creator-launch-lock">
                   <div className="creator-launch-icon"><Lock size={32} /></div>
-                  <div className="creator-launch-title">Monetizarea se activează la <strong>1 iulie 2026</strong></div>
+                  <div className="creator-launch-title">{t('creatorExtra.monetizationDate', { date: '1 July 2026' })}</div>
                   <div className="creator-launch-countdown">
                     <div className="creator-countdown-box">
                       <div className="creator-countdown-num">{days}</div>
-                      <div className="creator-countdown-unit">zile rămase</div>
+                      <div className="creator-countdown-unit">{t('creatorExtra.daysRemaining')}</div>
                     </div>
                   </div>
                   <div className="creator-launch-text">
-                    Continuă să creezi conținut — veniturile vor fi calculate din ziua lansării.
-                    <br />Abonamentul <strong>Creator (€25/lună)</strong> îți dă acces la toate funcționalitățile de monetizare.
+                    {t('creatorExtra.keepCreating')}
+                    <br />{t('creatorExtra.creatorSubscription')}
                   </div>
                   <div className="creator-earnings-preview">
                     <div className="creator-earnings-preview-item">
-                      <span>Venituri estimate *</span><span className="creator-locked">€ —</span>
+                      <span>{t('creatorExtra.estimatedEarnings')}</span><span className="creator-locked">€ —</span>
                     </div>
                     <div className="creator-earnings-preview-item">
-                      <span>Articole vândute *</span><span className="creator-locked">— </span>
+                      <span>{t('creatorExtra.articlesSold')}</span><span className="creator-locked">— </span>
                     </div>
                     <div className="creator-earnings-preview-item">
-                      <span>Revenue share *</span><span className="creator-locked">70%</span>
+                      <span>{t('creatorExtra.revenueShare')}</span><span className="creator-locked">70%</span>
                     </div>
-                    <div className="creator-earnings-note">* Disponibil din 01.07.2026</div>
+                    <div className="creator-earnings-note">{t('creatorExtra.availableDate', { date: '01.07.2026' })}</div>
                   </div>
                 </div>
               ) : (
                 <div className="creator-earnings-live">
-                  <div className="creator-section-subtitle">Venituri live</div>
+                  <div className="creator-section-subtitle">{t('creatorExtra.liveEarnings')}</div>
                 </div>
               )}
             </>
@@ -1047,17 +1047,17 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
         {/* ═══════════════════ STUDIO ═══════════════════ */}
         {activeTab === 'studio' && (
           <>
-            <h3 className="creator-section-title">Studio Tools</h3>
+            <h3 className="creator-section-title">{t('creatorExtra.studioTitle')}</h3>
             <div className="creator-studio-tabs">
               {(['music', 'photo', 'video'] as StudioTab[]).map(st => (
                 <button key={st}
                   className={`creator-studio-tab${studioTab === st ? ' active' : ''}`}
                   onClick={() => setStudioTab(st)}>
                   {st === 'music'
-                    ? <><MusicNote size={14} /> Music Creator</>
+                    ? <><MusicNote size={14} /> {t('creatorExtra.musicCreatorTab')}</>
                     : st === 'photo'
-                    ? <><PhImage size={14} /> Photo Editor</>
-                    : <><VideoCamera size={14} /> Video Thumbnail</>
+                    ? <><PhImage size={14} /> {t('creatorExtra.photoEditorTab')}</>
+                    : <><VideoCamera size={14} /> {t('creatorExtra.videoThumbTab')}</>
                   }
                 </button>
               ))}
@@ -1103,7 +1103,7 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
                   ))}
                 </div>
                 <div className="creator-music-hint">
-                  Apasă pe pătrate pentru a activa note. Record → cântă → Stop Rec → se descarcă automat ca .webm
+                  {t('creatorExtra.musicHint')}
                 </div>
               </div>
             )}
@@ -1112,7 +1112,7 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
             {studioTab === 'photo' && (
               <div className="creator-photo-editor">
                 <label className="creator-form-label">
-                  Încarcă imagine
+                  {t('creatorExtra.uploadImageLabel')}
                   <input type="file" accept="image/*" className="creator-form-input"
                     onChange={e => {
                       const f = e.target.files?.[0];
@@ -1148,14 +1148,14 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
                       ))}
                     </div>
                     <label className="creator-form-label" style={{ marginTop: 8 }}>
-                      Text overlay
+                      {t('creatorExtra.textOverlayLabel')}
                       <input type="text" className="creator-form-input" value={photoText}
-                        onChange={e => setPhotoText(e.target.value)} placeholder="Text pe imagine..." />
+                        onChange={e => setPhotoText(e.target.value)} placeholder={t('creatorExtra.textOverlayPlaceholder')} />
                     </label>
-                    <button className="creator-button" style={{ marginTop: 8 }} onClick={applyPhotoFilters}>Aplică</button>
+                    <button className="creator-button" style={{ marginTop: 8 }} onClick={applyPhotoFilters}>{t('creatorExtra.applyBtn')}</button>
                     <canvas ref={photoCanvasRef} className="creator-canvas-preview" />
                     <button className="creator-button" style={{ marginTop: 8 }} onClick={downloadPhoto}>
-                      ⬇ Download PNG
+                      {t('creatorExtra.downloadPngBtn')}
                     </button>
                   </>
                 )}
@@ -1166,7 +1166,7 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
             {studioTab === 'video' && (
               <div className="creator-video-editor">
                 <label className="creator-form-label">
-                  Încarcă video pentru thumbnail
+                  {t('creatorExtra.uploadVideoThumbLabel')}
                   <input type="file" accept="video/*" className="creator-form-input"
                     onChange={e => {
                       const f = e.target.files?.[0];
@@ -1184,13 +1184,13 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
                       style={{ maxWidth: '100%', borderRadius: 8, marginTop: 8 }}
                     />
                     <label className="creator-form-label" style={{ marginTop: 8 }}>
-                      Text pe thumbnail
+                      {t('creatorExtra.thumbTextLabel')}
                       <input type="text" className="creator-form-input" value={thumbText}
-                        onChange={e => setThumbText(e.target.value)} placeholder="Titlu pe imagine..." />
+                        onChange={e => setThumbText(e.target.value)} placeholder={t('creatorExtra.thumbTextPlaceholder')} />
                     </label>
                     <div className="creator-button-group" style={{ marginTop: 8 }}>
-                      <button className="creator-button secondary" onClick={captureThumb}>📸 Captează Frame</button>
-                      <button className="creator-button" onClick={downloadThumb}>⬇ Download JPG</button>
+                      <button className="creator-button secondary" onClick={captureThumb}>{t('creatorExtra.captureFrameBtn')}</button>
+                      <button className="creator-button" onClick={downloadThumb}>{t('creatorExtra.downloadJpgBtn')}</button>
                     </div>
                     <canvas ref={thumbCanvasRef} className="creator-canvas-preview" />
                   </>
@@ -1203,10 +1203,10 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
         {/* ═══════════════════ CONTENT MANAGER ═══════════════════ */}
         {activeTab === 'content' && (
           <>
-            <h3 className="creator-section-title">Content Manager</h3>
-            {loading ? <div className="creator-loading">Se încarcă...</div> :
+            <h3 className="creator-section-title">{t('creatorExtra.contentManagerTitle')}</h3>
+            {loading ? <div className="creator-loading">{t('creator.loading')}</div> :
               videos.length === 0 && articles.length === 0 ? (
-                <div className="creator-empty">Nu ai conținut publicat încă.</div>
+                <div className="creator-empty">{t('creatorExtra.noContentYet')}</div>
               ) : (
                 <div className="creator-list">
                   {videos.map(v => (
@@ -1219,15 +1219,15 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
                         </div>
                       </div>
                       <div className="creator-video-actions">
-                        {v.url && <a href={v.url} target="_blank" rel="noopener noreferrer" className="creator-video-btn view">View</a>}
+                        {v.url && <a href={v.url} target="_blank" rel="noopener noreferrer" className="creator-video-btn view">{t('creatorExtra.viewBtn')}</a>}
                         {deleteId === v.id ? (
                           <div className="creator-delete-confirm">
-                            <span>Sigur?</span>
-                            <button className="creator-video-btn delete" onClick={() => handleDelete(v.id)}>Da</button>
-                            <button className="creator-video-btn" onClick={() => setDeleteId(null)}>Nu</button>
+                            <span>{t('creatorExtra.confirmDeleteMsg')}</span>
+                            <button className="creator-video-btn delete" onClick={() => handleDelete(v.id)}>{t('creatorExtra.confirmDeleteYes')}</button>
+                            <button className="creator-video-btn" onClick={() => setDeleteId(null)}>{t('creatorExtra.confirmDeleteNo')}</button>
                           </div>
                         ) : (
-                          <button className="creator-video-btn delete" onClick={() => setDeleteId(v.id)}>Șterge</button>
+                          <button className="creator-video-btn delete" onClick={() => setDeleteId(v.id)}>{t('creatorExtra.deleteVideoBtn')}</button>
                         )}
                       </div>
                     </div>
@@ -1238,10 +1238,10 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
                       <div className="creator-list-body">
                         <div className="creator-list-title">{art.title}</div>
                         <div className="creator-list-meta">
-                          Articol {art.type} · 👁️ {formatNum(art.views || 0)} · {new Date(art.createdAt).toLocaleDateString(i18n.language)}
+                          {art.type} · 👁️ {formatNum(art.views || 0)} · {new Date(art.createdAt).toLocaleDateString(i18n.language)}
                         </div>
                       </div>
-                      <a href="/writers-hub" className="creator-video-btn view" style={{ textDecoration: 'none' }}>Edit</a>
+                      <a href="/writers-hub" className="creator-video-btn view" style={{ textDecoration: 'none' }}>{t('creatorExtra.editBtn')}</a>
                     </div>
                   ))}
                 </div>
@@ -1252,17 +1252,17 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
         {/* ═══════════════════ COMMENTS ═══════════════════ */}
         {activeTab === 'comments' && (
           <>
-            <h3 className="creator-section-title">Comentarii pe conținutul tău</h3>
-            {loading ? <div className="creator-loading">Se încarcă...</div> :
+            <h3 className="creator-section-title">{t('creatorExtra.commentsTitle')}</h3>
+            {loading ? <div className="creator-loading">{t('creator.loading')}</div> :
               comments.length === 0 ? (
-                <div className="creator-empty">Nu ai comentarii pe reels-urile tale încă.</div>
+                <div className="creator-empty">{t('creatorExtra.noCommentsYet')}</div>
               ) : (
                 <div className="creator-list">
                   {comments.map(c => (
                     <div key={c.id} className="creator-comment-item">
                       <div className="creator-comment-header">
-                        <span className="creator-comment-user">{c.userName || 'Anonymous'}</span>
-                        <span className="creator-comment-video">pe: {c.videoTitle}</span>
+                        <span className="creator-comment-user">{c.userName || t('reels.defaultCreator')}</span>
+                        <span className="creator-comment-video">{t('creatorExtra.commentedOn', { title: c.videoTitle })}</span>
                         <span className="creator-comment-date">{new Date(c.createdAt).toLocaleDateString(i18n.language)}</span>
                       </div>
                       <div className="creator-comment-text">{c.content}</div>
@@ -1276,12 +1276,12 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
         {/* ═══════════════════ PROFILE ═══════════════════ */}
         {activeTab === 'profile' && (
           <div className="creator-upload-form">
-            <h3 className="creator-section-title">Profilul de Creator</h3>
+            <h3 className="creator-section-title">{t('creatorExtra.creatorProfileTitle')}</h3>
             {[
-              { label: 'Nume afișat (pen name)', key: 'displayName' as keyof ProfileData, placeholder: 'Cum vrei să fii cunoscut...' },
-              { label: 'Bio', key: 'bio' as keyof ProfileData, placeholder: 'Câteva cuvinte despre tine...' },
-              { label: 'Locație', key: 'location' as keyof ProfileData, placeholder: 'București, Romania...' },
-              { label: 'Website / link', key: 'website' as keyof ProfileData, placeholder: 'https://...' },
+              { label: t('creatorExtra.displayNameLabel'), key: 'displayName' as keyof ProfileData, placeholder: t('creatorExtra.displayNamePlaceholder') },
+              { label: t('creatorExtra.bioLabel'), key: 'bio' as keyof ProfileData, placeholder: t('creatorExtra.bioPlaceholder2') },
+              { label: t('creatorExtra.locationLabel'), key: 'location' as keyof ProfileData, placeholder: t('creatorExtra.locationPlaceholder2') },
+              { label: t('creatorExtra.websiteLabel'), key: 'website' as keyof ProfileData, placeholder: t('creatorExtra.websitePlaceholder2') },
             ].map(field => (
               <label key={field.key} className="creator-form-label">
                 {field.label}
@@ -1297,12 +1297,12 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
               </label>
             ))}
             <div className="creator-profile-link">
-              <span>Link profil public: </span>
-              <a href="/you" style={{ color: '#ff6b00' }}>/you → profilul tău</a>
+              <span>{t('creatorExtra.publicLinkLabel')} </span>
+              <a href="/you" style={{ color: '#ff6b00' }}>{t('creatorExtra.profileLinkText')}</a>
             </div>
             <button className={`creator-button${profileSaving ? ' disabled' : ''}`}
               onClick={handleProfileSave} disabled={profileSaving} style={{ marginTop: 8 }}>
-              {profileSaving ? 'Se salvează...' : '💾 Salvează Profilul'}
+              {profileSaving ? t('creatorExtra.savingProfileBtn') : t('creatorExtra.saveProfileBtn')}
             </button>
           </div>
         )}

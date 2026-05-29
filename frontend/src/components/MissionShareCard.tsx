@@ -3,6 +3,7 @@
 // Shown after a mission is completed when viral loop is active (>= 70 users).
 
 import { useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import './MissionShareCard.css';
 
 interface Props {
@@ -34,6 +35,7 @@ const PILLAR_COLOR: Record<string, string> = {
 };
 
 export default function MissionShareCard({ missionTitle, pillar, xpEarned, referralCode, onClose }: Props) {
+  const { t } = useTranslation();
   const cardRef = useRef<HTMLDivElement>(null);
   const color = PILLAR_COLOR[pillar] ?? '#c77dff';
   const emoji = PILLAR_EMOJI[pillar] ?? '🌟';
@@ -43,11 +45,11 @@ export default function MissionShareCard({ missionTitle, pillar, xpEarned, refer
       ? `${window.location.origin}/?ref=${referralCode}`
       : window.location.origin;
 
-    const text = `Am finalizat misiunea "${missionTitle}" pe Mara și am câștigat +${xpEarned} XP! ${emoji}\n\nÎncearcă și tu: ${url}`;
+    const text = t('missionShare.shareText', { title: missionTitle, xp: xpEarned, emoji, url });
 
     if (navigator.share) {
       try {
-        await navigator.share({ title: 'Misiune completă pe Mara!', text });
+        await navigator.share({ title: t('missionShare.shareTitle'), text });
         return;
       } catch {
         // fallback to clipboard
@@ -56,7 +58,7 @@ export default function MissionShareCard({ missionTitle, pillar, xpEarned, refer
 
     try {
       await navigator.clipboard.writeText(text);
-      alert('Textul a fost copiat în clipboard!');
+      alert(t('missionShare.copied'));
     } catch {
       // silent
     }
@@ -70,7 +72,7 @@ export default function MissionShareCard({ missionTitle, pillar, xpEarned, refer
           <div className="msc-card-bg" />
           <div className="msc-card-content">
             <div className="msc-emoji">{emoji}</div>
-            <div className="msc-label">Misiune completă</div>
+            <div className="msc-label">{t('missionShare.cardLabel')}</div>
             <div className="msc-mission-title">{missionTitle}</div>
             <div className="msc-xp">+{xpEarned} XP</div>
             <div className="msc-brand">hellomara.net</div>
@@ -79,15 +81,15 @@ export default function MissionShareCard({ missionTitle, pillar, xpEarned, refer
 
         <div className="msc-actions">
           <button className="msc-btn msc-btn--share" onClick={handleShare}>
-            Distribuie
+            {t('missionShare.share')}
           </button>
           {referralCode && (
             <div className="msc-referral">
-              Codul tău de invitație: <strong>{referralCode}</strong>
+              {t('missionShare.referralLabel')} <strong>{referralCode}</strong>
             </div>
           )}
           <button className="msc-btn msc-btn--close" onClick={onClose}>
-            Închide
+            {t('common.close')}
           </button>
         </div>
       </div>

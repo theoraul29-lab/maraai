@@ -336,8 +336,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               <div className="p2p-signup-box__header">
                 <span className="p2p-signup-box__icon">🌐</span>
                 <div>
-                  <div className="p2p-signup-box__title">Join the P2P Network</div>
-                  <div className="p2p-signup-box__subtitle">Help power Mara &amp; earn credits</div>
+                  <div className="p2p-signup-box__title">{t('auth.p2pSignup.title')}</div>
+                  <div className="p2p-signup-box__subtitle">{t('auth.p2pSignup.subtitle')}</div>
                 </div>
                 <label className="p2p-toggle">
                   <input
@@ -351,14 +351,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               </div>
               {helpMara && (
                 <ul className="p2p-signup-box__benefits">
-                  <li>⚡ Earn Mara Credits for every contribution</li>
-                  <li>🔒 Only encrypted tasks — your data stays private</li>
-                  <li>🎛️ Bandwidth &amp; kill-switch always one tap away</li>
+                  <li>⚡ {t('auth.p2pSignup.benefit1')}</li>
+                  <li>🔒 {t('auth.p2pSignup.benefit2')}</li>
+                  <li>🎛️ {t('auth.p2pSignup.benefit3')}</li>
                 </ul>
               )}
               {!helpMara && (
                 <p className="p2p-signup-box__hint">
-                  Share a tiny slice of spare compute, earn credits, keep full control.
+                  {t('auth.p2pSignup.hint')}
                 </p>
               )}
             </div>
