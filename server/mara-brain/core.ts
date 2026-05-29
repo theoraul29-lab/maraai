@@ -3,7 +3,7 @@
 // Coordinates all agents: learning, research, analysis, self-reflection
 
 import { storage } from '../storage.js';
-import { LLMRateLimitedError } from '../llm.js';
+import { LLMRateLimitedError, llmGenerate } from '../llm.js';
 import { learnFromGemini, learnBusinessStrategy, validateIdeas, selfImproveQuery } from './agents/llm-learner.js';
 import { readRelevantFiles, getCodeOverview } from './agents/code-explorer.js';
 import { researchModuleTrends, researchCompetitors, generateResearchAgenda, batchResearch } from './agents/web-research.js';
@@ -15,6 +15,7 @@ import { readNextLibraryBook, getLibraryProgress, bootstrapReadBookIds } from '.
 import { getObjective } from '../mara-core/objective.js';
 import { DEFAULT_OBJECTIVE, type ObjectiveFunction } from '../mara-core/types.js';
 import { executive } from '../mara-core/executive.js';
+import { loadSession, saveSession, parseContinuityMemo, ensureSessionTable } from './session-state.js';
 
 /** Wrap a promise with a timeout (ms). Rejects with an error if it takes too long. */
 function withTimeout<T>(promise: Promise<T>, ms: number, label = 'operation'): Promise<T> {
@@ -71,7 +72,15 @@ export async function runBrainCycle(): Promise<BrainCycleResult> {
 }
 
 async function _runBrainCycleInner(): Promise<BrainCycleResult> {
-  console.log('[MaraBrain] 🧠 Autonomous brain cycle starting...');
+  // Ensure session table exists (idempotent).
+  try { ensureSessionTable(); } catch { /* non-fatal */ }
+
+  // Load persistent session — the "memory from last time".
+  const session = loadSession();
+  console.log(`[MaraBrain] 🧠 Brain cycle #${session.cycleCount + 1} starting… Focus: "${session.focusArea}"`);
+  if (session.continuityNotes) {
+    console.log(`[MaraBrain] 📝 Continuity notes: ${session.continuityNotes.slice(0, 120)}`);
+  }
 
   // Refresh shared CognitiveState so all phases this cycle see the same
   // strategic snapshot. Failures are swallowed — the brain cycle must run.
@@ -88,6 +97,14 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
   const growthIdeas: string[] = [];
   let knowledgeLearned = 0;
   let reflectionId: number | null = null;
+
+  // Carry continuity context into the cycle log so every phase can reference it.
+  if (session.openQuestions.length > 0) {
+    research.push(`🔖 Întrebări deschise din ciclul anterior: ${session.openQuestions.join(' | ')}`);
+  }
+  if (session.pendingThoughts.length > 0) {
+    research.push(`💭 Gânduri pending: ${session.pendingThoughts.join(' | ')}`);
+  }
 
   // Read the ObjectiveFunction ONCE for this cycle. Re-used by every phase
   // below; never called inside a loop. If the load fails we fall back to
@@ -203,6 +220,23 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
     //     lesson about "chat", which isn't useful.
     //   - everything else (`auto`, `user_gap`, `brain_cycle`, `trend`): a
     //     subject to research broadly via `learnFromGemini`.
+
+    // Enqueue open questions from last cycle as high-priority learning tasks
+    // so the brain actively tries to answer what it left unresolved.
+    if (session.openQuestions.length > 0) {
+      try {
+        for (const q of session.openQuestions) {
+          await storage.createLearningTask({
+            topic: q,
+            reason: 'Întrebare deschisă din ciclul anterior — continuitate',
+            priority: 'high',
+            source: 'brain_cycle',
+            status: 'pending',
+          });
+        }
+      } catch { /* non-fatal */ }
+    }
+
     console.log('[MaraBrain] Phase 1: Processing learning queue...');
     try {
       await withTimeout((async () => {
@@ -509,7 +543,11 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
           console.warn('[MaraBrain] Phase 9 code-context fetch failed:', (err as Error).message);
         }
 
-        const selfImprovement = await selfImproveQuery(sample + codeContext);
+        // Inject continuity context so self-improvement builds on previous cycles.
+        const continuityContext = session.continuityNotes
+          ? `\n\n=== Note de continuitate din ciclul anterior ===\n${session.continuityNotes}\nFocus curent: ${session.focusArea}`
+          : '';
+        const selfImprovement = await selfImproveQuery(sample + codeContext + continuityContext);
         devTasks.push(`Self-improvement: ${selfImprovement.substring(0, 500)}`);
 
         // Persist a tiny code overview so the admin dashboard / track
@@ -545,7 +583,7 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
 
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
     console.log(
-      `[MaraBrain] 🧠 Brain cycle complete in ${elapsed}s. Learned ${knowledgeLearned} pieces of knowledge.`,
+      `[MaraBrain] 🧠 Brain cycle #${session.cycleCount + 1} complete in ${elapsed}s. Learned ${knowledgeLearned} pieces of knowledge.`,
     );
 
     // Footer line so a brain-log reader can see at a glance which ObjectiveFunction
@@ -553,6 +591,44 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
     research.push(
       `🎯 Objective: primary=${objective.primary}, horizon=${objective.horizonDays}d, exploration=${objective.tradeoffs.explorationVsExploitation.toFixed(2)}`,
     );
+
+    // === CONTINUITY MEMO ===
+    // Ask the LLM to write a structured memo for the next cycle so the brain
+    // always knows where it left off and what to prioritize next.
+    try {
+      await withTimeout((async () => {
+        const memoPrompt = `Ești Mara, AI-ul autonom al platformei hellomara.net.
+Tocmai ai terminat ciclul de gândire #${session.cycleCount + 1}.
+
+Ce ai făcut în acest ciclu:
+${research.slice(0, 15).join('\n')}
+
+Ce ai construit/propus:
+${[...productIdeas, ...growthIdeas].slice(0, 5).join('\n') || 'nimic nou'}
+
+Focus anterior: ${session.focusArea}
+Întrebări deschise rezolvate/nerezolvate: ${session.openQuestions.join(', ') || 'niciuna'}
+
+Scrie un memo SCURT și CONCRET pentru tine (pentru ciclul următor).
+Fii specific — nu generic. Continuă de unde ai rămas.
+
+Format OBLIGATORIU (câte o linie pentru fiecare):
+FOCUS: <ce trebuie să fie prioritatea ciclului următor — 1 propoziție>
+ÎNTREBĂRI: <max 3 întrebări deschise, separate prin ; >
+GÂNDURI: <max 3 idei de aprofundat, separate prin ; >
+NOTE: <context important pentru ciclul următor — 2-3 propoziții>`;
+
+        const memoRaw = await llmGenerate(memoPrompt, { source: 'cycle.phase10.continuity-memo' });
+        const updatedSession = parseContinuityMemo(memoRaw, session, research);
+        saveSession(updatedSession);
+        console.log(`[MaraBrain] 📝 Continuity memo saved. Next focus: "${updatedSession.focusArea}"`);
+        research.push(`📝 Memo pentru ciclul #${updatedSession.cycleCount + 1}: ${updatedSession.focusArea}`);
+      })(), PHASE_TIMEOUT, 'Continuity memo');
+    } catch (err) {
+      // If memo fails, still save an incremented cycle count so tracking stays accurate.
+      saveSession({ ...session, cycleCount: session.cycleCount + 1, lastLearnings: research.slice(0, 10) });
+      console.warn('[MaraBrain] Continuity memo failed (non-fatal):', (err as Error).message);
+    }
 
     return {
       research: research.join('\n'),

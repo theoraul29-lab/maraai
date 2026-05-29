@@ -15,6 +15,7 @@ import { cleanupKnowledgeBase } from './knowledge-base.js';
 import { decayAllToxicity } from './memory.js';
 import { ensureAlertsTable, analyzePlatformAndAlert } from './alerts.js';
 import { db, rawSqlite } from '../db.js';
+import { ensureSessionTable } from './session-state.js';
 import { pushSubscriptions } from '../../shared/schema.js';
 import { sendToUser } from '../push/vapid.js';
 import { subscribeEvent, publishEvent } from '../maraai/kafka.js';
@@ -41,12 +42,16 @@ export type BrainStatus = {
   manualTriggerAvailableAt: string | null;
 };
 
-// Defaults — overridable via env. Keep conservative for Railway free/hobby CPU.
-// 2h interval — balances timely learning with Claude API cost (user pick).
-// Override via BRAIN_CYCLE_INTERVAL_MS env var.
-const DEFAULT_CYCLE_INTERVAL_MS = 2 * 60 * 60 * 1000; // 2h
+// Defaults — overridable via env.
+// Respiro between consecutive cycles: 10 min by default.
+// Override via BRAIN_RESPIRO_MS env var.
+const DEFAULT_RESPIRO_MS = 10 * 60 * 1000; // 10min
 const DEFAULT_SELF_POST_INTERVAL_MS = 4 * 60 * 60 * 1000; // 4h
 const DEFAULT_MANUAL_COOLDOWN_MS = 5 * 60 * 1000; // 5min between manual triggers
+
+// Legacy BRAIN_CYCLE_INTERVAL_MS is kept as an alias for BRAIN_RESPIRO_MS so
+// existing Railway env vars keep working without a config change.
+
 
 function parseIntervalMs(envVal: string | undefined, fallback: number): number {
   if (!envVal) return fallback;
@@ -79,8 +84,17 @@ class BrainManagerImpl {
   private _cycleLock: SingletonLock | null = null;
   private _passive = false; // true if we lost the lock at boot
 
+  /** Pause between consecutive cycles (replaces the old "cycle interval"). */
+  get respiroMs(): number {
+    return parseIntervalMs(
+      process.env.BRAIN_RESPIRO_MS ?? process.env.BRAIN_CYCLE_INTERVAL_MS,
+      DEFAULT_RESPIRO_MS,
+    );
+  }
+
+  /** Kept for the status shape — reports respiroMs as cycleIntervalMs. */
   get cycleIntervalMs(): number {
-    return parseIntervalMs(process.env.BRAIN_CYCLE_INTERVAL_MS, DEFAULT_CYCLE_INTERVAL_MS);
+    return this.respiroMs;
   }
 
   get selfPostIntervalMs(): number {
@@ -149,9 +163,12 @@ class BrainManagerImpl {
       'mara-scheduler',
     );
 
-    // Ensure the alerts table exists before any cycle can fire.
+    // Ensure supporting tables exist before any cycle fires.
     try { ensureAlertsTable(); } catch (err) {
       logger(`ensureAlertsTable failed (non-fatal): ${(err as Error).message}`, 'mara-scheduler');
+    }
+    try { ensureSessionTable(); } catch (err) {
+      logger(`ensureSessionTable failed (non-fatal): ${(err as Error).message}`, 'mara-scheduler');
     }
 
     // Release the lock when the process is winding down so the next deploy
@@ -194,33 +211,33 @@ class BrainManagerImpl {
       }
     })();
 
-    // Warmup: fire exactly once — 60s after the very first startup ever.
-    // Once brain_logs has at least one row, all future restarts skip the
-    // warmup and rely solely on the regular interval below.
+    // Determine initial delay:
+    //   - First-ever startup (no brain_logs): 60s warmup.
+    //   - Subsequent restarts: 30s to let server settle, then run immediately.
+    // After the first cycle, the chain schedules the next one with respiroMs pause.
     let hasRunBefore = false;
     try {
       const row = rawSqlite
         .prepare('SELECT COUNT(*) as cnt FROM brain_logs')
         .get() as { cnt: number } | undefined;
       hasRunBefore = (row?.cnt ?? 0) > 0;
-    } catch { /* table may not exist yet on very first deploy — treat as first run */ }
+    } catch { /* table may not exist yet on very first deploy */ }
+
+    const bootDelayMs = hasRunBefore ? 30_000 : 60_000;
+    this._nextRunAt = Date.now() + bootDelayMs;
 
     if (!hasRunBefore) {
-      const warmupDelay = 60_000;
-      this._nextRunAt = Date.now() + warmupDelay;
-      logger('First-ever brain run — warmup in 60s', 'mara-scheduler');
-      this._initialTimeout = setTimeout(() => {
-        this._initialTimeout = null;
-        void this._scheduledCycle(logger);
-      }, warmupDelay);
+      logger('First-ever brain run — warmup in 60s, then continuous with 10min respiro', 'mara-scheduler');
     } else {
-      this._nextRunAt = Date.now() + this.cycleIntervalMs;
+      logger(`Continuing brain from previous session — first cycle in 30s, then continuous with ${Math.round(this.respiroMs / 60000)}min respiro`, 'mara-scheduler');
     }
 
-    this._cycleTimer = setInterval(
-      () => void this._scheduledCycle(logger),
-      this.cycleIntervalMs,
-    );
+    // Kick off the continuous chain. Each completed cycle schedules the next
+    // one after respiroMs. No setInterval — the chain drives itself.
+    this._cycleTimer = setTimeout(() => {
+      this._cycleTimer = null;
+      void this._runCycleAndScheduleNext(logger);
+    }, bootDelayMs);
 
     // Self-post scheduler is opt-out via BRAIN_SELF_POST_ENABLED=false. When
     // the brain is on but the user only wants autonomous learning (no auto
@@ -261,7 +278,7 @@ class BrainManagerImpl {
       this._initialTimeout = null;
     }
     if (this._cycleTimer) {
-      clearInterval(this._cycleTimer);
+      clearTimeout(this._cycleTimer); // chain uses setTimeout, not setInterval
       this._cycleTimer = null;
     }
     if (this._selfPostTimer) {
@@ -358,36 +375,42 @@ class BrainManagerImpl {
     return { ok: true, started: true };
   }
 
-  private async _scheduledCycle(logger: (msg: string, tag?: string) => void): Promise<void> {
-    if (!this._started) return; // stop() called before this tick fired
-    if (!this.isEnabled) return;
-    if (this._passive) return; // another replica owns the lock
-    // Heartbeat is best-effort; if we lose the lock mid-cycle the next
-    // _runCycleInternal call will be skipped and the new holder takes over.
+  /** Run one cycle then schedule the next after respiroMs. The chain that keeps the brain alive. */
+  private async _runCycleAndScheduleNext(logger: (msg: string, tag?: string) => void): Promise<void> {
+    if (!this._started || !this.isEnabled || this._passive) return;
+
+    // Heartbeat — if we lost the advisory lock, go passive and stop the chain.
     if (this._cycleLock && !this._cycleLock.heartbeat()) {
-      logger(
-        'Lost brain_cycle advisory lock to another instance — switching to passive mode.',
-        'mara-scheduler',
-      );
+      logger('Lost brain_cycle advisory lock — switching to passive mode.', 'mara-scheduler');
       this._passive = true;
-      // Stop the self-post interval too so we don't keep publishing
-      // marketing posts while the new active holder also publishes them.
-      // (See _scheduledSelfPost — it has a _passive guard as belt-and-
-      // braces, but clearing the timer also stops the unnecessary wakeups.)
       if (this._selfPostTimer) {
         clearInterval(this._selfPostTimer);
         this._selfPostTimer = null;
       }
       return;
     }
-    // Anchor the next-run display to the tick time (now), not to the cycle's
-    // completion time. setInterval fires at fixed cadence from start(), so the
-    // true next fire is approx. now + cycleIntervalMs regardless of how long
-    // this cycle takes to run.
-    const tickAt = Date.now();
-    this._nextRunAt = tickAt + this.cycleIntervalMs;
+
+    if (!this._running) {
+      await this._runCycleInternal(logger);
+    }
+
+    // Schedule next cycle after respiro, unless stop() was called.
+    if (this._started && !this._passive && this.isEnabled) {
+      const respiro = this.respiroMs;
+      this._nextRunAt = Date.now() + respiro;
+      logger(`🛌 Respiro ${Math.round(respiro / 60000)}min — next cycle at ${new Date(this._nextRunAt).toISOString()}`, 'mara-scheduler');
+      this._cycleTimer = setTimeout(() => {
+        this._cycleTimer = null;
+        void this._runCycleAndScheduleNext(logger);
+      }, respiro);
+    }
+  }
+
+  private async _scheduledCycle(logger: (msg: string, tag?: string) => void): Promise<void> {
+    // Kept for event-triggered and manual paths that call _scheduledCycle directly.
+    if (!this._started || !this.isEnabled || this._passive) return;
     if (this._running) {
-      logger('Skipping scheduled cycle — previous cycle still running', 'mara-brain');
+      logger('Skipping cycle — previous cycle still running', 'mara-brain');
       return;
     }
     await this._runCycleInternal(logger);
