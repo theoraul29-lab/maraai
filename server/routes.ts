@@ -97,6 +97,10 @@ import {
   maraSpeakRateLimit,
   videoViewRateLimit,
 } from './rate-limit.js';
+import { requireAdmin as requireAdminMiddleware } from './middleware/requireAdmin.js';
+import { requireHttps } from './middleware/requireHttps.js';
+import { adminRateLimit } from './middleware/adminRateLimit.js';
+import { buildAdminSystemPrompt } from './services/promptBuilder.js';
 import { users as usersTable } from '../shared/models/auth.js';
 import { registerMaraAIRoutes } from './maraai/routes.js';
 import {
@@ -445,6 +449,69 @@ export async function registerRoutes(
   // Chat endpoints (require auth)
   app.get(api.chat.list.path, requireAuth, chatModule.getChatHistory);
   app.post(api.chat.send.path, requireAuth, chatModule.sendChatMessage);
+
+  // ─── Admin chat — securizat cu 4 straturi ────────────────────────────────
+  // Ordinea middleware-urilor este intenționată și obligatorie:
+  //   1. requireHttps  — respinge HTTP plain în producție
+  //   2. requireAuth   — verifică sesiunea (req.user trebuie să existe)
+  //   3. requireAdminMiddleware — confirmă rolul din DB (nu din request body)
+  //   4. adminRateLimit — max 30 req/min per IP
+  //   5. handler        — construiește system prompt și apelează Claude
+  app.post(
+    '/api/admin/chat',
+    requireHttps,
+    requireAuth,
+    requireAdminMiddleware,
+    adminRateLimit,
+    async (req: any, res: any) => {
+      try {
+        const { message, history = [], language } = req.body as {
+          message: string;
+          history?: { role: string; content: string }[];
+          language?: string;
+        };
+
+        if (!message || typeof message !== 'string' || message.trim().length === 0) {
+          return res.status(400).json({ message: 'message field is required.' });
+        }
+
+        const lang = typeof language === 'string' ? language : 'en';
+
+        // System prompt construit SERVER-SIDE — niciodată dictat de client.
+        // Conținutul său nu apare în răspunsul JSON și nu este logat.
+        const systemPrompt = buildAdminSystemPrompt(lang);
+
+        // Sistemul: role: 'system' e primul mesaj — singurul mod acceptat de llmChat.
+        // Istoricul din client: filtrat (max 20), nicio injecție de rol privilegiat.
+        const messages: LLMMessage[] = [
+          { role: 'system', content: systemPrompt },
+          ...history
+            .filter(
+              (h) =>
+                h &&
+                (h.role === 'user' || h.role === 'assistant') && // nu acceptăm role: 'system' din client
+                typeof h.content === 'string' &&
+                h.content.trim().length > 0,
+            )
+            .slice(-20) // max 20 mesaje de context
+            .map((h) => ({ role: h.role as 'user' | 'assistant', content: h.content })),
+          { role: 'user', content: message.trim() },
+        ];
+
+        // source: 'admin.chat' — tipul LLMSource acceptă `admin.${string}`
+        const responseText = await llmChat(messages, {
+          temperature: 0.7,
+          source: 'admin.chat',
+        });
+
+        // Răspunsul nu expune rolul userului, system prompt-ul sau detalii interne
+        res.json({ response: responseText });
+      } catch (err) {
+        console.error('[admin/chat] error:', err);
+        res.status(500).json({ message: 'Internal error — try again.' });
+      }
+    },
+  );
 
   // TTS / STT — gated behind `requireAuth` so an unauthenticated bot can't
   // hammer a paid provider (ElevenLabs / OpenAI Whisper / etc.) and rack up
