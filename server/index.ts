@@ -24,6 +24,7 @@ import { IMAGE_UPLOADS_DIR } from '../backend/src/modules/uploads.js';
 import { seedPlans } from './billing/seed.js';
 import { seedDefaultObjective } from './mara-core/objective.js';
 import { seedMissions } from './missions/seed.js';
+import { warmTranslationCache } from './missions/engine.js';
 import {
   registerComputePeer,
   unregisterComputePeer,
@@ -596,6 +597,14 @@ app.use((req, res, next) => {
   } catch (err) {
     console.error('[missions] seed failed (continuing):', err);
   }
+
+  // Pre-warm mission translation cache for the most common languages.
+  // Fire-and-forget: never blocks startup, errors are logged inside.
+  // The cache persists in SQLite across restarts so subsequent starts
+  // complete instantly (all missions already cached).
+  warmTranslationCache(['en', 'de', 'fr', 'es', 'pt', 'ru', 'ar', 'hi', 'ja', 'zh']).catch(
+    (err) => console.warn('[missions:warm] startup warm failed:', (err as Error).message),
+  );
 
   // MaraCore Etapa 1: seed the singleton ObjectiveFunction row if it
   // doesn't exist yet. Idempotent — will not overwrite admin edits.

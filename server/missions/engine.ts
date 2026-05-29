@@ -353,6 +353,140 @@ function logEvent(userId: string, missionId: string, type: string, meta: Record<
   ).run(id, userId, missionId, type, JSON.stringify(meta));
 }
 
+// ── Mission context for Mara AI ───────────────────────────────────────────────
+
+function parseSteps(stepsJson: string): string[] {
+  try { return JSON.parse(stepsJson) as string[]; } catch { return []; }
+}
+
+/**
+ * Build a rich, structured mission context string for Mara's system prompt.
+ * Reads from the translation cache (sync — no LLM call) so it's fast enough
+ * to include on every chat request.  Falls back to Romanian when a translation
+ * hasn't been cached yet (warmTranslationCache() pre-fills at startup).
+ */
+export function getMissionContextForMara(userId: string, lang?: string): string {
+  try {
+    const normalized = lang ? normalizeLang(lang) : 'ro';
+
+    // ── Active missions (max 3 most recent) ──────────────────────────────────
+    const activeMissions = rawSqlite.prepare(`
+      SELECT m.id, m.title, m.description, m.pillar, m.difficulty,
+             m.steps, m.proof_prompt, m.xp_reward, m.reflection,
+             um.status, um.started_at
+      FROM user_missions um
+      JOIN missions m ON m.id = um.mission_id
+      WHERE um.user_id = ? AND um.status = 'active'
+      ORDER BY um.started_at DESC
+      LIMIT 3
+    `).all(userId) as Array<{
+      id: string; title: string; description: string; pillar: string;
+      difficulty: string; steps: string; proof_prompt: string;
+      xp_reward: number; reflection: string | null;
+      status: string; started_at: number;
+    }>;
+
+    // Apply cached translations if lang ≠ 'ro'
+    let activeFinal = activeMissions;
+    if (normalized !== 'ro' && activeMissions.length > 0) {
+      const ids = activeMissions.map(m => m.id);
+      const placeholders = ids.map(() => '?').join(',');
+      const translations = rawSqlite.prepare(`
+        SELECT mission_id, title, description, proof_prompt, steps, reflection
+        FROM mission_translations WHERE lang = ? AND mission_id IN (${placeholders})
+      `).all(normalized, ...ids) as Array<{
+        mission_id: string; title: string; description: string;
+        proof_prompt: string; steps: string; reflection: string | null;
+      }>;
+      const tMap = new Map(translations.map(t => [t.mission_id, t]));
+      activeFinal = activeMissions.map(m => {
+        const t = tMap.get(m.id);
+        return t ? { ...m, title: t.title, description: t.description,
+                        proof_prompt: t.proof_prompt, steps: t.steps,
+                        reflection: t.reflection } : m;
+      });
+    }
+
+    // ── Completed missions summary ────────────────────────────────────────────
+    const completedRow = rawSqlite.prepare(
+      "SELECT COUNT(*) as total FROM user_missions WHERE user_id = ? AND status = 'completed'"
+    ).get(userId) as { total: number } | undefined;
+    const totalCompleted = completedRow?.total ?? 0;
+
+    const byPillar = rawSqlite.prepare(`
+      SELECT m.pillar, COUNT(*) as cnt
+      FROM user_missions um JOIN missions m ON m.id = um.mission_id
+      WHERE um.user_id = ? AND um.status = 'completed'
+      GROUP BY m.pillar ORDER BY cnt DESC LIMIT 3
+    `).all(userId) as Array<{ pillar: string; cnt: number }>;
+
+    // ── Build context string ──────────────────────────────────────────────────
+    const parts: string[] = [];
+
+    if (totalCompleted > 0) {
+      const pillars = byPillar.map(r => `${r.pillar}(${r.cnt})`).join(', ');
+      parts.push(`Missions completed: ${totalCompleted}${pillars ? ` — strongest pillars: ${pillars}` : ''}`);
+    } else {
+      parts.push('Missions completed: 0 — the user is just getting started.');
+    }
+
+    if (activeFinal.length > 0) {
+      parts.push(`Active missions (${activeFinal.length}):`);
+      for (const m of activeFinal) {
+        const steps = parseSteps(m.steps);
+        const daysSince = Math.floor((Date.now() / 1000 - (m.started_at || 0)) / 86400);
+        parts.push(`  • [${m.pillar} / ${m.difficulty}] "${m.title}" — started ${daysSince}d ago, +${m.xp_reward} XP`);
+        parts.push(`    Description: ${m.description}`);
+        if (steps.length > 0) parts.push(`    Steps: ${steps.map((s, i) => `${i + 1}. ${s}`).join(' | ')}`);
+        parts.push(`    Proof question: ${m.proof_prompt}`);
+        if (m.reflection) parts.push(`    Reflection: ${m.reflection}`);
+      }
+    } else {
+      parts.push('Active missions: none — the user has not started any mission yet.');
+    }
+
+    return parts.join('\n');
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Pre-warm the mission_translations cache for a list of languages.
+ * Call at server startup so the first real user doesn't pay the LLM latency.
+ * This is fire-and-forget — errors are logged and swallowed.
+ */
+export async function warmTranslationCache(langs: string[] = ['en', 'de', 'fr', 'es', 'pt', 'ru']): Promise<void> {
+  const allMissions = rawSqlite.prepare(
+    'SELECT id, title, description, proof_prompt, steps, reflection FROM missions WHERE is_active = 1'
+  ).all() as TranslatableMission[];
+
+  for (const lang of langs) {
+    const normalized = normalizeLang(lang);
+    if (normalized === 'ro') continue;
+
+    const cachedIds = new Set(
+      (rawSqlite.prepare(
+        'SELECT mission_id FROM mission_translations WHERE lang = ?'
+      ).all(normalized) as { mission_id: string }[]).map(r => r.mission_id)
+    );
+
+    const toTranslate = allMissions.filter(m => !cachedIds.has(m.id));
+    if (toTranslate.length === 0) {
+      console.log(`[missions:warm] ${lang} — all ${allMissions.length} missions already cached`);
+      continue;
+    }
+
+    console.log(`[missions:warm] ${lang} — translating ${toTranslate.length}/${allMissions.length} missions...`);
+    try {
+      await translateMissions(toTranslate, lang);
+      console.log(`[missions:warm] ${lang} — done`);
+    } catch (err) {
+      console.warn(`[missions:warm] ${lang} failed:`, (err as Error).message);
+    }
+  }
+}
+
 // ── Mission translation ───────────────────────────────────────────────────────
 
 type TranslatableMission = {

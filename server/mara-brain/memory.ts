@@ -8,6 +8,7 @@ import { getPlatformContext } from './platform-context.js';
 import { rawSqlite } from '../db.js';
 import { executive } from '../mara-core/executive.js';
 import { getInvestigatorContext } from '../maraai/qualitative-signals.js';
+import { getMissionContextForMara } from '../missions/engine.js';
 
 export interface UserMemoryContext {
   userId: string;
@@ -20,6 +21,8 @@ export interface UserMemoryContext {
   personalityPrompt: string;
   investigatorContext: string;
   userMemories: string;
+  /** Active missions + completion summary in the user's language. Injected into system prompt. */
+  missionsContext: string;
 }
 
 function getDefaultToxicityState(): ToxicityState {
@@ -136,6 +139,11 @@ export async function buildUserContext(
   // 9. Per-user long-term memories (goals, preferences, personal facts shared in past chats)
   const userMemories = isAdmin ? '' : getUserMemories(userId);
 
+  // 10. Mission context — active missions with details + completion summary.
+  //     Sync (reads from translation cache), safe to call on every request.
+  const lang = preferences?.language || undefined;
+  const missionsContext = isAdmin ? '' : getMissionContextForMara(userId, lang);
+
   return {
     userId,
     isAdmin,
@@ -147,6 +155,7 @@ export async function buildUserContext(
     personalityPrompt,
     investigatorContext,
     userMemories,
+    missionsContext,
   };
 }
 
@@ -178,6 +187,15 @@ export function buildSystemInstruction(context: UserMemoryContext, language?: st
   // Strategic context from ExecutiveReasoning (funnel state, active experiments)
   const executiveCtx = executive.getContextForConversation();
   if (executiveCtx) parts.push(executiveCtx);
+
+  // Active missions + journey context — Mara knows where the user is
+  if (context.missionsContext) {
+    parts.push(
+      `\n# MISIUNILE USERULUI\n${context.missionsContext}\n` +
+      `Use this to guide and motivate the user. Reference their active missions naturally when relevant. ` +
+      `If they ask about a step or how to do something, you now know the exact task details.`
+    );
+  }
 
   // Qualitative investigator signals (mission abandoned, returning user, not activated)
   if (context.investigatorContext) parts.push(context.investigatorContext);

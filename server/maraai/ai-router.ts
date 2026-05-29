@@ -23,6 +23,7 @@ import { logActivity } from './activity.js';
 import { publishEvent, KAFKA_TOPICS } from './kafka.js';
 import { callAgent, isSupportAgentEnabled } from '../lib/anthropic-agents.js';
 import { getUserMemories } from '../mara-brain/memory.js';
+import { getMissionContextForMara } from '../missions/engine.js';
 
 export type RouteDecision = {
   route: AiRoute;
@@ -60,11 +61,10 @@ function buildSupportAgentContext(userId: string, lang?: string | null): string 
       | undefined;
     if (xp) parts.push(`User stats: XP=${xp.xp}, Level=${xp.level}, Streak=${xp.streak} days`);
 
-    const missions = rawSqlite
-      .prepare(`SELECT m.title, um.status FROM user_missions um JOIN missions m ON m.id = um.mission_id WHERE um.user_id = ? AND um.status != 'completed' ORDER BY um.created_at DESC LIMIT 5`)
-      .all(userId) as Array<{ title: string; status: string }>;
-    if (missions.length > 0)
-      parts.push(`Active missions: ${missions.map((m) => `"${m.title}" (${m.status})`).join(', ')}`);
+    // Rich mission context: active missions with details + completed summary.
+    // getMissionContextForMara() reads from the translation cache (sync, fast).
+    const missionCtx = getMissionContextForMara(userId, lang ?? undefined);
+    if (missionCtx) parts.push(missionCtx);
   } catch {
     // non-fatal
   }
