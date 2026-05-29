@@ -137,20 +137,27 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
       console.log('[MaraBrain] Phase 0: Reading from library...');
       try {
         await withTimeout((async () => {
-          const progress = await getLibraryProgress();
-          // Catch-up mode: read 2 books per cycle when many are unread (> 10),
-          // so a freshly expanded library (30+ new books) is absorbed in ~2 days
-          // instead of 3+. Falls back to 1/cycle once the backlog shrinks.
-          const booksThisCycle = progress.unread > 10 ? 2 : 1;
-          for (let i = 0; i < booksThisCycle; i++) {
+          const progressBefore = await getLibraryProgress();
+          if (progressBefore.read > progressBefore.total) {
+            console.warn(
+              `[MaraBrain] Library progress inconsistent: read=${progressBefore.read} total=${progressBefore.total}`,
+            );
+          }
+          const unreadBefore = Math.max(progressBefore.total - progressBefore.read, 0);
+          const readsThisCycle = unreadBefore > 10 ? 2 : 1;
+
+          let readsDone = 0;
+          for (let i = 0; i < readsThisCycle; i += 1) {
             const bookResult = await readNextLibraryBook();
-            if (bookResult) {
-              research.push(`📚 Read "${bookResult.title}": ${bookResult.totalIdeas} ideas extracted`);
-              knowledgeLearned += bookResult.savedKnowledgeIds.length;
-            } else {
-              research.push(`📚 Library complete: ${progress.read}/${progress.total} books read`);
-              break;
-            }
+            if (!bookResult) break;
+            readsDone += 1;
+            research.push(`📚 Read "${bookResult.title}": ${bookResult.totalIdeas} ideas extracted`);
+            knowledgeLearned += bookResult.savedKnowledgeIds.length;
+          }
+
+          if (readsDone === 0) {
+            const progressAfter = await getLibraryProgress();
+            research.push(`📚 Library complete: ${progressAfter.read}/${progressAfter.total} books read`);
           }
         })(), PHASE_TIMEOUT, 'Phase 0: Library');
       } catch (err) {

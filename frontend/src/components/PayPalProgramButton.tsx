@@ -1,19 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 import { usePayPalSDK } from '../hooks/usePayPalSDK';
+import { getCsrfToken } from '../csrf';
 
 const API = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:5000');
 const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID as string | undefined;
 
 interface Props {
   programId: string;
-  programName: string;
   priceCents: number;
   onSuccess: (programId: string) => void;
   onError?: (msg: string) => void;
   disabled?: boolean;
 }
 
-export default function PayPalProgramButton({ programId, programName: _programName, priceCents, onSuccess, onError, disabled }: Props) {
+export default function PayPalProgramButton({ programId, priceCents, onSuccess, onError, disabled }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<'idle' | 'rendering' | 'ready' | 'paying' | 'error'>('idle');
   const [errMsg, setErrMsg] = useState('');
@@ -30,11 +30,14 @@ export default function PayPalProgramButton({ programId, programName: _programNa
 
       createOrder: async () => {
         setStatus('paying');
-        const csrf = document.cookie.match(/csrf_token=([^;]+)/)?.[1] ?? '';
+        const csrfToken = await getCsrfToken();
         const res = await fetch(`${API}/api/billing/program/purchase`, {
           method: 'POST',
           credentials: 'include',
-          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
+          },
           body: JSON.stringify({ programId }),
         });
         if (!res.ok) {
@@ -104,17 +107,20 @@ export default function PayPalProgramButton({ programId, programName: _programNa
   );
 }
 
-function FallbackButton({ programId, priceCents, disabled, onError }: Omit<Props, 'programName' | 'onSuccess'>) {
+function FallbackButton({ programId, priceCents, disabled, onError }: Omit<Props, 'onSuccess'>) {
   const [loading, setLoading] = useState(false);
 
   const handleClick = async () => {
     setLoading(true);
     try {
-      const csrf = document.cookie.match(/csrf_token=([^;]+)/)?.[1] ?? '';
+      const csrfToken = await getCsrfToken();
       const res = await fetch(`${API}/api/billing/program/purchase`, {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
+        },
         body: JSON.stringify({ programId }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);

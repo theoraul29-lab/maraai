@@ -3,7 +3,8 @@
  * Usage: MARAAI_BASE_URL=http://localhost:3001 node scripts/smoke-runtime.mjs
  */
 
-const BASE = process.env.MARAAI_BASE_URL || 'http://localhost:3001';
+const port = process.env.PORT || '5000';
+const BASE = process.env.MARAAI_BASE_URL || `http://localhost:${port}`;
 
 const endpoints = [
   { path: '/api/health', expect: 200 },
@@ -27,7 +28,7 @@ for (const { path, expect } of endpoints) {
       console.log(`OK    ${url} (${res.status}) ${body.slice(0, 120)}`);
     }
   } catch (err) {
-    console.error(`FAIL  ${url} — ${err.message}`);
+    console.error(`FAIL  ${url} — ${err.message}. Ensure the server is running or set MARAAI_BASE_URL.`);
     failures++;
   }
 }

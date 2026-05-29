@@ -13,7 +13,7 @@ import { route as routeAi } from './maraai/ai-router.js';
 import { WebSocketServer } from 'ws';
 import { storage } from './storage.js';
 import { setupSessionAuth, csrfProtection } from './auth.js';
-import { checkRateLimit } from './rateLimit.js';
+import { checkRateLimit } from './rate-limit.js';
 import { z } from 'zod';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { db, rawSqlite } from './db.js';
@@ -439,7 +439,7 @@ const runtimeState: RuntimeState = {
   startedAt: null,
 };
 
-// --- START RATE LIMITER LOGIC (moved to server/rateLimit.ts) ---
+// --- START RATE LIMITER LOGIC (moved to server/rate-limit.ts) ---
 // Re-imported for use in the WebSocket chat handler below.
 // --- END RATE LIMITER LOGIC ---
 

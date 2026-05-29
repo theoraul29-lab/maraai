@@ -32,6 +32,7 @@ interface NotificationItem {
 
 const NotificationBell: React.FC = () => {
 	const { isAuthenticated } = useAuth();
+	const { t } = useTranslation();
 	const [unread, setUnread] = useState(0);
 	const [open, setOpen] = useState(false);
 	const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -92,7 +93,7 @@ const NotificationBell: React.FC = () => {
 			<button
 				className="nav-bell-btn"
 				onClick={handleOpen}
-				aria-label="Notifications"
+				aria-label={t('nav.notifications', { defaultValue: 'Notifications' })}
 			>
 				🔔
 				{unread > 0 && <span className="nav-bell-badge">{unread > 99 ? '99+' : unread}</span>}
@@ -100,10 +101,10 @@ const NotificationBell: React.FC = () => {
 			{open && (
 				<div className="nav-bell-dropdown">
 					<div className="nav-bell-dropdown-header">
-						<strong>Notifications</strong>
+						<strong>{t('nav.notifications', { defaultValue: 'Notifications' })}</strong>
 					</div>
 					{notifications.length === 0 ? (
-						<p className="nav-bell-empty">No notifications</p>
+						<p className="nav-bell-empty">{t('nav.noNotifications', { defaultValue: 'No notifications' })}</p>
 					) : (
 						notifications.map(n => (
 							<div key={n.id} className="nav-bell-item">
@@ -170,7 +171,7 @@ const Nav: React.FC = () => {
 						<button
 							className="nav-messenger-btn"
 							onClick={() => setMessengerOpen(o => !o)}
-							aria-label="Mesaje"
+							aria-label={t('nav.messages', { defaultValue: 'Messages' })}
 						>
 							💬
 							{messengerUnread > 0 && (
@@ -182,7 +183,7 @@ const Nav: React.FC = () => {
 						<button
 							className="nav-settings-btn"
 							onClick={() => setSettingsOpen(true)}
-							aria-label="Setări"
+							aria-label={t('nav.settings', { defaultValue: 'Settings' })}
 						>
 							⚙️
 						</button>
@@ -201,7 +202,7 @@ const Nav: React.FC = () => {
 							<button
 								className="nav-messenger-btn"
 								onClick={() => setMessengerOpen(o => !o)}
-								aria-label="Mesaje"
+								aria-label={t('nav.messages', { defaultValue: 'Messages' })}
 							>
 								💬
 								{messengerUnread > 0 && (
@@ -213,7 +214,7 @@ const Nav: React.FC = () => {
 							<button
 								className="nav-settings-btn"
 								onClick={() => setSettingsOpen(true)}
-								aria-label="Setări"
+								aria-label={t('nav.settings', { defaultValue: 'Settings' })}
 							>
 								⚙️
 							</button>
@@ -268,7 +269,7 @@ const Nav: React.FC = () => {
 				<div className="nav-messenger-backdrop" onClick={() => setMessengerOpen(false)} />
 				<div className="nav-messenger-panel">
 					<div className="nav-messenger-panel-header">
-						<span>💬 Mesaje</span>
+						<span>💬 {t('nav.messages', { defaultValue: 'Messages' })}</span>
 						<button className="nav-messenger-close" onClick={() => setMessengerOpen(false)}>✕</button>
 					</div>
 					<MessengerPanel
