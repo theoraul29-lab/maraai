@@ -562,6 +562,15 @@ function GrowthTab() {
   const [stats, setStats] = useState<GrowthStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [executing, setExecuting] = useState<number | null>(null);
+  // { id, action } — butonul care se află în stare loading
+  const [deciding, setDeciding] = useState<{ id: number; action: string } | null>(null);
+  // Toast notification după aprobare/respingere
+  const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
+
+  const showToast = (msg: string, ok: boolean) => {
+    setToast({ msg, ok });
+    setTimeout(() => setToast(null), 3500);
+  };
 
   const loadData = () => {
     setLoading(true);
@@ -578,18 +587,44 @@ function GrowthTab() {
   useEffect(() => { loadData(); }, []);
 
   const handleDecision = async (id: number, action: 'approve' | 'reject') => {
+    if (deciding) return; // previne dublu-click
+    setDeciding({ id, action });
     const endpoint = action === 'approve'
       ? `/api/admin/mara/experiments/${id}/approve`
       : `/api/admin/mara/experiments/${id}/reject`;
     try {
-      await fetch(endpoint, {
+      const res = await fetch(endpoint, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ decidedBy: 'admin', note: '' }),
+        body: JSON.stringify({ note: '' }),
       });
-      loadData();
-    } catch { /* silent */ }
+      if (res.ok) {
+        // Actualizare optimistă imediată — fără full reload
+        setExperiments(prev =>
+          prev.map(e =>
+            e.id === id
+              ? { ...e, status: action === 'approve' ? 'approved' : 'rejected' }
+              : e
+          )
+        );
+        showToast(
+          action === 'approve'
+            ? '✅ Experimentul a fost aprobat. Mara implementează.'
+            : '❌ Experimentul a fost respins.',
+          action === 'approve',
+        );
+        // Reîncarcă în background pentru a sincroniza cu DB
+        loadData();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        showToast(`Eroare: ${err.error || 'A apărut o problemă.'}`, false);
+      }
+    } catch {
+      showToast('Eroare de rețea. Încearcă din nou.', false);
+    } finally {
+      setDeciding(null);
+    }
   };
 
   const handleExecute = async (id: number) => {
@@ -608,6 +643,21 @@ function GrowthTab() {
 
   return (
     <div className="adb-growth">
+      {/* Toast notification */}
+      {toast && (
+        <div
+          style={{
+            position: 'fixed', top: 20, right: 20, zIndex: 9999,
+            background: toast.ok ? '#166534' : '#7f1d1d',
+            color: 'white', padding: '12px 20px', borderRadius: 10,
+            fontSize: '0.9rem', fontWeight: 600,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+            animation: 'fadeIn 0.2s ease',
+          }}
+        >
+          {toast.msg}
+        </div>
+      )}
       {stats && (
         <div className="adb-stat-grid" style={{ marginBottom: '24px' }}>
           <StatCard icon="🧪" label="Total experimente" value={stats.total} color="#a855f7" />
@@ -679,11 +729,25 @@ function GrowthTab() {
               <div className="adb-exp-actions">
                 {exp.status === 'proposed' && (
                   <>
-                    <button className="adb-btn adb-btn--success" onClick={() => handleDecision(exp.id, 'approve')}>
-                      ✅ Aprobă — Mara implementează
+                    <button
+                      className="adb-btn adb-btn--success"
+                      onClick={() => handleDecision(exp.id, 'approve')}
+                      disabled={deciding?.id === exp.id}
+                      style={{ opacity: deciding?.id === exp.id ? 0.7 : 1 }}
+                    >
+                      {deciding?.id === exp.id && deciding.action === 'approve'
+                        ? '⏳ Se aprobă...'
+                        : '✅ Aprobă — Mara implementează'}
                     </button>
-                    <button className="adb-btn adb-btn--danger" onClick={() => handleDecision(exp.id, 'reject')}>
-                      ❌ Respinge
+                    <button
+                      className="adb-btn adb-btn--danger"
+                      onClick={() => handleDecision(exp.id, 'reject')}
+                      disabled={deciding?.id === exp.id}
+                      style={{ opacity: deciding?.id === exp.id ? 0.7 : 1 }}
+                    >
+                      {deciding?.id === exp.id && deciding.action === 'reject'
+                        ? '⏳ Se respinge...'
+                        : '❌ Respinge'}
                     </button>
                   </>
                 )}

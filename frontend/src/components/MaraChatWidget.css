@@ -448,6 +448,119 @@
   }
 }
 
+/* ─── Copy buttons ───────────────────────────────────────────────────────── */
+
+/* Mesajele cu copy au layout coloană: content → meta row */
+.mara-message--copyable {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.mara-message--copyable.user {
+  align-items: flex-end;
+}
+
+/* meta row: timp + buton copy, aliniate jos */
+.mara-message-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  justify-content: flex-end;
+}
+
+.mara-message.user .mara-message-meta {
+  justify-content: flex-end;
+}
+
+.mara-message.mara .mara-message-meta {
+  justify-content: flex-start;
+}
+
+/* Per-message copy button */
+.mara-copy-btn {
+  background: none;
+  border: none;
+  padding: 2px 4px;
+  cursor: pointer;
+  font-size: 12px;
+  border-radius: 4px;
+  color: rgba(199, 125, 255, 0.5);
+  transition: color 0.15s, opacity 0.15s, background 0.15s;
+  line-height: 1;
+  /* Desktop: ascuns implicit, apare la hover pe mesaj */
+  opacity: 0;
+}
+
+.mara-message--copyable:hover .mara-copy-btn,
+.mara-message--copyable:focus-within .mara-copy-btn {
+  opacity: 1;
+}
+
+.mara-copy-btn:hover {
+  color: #c77dff;
+  background: rgba(157, 78, 221, 0.15);
+}
+
+.mara-copy-btn--done {
+  color: #4ade80 !important;
+  opacity: 1 !important;
+}
+
+/* Mobile (touch): butonul de copy întotdeauna vizibil */
+@media (hover: none) {
+  .mara-copy-btn {
+    opacity: 0.6;
+  }
+}
+
+/* Header "Copy all" button */
+.mara-copy-all-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  color: rgba(199, 125, 255, 0.7);
+  transition: color 0.15s, background 0.15s;
+  min-width: 32px;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+}
+
+.mara-copy-all-btn:hover {
+  color: #c77dff;
+  background: rgba(157, 78, 221, 0.15);
+}
+
+/* Butoane header — spacing uniform */
+.mara-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Mobile: target-uri mai mari */
+@media (max-width: 768px) {
+  .mara-copy-btn {
+    opacity: 0.7;
+    font-size: 13px;
+    padding: 4px 6px;
+    min-width: 32px;
+    min-height: 32px;
+  }
+
+  .mara-copy-all-btn {
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 18px;
+  }
+}
+
 /* Accessibility */
 @media (prefers-reduced-motion: reduce) {
   .mara-chat-modal,

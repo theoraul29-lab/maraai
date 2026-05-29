@@ -1,10 +1,47 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import DOMPurify from 'dompurify';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { AuthModal } from './AuthModal';
 import './MaraChatWidget.css';
 import i18n from '../i18n';
+
+// ─── Clipboard utility ────────────────────────────────────────────────────────
+async function copyToClipboard(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+    // Fallback: DOM textarea trick — funcționează și pe mobile (iOS Safari)
+    const el = document.createElement('textarea');
+    el.value = text;
+    el.setAttribute('readonly', '');
+    el.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none';
+    document.body.appendChild(el);
+    el.focus();
+    el.select();
+    el.setSelectionRange(0, el.value.length); // mobil
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Elimină markdown → text plain, păstrând conținutul blocurilor de cod
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/```[\w]*\n?([\s\S]*?)```/g, (_, code) => code.trim())
+    .replace(/`([^`\n]+)`/g, '$1')
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/\*(.+?)\*/g, '$1')
+    .replace(/(?:^|\n)\d+\. /gm, '\n• ')
+    .replace(/(?:^|\n)[•\-] /gm, '\n• ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
 
 // Converts Mara's plain-text/markdown responses to sanitized HTML.
 // Build the raw HTML first, then run it through DOMPurify so even
@@ -69,6 +106,29 @@ export function MaraChatWidget() {
   const [currentMood, setCurrentMood] = useState('neutral');
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  // Copy state: id-ul mesajului copiat (reset după 2s) sau 'all' pentru tot
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleCopyMessage = useCallback(async (msg: ChatMessage) => {
+    const plain = stripMarkdown(msg.content);
+    const ok = await copyToClipboard(plain);
+    if (ok) {
+      setCopiedId(msg.id);
+      setTimeout(() => setCopiedId(null), 2000);
+    }
+  }, []);
+
+  const handleCopyAll = useCallback(async () => {
+    if (messages.length === 0) return;
+    const text = messages
+      .map(m => `${m.sender === 'mara' ? 'Mara' : 'Tu'}: ${stripMarkdown(m.content)}`)
+      .join('\n\n');
+    const ok = await copyToClipboard(text);
+    if (ok) {
+      setCopiedId('all');
+      setTimeout(() => setCopiedId(null), 2000);
+    }
+  }, [messages]);
 
   // Load chat history on component mount
   useEffect(() => {
@@ -260,9 +320,19 @@ export function MaraChatWidget() {
             </div>
             <div className="mara-header-actions">
               {messages.length > 0 && (
-                <button className="mara-clear-btn" onClick={clearConversation} title="Clear conversation">
-                  🗑️
-                </button>
+                <>
+                  <button
+                    className="mara-copy-all-btn"
+                    onClick={handleCopyAll}
+                    title={copiedId === 'all' ? 'Copiat!' : 'Copiază conversația'}
+                    aria-label="Copiază toată conversația"
+                  >
+                    {copiedId === 'all' ? '✓' : '📋'}
+                  </button>
+                  <button className="mara-clear-btn" onClick={clearConversation} title="Șterge conversația">
+                    🗑️
+                  </button>
+                </>
               )}
               <button className="mara-close-btn" onClick={() => setIsOpen(false)}>✕</button>
             </div>
@@ -304,7 +374,7 @@ export function MaraChatWidget() {
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`mara-message ${msg.sender}`}
+                className={`mara-message ${msg.sender} mara-message--copyable`}
                 style={{
                   borderLeftColor:
                     msg.sender === 'mara' ? msg.moodColor : MOOD_TO_COLOR['neutral'],
@@ -323,9 +393,19 @@ export function MaraChatWidget() {
                     <p>{msg.content}</p>
                   )}
                 </div>
-                <span className="mara-msg-time">
-                  {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </span>
+                <div className="mara-message-meta">
+                  <span className="mara-msg-time">
+                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                  <button
+                    className={`mara-copy-btn ${copiedId === msg.id ? 'mara-copy-btn--done' : ''}`}
+                    onClick={() => handleCopyMessage(msg)}
+                    title={copiedId === msg.id ? 'Copiat!' : 'Copiază mesajul'}
+                    aria-label="Copiază mesajul"
+                  >
+                    {copiedId === msg.id ? '✓' : '📋'}
+                  </button>
+                </div>
               </div>
             ))}
 
