@@ -65,6 +65,9 @@
     "node": ">=20.0.0"
   },
   "overrides": {
-    "tar": ">=6.2.1"
+    "tar": ">=6.2.1",
+    "@tootallnate/once": ">=2.0.1",
+    "http-proxy-agent": ">=5.0.0",
+    "make-fetch-happen": ">=11.0.0"
   }
 }
