@@ -1,5 +1,6 @@
 import type { Express } from 'express';
 import { rawSqlite } from '../db.js';
+import { missionWriteRateLimit } from '../rate-limit.js';
 import {
   startMission,
   submitProof,
@@ -122,20 +123,20 @@ export function registerMissionRoutes(app: Express, requireAuth: any) {
     res.json({ mission });
   });
 
-  app.post('/api/missions/:id/start', requireAuth, async (req: any, res: any) => {
+  app.post('/api/missions/:id/start', requireAuth, missionWriteRateLimit, async (req: any, res: any) => {
     const userId = getUserId(req);
     const result = await startMission(userId, req.params.id);
     res.json(result);
   });
 
-  app.post('/api/missions/:id/proof', requireAuth, async (req: any, res: any) => {
+  app.post('/api/missions/:id/proof', requireAuth, missionWriteRateLimit, async (req: any, res: any) => {
     const userId = getUserId(req);
     const { lang, ...proof } = req.body as { lang?: string; [key: string]: unknown };
     const result = await submitProof(userId, req.params.id, proof as any, lang);
     res.json(result);
   });
 
-  app.post('/api/missions/share', requireAuth, async (req: any, res: any) => {
+  app.post('/api/missions/share', requireAuth, missionWriteRateLimit, async (req: any, res: any) => {
     const userId = getUserId(req);
     const { userMissionId, platform, caption } = req.body as {
       userMissionId: string;

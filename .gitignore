@@ -45,3 +45,8 @@ logs/
 *.local
 data/
 scripts/.smoke-credits-*.ts
+
+# Debug / temporary files — not part of source
+output.txt
+screenshot-*.png
+screenshot-*.jpg

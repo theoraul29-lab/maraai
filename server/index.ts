@@ -14,6 +14,7 @@ import { WebSocketServer } from 'ws';
 import { storage } from './storage.js';
 import { setupSessionAuth, csrfProtection } from './auth.js';
 import { checkRateLimit } from './rateLimit.js';
+import { globalApiRateLimit } from './rate-limit.js';
 import { z } from 'zod';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { db, rawSqlite } from './db.js';
@@ -490,6 +491,11 @@ app.use(
 );
 
 app.use(express.urlencoded({ extended: false }));
+
+// Global flood-protection on all /api/* routes (300 req / IP / 15 min).
+// Per-route limiters (auth, TTS, uploads, etc.) apply stricter limits on top.
+// /api/health and /api/runtime are excluded so uptime probes are never throttled.
+app.use(/^\/api\/(?!health|runtime)/, globalApiRateLimit);
 
 // Lightweight health probe for local/dev orchestration and uptime checks.
 app.get('/api/health', (_req, res) => {

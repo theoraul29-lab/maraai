@@ -96,6 +96,8 @@ import {
   ttsRateLimit,
   maraSpeakRateLimit,
   videoViewRateLimit,
+  createPostRateLimit,
+  createCommentRateLimit,
 } from './rate-limit.js';
 import { requireAdmin as requireAdminMiddleware } from './middleware/requireAdmin.js';
 import { requireHttps } from './middleware/requireHttps.js';
@@ -292,12 +294,12 @@ export async function registerRoutes(
   app.get('/api/profile/:id/activity', profileModule.getActivity);
   app.get('/api/profile/:id/badges', profileModule.getBadges);
   app.get('/api/profile/:id/posts', profileModule.listProfilePosts);
-  app.post('/api/profile/posts', requireAuth, profileModule.createProfilePost);
+  app.post('/api/profile/posts', requireAuth, createPostRateLimit, profileModule.createProfilePost);
   // Post likes & comments — must be registered BEFORE the delete-post route
   // so that Express does not match `/posts/:postId` before `/posts/comments/:commentId`.
   app.post('/api/profile/posts/:postId/like', requireAuth, profileModule.likePost);
   app.get('/api/profile/posts/:postId/comments', profileModule.listPostComments);
-  app.post('/api/profile/posts/:postId/comments', requireAuth, profileModule.createPostComment);
+  app.post('/api/profile/posts/:postId/comments', requireAuth, createCommentRateLimit, profileModule.createPostComment);
   app.delete('/api/profile/posts/comments/:commentId', requireAuth, profileModule.deletePostComment);
   app.delete(
     '/api/profile/posts/:postId',

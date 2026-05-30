@@ -285,3 +285,32 @@ export const videoViewRateLimit = createUserRateLimit({
   max: envInt('RL_VIDEO_VIEW_MAX', 5),
   windowMs: ONE_MIN,
 });
+
+// --- Global API fallback (flood protection) --------------------------------
+// Applied once via app.use('/api/', ...) in server/index.ts.
+// Limits all /api/* traffic to 300 requests per IP per 15 minutes.
+// Auth + expensive-op routes have stricter per-route limiters on top of this.
+export const globalApiRateLimit = createIPRateLimit({
+  name: 'global:api',
+  max: envInt('RL_GLOBAL_API_MAX', 300),
+  windowMs: FIFTEEN_MIN,
+});
+
+// --- Community write routes -----------------------------------------------
+export const createPostRateLimit = createUserRateLimit({
+  name: 'community:create-post',
+  max: envInt('RL_CREATE_POST_MAX', 10),
+  windowMs: ONE_HOUR,
+});
+
+export const createCommentRateLimit = createUserRateLimit({
+  name: 'community:create-comment',
+  max: envInt('RL_CREATE_COMMENT_MAX', 20),
+  windowMs: ONE_HOUR,
+});
+
+export const missionWriteRateLimit = createUserRateLimit({
+  name: 'missions:write',
+  max: envInt('RL_MISSION_WRITE_MAX', 30),
+  windowMs: ONE_HOUR,
+});
