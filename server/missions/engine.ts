@@ -164,7 +164,7 @@ export async function submitProof(
   userId: string,
   missionId: string,
   proof: { text?: string; mediaUrl?: string; reflectionAnswer?: string },
-  lang = 'ro',
+  lang = 'en',
 ) {
   const mission = rawSqlite.prepare(
     'SELECT xp_reward, title, reflection FROM missions WHERE id = ?'
@@ -255,7 +255,7 @@ export function suggestMission(userId: string) {
   return preferred[0] ?? available[0] ?? null;
 }
 
-export async function generatePersonalizedMission(userId: string, lang = 'ro') {
+export async function generatePersonalizedMission(userId: string, lang = 'en') {
   const personality = getPersonality(userId);
   const xpData = getUserXP(userId);
   const row = rawSqlite.prepare(
@@ -555,7 +555,7 @@ ${JSON.stringify(payload)}`;
         // not compete with the daily autonomous-brain call budget.
         const raw = await Promise.race([
           llmGenerate(prompt, { source: 'user_chat' }),
-          new Promise<never>((_, reject) => setTimeout(() => reject(new Error('translate_timeout')), 12000)),
+          new Promise<never>((_, reject) => setTimeout(() => reject(new Error('translate_timeout')), 30000)),
         ]);
         const clean = raw.replace(/```json|```/g, '').trim();
         const translated = JSON.parse(clean) as Array<{

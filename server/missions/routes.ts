@@ -47,9 +47,9 @@ export function registerMissionRoutes(app: Express, requireAuth: any) {
       const prefs = rawSqlite.prepare(
         "SELECT language FROM user_preferences WHERE user_id = ? LIMIT 1"
       ).get(userId) as { language: string } | undefined;
-      return prefs?.language || 'ro';
+      return prefs?.language || 'en';
     } catch {
-      return 'ro';
+      return 'en';
     }
   }
 

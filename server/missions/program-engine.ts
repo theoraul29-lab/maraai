@@ -327,7 +327,7 @@ export async function getDayMission(
 
 function getStreakMessage(streak: number, lang?: string): string {
   if (streak === 0) return '';
-  const l = (lang || 'ro').split('-')[0].toLowerCase();
+  const l = (lang || 'en').split('-')[0].toLowerCase();
 
   const msgs: Record<string, { 1?: string; 7?: string; 14?: string; 21?: string; 30?: string; default: string }> = {
     ro: { 1: '🔥 Prima zi — ai început!', 7: '🔥🔥 7 zile — o săptămână completă!', 14: '🔥🔥🔥 14 zile — două săptămâni!', 21: '💎 21 de zile — habitoul e al tău!', 30: '👑 30 de zile — un maestru al obiceiului!', default: `🔥 ${streak} zile consecutive — nu te opri!` },

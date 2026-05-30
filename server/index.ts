@@ -143,6 +143,7 @@ function runMigrations() {
 
   ensureColumns('user_preferences', [
     ["theme", "text NOT NULL DEFAULT 'dark'"],
+    ["language", "text NOT NULL DEFAULT 'en'"],
   ]);
 
   ensureColumns('mara_growth_experiments', [
