@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { storage } from '../../../server/storage.js';
+import { storage } from '../storage.js';
 
 export async function moderate(req: Request, res: Response) {
   try {

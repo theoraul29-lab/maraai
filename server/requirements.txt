@@ -1,5 +1,0 @@
-fastapi
-uvicorn[standard]
-google-generativeai
-python-dotenv
-fastapi-cors

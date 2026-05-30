@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(git push origin main 2>&1)",
+      "Bash(grep -n '\"trading\"' c:/Users/admin/Desktop/MaraAi/frontend/src/i18n/locales/__TRACKED_VAR__.json)",
+      "Bash(git add *)",
+      "Bash(git restore *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(git commit -m 'fix\\(missions-orb\\): yin-yang negru si rosu + CSS rule lipsa *)",
+      "Bash(npm run *)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); [print\\(k,':',v\\) for k,v in d.get\\('scripts',{}\\).items\\(\\) if 'smoke' in k]\")",
+      "Bash(DATABASE_URL=\"sqlite:///ci_test2.sqlite\" NODE_ENV=development AUTH_MODE=local SESSION_SECRET=ci-session-secret PORT=3098 npx tsx server/index.ts)",
+      "Bash(echo \"PID $!\")",
+      "Bash(curl -s http://localhost:3098/api/health)"
+    ]
+  }
+}

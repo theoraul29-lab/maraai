@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import type { IStorage } from '../../../server/storage.js';
+import type { IStorage } from '../storage.js';
 import type { z as ZodType } from 'zod';
 
 let deps: { storage: IStorage; z: typeof ZodType };

@@ -1,10 +1,10 @@
 import type { Request, Response } from 'express';
-import type { IStorage } from '../../../server/storage.js';
-import { insertVideoSchema } from '../../../shared/schema.js';
+import type { IStorage } from '../storage.js';
+import { insertVideoSchema } from '../../shared/schema.js';
 import { eq, sql } from 'drizzle-orm';
-import { notifyReelLike } from '../../../server/notifications/producer.js';
-import { rawSqlite } from '../../../server/db.js';
-import { addXP } from '../../../server/missions/engine.js';
+import { notifyReelLike } from '../notifications/producer.js';
+import { rawSqlite } from '../db.js';
+import { addXP } from '../missions/engine.js';
 
 let deps: {
   storage: IStorage;

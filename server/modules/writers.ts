@@ -30,14 +30,14 @@
  */
 
 import type { Request, Response } from 'express';
-import type { IStorage } from '../../../server/storage.js';
-import { notifyWriterComment, notifyWriterLike } from '../../../server/notifications/producer.js';
+import type { IStorage } from '../storage.js';
+import { notifyWriterComment, notifyWriterLike } from '../notifications/producer.js';
 import {
   getActivePlanId,
   hasFeature,
   type FeatureKey,
-} from '../../../server/billing/features.js';
-import { CREATOR_REVENUE_SHARE } from '../../../server/billing/plans.js';
+} from '../billing/features.js';
+import { CREATOR_REVENUE_SHARE } from '../billing/plans.js';
 
 let deps: {
   storage: IStorage;

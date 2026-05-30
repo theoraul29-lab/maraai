@@ -20,30 +20,30 @@ import {
 } from './mara-brain/alerts.js';
 import { desc, eq } from 'drizzle-orm';
 import { csrfProtection } from './auth.js';
-import * as videoModule from '../backend/src/modules/video.js';
-import * as reelsModule from '../backend/src/modules/reels.js';
-import * as uploadsModule from '../backend/src/modules/uploads.js';
-import * as writersModule from '../backend/src/modules/writers.js';
+import * as videoModule from './modules/video.js';
+import * as reelsModule from './modules/reels.js';
+import * as uploadsModule from './modules/uploads.js';
+import * as writersModule from './modules/writers.js';
 
-import * as creatorsModule from '../backend/src/modules/creators.js';
-import * as chatModule from '../backend/src/modules/chat.js';
-import * as ttsModule from '../backend/src/modules/tts.js';
-import * as sttModule from '../backend/src/modules/stt.js';
-import * as userPrefsModule from '../backend/src/modules/userPrefs.js';
-import * as adminModule from '../backend/src/modules/admin.js';
-import * as feedbackModule from '../backend/src/modules/feedback.js';
-import * as profileModule from '../backend/src/modules/profile.js';
-import * as notificationsModule from '../backend/src/modules/notifications.js';
-import * as searchModule from '../backend/src/modules/search.js';
-import * as ordersModule from '../backend/src/modules/orders.js';
-import * as adminOrdersModule from '../backend/src/modules/adminOrders.js';
-import * as paymentsModule from '../backend/src/modules/payments.js';
-import * as pythonBridgeModule from '../backend/src/modules/pythonBridge.js';
-import * as messengerModule from '../backend/src/modules/messenger.js';
+import * as creatorsModule from './modules/creators.js';
+import * as chatModule from './modules/chat.js';
+import * as ttsModule from './modules/tts.js';
+import * as sttModule from './modules/stt.js';
+import * as userPrefsModule from './modules/userPrefs.js';
+import * as adminModule from './modules/admin.js';
+import * as feedbackModule from './modules/feedback.js';
+import * as profileModule from './modules/profile.js';
+import * as notificationsModule from './modules/notifications.js';
+import * as searchModule from './modules/search.js';
+import * as ordersModule from './modules/orders.js';
+import * as adminOrdersModule from './modules/adminOrders.js';
+import * as paymentsModule from './modules/payments.js';
+import * as pythonBridgeModule from './modules/pythonBridge.js';
+import * as messengerModule from './modules/messenger.js';
 import {
   StripeProvider,
   PayPalProvider,
-} from '../backend/src/payments/providers.js';
+} from './modules/providers.js';
 import {
   getMaraResponse,
   MOOD_TO_THEME,

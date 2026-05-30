@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
-import type { IStorage } from '../../../server/storage.js';
-import { notifyFollow } from '../../../server/notifications/producer.js';
-import { rawSqlite } from '../../../server/db.js';
+import type { IStorage } from '../storage.js';
+import { notifyFollow } from '../notifications/producer.js';
+import { rawSqlite } from '../db.js';
 
 let deps: { storage: IStorage };
 

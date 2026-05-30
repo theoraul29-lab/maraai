@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { storage } from '../../../server/storage.js';
+import { storage } from '../storage.js';
 
 function currentUserId(req: Request): string | null {
   const u = req.user as { uid?: string } | undefined;

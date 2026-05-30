@@ -12,7 +12,7 @@ import {
   isConfigured,
   saveSubscription,
   deleteSubscription,
-} from '../../../server/push/vapid.js';
+} from '../push/vapid.js';
 
 function currentUserId(req: Request): string | null {
   const u = req.user as { uid?: string; claims?: { sub?: string } } | undefined;

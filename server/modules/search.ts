@@ -23,14 +23,14 @@
 
 import type { Request, Response } from 'express';
 import { or, like, desc, eq, sql, type SQL } from 'drizzle-orm';
-import { db } from '../../../server/db.js';
-import { users } from '../../../shared/models/auth.js';
+import { db } from '../db.js';
+import { users } from '../../shared/models/auth.js';
 import {
   videos,
   writerPages,
   tradingLessons,
   tradingModules,
-} from '../../../shared/schema.js';
+} from '../../shared/schema.js';
 
 type Kind = 'people' | 'reels' | 'articles' | 'lessons';
 

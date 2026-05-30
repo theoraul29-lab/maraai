@@ -30,10 +30,10 @@
  */
 
 import type { Request, Response } from 'express';
-import type { IStorage } from '../../../server/storage.js';
-import { hasFeature, type FeatureKey } from '../../../server/billing/features.js';
-import { getUserXP, addXP } from '../../../server/missions/engine.js';
-import { rawSqlite } from '../../../server/db.js';
+import type { IStorage } from '../storage.js';
+import { hasFeature, type FeatureKey } from '../billing/features.js';
+import { getUserXP, addXP } from '../missions/engine.js';
+import { rawSqlite } from '../db.js';
 
 let deps: {
   storage: IStorage;
