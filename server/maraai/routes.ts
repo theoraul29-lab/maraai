@@ -49,6 +49,7 @@ import {
 } from './viral-loop.js';
 import { getGrowthGateStatus, isViralLoopActive, isGrowthDashboardActive } from './growth-gate.js';
 import { rawSqlite } from '../db.js';
+import { costGuard, isOllamaForcedFallback, setOllamaForcedFallback } from '../middleware/costGuard.js';
 
 type AuthedReq = Request & { user?: { uid: string } };
 
@@ -368,7 +369,7 @@ export function registerMaraAIRoutes(
   });
 
   // --- Hybrid AI router ---
-  app.post('/api/maraai/ai', requireAuth, async (req: AuthedReq, res: Response) => {
+  app.post('/api/maraai/ai', requireAuth, costGuard, async (req: AuthedReq, res: Response) => {
     const parsed = aiSchema.safeParse(req.body ?? {});
     if (!parsed.success) return res.status(400).json({ message: 'Invalid request.', errors: parsed.error.flatten() });
     const result = await routeAi(parsed.data.message, {

@@ -122,6 +122,7 @@ import { createRequire } from 'module';
 const _cjsRequire = createRequire(import.meta.url);
 const pdfParse = _cjsRequire('pdf-parse') as (buf: Buffer) => Promise<{ text: string }>;
 import { startFacebook, facebookCallback } from './modules/oauth-facebook.js';
+import { isOllamaForcedFallback, setOllamaForcedFallback } from './middleware/costGuard.js';
 
 export async function registerRoutes(
   httpServer: Server,
@@ -310,6 +311,24 @@ export async function registerRoutes(
   app.get('/api/admin/stats', requireAdmin, adminModule.getStats);
   app.get('/api/admin/users', requireAdmin, adminModule.getUsers);
   app.get('/api/admin/videos', requireAdmin, adminModule.getVideos);
+
+  // --- AI cost guardrails admin ---
+  app.get('/api/admin/ai-usage', requireAdmin, (req: any, res: any) => {
+    const date = (req.query.date as string) || new Date().toISOString().slice(0, 10);
+    const rows = rawSqlite.prepare(
+      `SELECT user_id, COUNT(*) as requests, SUM(tokens_estimated) as total_tokens,
+              COUNT(CASE WHEN outcome = 'rate_limited' THEN 1 END) as rate_limited,
+              COUNT(CASE WHEN outcome = 'token_exceeded' THEN 1 END) as token_exceeded
+       FROM ai_usage_log WHERE date_utc = ? GROUP BY user_id ORDER BY requests DESC LIMIT 50`
+    ).all(date);
+    res.json({ date, users: rows, ollamaForcedFallback: isOllamaForcedFallback() });
+  });
+
+  app.post('/api/admin/ai-usage/reset-ollama-fallback', requireAdmin, (_req: any, res: any) => {
+    setOllamaForcedFallback(false);
+    console.log('[costGuard] Ollama forced fallback reset by admin');
+    res.json({ success: true, ollamaForcedFallback: false });
+  });
 
   // Feedback/moderation endpoint (require auth)
   app.post('/api/moderate', requireAuth, feedbackModule.moderate);

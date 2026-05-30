@@ -21,6 +21,7 @@ import {
 import { anthropicProvider, anthropicBrainProvider } from './anthropic-provider.js';
 import { ollamaProvider } from './ollama-provider.js';
 import { circuitIsAvailable, circuitRecordSuccess, circuitRecordFailure } from './circuit-breaker.js';
+import { isOllamaForcedFallback, recordOllamaFailure, recordOllamaSuccess } from '../middleware/costGuard.js';
 
 export class NoProviderAvailableError extends Error {
   constructor() {
@@ -58,8 +59,8 @@ export async function getAIResponse(
   messages: AIMessage[],
   opts: AIChatOptions = {},
 ): Promise<AIResponse> {
-  // 1) Try Ollama if we have an explicit base URL configured.
-  if (ollamaConfigured()) {
+  // 1) Try Ollama if we have an explicit base URL configured and not permanently forced to Anthropic.
+  if (ollamaConfigured() && !isOllamaForcedFallback()) {
     if (!circuitIsAvailable('ollama')) {
       // eslint-disable-next-line no-console
       console.warn('[AI Router] Ollama circuit open; skipping to Anthropic.');
@@ -69,10 +70,13 @@ export async function getAIResponse(
           logProviderOnce('ollama');
           const result = await ollamaProvider.chat(messages, opts);
           circuitRecordSuccess('ollama');
+          recordOllamaSuccess();
           return result;
         }
+        recordOllamaFailure();
       } catch (err) {
         circuitRecordFailure('ollama');
+        recordOllamaFailure();
         // eslint-disable-next-line no-console
         console.warn('[AI Router] Ollama failed; falling back to Anthropic:', err);
       }
