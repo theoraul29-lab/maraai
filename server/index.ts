@@ -25,6 +25,7 @@ import { seedPlans } from './billing/seed.js';
 import { seedDefaultObjective } from './mara-core/objective.js';
 import { seedMissions } from './missions/seed.js';
 import { warmTranslationCache } from './missions/engine.js';
+import { scheduleDbBackup } from './services/dbBackup.js';
 import {
   registerComputePeer,
   unregisterComputePeer,
@@ -495,6 +496,21 @@ app.get('/api/health', (_req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
+// SQLite integrity check — returns {"db":"ok"} or {"db":"corrupt","detail":"..."}.
+app.get('/api/health/db', (_req, res) => {
+  try {
+    const rows = rawSqlite.pragma('integrity_check') as Array<{ integrity_check: string }>;
+    const result = rows[0]?.integrity_check ?? 'unknown';
+    if (result === 'ok') {
+      res.json({ db: 'ok' });
+    } else {
+      res.status(500).json({ db: 'corrupt', detail: result });
+    }
+  } catch (err) {
+    res.status(500).json({ db: 'corrupt', detail: err instanceof Error ? err.message : String(err) });
+  }
+});
+
 // /api/auth/me returns the full user payload (registered in routes.ts via
 // auth-api.meHandler). We keep a lightweight `/api/auth/csrf` endpoint here
 // so the SPA can grab a CSRF token for unauthenticated mutating calls
@@ -606,6 +622,9 @@ app.use((req, res, next) => {
   warmTranslationCache(['en', 'de', 'fr', 'es', 'pt', 'ru', 'ar', 'hi', 'ja', 'zh']).catch(
     (err) => console.warn('[missions:warm] startup warm failed:', (err as Error).message),
   );
+
+  // Daily SQLite backup at 03:00 UTC (production only, no-op in dev).
+  scheduleDbBackup();
 
   // MaraCore Etapa 1: seed the singleton ObjectiveFunction row if it
   // doesn't exist yet. Idempotent — will not overwrite admin edits.

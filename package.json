@@ -18,7 +18,8 @@
     "smoke:mara-cli": "node scripts/smoke-mara-cli.mjs",
     "smoke:code-explorer": "tsx scripts/test-code-explorer.mts",
     "mara": "node scripts/mara-cli.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "backup:db": "tsx server/services/dbBackup.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.33.1",
