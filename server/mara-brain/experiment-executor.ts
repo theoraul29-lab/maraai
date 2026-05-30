@@ -15,6 +15,7 @@
 import { rawSqlite } from '../db.js';
 import { markImplemented, getExperiment } from './agents/growth-engineer.js';
 import { llmGenerate, isLLMConfigured } from '../llm.js';
+import { assertBrainQuerySafe } from './sandbox.js';
 
 export interface ExecutionResult {
   experimentId: number;
@@ -101,13 +102,12 @@ Write a 2-sentence summary of what was implemented and what the treatment group 
 
   // Persist the implementation notes (columns added in db.ts migration)
   try {
-    rawSqlite
-      .prepare(
-        `UPDATE mara_growth_experiments
-         SET implementation_notes = ?
-         WHERE id = ?`,
-      )
-      .run(JSON.stringify({ actionsPerformed, needsClaudeCode, notes: implementationNotes }), experimentId);
+    const sql = `UPDATE mara_growth_experiments SET implementation_notes = ? WHERE id = ?`;
+    assertBrainQuerySafe(sql);
+    rawSqlite.prepare(sql).run(
+      JSON.stringify({ actionsPerformed, needsClaudeCode, notes: implementationNotes }),
+      experimentId,
+    );
   } catch (err) {
     console.warn('[executor] Could not write implementation_notes:', (err as Error).message);
   }

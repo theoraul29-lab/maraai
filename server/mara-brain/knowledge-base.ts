@@ -4,6 +4,7 @@
 import { llmGenerate, isLLMConfigured, LLMRateLimitedError } from '../llm.js';
 import { storage } from '../storage.js';
 import { db, rawSqlite } from '../db.js';
+import { brainSqlite } from './sandbox.js';
 import { maraKnowledgeBase } from '../../shared/schema.js';
 import { sql, inArray, eq, like, desc } from 'drizzle-orm';
 import { flagConflictsForKnowledge } from './conflict-detector.js';
@@ -334,7 +335,7 @@ Răspunde DOAR cu JSON array-ul, fără alt text. Exemplu:
  */
 export function cleanupKnowledgeBase(): { deleted: number } {
   try {
-    const r1 = rawSqlite.prepare(`
+    const r1 = brainSqlite.prepare(`
       DELETE FROM mara_knowledge_base
       WHERE id NOT IN (
         SELECT id FROM mara_knowledge_base
@@ -343,7 +344,7 @@ export function cleanupKnowledgeBase(): { deleted: number } {
       )
     `).run();
 
-    const r2 = rawSqlite.prepare(`
+    const r2 = brainSqlite.prepare(`
       DELETE FROM mara_knowledge_base
       WHERE category = 'web_research'
         AND id NOT IN (
