@@ -41,14 +41,14 @@ export async function enrollUserInProgram(
   const program = rawSqlite
     .prepare('SELECT * FROM mission_programs WHERE slug = ? AND is_active = 1')
     .get(programSlug) as any;
-  if (!program) return { success: false, message: 'Programul nu există.' };
+  if (!program) return { success: false, message: 'Program not found.' };
 
   const existing = rawSqlite
     .prepare(
       "SELECT id FROM user_program_enrollments WHERE user_id = ? AND program_id = ? AND status = 'active' LIMIT 1",
     )
     .get(userId, program.id) as any;
-  if (existing) return { success: false, message: 'Ești deja înrolat în acest program.' };
+  if (existing) return { success: false, message: 'You are already enrolled in this program.' };
 
   const enrollmentId = crypto.randomUUID();
   rawSqlite
@@ -64,7 +64,7 @@ export async function enrollUserInProgram(
       JSON.stringify({
         notificationHour: settings.notificationHour ?? 8,
         habitDescription: settings.habitDescription ?? '',
-        language: settings.language ?? 'ro',
+        language: settings.language ?? 'en',
       }),
     );
 
@@ -160,36 +160,47 @@ async function generateDayMission(
   const progress = day / totalDays;
   const phase = progress < 0.33 ? 'beginning' : progress < 0.66 ? 'middle' : 'deep';
   const phaseContext = {
-    beginning: 'Misiuni ușoare care construiesc momentum. Userul e la început.',
-    middle: 'Misiuni medii. Userul simte schimbarea și e pregătit pentru mai mult.',
-    deep: 'Misiuni profunde și transformatoare. Userul e pregătit pentru profunzime.',
+    beginning: 'Light missions that build momentum. The user is at the beginning of their journey.',
+    middle: 'Medium missions. The user feels the change and is ready for more.',
+    deep: 'Deep and transformative missions. The user is ready for depth and challenge.',
   }[phase];
 
-  const prompt = `Ești Mara — coach de viață empatic.
-Generează misiunea pentru ziua ${day} din ${totalDays} din programul "${program.name}".
+  const userLang = settings?.language ?? 'en';
+  const LANG_NAMES: Record<string, string> = {
+    en: 'English', ro: 'Romanian', de: 'German', fr: 'French', es: 'Spanish',
+    it: 'Italian', pt: 'Portuguese', ru: 'Russian', uk: 'Ukrainian', nl: 'Dutch',
+    sv: 'Swedish', bg: 'Bulgarian', ja: 'Japanese', ko: 'Korean', pl: 'Polish',
+    cs: 'Czech', hu: 'Hungarian', hr: 'Croatian', sr: 'Serbian', tr: 'Turkish',
+    ar: 'Arabic', hi: 'Hindi', zh: 'Chinese (Simplified)', th: 'Thai', vi: 'Vietnamese',
+    da: 'Danish', el: 'Greek',
+  };
+  const langName = LANG_NAMES[userLang.split('-')[0].toLowerCase()] ?? userLang;
+
+  const prompt = `You are Mara — an empathetic life coach.
+Generate the mission for day ${day} of ${totalDays} from the program "${program.name}".
 
 Program: ${program.tagline}
-Faza: ${phaseContext}
-Piloni focus: ${program.pillar_focus}
+Phase: ${phaseContext}
+Focus pillars: ${program.pillar_focus}
 
 User:
-- Îi place: ${personality?.what_you_love ?? 'necunoscut'}
-- Vrea să schimbe: ${personality?.want_to_change ?? 'necunoscut'}
-- Scop specific: ${settings?.habitDescription ?? 'transformare personală'}
+- Loves: ${personality?.what_you_love ?? 'unknown'}
+- Wants to change: ${personality?.want_to_change ?? 'unknown'}
+- Specific goal: ${settings?.habitDescription ?? 'personal transformation'}
 
 IMPORTANT:
-- Proof prin: fotografie SAU desen SAU text SAU combinație
-- Misiunea să fie concretă și realizabilă în 5-30 minute
-- Jurnalul Marei transformă dovada în pagină literară frumoasă
-- Limbă: ${settings?.language ?? 'ro'}
+- Proof via: photo OR drawing OR text OR any combination
+- Mission must be concrete and achievable in 5-30 minutes
+- Mara's journal transforms the proof into a beautiful literary page
+- Write ALL text fields in ${langName}.
 
-Răspunde DOAR JSON valid:
+Respond ONLY with valid JSON (no markdown fences):
 {
-  "title": "titlu scurt și inspirant",
-  "description": "2-3 propoziții personalizate",
-  "proofPrompt": "ce să facă/fotografieze/deseneze",
-  "intent": "cum transformă Mara în pagină de jurnal",
-  "reflection": "întrebare profundă de reflecție",
+  "title": "short inspiring title",
+  "description": "2-3 personalized sentences",
+  "proofPrompt": "what to do / photograph / draw",
+  "intent": "how Mara will transform this into a journal page",
+  "reflection": "deep reflection question",
   "proofType": "text|photo|any|drawing"
 }`;
 
@@ -382,7 +393,7 @@ export async function completeProgramDay(
        WHERE e.id = ? AND e.user_id = ? AND e.status = 'active'`,
     )
     .get(enrollmentId, userId) as any;
-  if (!enrollment) return { success: false, message: 'Enrollment negăsit.' };
+  if (!enrollment) return { success: false, message: 'Enrollment not found.' };
 
   const alreadyDone = rawSqlite
     .prepare(
@@ -392,10 +403,10 @@ export async function completeProgramDay(
        LIMIT 1`,
     )
     .get(userId, enrollmentId, enrollment.current_day);
-  if (alreadyDone) return { success: false, message: 'Ai completat deja misiunea de azi!' };
+  if (alreadyDone) return { success: false, message: "You have already completed today's mission!" };
 
   const dayMission = await getDayMission(userId, enrollmentId);
-  if (!dayMission?.mission) return { success: false, message: 'Misiunea zilei negăsită.' };
+  if (!dayMission?.mission) return { success: false, message: "Today's mission not found." };
 
   const journalData = await generateJournalPage(userId, dayMission, proof, enrollment);
 
@@ -506,7 +517,7 @@ export async function completeProgramDay(
     }
   }
 
-  const proofLang = proof.language ?? 'ro';
+  const proofLang = proof.language ?? 'en';
   return {
     success: true,
     maraJournalPage: journalData.journalPage,
@@ -538,7 +549,7 @@ async function generateJournalPage(
     .prepare('SELECT * FROM user_personality WHERE user_id = ?')
     .get(userId) as any;
 
-  const lang = (proof.language ?? 'ro').split('-')[0].toLowerCase();
+  const lang = (proof.language ?? 'en').split('-')[0].toLowerCase();
   const langInstruction: Record<string, string> = {
     ro: 'Scrie în română.',
     en: 'Write in English.',
@@ -569,48 +580,48 @@ async function generateJournalPage(
     el: 'Γράψε στα ελληνικά.',
   };
 
-  const prompt = `Ești Mara — coach empatic și scriitor talentat.
+  const prompt = `You are Mara — an empathetic coach and talented writer.
 
-Userul a completat ziua ${enrollment.current_day} din "${enrollment.program_name}".
+The user has completed day ${enrollment.current_day} of "${enrollment.program_name}".
 
-MISIUNEA: "${dayMission.mission?.title}"
-INTENȚIA: "${dayMission.mission?.intent ?? ''}"
+MISSION: "${dayMission.mission?.title}"
+INTENT: "${dayMission.mission?.intent ?? ''}"
 
-CE A SCRIS/CREAT:
-"${proof.content ?? '[A uploadat o imagine sau un desen]'}"
+WHAT THEY WROTE / CREATED:
+"${proof.content ?? '[Uploaded an image or drawing]'}"
 
-REFLECȚIE: "${proof.reflectionAnswer ?? 'nicio reflecție adăugată'}"
+REFLECTION: "${proof.reflectionAnswer ?? 'no reflection added'}"
 
-PROFIL USER:
-- Îi place: ${personality?.what_you_love ?? 'necunoscut'}
-- Vrea să schimbe: ${personality?.want_to_change ?? 'necunoscut'}
+USER PROFILE:
+- Loves: ${personality?.what_you_love ?? 'unknown'}
+- Wants to change: ${personality?.want_to_change ?? 'unknown'}
 
-Fă exact 3 lucruri:
+Do exactly 3 things:
 
-1. PAGINA DE JURNAL (150-250 cuvinte):
-   Transformă ce a scris în proză literară frumoasă.
-   Vocea lui, la persoana I.
-   Titlu: "Ziua [număr] — [ceva poetic]"
-   Include emoțiile, insight-urile, descoperirile.
+1. JOURNAL PAGE (150-250 words):
+   Transform what they wrote into beautiful literary prose.
+   Their voice, in first person.
+   Title: "Day [number] — [something poetic]"
+   Include emotions, insights, discoveries.
 
-2. FEEDBACK MARA (2-3 propoziții):
-   Personal, empatic, specific la ce a scris.
-   Inspiră pentru ziua de mâine.
-   Nu generic — referă-te la ceva concret din ce a scris.
+2. MARA FEEDBACK (2-3 sentences):
+   Personal, empathetic, specific to what they wrote.
+   Inspire for tomorrow.
+   Not generic — reference something concrete from what they wrote.
 
 3. METADATA:
-   mood: un singur cuvânt
-   tags: exact 3 cuvinte din conținut
+   mood: a single word
+   tags: exactly 3 words from the content
 
-Răspunde DOAR JSON valid:
+Respond ONLY with valid JSON (no markdown fences):
 {
-  "journalPage": "pagina completă",
-  "maraFeedback": "răspunsul Marei",
-  "detectedMood": "un cuvânt",
+  "journalPage": "complete page",
+  "maraFeedback": "Mara's response",
+  "detectedMood": "one word",
   "tags": ["tag1", "tag2", "tag3"]
 }
 
-${langInstruction[lang] ?? `Write in ${lang}.`}`;
+${langInstruction[lang] ?? `Write everything in ${lang}.`}`;
 
   try {
     const response = await llmGenerate(prompt, { source: 'agent.journal-generator' });
@@ -618,11 +629,10 @@ ${langInstruction[lang] ?? `Write in ${lang}.`}`;
     return JSON.parse(clean);
   } catch {
     return {
-      journalPage: `Ziua ${enrollment.current_day}\n\n${proof.content ?? ''}`,
-      maraFeedback:
-        'Bravo că ai completat această zi. Fiecare pas contează în călătoria ta.',
-      detectedMood: 'neutru',
-      tags: ['jurnal', 'misiune', 'transformare'],
+      journalPage: `Day ${enrollment.current_day}\n\n${proof.content ?? ''}`,
+      maraFeedback: 'Well done completing this day. Every step counts on your journey.',
+      detectedMood: 'neutral',
+      tags: ['journal', 'mission', 'transformation'],
     };
   }
 }
@@ -648,12 +658,11 @@ export async function generateUserBook(
     const chapterEntries = entries.slice(i, i + 7);
     const chapterNumber = Math.floor(i / 7) + 1;
 
-    let chapterTitle = `Capitolul ${chapterNumber}`;
+    let chapterTitle = `Chapter ${chapterNumber}`;
     try {
-      const titlePrompt = `Generează un titlu poetic și scurt (4-6 cuvinte)
-pentru un capitol de jurnal personal care acoperă zilele ${i + 1}-${Math.min(i + 7, entries.length)}.
-Mood-urile detectate: ${chapterEntries.map((e: any) => e.mood).filter(Boolean).join(', ')}.
-Răspunde DOAR cu titlul, fără ghilimele.`;
+      const titlePrompt = `Generate a short, poetic title (4-6 words) for a personal journal chapter covering days ${i + 1}-${Math.min(i + 7, entries.length)}.
+Detected moods: ${chapterEntries.map((e: any) => e.mood).filter(Boolean).join(', ')}.
+Reply ONLY with the title, no quotes, no extra text.`;
       chapterTitle = (
         await llmGenerate(titlePrompt, { source: 'agent.book-chapter-title' })
       ).trim();
@@ -662,7 +671,7 @@ Răspunde DOAR cu titlul, fără ghilimele.`;
     chapters.push({
       number: chapterNumber,
       title: chapterTitle,
-      dayRange: `Zilele ${i + 1}-${Math.min(i + 7, entries.length)}`,
+      dayRange: `Days ${i + 1}-${Math.min(i + 7, entries.length)}`,
       entries: chapterEntries.map((e: any) => ({
         day: e.day_number,
         page: e.mara_page,
@@ -672,12 +681,11 @@ Răspunde DOAR cu titlul, fără ghilimele.`;
     });
   }
 
-  let bookTitle = `Povestea mea — ${enrollment.program_name}`;
-  let bookSubtitle = `O călătorie de ${enrollment.duration_days} zile`;
+  let bookTitle = `My Story — ${enrollment.program_name}`;
+  let bookSubtitle = `A ${enrollment.duration_days}-day journey`;
   try {
-    const bookTitlePrompt = `Generează un titlu inspirant pentru o carte despre transformarea personală
-a unui om care a completat programul "${enrollment.program_name}" în ${enrollment.duration_days} zile.
-Răspunde cu JSON: {"title": "...", "subtitle": "..."}`;
+    const bookTitlePrompt = `Generate an inspiring title for a book about the personal transformation of someone who completed the program "${enrollment.program_name}" in ${enrollment.duration_days} days.
+Reply with JSON only: {"title": "...", "subtitle": "..."}`;
     const r = await llmGenerate(bookTitlePrompt, { source: 'agent.book-title' });
     const parsed = JSON.parse(r.replace(/```json|```/g, '').trim());
     bookTitle = parsed.title ?? bookTitle;

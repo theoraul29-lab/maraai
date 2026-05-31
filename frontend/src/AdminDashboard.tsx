@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import { useTranslation } from 'react-i18next';
 import './styles/AdminDashboard.css';
 
 const AdminGrowthDashboard = lazy(() => import('./AdminGrowthDashboard'));
@@ -208,6 +209,7 @@ function fmtUptime(s: number) {
 // ─── Tab: Overview ────────────────────────────────────────────────────────────
 
 function CircuitBreakersPanel() {
+  const { t } = useTranslation();
   const [breakers, setBreakers] = useState<CircuitBreakerStatus[]>([]);
 
   useEffect(() => {
@@ -222,11 +224,11 @@ function CircuitBreakersPanel() {
     <div className="adb-card">
       <SectionHeader icon="⚡" title="Circuit Breakers AI" />
       {breakers.length === 0
-        ? <p className="adb-empty">Niciun provider monitorizat</p>
+        ? <p className="adb-empty">{t('admin.noProviders')}</p>
         : (
           <table className="adb-table">
             <thead>
-              <tr><th>Provider</th><th>Stare</th><th>Failures</th><th>Open până la</th></tr>
+              <tr><th>Provider</th><th>{t('admin.state')}</th><th>Failures</th><th>{t('admin.openUntil')}</th></tr>
             </thead>
             <tbody>
               {breakers.map(b => (
@@ -245,40 +247,41 @@ function CircuitBreakersPanel() {
 }
 
 function OverviewTab({ stats }: { stats: DashboardStats | null }) {
-  if (!stats) return <div className="adb-loading">Se încarcă statisticile...</div>;
+  const { t } = useTranslation();
+  if (!stats) return <div className="adb-loading">{t('admin.loadingStats')}</div>;
   return (
     <div className="adb-overview">
       <div className="adb-stat-grid">
-        <StatCard icon="👥" label="Utilizatori totali" value={stats.users.total} sub={`+${stats.users.newToday} azi`} color="#6c63ff" />
-        <StatCard icon="🟢" label="Activi (7 zile)" value={stats.users.active7d} color="#4ade80" />
-        <StatCard icon="💰" label="Revenue total" value={`$${stats.revenue.total}`} sub={`$${stats.revenue.thisMonth} luna aceasta`} color="#f59e0b" />
-        <StatCard icon="⏳" label="Comenzi în așteptare" value={stats.revenue.pendingOrders} color="#f87171" />
-        <StatCard icon="🔔" label="Notificări azi" value={stats.notifications.today} sub={`${stats.notifications.total} total`} color="#38bdf8" />
+        <StatCard icon="👥" label={t('admin.totalUsers')} value={stats.users.total} sub={`+${stats.users.newToday} ${t('admin.today')}`} color="#6c63ff" />
+        <StatCard icon="🟢" label={t('admin.active7d')} value={stats.users.active7d} color="#4ade80" />
+        <StatCard icon="💰" label={t('admin.totalRevenue')} value={`$${stats.revenue.total}`} sub={`$${stats.revenue.thisMonth} ${t('admin.thisMonth')}`} color="#f59e0b" />
+        <StatCard icon="⏳" label={t('admin.pendingOrders')} value={stats.revenue.pendingOrders} color="#f87171" />
+        <StatCard icon="🔔" label={t('admin.notificationsToday')} value={stats.notifications.today} sub={`${stats.notifications.total} total`} color="#38bdf8" />
         <StatCard icon="📱" label="PWA Installs" value={stats.pwa.installs} color="#a78bfa" />
-        <StatCard icon="🎯" label="Misiuni completate" value={stats.missions.completed} sub={`${stats.missions.totalXP} XP total`} color="#34d399" />
-        <StatCard icon="🧠" label="Brain logs azi" value={stats.brain.logsToday} color="#fb923c" />
+        <StatCard icon="🎯" label={t('admin.missionsCompleted')} value={stats.missions.completed} sub={`${stats.missions.totalXP} XP total`} color="#34d399" />
+        <StatCard icon="🧠" label={t('admin.brainLogsToday')} value={stats.brain.logsToday} color="#fb923c" />
       </div>
 
       <div className="adb-row">
         <div className="adb-card">
-          <SectionHeader icon="🌍" title="Distribuție limbi" />
+          <SectionHeader icon="🌍" title={t('admin.langDistribution')} />
           <table className="adb-table">
-            <thead><tr><th>Limbă</th><th>Utilizatori</th></tr></thead>
+            <thead><tr><th>Lang</th><th>Users</th></tr></thead>
             <tbody>
               {stats.languages.map(l => (
-                <tr key={l.language}><td>{l.language || '(nesetat)'}</td><td>{l.cnt}</td></tr>
+                <tr key={l.language}><td>{l.language || t('admin.notSet')}</td><td>{l.cnt}</td></tr>
               ))}
             </tbody>
           </table>
         </div>
 
         <div className="adb-card">
-          <SectionHeader icon="⚡" title="AI Routes (24h)" />
+          <SectionHeader icon="⚡" title={t('admin.aiRoutes24h')} />
           {stats.aiRoutes.length === 0
-            ? <p className="adb-empty">Nicio rută logată</p>
+            ? <p className="adb-empty">{t('admin.noRoutesLogged')}</p>
             : (
               <table className="adb-table">
-                <thead><tr><th>Rută</th><th>Req</th><th>Latență avg</th><th>Succese</th></tr></thead>
+                <thead><tr><th>{t('admin.route')}</th><th>Req</th><th>{t('admin.avgLatency')}</th><th>{t('admin.successes')}</th></tr></thead>
                 <tbody>
                   {stats.aiRoutes.map(r => (
                     <tr key={r.route}>
@@ -295,12 +298,12 @@ function OverviewTab({ stats }: { stats: DashboardStats | null }) {
       </div>
 
       <div className="adb-card">
-        <SectionHeader icon="🖥️" title="Sistem" />
+        <SectionHeader icon="🖥️" title={t('admin.systemSection')} />
         <div className="adb-stat-grid adb-stat-grid--sm">
           <StatCard icon="⏱️" label="Uptime" value={fmtUptime(stats.system.uptimeSeconds)} />
-          <StatCard icon="💾" label="Memorie folosită" value={`${stats.system.memoryMB} MB`} sub={`din ${stats.system.totalMemoryMB} MB`} />
+          <StatCard icon="💾" label={t('admin.memUsed')} value={`${stats.system.memoryMB} MB`} sub={`/ ${stats.system.totalMemoryMB} MB`} />
           <StatCard icon="🟩" label="Node.js" value={stats.system.nodeVersion} />
-          <StatCard icon="📝" label="Ultimul log brain" value={stats.brain.lastLog?.message?.slice(0, 40) ?? '—'} sub={stats.brain.lastLog ? timeAgo(stats.brain.lastLog.created_at) : ''} />
+          <StatCard icon="📝" label={t('admin.lastBrainLog')} value={stats.brain.lastLog?.message?.slice(0, 40) ?? '—'} sub={stats.brain.lastLog ? timeAgo(stats.brain.lastLog.created_at) : ''} />
         </div>
       </div>
 
@@ -312,6 +315,7 @@ function OverviewTab({ stats }: { stats: DashboardStats | null }) {
 // ─── Tab: Brain ───────────────────────────────────────────────────────────────
 
 function BrainTab() {
+  const { t } = useTranslation();
   const [logs, setLogs] = useState<BrainLog[]>([]);
   const [reflections, setReflections] = useState<Reflection[]>([]);
   const [triggering, setTriggering] = useState(false);
@@ -330,9 +334,9 @@ function BrainTab() {
     try {
       const r = await fetch('/api/admin/brain/trigger', { method: 'POST', credentials: 'include' });
       const d = await r.json();
-      setTrigMsg(d.message ?? 'Ciclu pornit!');
+      setTrigMsg(d.message ?? 'Cycle started!');
     } catch {
-      setTrigMsg('Eroare la trigger.');
+      setTrigMsg('Error triggering brain cycle.');
     } finally {
       setTriggering(false);
     }
@@ -344,17 +348,17 @@ function BrainTab() {
         <div className="adb-card adb-card--wide">
           <SectionHeader
             icon="🧠"
-            title="Brain Logs (ultimele 50)"
+            title={t('admin.brainLogsTitle')}
             action={
               <button className="adb-btn adb-btn--primary" onClick={triggerBrain} disabled={triggering}>
-                {triggering ? 'Se rulează...' : '▶ Trigger Brain Cycle'}
+                {triggering ? t('admin.running') : t('admin.triggerBrain')}
               </button>
             }
           />
           {trigMsg && <p className="adb-trigger-msg">{trigMsg}</p>}
           <div className="adb-log-list">
             {logs.length === 0
-              ? <p className="adb-empty">Niciun log disponibil</p>
+              ? <p className="adb-empty">{t('admin.noLogs')}</p>
               : logs.map(l => (
                 <div key={l.id} className={`adb-log-item adb-log--${l.level ?? 'info'}`}>
                   <span className="adb-log-time">{timeAgo(l.created_at)}</span>
@@ -367,9 +371,9 @@ function BrainTab() {
       </div>
 
       <div className="adb-card">
-        <SectionHeader icon="💭" title="Reflecții Mara (ultimele 10)" />
+        <SectionHeader icon="💭" title={t('admin.maraReflections')} />
         {reflections.length === 0
-          ? <p className="adb-empty">Nicio reflecție disponibilă</p>
+          ? <p className="adb-empty">{t('admin.noReflections')}</p>
           : reflections.map(r => (
             <div key={r.id} className="adb-reflection">
               <p style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', userSelect: 'text', cursor: 'text' }}>
@@ -382,11 +386,11 @@ function BrainTab() {
                   onClick={(ev) => {
                     navigator.clipboard.writeText(r.content);
                     const btn = ev.currentTarget as HTMLButtonElement;
-                    btn.textContent = '✅ Copiat!';
-                    setTimeout(() => { btn.textContent = '📋 Copiază'; }, 2000);
+                    btn.textContent = t('admin.copied');
+                    setTimeout(() => { btn.textContent = t('admin.copy'); }, 2000);
                   }}
                 >
-                  📋 Copiază
+                  {t('admin.copy')}
                 </button>
               </div>
             </div>
@@ -399,6 +403,7 @@ function BrainTab() {
 // ─── Tab: Knowledge ───────────────────────────────────────────────────────────
 
 function KnowledgeTab() {
+  const { t } = useTranslation();
   const [entries, setEntries] = useState<KnowledgeEntry[]>([]);
   const [cleaning, setCleaning] = useState(false);
   const [cleanMsg, setCleanMsg] = useState('');
@@ -416,10 +421,10 @@ function KnowledgeTab() {
     try {
       const r = await fetch('/api/admin/dashboard/kb-cleanup', { method: 'POST', credentials: 'include' });
       const d = await r.json();
-      setCleanMsg(`Cleanup complet: ${d.deleted ?? 0} intrări șterse.`);
+      setCleanMsg(t('admin.cleanupDone', { count: d.deleted ?? 0 }));
       loadEntries();
     } catch {
-      setCleanMsg('Eroare la cleanup.');
+      setCleanMsg(t('admin.cleanupError'));
     } finally {
       setCleaning(false);
     }
@@ -430,16 +435,16 @@ function KnowledgeTab() {
       <div className="adb-card">
         <SectionHeader
           icon="📚"
-          title="Ce a învățat Mara (ultimele 20)"
+          title={t('admin.maraKnowledgeTitle')}
           action={
             <button className="adb-btn adb-btn--danger" onClick={runCleanup} disabled={cleaning}>
-              {cleaning ? 'Se curăță...' : '🗑 Cleanup KB'}
+              {cleaning ? t('admin.cleaning') : t('admin.cleanupKB')}
             </button>
           }
         />
         {cleanMsg && <p className="adb-feedback">{cleanMsg}</p>}
         {entries.length === 0
-          ? <p className="adb-empty">Nicio intrare în knowledge base</p>
+          ? <p className="adb-empty">{t('admin.noKBEntries')}</p>
           : (
             <div className="adb-knowledge-list">
               {entries.map(k => (
@@ -470,11 +475,11 @@ function KnowledgeTab() {
                     onClick={(ev) => {
                       navigator.clipboard.writeText(`${k.topic}\n\n${k.content}`);
                       const btn = ev.currentTarget as HTMLButtonElement;
-                      btn.textContent = '✅ Copiat!';
-                      setTimeout(() => { btn.textContent = '📋 Copiază'; }, 2000);
+                      btn.textContent = t('admin.copied');
+                      setTimeout(() => { btn.textContent = t('admin.copy'); }, 2000);
                     }}
                   >
-                    📋 Copiază
+                    {t('admin.copy')}
                   </button>
                 </div>
               ))}
@@ -522,7 +527,7 @@ function ABResultsDisplay({ experimentId, succeeded, actualImpact, learnings }: 
                 <div className="adb-ab-fill adb-ab-fill--control" style={{ width: `${Math.max(abData.control.rate, 2)}%` }} />
               </div>
               <span>{abData.control.rate}%</span>
-              <span className="adb-ab-users">({abData.control.users} useri)</span>
+              <span className="adb-ab-users">({abData.control.users} users)</span>
             </div>
             <div className="adb-ab-variant">
               <span>Treatment</span>
@@ -530,24 +535,24 @@ function ABResultsDisplay({ experimentId, succeeded, actualImpact, learnings }: 
                 <div className="adb-ab-fill adb-ab-fill--treatment" style={{ width: `${Math.max(abData.treatment.rate, 2)}%` }} />
               </div>
               <span>{abData.treatment.rate}%</span>
-              <span className="adb-ab-users">({abData.treatment.users} useri)</span>
+              <span className="adb-ab-users">({abData.treatment.users} users)</span>
             </div>
           </div>
           <div className="adb-ab-impact">
-            Impact real: <strong>{(actualImpact ?? 0) > 0 ? '+' : ''}{((actualImpact ?? 0) * 100).toFixed(1)}%</strong>
+            {t('admin.actualImpact')} <strong>{(actualImpact ?? 0) > 0 ? '+' : ''}{((actualImpact ?? 0) * 100).toFixed(1)}%</strong>
             {abData.improvement !== 0 && (
-              <> · Conversii: <strong style={{ color: abData.improvement > 0 ? '#4ade80' : '#f87171' }}>
+              <> · {t('admin.conversions')} <strong style={{ color: abData.improvement > 0 ? '#4ade80' : '#f87171' }}>
                 {abData.improvement > 0 ? '+' : ''}{abData.improvement}%
               </strong></>
             )}
           </div>
         </>
       ) : (
-        <p className="adb-ab-no-data">Niciun utilizator asignat în A/B test încă</p>
+        <p className="adb-ab-no-data">{t('admin.noABUsersAssigned')}</p>
       )}
       {learnings && (
         <div className="adb-ab-learnings">
-          <strong>Learnings Mara:</strong>
+          <strong>{t('admin.maraLearnings')}</strong>
           <p>{learnings}</p>
         </div>
       )}
@@ -558,6 +563,7 @@ function ABResultsDisplay({ experimentId, succeeded, actualImpact, learnings }: 
 // ─── Tab: Growth ──────────────────────────────────────────────────────────────
 
 function GrowthTab() {
+  const { t } = useTranslation();
   const [experiments, setExperiments] = useState<GrowthExperiment[]>([]);
   const [stats, setStats] = useState<GrowthStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -600,7 +606,6 @@ function GrowthTab() {
         body: JSON.stringify({ note: '' }),
       });
       if (res.ok) {
-        // Actualizare optimistă imediată — fără full reload
         setExperiments(prev =>
           prev.map(e =>
             e.id === id
@@ -610,18 +615,17 @@ function GrowthTab() {
         );
         showToast(
           action === 'approve'
-            ? '✅ Experimentul a fost aprobat. Mara implementează.'
-            : '❌ Experimentul a fost respins.',
+            ? t('admin.experimentApproved')
+            : t('admin.experimentRejected'),
           action === 'approve',
         );
-        // Reîncarcă în background pentru a sincroniza cu DB
         loadData();
       } else {
         const err = await res.json().catch(() => ({}));
-        showToast(`Eroare: ${err.error || 'A apărut o problemă.'}`, false);
+        showToast(`Error: ${err.error || 'Something went wrong.'}`, false);
       }
     } catch {
-      showToast('Eroare de rețea. Încearcă din nou.', false);
+      showToast(t('admin.networkError'), false);
     } finally {
       setDeciding(null);
     }
@@ -639,11 +643,10 @@ function GrowthTab() {
     finally { setExecuting(null); }
   };
 
-  if (loading) return <div className="adb-loading">Se încarcă datele de growth...</div>;
+  if (loading) return <div className="adb-loading">{t('admin.loadingGrowth')}</div>;
 
   return (
     <div className="adb-growth">
-      {/* Toast notification */}
       {toast && (
         <div
           style={{
@@ -660,21 +663,21 @@ function GrowthTab() {
       )}
       {stats && (
         <div className="adb-stat-grid" style={{ marginBottom: '24px' }}>
-          <StatCard icon="🧪" label="Total experimente" value={stats.total} color="#a855f7" />
-          <StatCard icon="⏳" label="Propuse" value={stats.proposed} color="#fbbf24" />
-          <StatCard icon="🚀" label="Implementate" value={stats.implemented} color="#60a5fa" />
-          <StatCard icon="✅" label="Rată succes" value={`${stats.successRate}%`} color="#4ade80" />
+          <StatCard icon="🧪" label={t('admin.totalExperiments')} value={stats.total} color="#a855f7" />
+          <StatCard icon="⏳" label={t('admin.proposed')} value={stats.proposed} color="#fbbf24" />
+          <StatCard icon="🚀" label={t('admin.implemented')} value={stats.implemented} color="#60a5fa" />
+          <StatCard icon="✅" label={t('admin.successRate')} value={`${stats.successRate}%`} color="#4ade80" />
         </div>
       )}
 
-      <SectionHeader icon="📈" title="Experimente Growth" action={
+      <SectionHeader icon="📈" title={t('admin.growthExperiments')} action={
         <button className="adb-btn adb-btn--primary" style={{ fontSize: '0.75rem', padding: '4px 10px' }} onClick={loadData}>
           ↻ Refresh
         </button>
       } />
 
       {experiments.length === 0 ? (
-        <p className="adb-empty">Niciun experiment disponibil — Mara va propune unul la următorul ciclu</p>
+        <p className="adb-empty">{t('admin.noExperimentsAvailable')}</p>
       ) : (
         <div className="adb-growth-list">
           {experiments.map(exp => (
@@ -692,7 +695,7 @@ function GrowthTab() {
 
               {exp.expected_impact_pct > 0 && (
                 <p className="adb-exp-expected">
-                  🎯 Impact așteptat: <strong>{(exp.expected_impact_pct * 100).toFixed(0)}%</strong>
+                  🎯 {t('admin.expectedImpact')} <strong>{(exp.expected_impact_pct * 100).toFixed(0)}%</strong>
                   {exp.framework && <> · Framework: <strong>{exp.framework}</strong></>}
                 </p>
               )}
@@ -713,12 +716,12 @@ function GrowthTab() {
                   const notes = JSON.parse(exp.implementation_notes);
                   return (
                     <div className="adb-exp-impl">
-                      <div className="adb-exp-impl-title">🤖 Implementat de Mara:</div>
+                      <div className="adb-exp-impl-title">{t('admin.implementedByMara')}</div>
                       {notes.actionsPerformed?.map((action: string, i: number) => (
                         <div key={i} className="adb-exp-impl-action">{action}</div>
                       ))}
                       {notes.needsClaudeCode && (
-                        <div className="adb-exp-needs-code">⚡ Necesită Claude Code</div>
+                        <div className="adb-exp-needs-code">{t('admin.needsClaudeCode')}</div>
                       )}
                     </div>
                   );
@@ -736,8 +739,8 @@ function GrowthTab() {
                       style={{ opacity: deciding?.id === exp.id ? 0.7 : 1 }}
                     >
                       {deciding?.id === exp.id && deciding.action === 'approve'
-                        ? '⏳ Se aprobă...'
-                        : '✅ Aprobă — Mara implementează'}
+                        ? t('admin.approving')
+                        : t('admin.approveAndImplement')}
                     </button>
                     <button
                       className="adb-btn adb-btn--danger"
@@ -746,8 +749,8 @@ function GrowthTab() {
                       style={{ opacity: deciding?.id === exp.id ? 0.7 : 1 }}
                     >
                       {deciding?.id === exp.id && deciding.action === 'reject'
-                        ? '⏳ Se respinge...'
-                        : '❌ Respinge'}
+                        ? t('admin.rejecting')
+                        : t('admin.reject')}
                     </button>
                   </>
                 )}
@@ -757,10 +760,10 @@ function GrowthTab() {
                     onClick={() => handleExecute(exp.id)}
                     disabled={executing === exp.id}
                   >
-                    {executing === exp.id ? '⏳ Se implementează...' : '🚀 Mara implementează'}
+                    {executing === exp.id ? t('admin.implementing') : t('admin.maraImplements')}
                   </button>
                 )}
-                <span className="adb-exp-meta-time">Creat: {timeAgo(exp.created_at)}</span>
+                <span className="adb-exp-meta-time">{t('admin.created')} {timeAgo(exp.created_at)}</span>
               </div>
             </div>
           ))}
@@ -780,6 +783,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 function ExperimentsTab() {
+  const { t } = useTranslation();
   const [experiments, setExperiments] = useState<Experiment[]>([]);
   const [updating, setUpdating] = useState<number | null>(null);
 
@@ -810,7 +814,7 @@ function ExperimentsTab() {
       <div className="adb-card">
         <SectionHeader icon="🧪" title="Growth Experiments" />
         {experiments.length === 0
-          ? <p className="adb-empty">Niciun experiment disponibil</p>
+          ? <p className="adb-empty">{t('admin.noExperiments')}</p>
           : experiments.map(exp => (
             <div key={exp.id} className="adb-exp-item">
               <div className="adb-exp-header">
@@ -821,10 +825,10 @@ function ExperimentsTab() {
                 {exp.ice_score && <span className="adb-exp-ice">ICE: {exp.ice_score}</span>}
               </div>
               {exp.description && <p className="adb-exp-desc">{exp.description}</p>}
-              {exp.hypothesis && <p className="adb-exp-hyp"><em>Ipoteză:</em> {exp.hypothesis}</p>}
+              {exp.hypothesis && <p className="adb-exp-hyp"><em>{t('admin.hypothesis')}</em> {exp.hypothesis}</p>}
               <div className="adb-exp-meta">
                 <span>{exp.funnel_stage}</span>
-                <span>Creat: {timeAgo(exp.created_at)}</span>
+                <span>{t('admin.created')} {timeAgo(exp.created_at)}</span>
               </div>
               {exp.status === 'pending' && (
                 <div className="adb-exp-actions">
@@ -833,14 +837,14 @@ function ExperimentsTab() {
                     onClick={() => updateStatus(exp.id, 'approved')}
                     disabled={updating === exp.id}
                   >
-                    ✓ Aprobă
+                    {t('admin.approve')}
                   </button>
                   <button
                     className="adb-btn adb-btn--danger"
                     onClick={() => updateStatus(exp.id, 'rejected')}
                     disabled={updating === exp.id}
                   >
-                    ✗ Respinge
+                    {t('admin.rejectShort')}
                   </button>
                 </div>
               )}
@@ -851,7 +855,7 @@ function ExperimentsTab() {
                     onClick={() => updateStatus(exp.id, 'implemented')}
                     disabled={updating === exp.id}
                   >
-                    ✓ Marchează implementat
+                    {t('admin.markImplemented')}
                   </button>
                 </div>
               )}
@@ -865,6 +869,7 @@ function ExperimentsTab() {
 // ─── Tab: Library ─────────────────────────────────────────────────────────────
 
 function LibraryTab() {
+  const { t } = useTranslation();
   const [books, setBooks] = useState<LibraryBook[]>([]);
   const [bookTitle, setBookTitle] = useState('');
   const [bookFile, setBookFile] = useState<File | null>(null);
@@ -881,11 +886,11 @@ function LibraryTab() {
 
   const uploadBook = async () => {
     if (!bookFile || !bookTitle.trim()) {
-      setUploadMsg('Completează titlul și selectează un fișier.');
+      setUploadMsg(t('admin.uploadFillFields'));
       return;
     }
     setUploading(true);
-    setUploadMsg('Se procesează fișierul...');
+    setUploadMsg(t('admin.processingFile'));
     try {
       const fd = new FormData();
       fd.append('title', bookTitle.trim());
@@ -898,16 +903,16 @@ function LibraryTab() {
       });
       const d = await r.json();
       if (r.ok) {
-        setUploadMsg(`✓ ${d.message ?? 'Carte încărcată cu succes!'}`);
+        setUploadMsg(`✓ ${d.message ?? 'Book uploaded successfully!'}`);
         setBookTitle('');
         setBookFile(null);
         if (fileRef.current) fileRef.current.value = '';
         loadBooks();
       } else {
-        setUploadMsg(`Eroare: ${d.error ?? d.message ?? 'Upload eșuat.'}`);
+        setUploadMsg(`Error: ${d.error ?? d.message ?? 'Upload failed.'}`);
       }
     } catch {
-      setUploadMsg('Eroare la upload. Verifică conexiunea.');
+      setUploadMsg('Upload error. Check your connection.');
     } finally {
       setUploading(false);
     }
@@ -916,12 +921,12 @@ function LibraryTab() {
   return (
     <div className="adb-library">
       <div className="adb-card">
-        <SectionHeader icon="📖" title="Upload carte / document" />
+        <SectionHeader icon="📖" title={t('admin.uploadDocTitle')} />
         <div className="adb-upload-form">
           <input
             type="text"
             className="adb-input"
-            placeholder="Titlu document"
+            placeholder={t('admin.docTitle')}
             value={bookTitle}
             onChange={e => setBookTitle(e.target.value)}
           />
@@ -933,7 +938,7 @@ function LibraryTab() {
             onChange={e => setBookFile(e.target.files?.[0] ?? null)}
           />
           <button className="adb-btn adb-btn--primary" onClick={uploadBook} disabled={uploading}>
-            {uploading ? 'Se încarcă...' : '⬆ Upload'}
+            {uploading ? t('admin.uploading') : t('admin.upload')}
           </button>
         </div>
         {uploadMsg && <p className="adb-upload-msg">{uploadMsg}</p>}
@@ -941,20 +946,20 @@ function LibraryTab() {
 
       <div className="adb-card">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <SectionHeader icon="📚" title="Biblioteca Mara" />
+          <SectionHeader icon="📚" title={t('admin.maraLibrary')} />
           <button className="adb-btn adb-btn--ghost" onClick={loadBooks} style={{ fontSize: '0.8rem', padding: '4px 12px' }}>
-            ↻ Reîncarcă
+            {t('admin.reload')}
           </button>
         </div>
         <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.45)', marginBottom: 10 }}>
-          Procesarea se face în background — apasă Reîncarcă după câteva minute pentru a vedea ideile extrase.
+          {t('admin.uploadHint')}
         </p>
         {books.length === 0
-          ? <p className="adb-empty">Nicio carte în bibliotecă</p>
+          ? <p className="adb-empty">{t('admin.noBooks')}</p>
           : (
             <table className="adb-table adb-table--full">
               <thead>
-                <tr><th>ID</th><th>Categorie</th><th>Topic</th><th>Adăugat</th></tr>
+                <tr><th>ID</th><th>{t('admin.category')}</th><th>Topic</th><th>{t('admin.added')}</th></tr>
               </thead>
               <tbody>
                 {books.map(b => (
@@ -976,6 +981,7 @@ function LibraryTab() {
 // ─── Tab: Chat ────────────────────────────────────────────────────────────────
 
 function ChatTab() {
+  const { t } = useTranslation();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -1007,11 +1013,11 @@ function ChatTab() {
         body: JSON.stringify({ message: text }),
       });
       const d = await r.json();
-      const reply = d.reply ?? 'Mara nu a răspuns.';
+      const reply = d.reply ?? t('admin.maraNoResponse');
       const tempAssistant: ChatMessage = { id: Date.now() + 1, content: reply, sender: 'assistant', created_at: Date.now() / 1000 };
       setMessages(prev => [...prev, tempAssistant]);
     } catch {
-      const tempErr: ChatMessage = { id: Date.now() + 1, content: 'Eroare de conexiune.', sender: 'assistant', created_at: Date.now() / 1000 };
+      const tempErr: ChatMessage = { id: Date.now() + 1, content: t('admin.connectionError'), sender: 'assistant', created_at: Date.now() / 1000 };
       setMessages(prev => [...prev, tempErr]);
     } finally {
       setSending(false);
@@ -1021,7 +1027,7 @@ function ChatTab() {
   return (
     <div className="adb-chat">
       <div className="adb-chat-messages">
-        {messages.length === 0 && <p className="adb-empty">Niciun mesaj. Scrie ceva!</p>}
+        {messages.length === 0 && <p className="adb-empty">{t('admin.noMessages')}</p>}
         {messages.map(m => (
           <div key={m.id} className={`adb-chat-msg adb-chat-msg--${m.sender}`}>
             <div className="adb-chat-bubble">{m.content}</div>
@@ -1034,14 +1040,14 @@ function ChatTab() {
         <input
           className="adb-input"
           type="text"
-          placeholder="Scrie un mesaj pentru Mara..."
+          placeholder={t('admin.chatPlaceholder')}
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter') sendMessage(); }}
           disabled={sending}
         />
         <button className="adb-btn adb-btn--primary" onClick={sendMessage} disabled={sending || !input.trim()}>
-          {sending ? '...' : 'Trimite'}
+          {sending ? '...' : t('admin.send')}
         </button>
       </div>
     </div>
@@ -1051,6 +1057,7 @@ function ChatTab() {
 // ─── Tab: AI Logs ─────────────────────────────────────────────────────────────
 
 function AiLogsTab() {
+  const { t } = useTranslation();
   const [routes, setRoutes] = useState<AiRouteLog[]>([]);
 
   useEffect(() => {
@@ -1061,21 +1068,21 @@ function AiLogsTab() {
   return (
     <div className="adb-ailogs">
       <div className="adb-card">
-        <SectionHeader icon="⚡" title="AI Route Logs (ultimele 100)" />
+        <SectionHeader icon="⚡" title={t('admin.aiRouteLogs100')} />
         {routes.length === 0
-          ? <p className="adb-empty">Niciun log disponibil</p>
+          ? <p className="adb-empty">{t('admin.noLogs')}</p>
           : (
             <div className="adb-table-wrap">
               <table className="adb-table adb-table--full">
                 <thead>
                   <tr>
-                    <th>Rută</th>
-                    <th>Modul</th>
-                    <th>Latență</th>
+                    <th>{t('admin.route')}</th>
+                    <th>{t('admin.module')}</th>
+                    <th>{t('admin.latency')}</th>
                     <th>Tokens ↑</th>
                     <th>Tokens ↓</th>
                     <th>Status</th>
-                    <th>Data</th>
+                    <th>{t('admin.date')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1102,6 +1109,7 @@ function AiLogsTab() {
 // ─── Tab: Alerts ─────────────────────────────────────────────────────────────
 
 function AlertsTab({ onUnreadChange }: { onUnreadChange: (n: number) => void }) {
+  const { t } = useTranslation();
   const [alerts, setAlerts] = useState<MaraAlert[]>([]);
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
@@ -1144,9 +1152,9 @@ function AlertsTab({ onUnreadChange }: { onUnreadChange: (n: number) => void }) 
       const d = await r.json();
       setAlerts(d.alerts ?? []);
       onUnreadChange((d.alerts ?? []).filter((a: MaraAlert) => !a.read).length);
-      setMsg(`Analiză completă. ${d.count} alerte totale.`);
+      setMsg(t('admin.analyzeComplete', { count: d.count ?? 0 }));
     } catch {
-      setMsg('Eroare la analiză.');
+      setMsg(t('admin.analyzeError'));
     } finally {
       setAnalyzing(false);
     }
@@ -1162,15 +1170,15 @@ function AlertsTab({ onUnreadChange }: { onUnreadChange: (n: number) => void }) 
       <div className="adb-card">
         <SectionHeader
           icon="🔔"
-          title={`Alerte platform${unread > 0 ? ` (${unread} necitite)` : ''}`}
+          title={unread > 0 ? t('admin.alertsWithUnread', { count: unread }) : t('admin.alertsTitle')}
           action={
             <div style={{ display: 'flex', gap: 8 }}>
               <button className="adb-btn adb-btn--primary" onClick={runAnalysis} disabled={analyzing}>
-                {analyzing ? 'Analizez...' : 'Analizează acum'}
+                {analyzing ? t('admin.analyzing') : t('admin.analyzeNow')}
               </button>
               {unread > 0 && (
                 <button className="adb-btn" style={{ background: '#1e1e2e', color: '#9ca3af' }} onClick={markAllRead}>
-                  Marchează toate citite
+                  {t('admin.markAllRead')}
                 </button>
               )}
             </div>
@@ -1178,9 +1186,9 @@ function AlertsTab({ onUnreadChange }: { onUnreadChange: (n: number) => void }) 
         />
         {msg && <p className="adb-feedback">{msg}</p>}
         {loading ? (
-          <p className="adb-loading">Se încarcă alertele...</p>
+          <p className="adb-loading">{t('admin.loadingAlerts')}</p>
         ) : alerts.length === 0 ? (
-          <p className="adb-empty">Nicio alertă. Rulează analiza sau așteaptă următorul ciclu brain.</p>
+          <p className="adb-empty">{t('admin.noAlerts')}</p>
         ) : (
           <div className="adb-alert-list">
             {alerts.map(a => (
@@ -1195,7 +1203,7 @@ function AlertsTab({ onUnreadChange }: { onUnreadChange: (n: number) => void }) 
                   </span>
                   <span className="adb-alert-time">{timeAgo(a.created_at)}</span>
                   {!a.read && (
-                    <button className="adb-alert-read-btn" onClick={() => markRead(a.id)}>citit</button>
+                    <button className="adb-alert-read-btn" onClick={() => markRead(a.id)}>{t('admin.markRead')}</button>
                   )}
                 </div>
                 <div className="adb-alert-title">{a.title}</div>
@@ -1211,20 +1219,21 @@ function AlertsTab({ onUnreadChange }: { onUnreadChange: (n: number) => void }) 
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-const TABS = [
-  { id: 'overview', icon: '📊', label: 'Overview' },
-  { id: 'brain', icon: '🧠', label: 'Brain' },
-  { id: 'growth', icon: '📈', label: 'Growth' },
-  { id: 'alerts', icon: '🔔', label: 'Alerte' },
-  { id: 'knowledge', icon: '📚', label: 'Knowledge' },
-  { id: 'experiments', icon: '🧪', label: 'Experiments' },
-  { id: 'library', icon: '📖', label: 'Library' },
-  { id: 'chat', icon: '💬', label: 'Chat Mara' },
-  { id: 'ailogs', icon: '⚡', label: 'AI Logs' },
-  { id: 'growth-dash', icon: '🌱', label: 'Growth Dash' },
+const TAB_IDS = [
+  { id: 'overview', icon: '📊', labelKey: 'Overview' },
+  { id: 'brain', icon: '🧠', labelKey: 'Brain' },
+  { id: 'growth', icon: '📈', labelKey: 'Growth' },
+  { id: 'alerts', icon: '🔔', labelKey: 'admin.tabAlerts' },
+  { id: 'knowledge', icon: '📚', labelKey: 'Knowledge' },
+  { id: 'experiments', icon: '🧪', labelKey: 'Experiments' },
+  { id: 'library', icon: '📖', labelKey: 'Library' },
+  { id: 'chat', icon: '💬', labelKey: 'Chat Mara' },
+  { id: 'ailogs', icon: '⚡', labelKey: 'AI Logs' },
+  { id: 'growth-dash', icon: '🌱', labelKey: 'Growth Dash' },
 ];
 
 export default function AdminDashboard() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('overview');
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [statsError, setStatsError] = useState('');
@@ -1237,7 +1246,7 @@ export default function AdminDashboard() {
         return r.json();
       })
       .then(d => setStats(d))
-      .catch(err => setStatsError(`Eroare la încărcare stats: ${err.message}`));
+      .catch(err => setStatsError(`${t('admin.statsLoadError')} ${err.message}`));
 
     fetch('/api/admin/alerts/unread', { credentials: 'include' })
       .then(r => r.json())
@@ -1248,19 +1257,19 @@ export default function AdminDashboard() {
   return (
     <div className="adb-root">
       <div className="adb-header">
-        <h1 className="adb-title">🧠 Admin Dashboard</h1>
+        <h1 className="adb-title">{t('admin.title')}</h1>
         {statsError && <span className="adb-error">{statsError}</span>}
       </div>
 
       <div className="adb-tabs">
-        {TABS.map(tab => (
+        {TAB_IDS.map(tab => (
           <button
             key={tab.id}
             className={`adb-tab ${activeTab === tab.id ? 'adb-tab--active' : ''}`}
             onClick={() => setActiveTab(tab.id)}
           >
             <span>{tab.icon}</span>
-            <span>{tab.label}</span>
+            <span>{tab.labelKey.startsWith('admin.') ? t(tab.labelKey) : tab.labelKey}</span>
             {tab.id === 'alerts' && unreadAlerts > 0 && (
               <span className="adb-tab-badge">{unreadAlerts}</span>
             )}

@@ -100,14 +100,24 @@ function runMigrations() {
   // is wrapped in its own try/catch so a transient failure on one (e.g.
   // duplicate-column race with another boot) does not skip the rest.
   type ColumnInfo = { name: string };
+  const IDENT_RE = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
+  const ALLOWED_TYPES = new Set([
+    'text', 'integer', 'real', 'blob',
+    "text NOT NULL DEFAULT 'free'",
+    "text NOT NULL DEFAULT 'en'",
+    "integer DEFAULT 0",
+  ]);
   const ensureColumns = (
     table: string,
     required: ReadonlyArray<readonly [string, string]>,
   ) => {
+    if (!IDENT_RE.test(table)) throw new Error(`ensureColumns: unsafe table name '${table}'`);
     try {
       const columns = rawSqlite.pragma(`table_info(${table})`) as ColumnInfo[];
       const have = new Set(columns.map((c) => c.name));
       for (const [name, type] of required) {
+        if (!IDENT_RE.test(name)) throw new Error(`ensureColumns: unsafe column name '${name}'`);
+        if (!ALLOWED_TYPES.has(type)) throw new Error(`ensureColumns: unsafe column type '${type}'`);
         if (have.has(name)) continue;
         try {
           rawSqlite.exec(`ALTER TABLE \`${table}\` ADD COLUMN \`${name}\` ${type};`);
@@ -780,13 +790,14 @@ app.use((req, res, next) => {
     // Use the session-authenticated user id exclusively. Ignoring any
     // client-supplied ?userId= query param prevents trivial identity spoofing.
     const finalUserId = req.user?.uid;
-    if (finalUserId) {
-      log(`P2P user connected: ${finalUserId}`, 'p2p-ws');
-      userConnections.set(finalUserId, ws);
-      ws.userId = finalUserId;
-    } else {
-      log('Anonymous P2P user connected.', 'p2p-ws');
+    if (!finalUserId) {
+      log('Anonymous P2P connection rejected — auth required.', 'p2p-ws');
+      ws.close(1008, 'Authentication required');
+      return;
     }
+    log(`P2P user connected: ${finalUserId}`, 'p2p-ws');
+    userConnections.set(finalUserId, ws);
+    ws.userId = finalUserId;
 
     ws.on('message', (message: Buffer) => {
       let data;

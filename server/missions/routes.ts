@@ -19,6 +19,11 @@ import {
   completeProgramDay,
 } from './program-engine.js';
 
+const SUPPORTED_LANGS = new Set([
+  'en','ro','de','fr','es','it','pt','ru','uk','nl','sv','bg','ja','ko',
+  'pl','cs','hu','hr','sr','tr','ar','hi','zh','th','vi','da','el',
+]);
+
 function getUserId(req: any): string {
   return req.user?.uid;
 }
@@ -43,15 +48,17 @@ export function registerMissionRoutes(app: Express, requireAuth: any) {
   // Helper: read the user's stored language preference from user_preferences.
   // Used as a fallback when the frontend doesn't send a ?lang= query param.
   function getUserLang(userId: string, queryLang?: string): string {
-    if (queryLang) return queryLang;
-    try {
-      const prefs = rawSqlite.prepare(
-        "SELECT language FROM user_preferences WHERE user_id = ? LIMIT 1"
-      ).get(userId) as { language: string } | undefined;
-      return prefs?.language || 'en';
-    } catch {
-      return 'en';
-    }
+    const raw = queryLang ?? (() => {
+      try {
+        const prefs = rawSqlite.prepare(
+          "SELECT language FROM user_preferences WHERE user_id = ? LIMIT 1"
+        ).get(userId) as { language: string } | undefined;
+        return prefs?.language;
+      } catch { return undefined; }
+    })();
+    if (!raw) return 'en';
+    const normalized = raw.split('-')[0].toLowerCase();
+    return SUPPORTED_LANGS.has(normalized) ? normalized : 'en';
   }
 
   app.get('/api/missions', requireAuth, async (req: any, res: any) => {
@@ -144,7 +151,7 @@ export function registerMissionRoutes(app: Express, requireAuth: any) {
       caption?: string;
     };
     if (!userMissionId || !platform) {
-      return res.status(400).json({ message: 'userMissionId și platform sunt obligatorii.' });
+      return res.status(400).json({ message: 'userMissionId and platform are required.' });
     }
     const result = await shareMission(userId, userMissionId, platform, caption);
     res.json(result);
@@ -212,7 +219,7 @@ export function registerMissionRoutes(app: Express, requireAuth: any) {
     const userId = getUserId(req);
     const { missionId, rating, note } = req.body;
     if (!missionId || ![-1, 1].includes(rating)) {
-      return res.status(400).json({ message: 'missionId și rating sunt obligatorii.' });
+      return res.status(400).json({ message: 'missionId and rating are required.' });
     }
     rawSqlite
       .prepare(
@@ -252,7 +259,7 @@ export function registerMissionRoutes(app: Express, requireAuth: any) {
     const program = rawSqlite
       .prepare('SELECT * FROM mission_programs WHERE slug = ? AND is_active = 1')
       .get(req.params.slug);
-    if (!program) return res.status(404).json({ message: 'Program negăsit.' });
+    if (!program) return res.status(404).json({ message: 'Program not found.' });
     res.json({ program });
   });
 
@@ -346,7 +353,7 @@ export function registerMissionRoutes(app: Express, requireAuth: any) {
     const entry = rawSqlite
       .prepare('SELECT * FROM journal_entries WHERE id = ? AND user_id = ?')
       .get(req.params.id, userId);
-    if (!entry) return res.status(404).json({ message: 'Intrare negăsită.' });
+    if (!entry) return res.status(404).json({ message: 'Entry not found.' });
     res.json({ entry });
   });
 
@@ -386,7 +393,7 @@ export function registerMissionRoutes(app: Express, requireAuth: any) {
     const book = rawSqlite
       .prepare('SELECT * FROM user_books WHERE id = ? AND user_id = ?')
       .get(req.params.id, userId);
-    if (!book) return res.status(404).json({ message: 'Carte negăsită.' });
+    if (!book) return res.status(404).json({ message: 'Book not found.' });
     res.json({ book });
   });
 

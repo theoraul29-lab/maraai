@@ -100,6 +100,7 @@ import {
   createCommentRateLimit,
 } from './rate-limit.js';
 import { requireAdmin as requireAdminMiddleware } from './middleware/requireAdmin.js';
+import { isUserAdmin } from './lib/admin-check.js';
 import { requireHttps } from './middleware/requireHttps.js';
 import { adminRateLimit } from './middleware/adminRateLimit.js';
 import { buildAdminSystemPrompt } from './services/promptBuilder.js';
@@ -143,28 +144,16 @@ export async function registerRoutes(
   // so req.session is populated by the time this middleware runs.
   app.use(csrfProtection);
 
-  // Admin guard: match against ADMIN_USER_IDS / ADMIN_EMAILS (deny-by-default).
-  const parseCsv = (v: string | undefined): string[] =>
-    (v || '').split(',').map((s) => s.trim()).filter(Boolean);
+  // Admin guard — delegates to the shared isUserAdmin() helper which is the
+  // single source of truth for the ADMIN_USER_IDS / ADMIN_EMAILS contract.
   const requireAdmin = async (req: any, res: any, next: any) => {
-    const adminIds = parseCsv(process.env.ADMIN_USER_IDS);
-    const adminEmails = parseCsv(process.env.ADMIN_EMAILS).map((e) => e.toLowerCase());
-
     const userId: string | undefined = req.user?.uid;
     if (!userId) return res.status(401).json({ message: 'Unauthorized.' });
-
-    if (adminIds.includes(userId)) return next();
-
-    if (adminEmails.length > 0) {
-      try {
-        const user = await storage.getUserById(userId);
-        const email = user?.email?.toLowerCase();
-        if (email && adminEmails.includes(email)) return next();
-      } catch (err) {
-        console.error('[requireAdmin] getUserById failed:', err);
-      }
+    try {
+      if (await isUserAdmin(userId)) return next();
+    } catch (err) {
+      console.error('[requireAdmin] isUserAdmin check failed:', err);
     }
-
     return res.status(403).json({ message: 'Forbidden — admin access required.' });
   };
 
@@ -259,8 +248,8 @@ export async function registerRoutes(
     console.log('[auth] Facebook OAuth routes registered');
   }
 
-  app.post('/api/auth/signup', signupRateLimit, authSignup);
-  app.post('/api/auth/login', loginRateLimit, authLogin);
+  app.post('/api/auth/signup', requireHttps, signupRateLimit, authSignup);
+  app.post('/api/auth/login', requireHttps, loginRateLimit, authLogin);
   app.post('/api/auth/logout', authLogout);
   // Full user payload (matches the AuthContext's expected shape).
   app.get('/api/auth/me', authMe);
@@ -274,8 +263,8 @@ export async function registerRoutes(
   // routed. The forgot-password UI link is a separate follow-up (PR II);
   // wiring the backend here means the endpoints are reachable + rate-limited
   // when that UI lands. 3/IP/15min on each leg.
-  app.post('/api/auth/request-reset', requestResetRateLimit, authRequestReset);
-  app.post('/api/auth/confirm-reset', confirmResetRateLimit, authConfirmReset);
+  app.post('/api/auth/request-reset', requireHttps, requestResetRateLimit, authRequestReset);
+  app.post('/api/auth/confirm-reset', requireHttps, confirmResetRateLimit, authConfirmReset);
 
   // Mara AI chat / OTP / brain endpoints. Imported but never wired in
   // the previous PR which is why /api/auth/otp/* and /api/chat were
@@ -1368,7 +1357,7 @@ export async function registerRoutes(
   // Admin must specify which user to upgrade via `body.userId`; if omitted we
   // fall back to the admin's own uid (covers admin self-promotion during
   // bootstrap).
-  app.post('/api/user/upgrade', requireAdmin, async (req: any, res: any) => {
+  app.post('/api/user/upgrade', requireAdmin, adminRateLimit, async (req: any, res: any) => {
     const adminId: string = req.user?.uid;
     const targetUserId: string = (req.body?.userId as string) || adminId;
     const VALID_TIERS = ['free', 'trial', 'premium', 'vip'] as const;

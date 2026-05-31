@@ -25,6 +25,24 @@ import { randomBytes } from 'crypto';
 import type { Request, Response } from 'express';
 import multer from 'multer';
 
+const MAGIC_BYTES: Record<string, (buf: Buffer) => boolean> = {
+  'image/jpeg': (b) => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff,
+  'image/png': (b) => b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47,
+  'image/webp': (b) => b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 &&
+                       b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50,
+  'image/gif': (b) => b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x38,
+};
+
+function validateMagicBytes(filePath: string, mimeType: string): boolean {
+  try {
+    const buf = fs.readFileSync(filePath);
+    const check = MAGIC_BYTES[mimeType];
+    return check ? check(buf) : false;
+  } catch {
+    return false;
+  }
+}
+
 export const IMAGE_UPLOADS_DIR = (() => {
   const configured = process.env.IMAGE_UPLOADS_DIR;
   if (configured && configured.length > 0) return configured;
@@ -84,6 +102,11 @@ export async function uploadImage(req: Request, res: Response) {
     const file = (req as any).file as Express.Multer.File | undefined;
     if (!file) {
       res.status(400).json({ error: 'No image file provided' });
+      return;
+    }
+    if (!validateMagicBytes(file.path, file.mimetype)) {
+      fs.unlink(file.path, () => {});
+      res.status(400).json({ error: 'File content does not match declared image type.' });
       return;
     }
     const url = `/uploads/images/${file.filename}`;

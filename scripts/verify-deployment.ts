@@ -2,7 +2,6 @@
 
 /**
  * MaraAI Pre-Deployment Verification Checklist
- * Runs quick tests on all critical systems before deploying
  */
 
 import fs from 'fs';
@@ -17,19 +16,11 @@ interface CheckResult {
 const results: CheckResult[] = [];
 
 function check(name: string, condition: boolean, failMessage: string): void {
-  results.push({
-    name,
-    status: condition ? 'PASS' : 'FAIL',
-    message: condition ? '✓ OK' : failMessage,
-  });
+  results.push({ name, status: condition ? 'PASS' : 'FAIL', message: condition ? '✓ OK' : failMessage });
 }
 
 function warn(name: string, message: string): void {
-  results.push({
-    name,
-    status: 'WARN',
-    message,
-  });
+  results.push({ name, status: 'WARN', message });
 }
 
 async function runChecks(): Promise<void> {
@@ -37,139 +28,106 @@ async function runChecks(): Promise<void> {
 
   // 1. Environment Variables
   console.log('📋 Checking Environment Variables...');
-  check(
-    'ANTHROPIC_API_KEY',
-    !!process.env.ANTHROPIC_API_KEY,
-    'Missing ANTHROPIC_API_KEY - AI responses will fail',
-  );
-  check(
-    'DATABASE_URL',
-    !!process.env.DATABASE_URL,
-    'Missing DATABASE_URL - use local SQLite or set cloud DB',
-  );
-  check('NODE_ENV', !!process.env.NODE_ENV, 'NODE_ENV not set - defaults to development');
+  check('ANTHROPIC_API_KEY', !!process.env.ANTHROPIC_API_KEY, 'Missing ANTHROPIC_API_KEY — AI responses will fail');
+  check('SESSION_SECRET', !!process.env.SESSION_SECRET, 'Missing SESSION_SECRET — sessions insecure');
+  check('DATABASE_URL', !!process.env.DATABASE_URL, 'Missing DATABASE_URL — set to /data/mara.db for Railway');
+  check('NODE_ENV', !!process.env.NODE_ENV, 'NODE_ENV not set');
 
-  // 2. Frontend Files
+  // 2. Frontend Source Files
   console.log('\n📁 Checking Frontend Files...');
   const frontendFiles = [
-    'frontend/src/HomePage.tsx',
-    'frontend/src/HomePage.css',
-    'frontend/src/ChatBox.tsx',
     'frontend/src/App.tsx',
+    'frontend/src/main.tsx',
+    'frontend/src/Nav.tsx',
+    'frontend/src/HomePage.tsx',
+    'frontend/src/Missions.tsx',
+    'frontend/src/Pricing.tsx',
+    'frontend/src/VIP.tsx',
+    'frontend/src/WritersHub.tsx',
+    'frontend/src/reels.tsx',
+    'frontend/src/you.tsx',
+    'frontend/src/creator.tsx',
+    'frontend/src/modules.css',
+    'frontend/index.html',
   ];
-
   for (const file of frontendFiles) {
-    const exists = fs.existsSync(path.join(process.cwd(), file));
-    check(`File: ${file}`, exists, `Missing file: ${file}`);
+    check(`Frontend: ${file}`, fs.existsSync(path.join(process.cwd(), file)), `Missing: ${file}`);
   }
 
   // 3. Backend Files
   console.log('\n⚙️  Checking Backend Files...');
-  const backendFiles = ['server/index.ts', 'server/routes.ts', 'server/ai.ts', 'server/mara-brain.ts'];
-
-  for (const file of backendFiles) {
-    const exists = fs.existsSync(path.join(process.cwd(), file));
-    check(`File: ${file}`, exists, `Missing file: ${file}`);
-  }
-
-  // 4. CSS Module-Specific Files
-  console.log('\n🎨 Checking CSS Files...');
-  check('modules.css', fs.existsSync('frontend/src/modules.css'), 'Module-specific styles missing');
-
-  // 5. Package Dependencies
-  console.log('\n📦 Checking Dependencies...');
-  const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf-8'));
-
-  const requiredDeps = [
-    'express',
-    'ws',
-    'zod',
+  const backendFiles = [
+    'server/index.ts',
+    'server/routes.ts',
+    'server/auth.ts',
+    'server/db.ts',
+    'server/ai.ts',
+    'server/llm.ts',
+    'server/mara-brain/index.ts',
+    'server/mara-brain/core.ts',
+    'server/missions/engine.ts',
+    'server/missions/routes.ts',
+    'server/billing/stripe.ts',
+    'server/billing/paypal.ts',
+    'server/middleware/requireAdmin.ts',
   ];
-
-  for (const dep of requiredDeps) {
-    const hasDep = !!packageJson.dependencies[dep];
-    check(`Dependency: ${dep}`, hasDep, `Missing critical dependency: ${dep}`);
+  for (const file of backendFiles) {
+    check(`Backend: ${file}`, fs.existsSync(path.join(process.cwd(), file)), `Missing: ${file}`);
   }
 
-  // 6. Mara Brain Integration
-  console.log('\n🧠 Checking Mara Brain...');
-  check(
-    'MaraBrainMemory',
-    fs.existsSync('server/mara-brain.ts'),
-    'Mara brain system not found',
-  );
+  // 4. Migrations
+  console.log('\n💾 Checking Migrations...');
+  const journal = JSON.parse(fs.readFileSync('migrations/meta/_journal.json', 'utf-8'));
+  check('Migration journal readable', Array.isArray(journal.entries), 'Invalid _journal.json');
+  check('Migration count ≥ 21', journal.entries.length >= 21, `Only ${journal.entries.length} migrations in journal`);
+  const lastIdx = Math.max(...journal.entries.map((e: any) => e.idx));
+  check('Journal sequential (no gaps)', journal.entries.length === lastIdx + 1, `Journal has gaps — ${journal.entries.length} entries but last idx is ${lastIdx}`);
 
-  // 7. Database Schema
-  console.log('\n💾 Checking Database...');
-  warn(
-    'Database Schema',
-    'Ensure tables exist: users, chats, videos, orders, preferences',
-  );
+  // 5. Dependencies
+  console.log('\n📦 Checking Dependencies...');
+  const pkg = JSON.parse(fs.readFileSync('package.json', 'utf-8'));
+  for (const dep of ['express', 'ws', 'better-sqlite3', 'drizzle-orm', '@anthropic-ai/sdk']) {
+    check(`Dep: ${dep}`, !!(pkg.dependencies[dep] || pkg.devDependencies?.[dep]), `Missing: ${dep}`);
+  }
 
-  // 8. API Endpoints
-  console.log('\n🔌 Checking Critical Endpoints...');
-  check(
-    'LLM Integration',
-    fs.readFileSync('server/llm.ts', 'utf-8').includes('@anthropic-ai/sdk'),
-    'Anthropic SDK not wired up in llm.ts',
-  );
-  check(
-    'Chat Endpoint',
-    fs.readFileSync('server/routes.ts', 'utf-8').includes('chatModule.getChatHistory'),
-    'Chat endpoint not registered',
-  );
-  check(
-    'Video Endpoints',
-    fs.readFileSync('server/routes.ts', 'utf-8').includes('videoModule.listVideos'),
-    'Video endpoints not registered',
-  );
+  // 6. Build Output
+  console.log('\n🏗️  Checking Build Output...');
+  const distExists = fs.existsSync(path.join(process.cwd(), 'dist'));
+  warn('dist/ folder', distExists ? '✓ dist/ exists' : 'dist/ not built yet — run npm run build');
 
-  // 9. Cleanup Status
-  console.log('\n🧹 Checking Cleanup...');
-  const mainPyContent = fs.readFileSync('main.py', 'utf-8');
-  check(
-    'Vertex AI Removed',
-    !mainPyContent.includes('_candidate_vertex_models'),
-    'Legacy Vertex code still present',
-  );
-  check(
-    'Old chat_with_mara Removed',
-    mainPyContent.includes('// Chat endpoint now handled by server/ai.ts'),
-    'Old Flask chat endpoint not removed',
-  );
+  // 7. Security Config
+  console.log('\n🔐 Checking Security Config...');
+  const authTs = fs.readFileSync('server/auth.ts', 'utf-8');
+  check('CSRF enabled', authTs.includes('csrf'), 'CSRF protection not found in auth.ts');
+  check('Session secret guarded', authTs.includes('SESSION_SECRET'), 'SESSION_SECRET not read in auth.ts');
 
-  // Results Summary
+  const paypalTs = fs.readFileSync('server/billing/paypal.ts', 'utf-8');
+  check('PayPal webhook signature', paypalTs.includes('PAYPAL_WEBHOOK_ID') || paypalTs.includes('verifyWebhook'), 'PayPal webhook signature verification missing');
+
+  // Results
   console.log('\n' + '='.repeat(60));
   console.log('VERIFICATION RESULTS\n');
+  const passed = results.filter(r => r.status === 'PASS').length;
+  const failed = results.filter(r => r.status === 'FAIL').length;
+  const warned = results.filter(r => r.status === 'WARN').length;
 
-  const passed = results.filter((r) => r.status === 'PASS').length;
-  const failed = results.filter((r) => r.status === 'FAIL').length;
-  const warned = results.filter((r) => r.status === 'WARN').length;
-
-  results.forEach((r) => {
+  results.forEach(r => {
     const icon = r.status === 'PASS' ? '✅' : r.status === 'FAIL' ? '❌' : '⚠️ ';
-    console.log(`${icon} ${r.name.padEnd(30)} ${r.message}`);
+    console.log(`${icon} ${r.name.padEnd(40)} ${r.message}`);
   });
 
   console.log('\n' + '='.repeat(60));
-  console.log(`
-Summary:
-✅ Passed: ${passed}
-❌ Failed: ${failed}
-⚠️  Warnings: ${warned}
-Total: ${results.length}
-`);
+  console.log(`\n✅ Passed: ${passed}  ❌ Failed: ${failed}  ⚠️  Warnings: ${warned}  Total: ${results.length}\n`);
 
   if (failed > 0) {
-    console.log('🛑 DEPLOYMENT BLOCKED - Fix failures above');
+    console.log('🛑 DEPLOYMENT BLOCKED — fix failures above');
     process.exit(1);
   }
-
-  console.log(`✨ Ready for deployment! ${warned > 0 ? ' (address warnings)' : ''}`);
+  console.log(`✨ Ready for deployment!${warned > 0 ? ' (address warnings when possible)' : ''}`);
   process.exit(0);
 }
 
-runChecks().catch((error) => {
-  console.error('❌ Verification error:', error);
+runChecks().catch(err => {
+  console.error('❌ Verification error:', err);
   process.exit(1);
 });

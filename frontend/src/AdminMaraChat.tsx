@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import './AdminMaraChat.css';
 
 interface BrainStatus {
@@ -28,6 +29,7 @@ interface Experiment {
 type Tab = 'chat' | 'status' | 'experiments' | 'knowledge';
 
 export default function AdminMaraChat() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<Tab>('chat');
 
   // Chat state
@@ -97,7 +99,7 @@ export default function AdminMaraChat() {
       const json = await res.json();
       setMessages((prev) => [...prev, { role: 'assistant', content: json.reply ?? '…', ts: Date.now() }]);
     } catch {
-      setMessages((prev) => [...prev, { role: 'assistant', content: 'Error contacting Mara.', ts: Date.now() }]);
+      setMessages((prev) => [...prev, { role: 'assistant', content: t('admin.connectionError'), ts: Date.now() }]);
     } finally {
       setChatLoading(false);
     }
@@ -197,11 +199,11 @@ export default function AdminMaraChat() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-                placeholder="Ask Mara…"
+                placeholder={t('admin.chatPlaceholder')}
                 disabled={chatLoading}
               />
               <button className="amc-send" onClick={sendMessage} disabled={chatLoading || !input.trim()}>
-                Send
+                {t('admin.send')}
               </button>
             </div>
           </div>

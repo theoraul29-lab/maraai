@@ -12,7 +12,7 @@ const LANG_NAMES: Record<string, string> = {
 };
 
 function normalizeLang(lang: string): string {
-  return (lang || 'ro').split('-')[0].toLowerCase();
+  return (lang || 'en').split('-')[0].toLowerCase();
 }
 
 // Persistent translation cache so each mission is only translated once per language.
@@ -117,7 +117,7 @@ export async function startMission(userId: string, missionId: string) {
   const existing = rawSqlite.prepare(
     "SELECT id FROM user_missions WHERE user_id = ? AND mission_id = ? AND status != 'skipped' LIMIT 1"
   ).get(userId, missionId);
-  if (existing) return { success: false, message: 'Misiunea este deja activă sau completată.' };
+  if (existing) return { success: false, message: 'Mission is already active or completed.' };
   const id = randomUUID();
   rawSqlite.prepare(
     'INSERT INTO user_missions (id, user_id, mission_id, status, progress, started_at) VALUES (?, ?, ?, ?, 0, unixepoch())'
@@ -320,14 +320,14 @@ export async function shareMission(
   const alreadyShared = rawSqlite.prepare(
     'SELECT id FROM mission_shares WHERE user_id = ? AND user_mission_id = ? AND platform = ? LIMIT 1'
   ).get(userId, userMissionId, platform);
-  if (alreadyShared) return { success: false, message: 'Ai distribuit deja pe această platformă.' };
+  if (alreadyShared) return { success: false, message: 'Already shared on this platform.' };
 
   const id = randomUUID();
   rawSqlite.prepare(
     'INSERT INTO mission_shares (id, user_id, user_mission_id, platform, caption, xp_awarded) VALUES (?, ?, ?, ?, ?, 50)'
   ).run(id, userId, userMissionId, platform, caption ?? null);
   addXP(userId, 50);
-  return { success: true, message: `+50 XP pentru share pe ${platform}!` };
+  return { success: true, message: `+50 XP for sharing on ${platform}!` };
 }
 
 export function getCommunityFeed(limit = 20) {
@@ -367,7 +367,7 @@ function parseSteps(stepsJson: string): string[] {
  */
 export function getMissionContextForMara(userId: string, lang?: string): string {
   try {
-    const normalized = lang ? normalizeLang(lang) : 'ro';
+    const normalized = lang ? normalizeLang(lang) : 'en';
 
     // ── Active missions (max 3 most recent) ──────────────────────────────────
     const activeMissions = rawSqlite.prepare(`
@@ -456,7 +456,10 @@ export function getMissionContextForMara(userId: string, lang?: string): string 
  * Call at server startup so the first real user doesn't pay the LLM latency.
  * This is fire-and-forget — errors are logged and swallowed.
  */
-export async function warmTranslationCache(langs: string[] = ['en', 'de', 'fr', 'es', 'pt', 'ru']): Promise<void> {
+export async function warmTranslationCache(langs: string[] = [
+  'en', 'de', 'fr', 'es', 'pt', 'ru', 'it', 'uk', 'nl', 'sv', 'bg', 'ja', 'ko',
+  'pl', 'cs', 'hu', 'hr', 'sr', 'tr', 'ar', 'hi', 'zh', 'th', 'vi', 'da', 'el',
+]): Promise<void> {
   const allMissions = rawSqlite.prepare(
     'SELECT id, title, description, proof_prompt, steps, reflection FROM missions WHERE is_active = 1'
   ).all() as TranslatableMission[];
