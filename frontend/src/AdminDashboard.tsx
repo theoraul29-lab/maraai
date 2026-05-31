@@ -498,6 +498,7 @@ function ABResultsDisplay({ experimentId, succeeded, actualImpact, learnings }: 
   actualImpact: number | null;
   learnings: string | null;
 }) {
+  const { t } = useTranslation();
   const [abData, setAbData] = useState<ABResults | null>(null);
 
   useEffect(() => {
