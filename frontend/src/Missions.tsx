@@ -386,7 +386,7 @@ function MissionCardNew({
 // ── Main component ──────────────────────────────────────────────────────────
 export default function Missions() {
   const { t, i18n } = useTranslation();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
 
   const [view, setView] = useState<View>('list');
