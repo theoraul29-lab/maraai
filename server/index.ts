@@ -105,6 +105,7 @@ function runMigrations() {
     'text', 'integer', 'real', 'blob',
     "text NOT NULL DEFAULT 'free'",
     "text NOT NULL DEFAULT 'en'",
+    "text NOT NULL DEFAULT 'dark'",
     "integer DEFAULT 0",
   ]);
   const ensureColumns = (
