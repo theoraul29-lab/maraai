@@ -9,36 +9,20 @@ export default function Pricing() {
   const TIERS = [
     {
       id: 'free',
-      name: 'Free',
-      price: 0,
-      color: '#888',
+      name: t('pricing.tierExplorerName'),
+      price: 0 as number | null,
+      color: '#6b7280',
       badge: null as string | null,
-      tagline: t('pricing.tierFreeTagline'),
+      tagline: t('pricing.tierExplorerTagline'),
       features: [
-        t('pricing.tierFreeChat'),
-        t('pricing.tierFreeReels'),
-        t('pricing.tierFreeArticles'),
-        t('pricing.tierFreeCommunity'),
+        t('pricing.tierExplorerPrograms'),
+        t('pricing.tierExplorerChat'),
+        t('pricing.tierExplorerReels'),
+        t('pricing.tierExplorerArticles'),
+        t('pricing.tierExplorerCommunity'),
       ],
-      cta: t('pricing.tierFreeCta'),
+      cta: t('pricing.tierExplorerCta'),
       ctaPath: '/register',
-    },
-    {
-      id: 'pro_monthly',
-      name: 'Pro',
-      price: 16,
-      color: '#60a5fa',
-      badge: null as string | null,
-      tagline: t('pricing.tierProTagline'),
-      features: [
-        t('pricing.tierProChat'),
-        t('pricing.tierProReels'),
-        t('pricing.tierProArticles'),
-        t('pricing.tierProProfile'),
-        t('pricing.tierProAll'),
-      ],
-      cta: t('pricing.tierProCta'),
-      ctaPath: '/billing?plan=pro_monthly',
     },
     {
       id: 'vip_monthly',
@@ -48,33 +32,15 @@ export default function Pricing() {
       badge: t('pricing.tierVipBadge') as string | null,
       tagline: t('pricing.tierVipTagline'),
       features: [
+        t('pricing.tierVipPrograms'),
         t('pricing.tierVipAll'),
-        t('pricing.tierVipReadVip'),
-        t('pricing.tierVipPublishVip'),
         t('pricing.tierVipAI'),
         t('pricing.tierVipHD'),
-        t('pricing.tierVipPrograms'),
+        t('pricing.tierVipCreatorRevenue'),
+        t('pricing.tierVipCreatorMonetize'),
       ],
       cta: t('pricing.tierVipCta'),
       ctaPath: '/billing?plan=vip_monthly',
-    },
-    {
-      id: 'creator_monthly',
-      name: 'Creator',
-      price: 25,
-      color: '#f59e0b',
-      badge: null as string | null,
-      tagline: t('pricing.tierCreatorTagline'),
-      features: [
-        t('pricing.tierCreatorAll'),
-        t('pricing.tierCreatorRevenue'),
-        t('pricing.tierCreatorWithdraw'),
-        t('pricing.tierCreatorAnalytics'),
-        t('pricing.tierCreatorPaid'),
-        t('pricing.tierCreatorMonetize'),
-      ],
-      cta: t('pricing.tierCreatorCta'),
-      ctaPath: '/billing?plan=creator_monthly',
     },
   ];
 
@@ -91,9 +57,7 @@ export default function Pricing() {
     <div className="pricing-root">
       <div className="pricing-hero">
         <h1 className="pricing-title">{t('pricing.heroTitle')}</h1>
-        <p className="pricing-subtitle">
-          {t('pricing.heroSubtitle')}
-        </p>
+        <p className="pricing-subtitle">{t('pricing.heroSubtitle')}</p>
       </div>
 
       <div className="pricing-grid">
@@ -109,10 +73,10 @@ export default function Pricing() {
 
             <div className="pricing-card-price">
               {tier.price === 0 ? (
-                <span className="pricing-free">{t('pricing.free')}</span>
+                <span className="pricing-free">{t('pricing.noCardNeeded')}</span>
               ) : (
                 <>
-                  <span className="pricing-amount">€{tier.price % 1 === 0 ? tier.price : tier.price.toFixed(2)}</span>
+                  <span className="pricing-amount">€{tier.price}</span>
                   <span className="pricing-once">{t('pricing.perMonth')}</span>
                 </>
               )}
@@ -136,9 +100,7 @@ export default function Pricing() {
 
       <div className="pricing-section-divider">
         <h2 className="pricing-section-title">{t('pricing.programsTitle')}</h2>
-        <p className="pricing-section-sub">
-          {t('pricing.programsSubtitle')}
-        </p>
+        <p className="pricing-section-sub">{t('pricing.programsSubtitle')}</p>
       </div>
 
       <div className="pricing-programs-grid">
@@ -147,7 +109,9 @@ export default function Pricing() {
             <span className="pricing-program-icon">{p.icon}</span>
             <div>
               <div className="pricing-program-name">{p.name}</div>
-              <div className="pricing-program-days">{p.days} {p.days === 1 ? t('pricing.day') : t('pricing.days')}</div>
+              <div className="pricing-program-days">
+                {p.days} {p.days === 1 ? t('pricing.day') : t('pricing.days')}
+              </div>
               <div className="pricing-program-desc">{p.desc}</div>
             </div>
           </div>

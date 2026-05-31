@@ -2,7 +2,7 @@ import { rawSqlite } from '../db.js';
 import { llmGenerate, isLLMConfigured } from '../llm.js';
 import { PROGRAM_CATALOGUE } from '../billing/plans.js';
 import { hasFeature } from '../billing/features.js';
-import { translateMissions } from './engine.js';
+import { translateMissions, addXP } from './engine.js';
 
 // ─── PROGRAM ACCESS ───────────────────────────────────────────────────────────
 
@@ -26,6 +26,10 @@ function slugToProgramId(slug: string): string {
   // Slugs like 'new-mindset' map to program IDs like 'new_mindset'
   return slug.replace(/-/g, '_');
 }
+
+// In-memory set of enrollment IDs currently being generated to prevent
+// concurrent calls from producing duplicate program_day_missions rows.
+const _generatingEnrollments = new Set<string>();
 
 // ─── ENROLLMENT ───────────────────────────────────────────────────────────────
 
@@ -86,53 +90,60 @@ export async function generateProgramDays(
   fromDay: number,
   toDay: number,
 ): Promise<void> {
-  const personality = rawSqlite
-    .prepare('SELECT * FROM user_personality WHERE user_id = ?')
-    .get(userId) as any;
+  const lockKey = `${enrollmentId}:${fromDay}:${toDay}`;
+  if (_generatingEnrollments.has(lockKey)) return;
+  _generatingEnrollments.add(lockKey);
+  try {
+    const personality = rawSqlite
+      .prepare('SELECT * FROM user_personality WHERE user_id = ?')
+      .get(userId) as any;
 
-  const seedMissions = rawSqlite
-    .prepare('SELECT * FROM missions WHERE is_active = 1 ORDER BY RANDOM() LIMIT 50')
-    .all() as any[];
+    const seedMissions = rawSqlite
+      .prepare('SELECT * FROM missions WHERE is_active = 1 ORDER BY RANDOM() LIMIT 50')
+      .all() as any[];
 
-  for (let day = fromDay; day <= toDay; day++) {
-    const exists = rawSqlite
-      .prepare('SELECT id FROM program_day_missions WHERE program_id = ? AND day_number = ?')
-      .get(program.id, day);
-    if (exists) continue;
+    for (let day = fromDay; day <= toDay; day++) {
+      const exists = rawSqlite
+        .prepare('SELECT id FROM program_day_missions WHERE program_id = ? AND day_number = ?')
+        .get(program.id, day);
+      if (exists) continue;
 
-    try {
-      const mission = await generateDayMission(day, program, personality, settings, seedMissions);
-      rawSqlite
-        .prepare(
-          `INSERT OR IGNORE INTO program_day_missions
-            (id, program_id, day_number, mission_id,
-             custom_title, custom_description, custom_proof_prompt, intent, is_ai_generated)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        )
-        .run(
-          crypto.randomUUID(),
-          program.id,
-          day,
-          mission.seedMissionId ?? null,
-          mission.customTitle ?? null,
-          mission.customDescription ?? null,
-          mission.customProofPrompt ?? null,
-          mission.intent ?? null,
-          mission.isAiGenerated ? 1 : 0,
-        );
-    } catch (err) {
-      console.error(`[program-engine] Day ${day} error:`, err);
-      const fallback = seedMissions[day % seedMissions.length];
-      if (fallback) {
+      try {
+        const mission = await generateDayMission(day, program, personality, settings, seedMissions);
         rawSqlite
           .prepare(
             `INSERT OR IGNORE INTO program_day_missions
-              (id, program_id, day_number, mission_id, is_ai_generated)
-             VALUES (?, ?, ?, ?, 0)`,
+              (id, program_id, day_number, mission_id,
+               custom_title, custom_description, custom_proof_prompt, intent, is_ai_generated)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           )
-          .run(crypto.randomUUID(), program.id, day, fallback.id);
+          .run(
+            crypto.randomUUID(),
+            program.id,
+            day,
+            mission.seedMissionId ?? null,
+            mission.customTitle ?? null,
+            mission.customDescription ?? null,
+            mission.customProofPrompt ?? null,
+            mission.intent ?? null,
+            mission.isAiGenerated ? 1 : 0,
+          );
+      } catch (err) {
+        console.error(`[program-engine] Day ${day} error:`, err);
+        const fallback = seedMissions[day % seedMissions.length];
+        if (fallback) {
+          rawSqlite
+            .prepare(
+              `INSERT OR IGNORE INTO program_day_missions
+                (id, program_id, day_number, mission_id, is_ai_generated)
+               VALUES (?, ?, ?, ?, 0)`,
+            )
+            .run(crypto.randomUUID(), program.id, day, fallback.id);
+        }
       }
     }
+  } finally {
+    _generatingEnrollments.delete(lockKey);
   }
 }
 
@@ -395,6 +406,20 @@ export async function completeProgramDay(
     .get(enrollmentId, userId) as any;
   if (!enrollment) return { success: false, message: 'Enrollment not found.' };
 
+  // Bug fix #4 — settings JSON parse crash guard
+  let enrollmentSettings: Record<string, unknown> = {};
+  try {
+    enrollmentSettings = enrollment.settings ? JSON.parse(enrollment.settings) : {};
+  } catch {
+    console.warn('[program-engine] completeProgramDay: could not parse enrollment.settings, using defaults');
+  }
+
+  // Bug fix #3 — language chain: if proof doesn't specify a language, fall back
+  // to the enrollment's stored language so the journal is always generated in
+  // the language the user chose when they enrolled.
+  const effectiveLang = proof.language || (enrollmentSettings.language as string | undefined) || 'en';
+  const proofWithLang = { ...proof, language: effectiveLang };
+
   const alreadyDone = rawSqlite
     .prepare(
       `SELECT id FROM journal_entries
@@ -408,7 +433,7 @@ export async function completeProgramDay(
   const dayMission = await getDayMission(userId, enrollmentId);
   if (!dayMission?.mission) return { success: false, message: "Today's mission not found." };
 
-  const journalData = await generateJournalPage(userId, dayMission, proof, enrollment);
+  const journalData = await generateJournalPage(userId, dayMission, proofWithLang, enrollment);
 
   const journalId = crypto.randomUUID();
   const MILESTONES = [7, 14, 21, 30, 60, 90, 180, 365];
@@ -419,8 +444,8 @@ export async function completeProgramDay(
       .prepare(
         `INSERT INTO journal_entries
           (id, user_id, program_enrollment_id, day_number, raw_content,
-           mara_reflection, mara_page, mood, tags, visibility, is_milestone)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'private', ?)`,
+           mara_reflection, mara_page, mood, tags, visibility, is_milestone, is_ai_generated)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'private', ?, ?)`,
       )
       .run(
         journalId,
@@ -433,6 +458,7 @@ export async function completeProgramDay(
         journalData.detectedMood ?? null,
         JSON.stringify(journalData.tags ?? []),
         MILESTONES.includes(enrollment.current_day) ? 1 : 0,
+        journalData.isAiGenerated ? 1 : 0,
       );
 
     rawSqlite
@@ -455,7 +481,14 @@ export async function completeProgramDay(
   })();
 
   const newDay = enrollment.current_day + 1;
-  const newStreak = enrollment.streak + 1;
+
+  // Bug fix #5 — streak reset: if the user's last activity was more than 48 h
+  // ago, treat this as a fresh start rather than extending a broken streak.
+  const lastActivityAt: number = enrollment.last_activity_at ?? 0;
+  const hoursSinceLast = (Date.now() / 1000 - lastActivityAt) / 3600;
+  const streakBroken = lastActivityAt > 0 && hoursSinceLast > 48;
+  const newStreak = streakBroken ? 1 : (enrollment.streak ?? 0) + 1;
+
   const longestStreak = Math.max(newStreak, enrollment.longest_streak ?? 0);
   const programCompleted = newDay > enrollment.duration_days;
 
@@ -477,47 +510,60 @@ export async function completeProgramDay(
       enrollmentId,
     );
 
+  // Bug fix #1 — XP atomic award via the same transaction-guarded addXP from
+  // engine.ts that protects the standalone mission flow. The previous INSERT +
+  // ON CONFLICT pattern could double-award XP if two concurrent completions
+  // both passed the alreadyDone check before the first INSERT committed.
   const xpGained = dayMission.mission.xpReward ?? 100;
-  rawSqlite
-    .prepare(
-      `INSERT INTO user_xp (user_id, xp, level, streak, updated_at)
-       VALUES (?, ?, 1, 0, unixepoch())
-       ON CONFLICT(user_id) DO UPDATE SET
-         xp = xp + ?,
-         level = CASE
-           WHEN xp + ? < 500   THEN 1
-           WHEN xp + ? < 1500  THEN 2
-           WHEN xp + ? < 3500  THEN 3
-           WHEN xp + ? < 7500  THEN 4
-           WHEN xp + ? < 15000 THEN 5
-           ELSE 6
-         END,
-         updated_at = unixepoch()`,
-    )
-    .run(userId, xpGained, xpGained, xpGained, xpGained, xpGained, xpGained, xpGained);
+  addXP(userId, xpGained);
 
   if (programCompleted) {
-    generateUserBook(userId, enrollmentId, enrollment).catch((err) =>
-      console.error('[book-gen] Error:', err),
-    );
+    // Bug fix #2 — book generation: retry up to 3 times before giving up;
+    // on final failure insert a 'pending' row so an admin/brain cycle can
+    // trigger regeneration without losing the user's journal entries.
+    (async () => {
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          await generateUserBook(userId, enrollmentId, enrollment);
+          return;
+        } catch (err) {
+          console.error(`[book-gen] Attempt ${attempt}/3 failed:`, err);
+          if (attempt < 3) await new Promise((r) => setTimeout(r, 2000 * attempt));
+        }
+      }
+      try {
+        rawSqlite
+          .prepare(
+            `INSERT OR IGNORE INTO user_books
+              (id, user_id, program_enrollment_id, title, subtitle, chapters, total_pages, status, created_at, updated_at)
+             VALUES (?, ?, ?, ?, '', '[]', 0, 'pending', unixepoch(), unixepoch())`,
+          )
+          .run(
+            crypto.randomUUID(), userId, enrollmentId,
+            `${enrollment.program_name} — pending generation`,
+          );
+        console.error('[book-gen] All retries exhausted — inserted pending row for manual retry');
+      } catch (dbErr) {
+        console.error('[book-gen] Could not insert pending row:', dbErr);
+      }
+    })();
   } else {
     const program = rawSqlite
       .prepare('SELECT * FROM mission_programs WHERE id = ?')
       .get(enrollment.program_id) as any;
-    const settings = enrollment.settings ? JSON.parse(enrollment.settings) : {};
     if (program) {
       generateProgramDays(
         enrollmentId,
         userId,
         program,
-        settings,
+        enrollmentSettings,
         newDay,
         Math.min(newDay + 6, enrollment.duration_days),
       ).catch(() => {});
     }
   }
 
-  const proofLang = proof.language ?? 'en';
+  const proofLang = effectiveLang;
   return {
     success: true,
     maraJournalPage: journalData.journalPage,
@@ -544,6 +590,7 @@ async function generateJournalPage(
   maraFeedback: string;
   detectedMood?: string;
   tags: string[];
+  isAiGenerated: boolean;
 }> {
   const personality = rawSqlite
     .prepare('SELECT * FROM user_personality WHERE user_id = ?')
@@ -626,13 +673,14 @@ ${langInstruction[lang] ?? `Write everything in ${lang}.`}`;
   try {
     const response = await llmGenerate(prompt, { source: 'agent.journal-generator' });
     const clean = response.replace(/```json|```/g, '').trim();
-    return JSON.parse(clean);
+    return { ...JSON.parse(clean), isAiGenerated: true };
   } catch {
     return {
       journalPage: `Day ${enrollment.current_day}\n\n${proof.content ?? ''}`,
       maraFeedback: 'Well done completing this day. Every step counts on your journey.',
       detectedMood: 'neutral',
       tags: ['journal', 'mission', 'transformation'],
+      isAiGenerated: false,
     };
   }
 }

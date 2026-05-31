@@ -1,6 +1,6 @@
 import type { Express } from 'express';
 import { rawSqlite } from '../db.js';
-import { missionWriteRateLimit } from '../rate-limit.js';
+import { missionWriteRateLimit, publicReadRateLimit } from '../rate-limit.js';
 import {
   startMission,
   submitProof,
@@ -22,6 +22,10 @@ import {
 const SUPPORTED_LANGS = new Set([
   'en','ro','de','fr','es','it','pt','ru','uk','nl','sv','bg','ja','ko',
   'pl','cs','hu','hr','sr','tr','ar','hi','zh','th','vi','da','el',
+]);
+
+const ALLOWED_SHARE_PLATFORMS = new Set([
+  'hellomara','you','instagram','tiktok','x','whatsapp','telegram','link',
 ]);
 
 function getUserId(req: any): string {
@@ -138,7 +142,9 @@ export function registerMissionRoutes(app: Express, requireAuth: any) {
 
   app.post('/api/missions/:id/proof', requireAuth, missionWriteRateLimit, async (req: any, res: any) => {
     const userId = getUserId(req);
-    const { lang, ...proof } = req.body as { lang?: string; [key: string]: unknown };
+    const { lang: rawLang, ...proof } = req.body as { lang?: string; [key: string]: unknown };
+    // Validate lang from body the same way we validate query params
+    const lang = rawLang ? getUserLang(userId, rawLang) : getUserLang(userId, undefined);
     const result = await submitProof(userId, req.params.id, proof as any, lang);
     res.json(result);
   });
@@ -153,11 +159,14 @@ export function registerMissionRoutes(app: Express, requireAuth: any) {
     if (!userMissionId || !platform) {
       return res.status(400).json({ message: 'userMissionId and platform are required.' });
     }
+    if (!ALLOWED_SHARE_PLATFORMS.has(platform)) {
+      return res.status(400).json({ message: `Invalid platform. Allowed: ${[...ALLOWED_SHARE_PLATFORMS].join(', ')}` });
+    }
     const result = await shareMission(userId, userMissionId, platform, caption);
     res.json(result);
   });
 
-  app.get('/api/missions/community', (_req: any, res: any) => {
+  app.get('/api/missions/community', publicReadRateLimit, (_req: any, res: any) => {
     const feed = getCommunityFeed(20);
     res.json({ feed });
   });
@@ -180,7 +189,7 @@ export function registerMissionRoutes(app: Express, requireAuth: any) {
     res.json({ xp, completed, byPillar });
   });
 
-  app.get('/api/missions/leaderboard', (_req: any, res: any) => {
+  app.get('/api/missions/leaderboard', publicReadRateLimit, (_req: any, res: any) => {
     const rows = rawSqlite
       .prepare(
         `SELECT ux.user_id, ux.xp, ux.level, ux.streak,
@@ -233,7 +242,7 @@ export function registerMissionRoutes(app: Express, requireAuth: any) {
 
   // ── PROGRAME ────────────────────────────────────────────────────────────────
 
-  app.get('/api/programs', (_req: any, res: any) => {
+  app.get('/api/programs', publicReadRateLimit, (_req: any, res: any) => {
     const programs = rawSqlite
       .prepare('SELECT * FROM mission_programs WHERE is_active = 1 ORDER BY sort_order ASC')
       .all();
@@ -255,7 +264,7 @@ export function registerMissionRoutes(app: Express, requireAuth: any) {
     res.json({ enrollments });
   });
 
-  app.get('/api/programs/:slug', (req: any, res: any) => {
+  app.get('/api/programs/:slug', publicReadRateLimit, (req: any, res: any) => {
     const program = rawSqlite
       .prepare('SELECT * FROM mission_programs WHERE slug = ? AND is_active = 1')
       .get(req.params.slug);
@@ -265,7 +274,15 @@ export function registerMissionRoutes(app: Express, requireAuth: any) {
 
   app.post('/api/programs/:slug/enroll', requireAuth, async (req: any, res: any) => {
     const userId = getUserId(req);
-    const result = await enrollUserInProgram(userId, req.params.slug, req.body);
+    // Validate and normalize the language in enrollment settings so it
+    // propagates correctly through generateDayMission and generateJournalPage.
+    const body = { ...req.body };
+    if (body.language) {
+      body.language = getUserLang(userId, body.language);
+    } else {
+      body.language = getUserLang(userId, undefined);
+    }
+    const result = await enrollUserInProgram(userId, req.params.slug, body);
     res.json(result);
   });
 
@@ -332,7 +349,7 @@ export function registerMissionRoutes(app: Express, requireAuth: any) {
     res.json({ entries, total });
   });
 
-  app.get('/api/journal/community', (_req: any, res: any) => {
+  app.get('/api/journal/community', publicReadRateLimit, (_req: any, res: any) => {
     const entries = rawSqlite
       .prepare(
         `SELECT je.mara_page, je.mood, je.day_number, je.created_at, je.tags,

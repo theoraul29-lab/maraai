@@ -12,7 +12,9 @@ const LANG_NAMES: Record<string, string> = {
 };
 
 function normalizeLang(lang: string): string {
-  return (lang || 'en').split('-')[0].toLowerCase();
+  const normalized = (lang || 'en').split('-')[0].toLowerCase();
+  // Validate against the known language map; unknown codes fall back to English.
+  return LANG_NAMES[normalized] ? normalized : 'en';
 }
 
 // Persistent translation cache so each mission is only translated once per language.
@@ -401,9 +403,16 @@ export function getMissionContextForMara(userId: string, lang?: string): string 
       const tMap = new Map(translations.map(t => [t.mission_id, t]));
       activeFinal = activeMissions.map(m => {
         const t = tMap.get(m.id);
-        return t ? { ...m, title: t.title, description: t.description,
-                        proof_prompt: t.proof_prompt, steps: t.steps,
-                        reflection: t.reflection } : m;
+        if (!t) return m;
+        return {
+          ...m,
+          title: t.title || m.title,
+          description: t.description || m.description,
+          proof_prompt: t.proof_prompt || m.proof_prompt,
+          steps: t.steps || m.steps,
+          // Only override reflection if the translation has a non-null value
+          reflection: t.reflection ?? m.reflection,
+        };
       });
     }
 
@@ -464,29 +473,34 @@ export async function warmTranslationCache(langs: string[] = [
     'SELECT id, title, description, proof_prompt, steps, reflection FROM missions WHERE is_active = 1'
   ).all() as TranslatableMission[];
 
-  for (const lang of langs) {
-    const normalized = normalizeLang(lang);
-    if (normalized === 'ro') continue;
+  // Process in parallel batches of 6 so startup doesn't serialize 26 LLM calls.
+  const BATCH_SIZE = 6;
+  for (let i = 0; i < langs.length; i += BATCH_SIZE) {
+    const batch = langs.slice(i, i + BATCH_SIZE);
+    await Promise.allSettled(batch.map(async (lang) => {
+      const normalized = normalizeLang(lang);
+      if (normalized === 'ro') return;
 
-    const cachedIds = new Set(
-      (rawSqlite.prepare(
-        'SELECT mission_id FROM mission_translations WHERE lang = ?'
-      ).all(normalized) as { mission_id: string }[]).map(r => r.mission_id)
-    );
+      const cachedIds = new Set(
+        (rawSqlite.prepare(
+          'SELECT mission_id FROM mission_translations WHERE lang = ?'
+        ).all(normalized) as { mission_id: string }[]).map(r => r.mission_id)
+      );
 
-    const toTranslate = allMissions.filter(m => !cachedIds.has(m.id));
-    if (toTranslate.length === 0) {
-      console.log(`[missions:warm] ${lang} — all ${allMissions.length} missions already cached`);
-      continue;
-    }
+      const toTranslate = allMissions.filter(m => !cachedIds.has(m.id));
+      if (toTranslate.length === 0) {
+        console.log(`[missions:warm] ${lang} — all ${allMissions.length} missions already cached`);
+        return;
+      }
 
-    console.log(`[missions:warm] ${lang} — translating ${toTranslate.length}/${allMissions.length} missions...`);
-    try {
-      await translateMissions(toTranslate, lang);
-      console.log(`[missions:warm] ${lang} — done`);
-    } catch (err) {
-      console.warn(`[missions:warm] ${lang} failed:`, (err as Error).message);
-    }
+      console.log(`[missions:warm] ${lang} — translating ${toTranslate.length}/${allMissions.length} missions...`);
+      try {
+        await translateMissions(toTranslate, lang);
+        console.log(`[missions:warm] ${lang} — done`);
+      } catch (err) {
+        console.warn(`[missions:warm] ${lang} failed:`, (err as Error).message);
+      }
+    }));
   }
 }
 
@@ -556,9 +570,10 @@ ${JSON.stringify(payload)}`;
         // source: 'user_chat' bypasses the brain rate-limiter (autonomous cap).
         // Mission translation is triggered by a live user request, so it must
         // not compete with the daily autonomous-brain call budget.
+        const TRANSLATE_TIMEOUT_MS = parseInt(process.env.TRANSLATE_TIMEOUT_MS ?? '', 10) || 45000;
         const raw = await Promise.race([
           llmGenerate(prompt, { source: 'user_chat' }),
-          new Promise<never>((_, reject) => setTimeout(() => reject(new Error('translate_timeout')), 30000)),
+          new Promise<never>((_, reject) => setTimeout(() => reject(new Error('translate_timeout')), TRANSLATE_TIMEOUT_MS)),
         ]);
         const clean = raw.replace(/```json|```/g, '').trim();
         const translated = JSON.parse(clean) as Array<{

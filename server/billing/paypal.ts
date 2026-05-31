@@ -46,7 +46,7 @@ export async function checkPayPalConnection(): Promise<{
   const configured = isPayPalConfigured();
   const sandbox = process.env.PAYPAL_SANDBOX === 'true';
   const webhookIdSet = !!process.env.PAYPAL_WEBHOOK_ID;
-  const planIds = ['pro_monthly', 'pro_yearly', 'vip_monthly', 'vip_yearly', 'creator_monthly', 'creator_yearly'];
+  const planIds = ['vip_monthly', 'vip_yearly'];
   const plans: Record<string, boolean> = {};
   for (const id of planIds) {
     plans[id] = !!process.env[`PAYPAL_PLAN_${id.toUpperCase()}`];

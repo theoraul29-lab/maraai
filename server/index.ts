@@ -182,6 +182,19 @@ function runMigrations() {
     console.error('[migrations] Failed to add user_personality evolution columns (non-fatal):', err);
   }
 
+  try {
+    const jeRows = rawSqlite
+      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='journal_entries'")
+      .all() as Array<{ name: string }>;
+    if (jeRows.length > 0) {
+      ensureColumns('journal_entries', [
+        ['is_ai_generated', 'integer DEFAULT 1'],
+      ]);
+    }
+  } catch (err) {
+    console.error('[migrations] Failed to add journal_entries.is_ai_generated (non-fatal):', err);
+  }
+
   // user_posts: source_kind / source_id were added by migration
   // 0009_user_posts_source_kind. Same self-heal pattern — applied
   // separately from createTable below because the table itself is created

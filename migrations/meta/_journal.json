@@ -169,6 +169,13 @@
       "when": 1779500000000,
       "tag": "0023_user_personality_evolution",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1779600000000,
+      "tag": "0024_journal_ai_flag",
+      "breakpoints": true
     }
   ]
 }

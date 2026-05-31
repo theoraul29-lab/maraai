@@ -776,4 +776,21 @@ export function seedMissions(): void {
   const totalPrograms = PROGRESSION_PROGRAMS.length + PROGRAMS.length;
   insertAll();
   console.log(`[missions] ✅ ${allMissions.length} misiuni + ${totalPrograms} programe seed-uite (${PROGRESSION_PROGRAMS.length} progression + ${PROGRAMS.length} tematice)`);
+
+  // Faza 6 — pillar_focus consistency check (non-fatal warning at startup)
+  const allPrograms = [...PROGRESSION_PROGRAMS, ...PROGRAMS];
+  for (const prog of allPrograms) {
+    const pillars: string[] = prog.pillar_focus ?? [];
+    for (const pillar of pillars) {
+      const count = (rawSqlite
+        .prepare('SELECT COUNT(*) as cnt FROM missions WHERE pillar = ? AND is_active = 1')
+        .get(pillar) as { cnt: number } | undefined)?.cnt ?? 0;
+      if (count === 0) {
+        console.warn(
+          `[missions:seed] ⚠ Program "${prog.slug}" declares pillar_focus "${pillar}" ` +
+          `but no active missions with that pillar exist in the DB.`,
+        );
+      }
+    }
+  }
 }

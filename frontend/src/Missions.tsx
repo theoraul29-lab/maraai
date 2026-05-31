@@ -399,7 +399,10 @@ export default function Missions() {
   const [userXp, setUserXp] = useState<UserXp>({ xp: 0, level: 1, streak: 0 });
   const [selectedPillar, setSelectedPillar] = useState<string>('all');
   const [loading, setLoading] = useState(false);
-  const [proofText, setProofText] = useState('');
+  const PROOF_STORAGE_KEY = `mara_proof_draft_${user?.id ?? 'anon'}`;
+  const [proofText, setProofText] = useState(() => {
+    try { return localStorage.getItem(PROOF_STORAGE_KEY) ?? ''; } catch { return ''; }
+  });
   const [reflectionText, setReflectionText] = useState('');
   const [completionResult, setCompletionResult] = useState<{
     maraFeedback: string; message: string; leveledUp: boolean;
@@ -632,6 +635,7 @@ export default function Missions() {
         setChatPhase('done');
         setProofText('');
         setReflectionText('');
+        try { localStorage.removeItem(PROOF_STORAGE_KEY); } catch { /* ignore */ }
         loadMissions();
         loadStatsDetailed();
       }
@@ -929,7 +933,10 @@ export default function Missions() {
                     <textarea
                       className="mara-proof-input"
                       value={proofText}
-                      onChange={(e) => setProofText(e.target.value)}
+                      onChange={(e) => {
+                        setProofText(e.target.value);
+                        try { localStorage.setItem(PROOF_STORAGE_KEY, e.target.value); } catch { /* ignore */ }
+                      }}
                       placeholder={t('missions.proofPlaceholderDetailed')}
                       rows={5}
                     />

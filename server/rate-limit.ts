@@ -314,3 +314,11 @@ export const missionWriteRateLimit = createUserRateLimit({
   max: envInt('RL_MISSION_WRITE_MAX', 30),
   windowMs: ONE_HOUR,
 });
+
+// --- Public read endpoints (community, leaderboard) -------------------------
+// Unauthenticated IP-based limit to prevent scraping.
+export const publicReadRateLimit = createIPRateLimit({
+  name: 'public:read',
+  max: envInt('RL_PUBLIC_READ_MAX', 60),
+  windowMs: ONE_MIN,
+});
