@@ -2,7 +2,7 @@ import { rawSqlite } from '../db.js';
 import { llmGenerate, isLLMConfigured } from '../llm.js';
 import { PROGRAM_CATALOGUE } from '../billing/plans.js';
 import { hasFeature } from '../billing/features.js';
-import { translateMissions, addXP } from './engine.js';
+import { translateMissions, addXP, normalizeLang } from './engine.js';
 
 // ─── PROGRAM ACCESS ───────────────────────────────────────────────────────────
 
@@ -68,7 +68,7 @@ export async function enrollUserInProgram(
       JSON.stringify({
         notificationHour: settings.notificationHour ?? 8,
         habitDescription: settings.habitDescription ?? '',
-        language: settings.language ?? 'en',
+        language: normalizeLang(settings.language ?? 'en'),
       }),
     );
 
@@ -176,8 +176,9 @@ async function generateDayMission(
     deep: 'Deep and transformative missions. The user is ready for depth and challenge.',
   }[phase];
 
-  const userLang = settings?.language ?? 'en';
-  const LANG_NAMES: Record<string, string> = {
+  // normalizeLang validates against LANG_NAMES and falls back to 'en' for unknown codes
+  const userLang = normalizeLang(settings?.language ?? 'en');
+  const LANG_DISPLAY: Record<string, string> = {
     en: 'English', ro: 'Romanian', de: 'German', fr: 'French', es: 'Spanish',
     it: 'Italian', pt: 'Portuguese', ru: 'Russian', uk: 'Ukrainian', nl: 'Dutch',
     sv: 'Swedish', bg: 'Bulgarian', ja: 'Japanese', ko: 'Korean', pl: 'Polish',
@@ -185,7 +186,7 @@ async function generateDayMission(
     ar: 'Arabic', hi: 'Hindi', zh: 'Chinese (Simplified)', th: 'Thai', vi: 'Vietnamese',
     da: 'Danish', el: 'Greek',
   };
-  const langName = LANG_NAMES[userLang.split('-')[0].toLowerCase()] ?? userLang;
+  const langName = LANG_DISPLAY[userLang] ?? 'English';
 
   const prompt = `You are Mara — an empathetic life coach.
 Generate the mission for day ${day} of ${totalDays} from the program "${program.name}".
@@ -349,7 +350,7 @@ export async function getDayMission(
 
 function getStreakMessage(streak: number, lang?: string): string {
   if (streak === 0) return '';
-  const l = (lang || 'en').split('-')[0].toLowerCase();
+  const l = normalizeLang(lang || 'en');
 
   const msgs: Record<string, { 1?: string; 7?: string; 14?: string; 21?: string; 30?: string; default: string }> = {
     ro: { 1: '🔥 Prima zi — ai început!', 7: '🔥🔥 7 zile — o săptămână completă!', 14: '🔥🔥🔥 14 zile — două săptămâni!', 21: '💎 21 de zile — habitoul e al tău!', 30: '👑 30 de zile — un maestru al obiceiului!', default: `🔥 ${streak} zile consecutive — nu te opri!` },
@@ -359,6 +360,22 @@ function getStreakMessage(streak: number, lang?: string): string {
     es: { 1: '🔥 Primer día — ¡empezaste!', 7: '🔥🔥 7 días — ¡una semana completa!', 14: '🔥🔥🔥 14 días — ¡dos semanas!', 21: '💎 21 días — ¡el hábito es tuyo!', 30: '👑 30 días — ¡un maestro del hábito!', default: `🔥 ${streak} días consecutivos — ¡no te detengas!` },
     it: { 1: '🔥 Primo giorno — hai iniziato!', 7: '🔥🔥 7 giorni — una settimana intera!', 14: '🔥🔥🔥 14 giorni — due settimane!', 21: '💎 21 giorni — l\'abitudine è tua!', 30: '👑 30 giorni — un maestro delle abitudini!', default: `🔥 ${streak} giorni consecutivi — non fermarti!` },
     pt: { 1: '🔥 Primeiro dia — você começou!', 7: '🔥🔥 7 dias — uma semana completa!', 14: '🔥🔥🔥 14 dias — duas semanas!', 21: '💎 21 dias — o hábito é seu!', 30: '👑 30 dias — um mestre do hábito!', default: `🔥 ${streak} dias consecutivos — não pare!` },
+    ru: { 1: '🔥 Первый день — ты начал!', 7: '🔥🔥 7 дней — целая неделя!', 14: '🔥🔥🔥 14 дней — две недели!', 21: '💎 21 день — привычка твоя!', 30: '👑 30 дней — мастер привычки!', default: `🔥 ${streak} дней подряд — не останавливайся!` },
+    uk: { 1: '🔥 Перший день — ти почав!', 7: '🔥🔥 7 днів — цілий тиждень!', 14: '🔥🔥🔥 14 днів — два тижні!', 21: '💎 21 день — звичка твоя!', 30: '👑 30 днів — майстер звички!', default: `🔥 ${streak} днів поспіль — не зупиняйся!` },
+    nl: { 1: '🔥 Eerste dag — je bent begonnen!', 7: '🔥🔥 7 dagen — een volle week!', 14: '🔥🔥🔥 14 dagen — twee weken!', 21: '💎 21 dagen — de gewoonte is de jouwe!', 30: '👑 30 dagen — gewoontemaster!', default: `🔥 ${streak} opeenvolgende dagen — stop niet!` },
+    sv: { 1: '🔥 Första dagen — du har börjat!', 7: '🔥🔥 7 dagar — en hel vecka!', 14: '🔥🔥🔥 14 dagar — två veckor!', 21: '💎 21 dagar — vanan är din!', 30: '👑 30 dagar — vanans mästare!', default: `🔥 ${streak} dagar i rad — sluta inte!` },
+    bg: { 1: '🔥 Първи ден — започна!', 7: '🔥🔥 7 дни — цяла седмица!', 14: '🔥🔥🔥 14 дни — две седмици!', 21: '💎 21 дни — навикът е твой!', 30: '👑 30 дни — майстор на навика!', default: `🔥 ${streak} поредни дни — не спирай!` },
+    pl: { 1: '🔥 Pierwszy dzień — zacząłeś!', 7: '🔥🔥 7 dni — cały tydzień!', 14: '🔥🔥🔥 14 dni — dwa tygodnie!', 21: '💎 21 dni — nawyk jest twój!', 30: '👑 30 dni — mistrz nawyku!', default: `🔥 ${streak} dni z rzędu — nie zatrzymuj się!` },
+    cs: { 1: '🔥 První den — začal jsi!', 7: '🔥🔥 7 dní — celý týden!', 14: '🔥🔥🔥 14 dní — dva týdny!', 21: '💎 21 dní — zvyk je tvůj!', 30: '👑 30 dní — mistr zvyku!', default: `🔥 ${streak} dní za sebou — nezastavuj se!` },
+    hu: { 1: '🔥 Első nap — elkezdted!', 7: '🔥🔥 7 nap — egy teljes hét!', 14: '🔥🔥🔥 14 nap — két hét!', 21: '💎 21 nap — a szokás a tied!', 30: '👑 30 nap — szokásmester!', default: `🔥 ${streak} egymást követő nap — ne állj meg!` },
+    hr: { 1: '🔥 Prvi dan — počeo si!', 7: '🔥🔥 7 dana — cijeli tjedan!', 14: '🔥🔥🔥 14 dana — dva tjedna!', 21: '💎 21 dan — navika je tvoja!', 30: '👑 30 dana — majstor navike!', default: `🔥 ${streak} dana zaredom — ne stani!` },
+    sr: { 1: '🔥 Prvi dan — počeo si!', 7: '🔥🔥 7 dana — cela nedelja!', 14: '🔥🔥🔥 14 dana — dve nedelje!', 21: '💎 21 dan — navika je tvoja!', 30: '👑 30 dana — majstor navike!', default: `🔥 ${streak} dana zaredom — ne staj!` },
+    tr: { 1: '🔥 İlk gün — başladın!', 7: '🔥🔥 7 gün — tam bir hafta!', 14: '🔥🔥🔥 14 gün — iki hafta!', 21: '💎 21 gün — alışkanlık senin!', 30: '👑 30 gün — alışkanlık ustası!', default: `🔥 ${streak} gün üst üste — durma!` },
+    hi: { 1: '🔥 पहला दिन — शुरुआत हो गई!', 7: '🔥🔥 7 दिन — पूरा एक हफ्ता!', 14: '🔥🔥🔥 14 दिन — दो हफ्ते!', 21: '💎 21 दिन — आदत आपकी है!', 30: '👑 30 दिन — आदत के उस्ताद!', default: `🔥 ${streak} लगातार दिन — रुको मत!` },
+    th: { 1: '🔥 วันแรก — เริ่มแล้ว!', 7: '🔥🔥 7 วัน — ครบหนึ่งสัปดาห์!', 14: '🔥🔥🔥 14 วัน — สองสัปดาห์!', 21: '💎 21 วัน — นิสัยเป็นของคุณ!', 30: '👑 30 วัน — เจ้านายแห่งนิสัย!', default: `🔥 ${streak} วันต่อเนื่อง — อย่าหยุด!` },
+    vi: { 1: '🔥 Ngày đầu tiên — bắt đầu rồi!', 7: '🔥🔥 7 ngày — một tuần đầy đủ!', 14: '🔥🔥🔥 14 ngày — hai tuần!', 21: '💎 21 ngày — thói quen là của bạn!', 30: '👑 30 ngày — bậc thầy thói quen!', default: `🔥 ${streak} ngày liên tiếp — đừng dừng lại!` },
+    da: { 1: '🔥 Første dag — du er begyndt!', 7: '🔥🔥 7 dage — en hel uge!', 14: '🔥🔥🔥 14 dage — to uger!', 21: '💎 21 dage — vanen er din!', 30: '👑 30 dage — vanemester!', default: `🔥 ${streak} dage i træk — stop ikke!` },
+    el: { 1: '🔥 Πρώτη μέρα — ξεκίνησες!', 7: '🔥🔥 7 μέρες — μια ολόκληρη εβδομάδα!', 14: '🔥🔥🔥 14 μέρες — δύο εβδομάδες!', 21: '💎 21 μέρες — η συνήθεια είναι δική σου!', 30: '👑 30 μέρες — μάστερ της συνήθειας!', default: `🔥 ${streak} συνεχόμενες μέρες — μη σταματάς!` },
     ja: { 1: '🔥 1日目 — 始めました！', 7: '🔥🔥 7日間 — 1週間達成！', 14: '🔥🔥🔥 14日間 — 2週間！', 21: '💎 21日間 — 習慣が身についた！', 30: '👑 30日間 — 習慣の達人！', default: `🔥 ${streak}日連続 — 止まらないで！` },
     ko: { 1: '🔥 첫 번째 날 — 시작했어요!', 7: '🔥🔥 7일 — 꼬박 한 주!', 14: '🔥🔥🔥 14일 — 2주!', 21: '💎 21일 — 습관이 생겼어요!', 30: '👑 30일 — 습관의 달인!', default: `🔥 ${streak}일 연속 — 멈추지 마세요!` },
     zh: { 1: '🔥 第一天 — 你开始了！', 7: '🔥🔥 7天 — 整整一周！', 14: '🔥🔥🔥 14天 — 两周！', 21: '💎 21天 — 习惯已成！', 30: '👑 30天 — 习惯大师！', default: `🔥 ${streak}天连续 — 不要停！` },
@@ -414,10 +431,11 @@ export async function completeProgramDay(
     console.warn('[program-engine] completeProgramDay: could not parse enrollment.settings, using defaults');
   }
 
-  // Bug fix #3 — language chain: if proof doesn't specify a language, fall back
-  // to the enrollment's stored language so the journal is always generated in
-  // the language the user chose when they enrolled.
-  const effectiveLang = proof.language || (enrollmentSettings.language as string | undefined) || 'en';
+  // Bug fix #3 — language chain: normalize + validate against SUPPORTED_LANGS,
+  // fall back through proof.language → enrollment.settings.language → 'en'.
+  const effectiveLang = normalizeLang(
+    proof.language || (enrollmentSettings.language as string | undefined) || 'en',
+  );
   const proofWithLang = { ...proof, language: effectiveLang };
 
   const alreadyDone = rawSqlite

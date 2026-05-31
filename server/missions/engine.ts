@@ -11,7 +11,7 @@ const LANG_NAMES: Record<string, string> = {
   da: 'Danish', el: 'Greek',
 };
 
-function normalizeLang(lang: string): string {
+export function normalizeLang(lang: string): string {
   const normalized = (lang || 'en').split('-')[0].toLowerCase();
   // Validate against the known language map; unknown codes fall back to English.
   return LANG_NAMES[normalized] ? normalized : 'en';

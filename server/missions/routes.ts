@@ -305,7 +305,11 @@ export function registerMissionRoutes(app: Express, requireAuth: any) {
     requireAuth,
     async (req: any, res: any) => {
       const userId = getUserId(req);
-      const result = await completeProgramDay(userId, req.params.enrollmentId, req.body);
+      // Normalize proof.language before it reaches completeProgramDay so
+      // invalid/missing lang codes never propagate to LLM prompts or DB.
+      const body = { ...req.body };
+      if (body.language) body.language = getUserLang(userId, body.language);
+      const result = await completeProgramDay(userId, req.params.enrollmentId, body);
       res.json(result);
     },
   );
