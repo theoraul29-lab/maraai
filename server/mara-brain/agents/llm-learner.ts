@@ -4,6 +4,7 @@
 import { llmGenerate, isLLMConfigured, LLMRateLimitedError } from '../../llm.js';
 import { storeKnowledge } from '../knowledge-base.js';
 import { storage } from '../../storage.js';
+import { rawSqlite } from '../../db.js';
 
 interface LearningResult {
   topic: string;
@@ -192,6 +193,97 @@ export async function deepenConcept(concept: string, currentKnowledge: string): 
     concept,
     `Ce știu deja: ${currentKnowledge}\n\nVreau să aprofundez acest subiect.`,
   );
+}
+
+const VALID_EMOTIONS = new Set([
+  'growth', 'confusion', 'excitement', 'ambition', 'insecurity',
+  'frustration', 'gratitude', 'curiosity', 'neutral',
+]);
+
+/**
+ * Update the evolutionary emotional profile for a user.
+ *
+ * Called fire-and-forget at the end of Phase 1 (brain cycle) after chat
+ * excerpts have been processed.  Never blocks the hot conversation path.
+ *
+ * Rate-limited to once per 24 h per user.  Requires at least 3 recent
+ * messages to produce a meaningful signal — skips silently otherwise.
+ */
+export async function updateUserEmotionalProfile(userId: string): Promise<void> {
+  if (!isLLMConfigured()) return;
+
+  try {
+    const now = Math.floor(Date.now() / 1000);
+
+    // Rate-limit: skip if updated less than 24 h ago.
+    const existing = rawSqlite
+      .prepare('SELECT profile_updated_at, mara_confidence FROM user_personality WHERE user_id = ?')
+      .get(userId) as { profile_updated_at: number | null; mara_confidence: number | null } | undefined;
+
+    if (existing?.profile_updated_at && now - existing.profile_updated_at < 86400) return;
+
+    // Gather last 7 days of user messages only (not Mara's replies).
+    const messages = rawSqlite
+      .prepare(`
+        SELECT content FROM chat_messages
+        WHERE user_id = ? AND sender = 'user'
+          AND created_at > ?
+        ORDER BY created_at DESC
+        LIMIT 30
+      `)
+      .all(userId, now - 7 * 86400) as Array<{ content: string }>;
+
+    if (messages.length < 3) return;
+
+    const sample = messages.map((m) => m.content).join('\n---\n').slice(0, 2500);
+
+    const prompt = `Analyze these recent messages from a user on the MaraAI self-development platform.
+Identify:
+1. Their dominant emotional state (pick exactly one: growth, confusion, excitement, ambition, insecurity, frustration, gratitude, curiosity, neutral)
+2. Their main topic of interest (a short phrase describing what they discuss most, e.g. "building a writing habit", "content creation on reels", "personal transformation")
+3. A confidence delta (-10 to +15) representing how much MORE you now know about this user compared to a baseline first conversation.
+
+Messages:
+${sample}
+
+Reply ONLY with valid JSON, no markdown fences, no extra text:
+{"dominant_emotion": "...", "dominant_topic": "...", "confidence_delta": 10}`;
+
+    const raw = await llmGenerate(prompt, { source: 'agent.llm-learner.emotional-profile' });
+    const clean = raw.replace(/```json|```/g, '').trim();
+    const result = JSON.parse(clean) as {
+      dominant_emotion: string;
+      dominant_topic: string;
+      confidence_delta: number;
+    };
+
+    const emotion = VALID_EMOTIONS.has(result.dominant_emotion) ? result.dominant_emotion : 'neutral';
+    const topic = typeof result.dominant_topic === 'string' ? result.dominant_topic.slice(0, 100) : '';
+    const delta = typeof result.confidence_delta === 'number'
+      ? Math.min(15, Math.max(-10, result.confidence_delta))
+      : 5;
+
+    const currentConfidence = existing?.mara_confidence ?? 0;
+    const newConfidence = Math.max(0, Math.min(100, currentConfidence + delta));
+
+    rawSqlite
+      .prepare(`
+        INSERT INTO user_personality
+          (user_id, dominant_emotion, dominant_topic, mara_confidence, profile_updated_at, updated_at)
+        VALUES (?, ?, ?, ?, unixepoch(), unixepoch())
+        ON CONFLICT(user_id) DO UPDATE SET
+          dominant_emotion   = excluded.dominant_emotion,
+          dominant_topic     = excluded.dominant_topic,
+          mara_confidence    = excluded.mara_confidence,
+          profile_updated_at = excluded.profile_updated_at,
+          updated_at         = unixepoch()
+      `)
+      .run(userId, emotion, topic, newConfidence);
+
+    console.log(`[EvoProfile] ${userId}: ${emotion} / "${topic}" / confidence=${newConfidence}`);
+  } catch (err) {
+    console.warn('[EvoProfile] Failed to update emotional profile (non-fatal):', err);
+  }
 }
 
 // Helper: extract key concepts from an LLM response

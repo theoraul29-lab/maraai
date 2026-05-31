@@ -23,6 +23,8 @@ export interface UserMemoryContext {
   userMemories: string;
   /** Active missions + completion summary in the user's language. Injected into system prompt. */
   missionsContext: string;
+  /** Evolved profile updated async by the brain cycle. Empty string if not yet computed. */
+  evolvedProfile: string;
 }
 
 function getDefaultToxicityState(): ToxicityState {
@@ -144,6 +146,10 @@ export async function buildUserContext(
   const lang = preferences?.language || undefined;
   const missionsContext = isAdmin ? '' : getMissionContextForMara(userId, lang);
 
+  // 11. Evolved emotional profile — written async by brain cycle Phase 1.5.
+  //     Read-only here; never blocks the response.
+  const evolvedProfile = isAdmin ? '' : getEvolvedProfile(userId);
+
   return {
     userId,
     isAdmin,
@@ -156,6 +162,7 @@ export async function buildUserContext(
     investigatorContext,
     userMemories,
     missionsContext,
+    evolvedProfile,
   };
 }
 
@@ -203,6 +210,16 @@ export function buildSystemInstruction(context: UserMemoryContext, language?: st
   // Per-user long-term memories — things the user has shared in past conversations
   if (context.userMemories) {
     parts.push(`\n# CE ȘTI DESPRE ACEST USER\n${context.userMemories}\nFolosește aceste informații pentru a personaliza răspunsurile. Nu repeta mecanic faptele — referă-te natural la ele când e relevant.`);
+  }
+
+  // Evolutionary profile — updated async by brain cycle, reflects recent behaviour
+  if (context.evolvedProfile) {
+    parts.push(
+      `\n# PROFIL EMOȚIONAL EVOLUTIV\n${context.evolvedProfile}\n` +
+      `Let this guide your tone and framing. If the user shows ambition, match it with energy. ` +
+      `If they show confusion, slow down and clarify. ` +
+      `If Mara's familiarity is high, be more personal and skip basic introductions.`,
+    );
   }
 
   return parts.join('\n');
@@ -325,6 +342,41 @@ export function storeUserMemory(userId: string, fact: string, category: MemoryCa
       .run(userId, fact.slice(0, 500), category);
   } catch (err) {
     console.warn('[Memory] Failed to store user memory:', err);
+  }
+}
+
+/**
+ * Read the brain-cycle-generated evolutionary emotional profile for a user.
+ * Returns an empty string if the profile hasn't been computed yet.
+ * No LLM call — pure DB read, safe on the hot path.
+ */
+export function getEvolvedProfile(userId: string): string {
+  try {
+    const row = rawSqlite
+      .prepare(`
+        SELECT dominant_emotion, dominant_topic, mara_confidence
+        FROM user_personality
+        WHERE user_id = ?
+          AND dominant_emotion IS NOT NULL
+          AND profile_updated_at IS NOT NULL
+      `)
+      .get(userId) as {
+        dominant_emotion: string;
+        dominant_topic: string;
+        mara_confidence: number;
+      } | undefined;
+    if (!row) return '';
+    const confidence = row.mara_confidence ?? 0;
+    const confidenceLabel = confidence < 30 ? 'getting to know them'
+      : confidence < 60 ? 'moderately familiar'
+      : 'knows them well';
+    return (
+      `Dominant emotion (last 7 days): ${row.dominant_emotion}\n` +
+      `Main topic of interest: ${row.dominant_topic}\n` +
+      `Mara's familiarity: ${confidence}/100 (${confidenceLabel})`
+    );
+  } catch {
+    return '';
   }
 }
 

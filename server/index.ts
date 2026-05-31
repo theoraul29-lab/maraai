@@ -163,6 +163,25 @@ function runMigrations() {
     ['auto_recommendation', 'text'],
   ]);
 
+  // user_personality: evolutionary profile columns added by migration 0023.
+  // user_personality may not exist on very fresh databases (created by
+  // onboarding), so the guard is wrapped in its own try/catch.
+  try {
+    const upRows = rawSqlite
+      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='user_personality'")
+      .all() as Array<{ name: string }>;
+    if (upRows.length > 0) {
+      ensureColumns('user_personality', [
+        ['dominant_emotion', 'text'],
+        ['dominant_topic', 'text'],
+        ['mara_confidence', 'integer DEFAULT 0'],
+        ['profile_updated_at', 'integer'],
+      ]);
+    }
+  } catch (err) {
+    console.error('[migrations] Failed to add user_personality evolution columns (non-fatal):', err);
+  }
+
   // user_posts: source_kind / source_id were added by migration
   // 0009_user_posts_source_kind. Same self-heal pattern — applied
   // separately from createTable below because the table itself is created

@@ -4,7 +4,7 @@
 
 import { storage } from '../storage.js';
 import { LLMRateLimitedError, llmGenerate } from '../llm.js';
-import { learnFromGemini, learnBusinessStrategy, validateIdeas, selfImproveQuery } from './agents/llm-learner.js';
+import { learnFromGemini, learnBusinessStrategy, validateIdeas, selfImproveQuery, updateUserEmotionalProfile } from './agents/llm-learner.js';
 import { readRelevantFiles, getCodeOverview } from './agents/code-explorer.js';
 import { researchModuleTrends, researchCompetitors, generateResearchAgenda, batchResearch } from './agents/web-research.js';
 import { generateGrowthSuggestions, identifyWeakModules } from './agents/platform-analyzer.js';
@@ -238,6 +238,9 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
     }
 
     console.log('[MaraBrain] Phase 1: Processing learning queue...');
+    // Collect user IDs whose chat excerpts are processed this cycle so we can
+    // refresh their evolutionary emotional profiles afterward (fire-and-forget).
+    const chatExcerptUserIds = new Set<string>();
     try {
       await withTimeout((async () => {
         const pendingTasks = await storage.getPendingLearningTasks(5);
@@ -248,6 +251,10 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
             let savedCount: number;
 
             if (task.source === 'chat_excerpt') {
+              // topic format: "chat:<userId>:<module>"
+              const userIdFromTopic = task.topic.split(':')[1];
+              if (userIdFromTopic) chatExcerptUserIds.add(userIdFromTopic);
+
               const extraction = await learnFromText(
                 task.reason,
                 'user_interaction',
@@ -283,6 +290,15 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
       })(), PHASE_TIMEOUT, 'Phase 1: Learning queue');
     } catch (err) {
       console.error('[MaraBrain] Phase 1 failed:', err);
+    }
+
+    // Phase 1.5: Evolutionary emotional profile refresh.
+    // Fire-and-forget for up to 5 users whose chat excerpts were just
+    // processed.  Each call is rate-limited to once per 24 h per user, so
+    // this adds at most a handful of cheap LLM calls per cycle.
+    if (chatExcerptUserIds.size > 0) {
+      const usersToUpdate = Array.from(chatExcerptUserIds).slice(0, 5);
+      Promise.allSettled(usersToUpdate.map(updateUserEmotionalProfile)).catch(() => {});
     }
 
     // === PHASE 2: Autonomous Research ===
