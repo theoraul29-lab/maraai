@@ -21,7 +21,7 @@
     "all": "Alle"
   },
   "nav": {
-    "home": "Thuis",
+    "home": "Home",
     "reels": "Reels",
     "missions": "Missies",
     "vip": "VIP",
@@ -31,27 +31,26 @@
     "pricing": "Prijzen",
     "brand": "MARAAI",
     "brandMobile": "MARA",
-    "toggleMenu": "Menu",
-    "community": "Gemeenschap",
-    "trading": "Trading"
+    "toggleMenu": "Menu wisselen",
+    "community": "Community"
   },
   "home": {
-    "title": "MaraAI Home - Orbital Module Navigation",
-    "orbitalNav": "MaraAI Home - Orbital Module Navigation",
+    "title": "MaraAI Home - Orbitale modulenavigatie",
+    "orbitalNav": "MaraAI Home - Orbitale modulenavigatie",
     "mara": "MARA",
-    "maraCenter": "MARA - AI Assistant at Center",
-    "navigateTo": "Navigate to {{module}}",
-    "navigateToModule": "Navigate to module",
-    "moduleLabel": "{{module}} module",
-    "you": "You",
+    "maraCenter": "MARA - AI-assistent in het centrum",
+    "navigateTo": "Naar {{module}} navigeren",
+    "navigateToModule": "Naar module navigeren",
+    "moduleLabel": "Module {{module}}",
+    "you": "Jij",
     "reels": "Reels",
-    "missions": "Missions",
-    "programs": "Programs",
+    "missions": "Missies",
+    "programs": "Programma's",
     "creators": "Creators",
-    "writers": "Writers",
-    "mobileAriaLabel": "Mara AI mobile home selector",
-    "subsystemSettings": "Subsystem settings",
-    "createAccount": "Create account"
+    "writers": "Schrijvers",
+    "mobileAriaLabel": "Mara AI mobiele home-selector",
+    "subsystemSettings": "Subsysteeminstellingen",
+    "createAccount": "Account aanmaken"
   },
   "auth": {
     "welcomeBack": "Inloggen",

@@ -21,7 +21,7 @@
     "all": "Mind"
   },
   "nav": {
-    "home": "Főoldal",
+    "home": "Kezdőlap",
     "reels": "Reels",
     "missions": "Küldetések",
     "vip": "VIP",
@@ -31,27 +31,26 @@
     "pricing": "Árak",
     "brand": "MARAAI",
     "brandMobile": "MARA",
-    "toggleMenu": "Menü",
-    "community": "Közösség",
-    "trading": "Trading"
+    "toggleMenu": "Menü váltása",
+    "community": "Közösség"
   },
   "home": {
-    "title": "MaraAI Home - Orbital Module Navigation",
-    "orbitalNav": "MaraAI Home - Orbital Module Navigation",
+    "title": "MaraAI kezdőlap - Orbitális modulnavigáció",
+    "orbitalNav": "MaraAI kezdőlap - Orbitális modulnavigáció",
     "mara": "MARA",
-    "maraCenter": "MARA - AI Assistant at Center",
-    "navigateTo": "Navigate to {{module}}",
-    "navigateToModule": "Navigate to module",
-    "moduleLabel": "{{module}} module",
-    "you": "You",
+    "maraCenter": "MARA - AI asszisztens a központban",
+    "navigateTo": "Ugrás ide: {{module}}",
+    "navigateToModule": "Ugrás a modulhoz",
+    "moduleLabel": "{{module}} modul",
+    "you": "Te",
     "reels": "Reels",
-    "missions": "Missions",
-    "programs": "Programs",
-    "creators": "Creators",
-    "writers": "Writers",
-    "mobileAriaLabel": "Mara AI mobile home selector",
-    "subsystemSettings": "Subsystem settings",
-    "createAccount": "Create account"
+    "missions": "Küldetések",
+    "programs": "Programok",
+    "creators": "Alkotók",
+    "writers": "Írók",
+    "mobileAriaLabel": "Mara AI mobil kezdőlap-választó",
+    "subsystemSettings": "Alrendszer beállításai",
+    "createAccount": "Fiók létrehozása"
   },
   "auth": {
     "welcomeBack": "Bejelentkezés",

@@ -21,7 +21,7 @@
     "all": "Wszystkie"
   },
   "nav": {
-    "home": "Strona główna",
+    "home": "Główna",
     "reels": "Reelsy",
     "missions": "Misje",
     "vip": "VIP",
@@ -31,27 +31,26 @@
     "pricing": "Cennik",
     "brand": "MARAAI",
     "brandMobile": "MARA",
-    "toggleMenu": "Menu",
-    "community": "Społeczność",
-    "trading": "Trading"
+    "toggleMenu": "Przełącz menu",
+    "community": "Społeczność"
   },
   "home": {
-    "title": "MaraAI Home - Orbital Module Navigation",
-    "orbitalNav": "MaraAI Home - Orbital Module Navigation",
+    "title": "Strona główna MaraAI - Orbitalna nawigacja modułów",
+    "orbitalNav": "Strona główna MaraAI - Orbitalna nawigacja modułów",
     "mara": "MARA",
-    "maraCenter": "MARA - AI Assistant at Center",
-    "navigateTo": "Navigate to {{module}}",
-    "navigateToModule": "Navigate to module",
-    "moduleLabel": "{{module}} module",
-    "you": "You",
+    "maraCenter": "MARA - Asystent AI w centrum",
+    "navigateTo": "Przejdź do {{module}}",
+    "navigateToModule": "Przejdź do modułu",
+    "moduleLabel": "Moduł {{module}}",
+    "you": "Ty",
     "reels": "Reels",
-    "missions": "Missions",
-    "programs": "Programs",
-    "creators": "Creators",
-    "writers": "Writers",
-    "mobileAriaLabel": "Mara AI mobile home selector",
-    "subsystemSettings": "Subsystem settings",
-    "createAccount": "Create account"
+    "missions": "Misje",
+    "programs": "Programy",
+    "creators": "Twórcy",
+    "writers": "Pisarze",
+    "mobileAriaLabel": "Mobilny selektor strony głównej Mara AI",
+    "subsystemSettings": "Ustawienia podsystemu",
+    "createAccount": "Utwórz konto"
   },
   "auth": {
     "welcomeBack": "Zaloguj się",
