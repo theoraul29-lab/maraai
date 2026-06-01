@@ -15,7 +15,7 @@
  * sees a stable, real user id.
  */
 
-import { randomBytes } from 'crypto';
+import { randomBytes, createHash } from 'crypto';
 import type { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { db } from '../db.js';
@@ -146,6 +146,14 @@ async function fetchUserLanguage(userId: string): Promise<string | null> {
     console.warn('[auth] fetchUserLanguage failed:', err);
     return null;
   }
+}
+
+/**
+ * SHA-256 of a password-reset token. Only the digest is stored in the DB;
+ * the plaintext token lives only in the user's reset email/link.
+ */
+function hashResetToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
 }
 
 /**
@@ -412,10 +420,15 @@ export async function requestReset(req: Request, res: Response) {
   // Invalidate any existing unexpired tokens for this user
   await db.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, user.id));
 
+  // The token handed to the user is the secret; only its SHA-256 digest is
+  // persisted. A DB leak therefore exposes no usable reset tokens. SHA-256
+  // (not bcrypt) is correct here: the token is 256-bit high-entropy random,
+  // so it isn't brute-forceable and we need a deterministic value to look up.
   const token = randomBytes(32).toString('hex');
+  const tokenHash = hashResetToken(token);
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
-  await db.insert(passwordResetTokens).values({ userId: user.id, token, expiresAt });
+  await db.insert(passwordResetTokens).values({ userId: user.id, token: tokenHash, expiresAt });
 
   const isProduction = process.env.NODE_ENV === 'production';
   if (!isProduction) {
@@ -437,18 +450,19 @@ export async function requestReset(req: Request, res: Response) {
 export async function confirmReset(req: Request, res: Response) {
   const parsed = confirmResetSchema.safeParse(req.body);
   if (!parsed.success) {
-    return flashBadRequest(res, 'login_body_invalid', 'Token and a new password (min 8 chars) are required.');
+    return flashBadRequest(res, 'login_body_invalid', 'Token and a new password (min 6 chars) are required.');
   }
 
   const { token, password } = parsed.data;
   const now = new Date();
+  const tokenHash = hashResetToken(token);
 
   const [tokenRow] = await db
     .select()
     .from(passwordResetTokens)
     .where(
       and(
-        eq(passwordResetTokens.token, token),
+        eq(passwordResetTokens.token, tokenHash),
         gt(passwordResetTokens.expiresAt, now),
       ),
     )

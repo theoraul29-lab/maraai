@@ -41,33 +41,56 @@ class BrainQueryViolationError extends Error {
   }
 }
 
+/**
+ * Canonicalise SQL so the safety checks below can't be defeated by trivial
+ * lexical tricks (the old normaliser only collapsed whitespace, so
+ * `SET tier='vip'` — no spaces around `=` — slipped past the column guard).
+ *
+ * Steps: strip SQL comments, strip identifier-quote characters
+ * (backtick / double-quote / square-bracket), collapse whitespace, then force
+ * a single space around `=` and `,`. Result is uppercased.
+ */
 function normalise(sql: string): string {
-  return sql.replace(/\s+/g, ' ').trim().toUpperCase();
+  return sql
+    .replace(/--[^\n]*/g, ' ')          // line comments
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')   // block comments (also defeats UP/**/DATE)
+    .replace(/[`"\[\]]/g, '')            // identifier quotes (string literals use ')
+    .replace(/\s+/g, ' ')
+    .replace(/\s*=\s*/g, ' = ')          // canonical spacing around '='
+    .replace(/\s*,\s*/g, ' , ')          // canonical spacing around ','
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toUpperCase();
 }
 
 export function assertBrainQuerySafe(sql: string): void {
   const norm = normalise(sql);
 
-  // Block any DROP TABLE or ALTER TABLE — structural mutations are never allowed.
+  // Block structural / cross-database mutations — never allowed.
   if (/\bDROP\s+TABLE\b/.test(norm) || /\bALTER\s+TABLE\b/.test(norm)) {
     throw new BrainQueryViolationError('DROP TABLE / ALTER TABLE is forbidden', sql);
   }
+  if (/\bATTACH\b/.test(norm) || /\bDETACH\b/.test(norm)) {
+    throw new BrainQueryViolationError('ATTACH / DETACH DATABASE is forbidden', sql);
+  }
 
-  // Block DELETE on critical tables.
+  // Block DELETE on critical tables. Tolerates identifier quoting (already
+  // stripped) and schema qualification (e.g. main.users).
   for (const table of CRITICAL_TABLES_NO_DELETE) {
     const tableUpper = table.toUpperCase();
-    // Matches: DELETE FROM <table>, DELETE FROM `<table>`
-    if (new RegExp(`\\bDELETE\\s+FROM\\s+\`?${tableUpper}\`?\\b`).test(norm)) {
+    if (new RegExp(`\\bDELETE\\s+FROM\\s+(?:\\w+\\.)?${tableUpper}\\b`).test(norm)) {
       throw new BrainQueryViolationError(`DELETE on critical table '${table}' is forbidden`, sql);
     }
   }
 
-  // Block UPDATE on protected columns in critical tables.
+  // Block UPDATE on protected columns in critical tables. After normalisation
+  // every assignment is `<COL> = ...`, so a single word-boundary match catches
+  // any spacing (`tier='vip'`, `tier = 'vip'`, `SET role='admin',tier='vip'`).
   for (const [table, cols] of CRITICAL_TABLES_NO_UPDATE_COLS) {
     const tableUpper = table.toUpperCase();
-    if (new RegExp(`\\bUPDATE\\s+\`?${tableUpper}\`?\\b`).test(norm)) {
+    if (new RegExp(`\\bUPDATE\\s+(?:\\w+\\.)?${tableUpper}\\b`).test(norm)) {
       for (const col of cols) {
-        if (norm.includes(` ${col.toUpperCase()} =`) || norm.includes(`,${col.toUpperCase()}=`)) {
+        if (new RegExp(`\\b${col.toUpperCase()} =`).test(norm)) {
           throw new BrainQueryViolationError(
             `UPDATE ${table}.${col} is forbidden from brain cycle`,
             sql,
