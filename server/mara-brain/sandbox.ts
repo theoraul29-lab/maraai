@@ -46,15 +46,24 @@ class BrainQueryViolationError extends Error {
  * lexical tricks (the old normaliser only collapsed whitespace, so
  * `SET tier='vip'` — no spaces around `=` — slipped past the column guard).
  *
- * Steps: strip SQL comments, strip identifier-quote characters
- * (backtick / double-quote / square-bracket), collapse whitespace, then force
- * a single space around `=` and `,`. Result is uppercased.
+ * Steps, in order:
+ *   1. Blank out single-quoted string-literal *contents* (handling the `''`
+ *      escape). This MUST run first so that `--`, comment markers, `=` or
+ *      protected column names hidden inside a literal (e.g.
+ *      `email='x--', tier='vip'`) can't fool the later passes.
+ *   2. Strip SQL comments (line + block; block-strip also defeats keywords
+ *      split by an inline block comment).
+ *   3. Strip identifier-quote characters (backtick / double-quote / bracket).
+ *   4. Collapse whitespace and force a single space around `=` and `,`.
+ * Result is uppercased. The normalised string is used only for the safety
+ * checks; the original SQL is what actually executes.
  */
 function normalise(sql: string): string {
   return sql
+    .replace(/'(?:[^']|'')*'/g, "''")    // neutralise string-literal contents first
     .replace(/--[^\n]*/g, ' ')          // line comments
     .replace(/\/\*[\s\S]*?\*\//g, ' ')   // block comments (also defeats UP/**/DATE)
-    .replace(/[`"\[\]]/g, '')            // identifier quotes (string literals use ')
+    .replace(/[`"\[\]]/g, '')            // identifier quotes
     .replace(/\s+/g, ' ')
     .replace(/\s*=\s*/g, ' = ')          // canonical spacing around '='
     .replace(/\s*,\s*/g, ' , ')          // canonical spacing around ','
