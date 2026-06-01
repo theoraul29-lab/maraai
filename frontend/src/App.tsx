@@ -17,9 +17,9 @@ const VIP = lazy(() => import('./VIP').then((m) => ({ default: m.VIP })));
 const Creators = lazy(() => import('./creator').then((m) => ({ default: m.Creator })));
 const Reels = lazy(() => import('./reels'));
 const WritersHub = lazy(() => import('./WritersHub').then((m) => ({ default: m.WritersHub })));
-import You from './you';
-import ResetPassword from './ResetPassword';
-import ResetPasswordConfirmation from './ResetPasswordConfirmation';
+const You = lazy(() => import('./you'));
+const ResetPassword = lazy(() => import('./ResetPassword'));
+const ResetPasswordConfirmation = lazy(() => import('./ResetPasswordConfirmation'));
 import HomePage from './HomePage';
 // Admin pages are gated behind AdminGuard and never reached by 99% of
 // visitors. Loading them eagerly bloated the initial bundle by ~110 kB; lazy
@@ -30,11 +30,11 @@ const AdminGrowthDashboard = lazy(() => import('./AdminGrowthDashboard'));
 const AdminExperiments = lazy(() => import('./AdminExperiments'));
 const AdminWaitlist = lazy(() => import('./AdminWaitlist'));
 const AdminMaraChat = lazy(() => import('./AdminMaraChat'));
-import { OnboardingFlow } from './maraai/OnboardingFlow';
-import { TransparencyDashboard } from './maraai/TransparencyDashboard';
+const OnboardingFlow = lazy(() => import('./maraai/OnboardingFlow').then((m) => ({ default: m.OnboardingFlow })));
+const TransparencyDashboard = lazy(() => import('./maraai/TransparencyDashboard').then((m) => ({ default: m.TransparencyDashboard })));
 import { ThemeProvider } from './contexts/ThemeContext';
-import NotFound from './NotFound';
-import PrivacyPolicy from './PrivacyPolicy';
+const NotFound = lazy(() => import('./NotFound'));
+const PrivacyPolicy = lazy(() => import('./PrivacyPolicy'));
 import CookieBanner from './components/CookieBanner';
 
 /**
