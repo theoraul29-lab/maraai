@@ -744,6 +744,23 @@ const insertProgram = rawSqlite.prepare(`
   )
 `);
 
+/**
+ * pillar_focus is persisted as a JSON-encoded string array. Decode it safely
+ * for the startup consistency check, tolerating a plain array, a comma-separated
+ * fallback, or malformed input (returns []).
+ */
+function parsePillarFocus(value: unknown): string[] {
+  if (Array.isArray(value)) return value.map((v) => String(v));
+  if (typeof value !== 'string' || value.trim() === '') return [];
+  try {
+    const parsed = JSON.parse(value);
+    if (Array.isArray(parsed)) return parsed.map((v) => String(v));
+  } catch {
+    return value.split(',').map((s) => s.trim()).filter(Boolean);
+  }
+  return [];
+}
+
 export function seedMissions(): void {
   console.log('[missions] Seeding missions...');
 
@@ -780,7 +797,9 @@ export function seedMissions(): void {
   // Faza 6 — pillar_focus consistency check (non-fatal warning at startup)
   const allPrograms = [...PROGRESSION_PROGRAMS, ...PROGRAMS];
   for (const prog of allPrograms) {
-    const pillars: string[] = prog.pillar_focus ?? [];
+    // pillar_focus is stored as a JSON-encoded array string (e.g. '["self","acceptance"]').
+    // Parse it back to an array; iterating the raw string would loop over characters.
+    const pillars: string[] = parsePillarFocus(prog.pillar_focus);
     for (const pillar of pillars) {
       const count = (rawSqlite
         .prepare('SELECT COUNT(*) as cnt FROM missions WHERE pillar = ? AND is_active = 1')
