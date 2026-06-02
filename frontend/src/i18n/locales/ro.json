@@ -32,8 +32,7 @@
     "brand": "MARAAI",
     "brandMobile": "MARA",
     "toggleMenu": "Comutare meniu",
-    "community": "Comunitate",
-    "trading": "Trading"
+    "community": "Comunitate"
   },
   "home": {
     "title": "MaraAI Acasă — Navigare Orbitală Module",
@@ -51,9 +50,7 @@
     "writers": "Scriitori",
     "mobileAriaLabel": "Selector mobil Mara AI",
     "subsystemSettings": "Setări subsisteme",
-    "createAccount": "Creează cont",
-    "trading": "Trading",
-    "vip": "VIP"
+    "createAccount": "Creează cont"
   },
   "auth": {
     "welcomeBack": "Bine ai revenit",
@@ -1346,30 +1343,5 @@
     "s7Li3": "Sesiunile sunt securizate si expira la deconectare",
     "s8Title": "8. Contact",
     "s8Text": "Pentru intrebari despre datele personale, ne poti contacta la:"
-  },
-  "trading": {
-    "title": "ACADEMIA DE STRATEGII DE TRADING",
-    "exit": "IEȘIRE",
-    "closeLabel": "Închide Trading",
-    "strategyHub": "HUB STRATEGII ({{count}})",
-    "liveSignal": "SEMNAL MARA LIVE:",
-    "noSignal": "Niciun semnal detectat.",
-    "dataUnavailable": "⚠️ Date indisponibile.",
-    "connectingEngine": "Se conectează la Motorul Neural...",
-    "filterAll": "Toate",
-    "beginner": "Începător",
-    "intermediate": "Intermediar",
-    "advanced": "Avansat",
-    "vipLocked": "🔒 VIP",
-    "freeLimit": "🔒 Primele {{count}} strategii sunt gratuite.",
-    "upgradeMessage": "Devino VIP pentru acces complet la toate {{count}} strategiile.",
-    "upgradeLink": "Upgrade la VIP →",
-    "mentorTitle": "MENTOR MARA AI",
-    "stepsToFollow": "PAȘI DE URMAT:",
-    "askPlaceholder": "Întreab-o pe Mara despre această strategie...",
-    "askButton": "🧠 Întreabă",
-    "maraNoResponse": "Mara nu a putut răspunde.",
-    "maraError": "⚠️ Nu s-a putut contacta Mara AI. Verifică conexiunea.",
-    "selectStrategy": "Selectează o strategie din stânga pentru a începe analiza pe graficul live."
   }
 }
