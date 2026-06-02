@@ -132,11 +132,35 @@ export async function registerRoutes(
   app: Express,
 ): Promise<Server> {
 
-  // Middleware: requires a logged-in user (session user)
+  // Middleware: requires a session user id to be present.
+  // NOTE: every visitor gets a stable anonymous session uid (see
+  // setupSessionAuth), so this only rejects requests with no session at all.
+  // For routes that must belong to a *registered* account use requireRealUser.
   const requireAuth = (req: any, res: any, next: any) => {
     const userId = req.user?.uid;
     if (!userId) return res.status(401).json({ message: 'Unauthorized — login required.' });
     return next();
+  };
+
+  // Middleware: requires a *registered* user (not an anonymous session).
+  // A real account is the single source of truth used by /api/auth/me: a
+  // `users` row that exists and has a non-null email. Anonymous visitors get
+  // a session uid with no such row, so they are rejected here.
+  const requireRealUser = async (req: any, res: any, next: any) => {
+    const userId: string | undefined = req.user?.uid;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized — login required.' });
+    try {
+      const row = await db
+        .select({ id: usersTable.id, email: usersTable.email })
+        .from(usersTable)
+        .where(eq(usersTable.id, userId))
+        .limit(1);
+      if (row[0] && row[0].email) return next();
+    } catch (err) {
+      console.error('[requireRealUser] user lookup failed:', err);
+      return res.status(500).json({ message: 'Auth check failed.' });
+    }
+    return res.status(401).json({ message: 'Unauthorized — please sign in to continue.' });
   };
 
   // Apply CSRF protection to all state-changing routes.
@@ -188,8 +212,8 @@ export async function registerRoutes(
   });
 
   // Payment endpoints (require auth)
-  app.post('/api/payments/stripe', requireAuth, paymentsModule.processStripePayment);
-  app.post('/api/payments/paypal', requireAuth, paymentsModule.processPayPalPayment);
+  app.post('/api/payments/stripe', requireRealUser, paymentsModule.processStripePayment);
+  app.post('/api/payments/paypal', requireRealUser, paymentsModule.processPayPalPayment);
 
   // Admin order management (require admin)
   app.get('/api/admin/orders', requireAdmin, adminOrdersModule.getOrders);
@@ -214,7 +238,7 @@ export async function registerRoutes(
 
   // Orders and premium endpoints (require auth + plăți active)
   app.get('/api/premium/status', requireAuth, requirePaymentsActive, ordersModule.getPremiumStatus);
-  app.post('/api/premium/order', requireAuth, requirePaymentsActive, ordersModule.createPremiumOrder);
+  app.post('/api/premium/order', requireRealUser, requirePaymentsActive, ordersModule.createPremiumOrder);
 
   // ─── Onboarding status: verifică dacă userul a completat onboarding-ul ─────
   app.get('/api/user/onboarding-status', requireAuth, (req: any, res: any) => {
@@ -296,7 +320,7 @@ export async function registerRoutes(
     profileModule.deleteProfilePost,
   );
   app.post('/api/profile/:id/follow', requireAuth, profileModule.followUser);
-  app.delete('/api/profile/me', requireAuth, profileModule.deleteAccount);
+  app.delete('/api/profile/me', requireRealUser, profileModule.deleteAccount);
 
   // Admin endpoints (require admin)
   app.get('/api/admin/stats', requireAdmin, adminModule.getStats);

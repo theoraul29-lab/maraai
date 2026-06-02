@@ -79,6 +79,29 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, '..', 'dist', 'public'),
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        // Split node_modules out of the main app chunk. The previous single
+        // ~630 kB `index` chunk bundled all vendor code with app code, so any
+        // app change busted the whole download. Isolating the rarely-changing
+        // framework/i18n libs into their own long-lived cache buckets cuts the
+        // initial app chunk and improves repeat-visit caching.
+        manualChunks(id: string) {
+          if (!id.includes('node_modules')) return undefined;
+          // Only hoist the framework/i18n libs that the eager app shell always
+          // needs into shared, long-lived cache buckets. Everything else is
+          // left to Rollup's default splitting so heavy route-only deps stay in
+          // their own lazy route chunks instead of being forced eager.
+          if (/[\\/]node_modules[\\/](react|react-dom|react-router|react-router-dom|scheduler)[\\/]/.test(id)) {
+            return 'react-vendor';
+          }
+          if (/[\\/]node_modules[\\/](i18next|react-i18next|i18next-browser-languagedetector)[\\/]/.test(id)) {
+            return 'i18n-vendor';
+          }
+          return undefined;
+        },
+      },
+    },
   },
   // `virtual:pwa-register` is a plugin-provided virtual module — the Vite dev
   // dep-scanner can't resolve it from disk and logs an error that, in our CI
