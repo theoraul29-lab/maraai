@@ -318,7 +318,11 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
           }
         })(), PHASE_TIMEOUT, 'Phase 2: Autonomous research');
       } catch (err) {
-        console.error('[MaraBrain] Phase 2 failed:', err);
+        if (err instanceof LLMRateLimitedError) {
+          console.log('[MaraBrain] Phase 2 skipped — daily LLM cap reached');
+        } else {
+          console.error('[MaraBrain] Phase 2 failed:', err);
+        }
       }
     };
 
@@ -399,6 +403,10 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
             );
             knowledgeLearned += result.knowledgeIds.length;
           } catch (err) {
+            if (err instanceof LLMRateLimitedError) {
+              console.log(`[MaraBrain] Phase 3 stopped at "${mod}" — daily LLM cap reached`);
+              break;
+            }
             console.error(`[MaraBrain] Trend research failed for ${mod}:`, err);
           }
           // Rate limit between module researches

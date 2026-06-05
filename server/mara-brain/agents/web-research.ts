@@ -2,10 +2,11 @@
 // Searches the internet for information, trends, and knowledge
 // Uses the configured LLM provider for web-grounded queries
 
-import { llmGenerate, isLLMConfigured } from '../../llm.js';
+import { llmGenerate, isLLMConfigured, LLMRateLimitedError } from '../../llm.js';
 import { storeKnowledge } from '../knowledge-base.js';
 import { storage } from '../../storage.js';
 import { webSearch, formatSearchResultsForPrompt } from '../../lib/web-search.js';
+import { learningRateLimiter } from '../rate-limiter.js';
 
 interface WebResearchResult {
   query: string;
@@ -20,6 +21,12 @@ interface WebResearchResult {
 export async function researchTopic(query: string, context?: string): Promise<WebResearchResult> {
   if (!isLLMConfigured()) {
     return { query, findings: 'LLM provider not configured', knowledgeIds: [], source: 'none' };
+  }
+
+  // Skip web search entirely if the LLM cap is already exhausted — avoid
+  // burning Serper/DuckDuckGo quota for a call that will be discarded anyway.
+  if (!learningRateLimiter.canCall()) {
+    throw new LLMRateLimitedError('agent.web-research.research');
   }
 
   // Fetch real web results first (Serper → DuckDuckGo fallback)
@@ -135,8 +142,13 @@ export async function batchResearch(topics: string[]): Promise<WebResearchResult
   const results: WebResearchResult[] = [];
 
   for (const topic of topics.slice(0, 5)) { // Max 5 to avoid API rate limits
-    const result = await researchTopic(topic);
-    results.push(result);
+    try {
+      const result = await researchTopic(topic);
+      results.push(result);
+    } catch (err) {
+      if (err instanceof LLMRateLimitedError) break; // cap hit — no point continuing
+      throw err;
+    }
 
     // Small delay between requests
     await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -170,7 +182,11 @@ Returnează doar un JSON array de strings: ["topic1", "topic2", ...]`;
     ).trim();
     const jsonMatch = text.match(/\[[\s\S]*\]/);
     return jsonMatch ? JSON.parse(jsonMatch[0]) : [];
-  } catch {
+  } catch (err) {
+    // Propagate rate-limit errors so the brain cycle skips Phase 2 entirely
+    // instead of proceeding with the hardcoded fallback list and burning web
+    // search quota on calls that will fail anyway.
+    if (err instanceof LLMRateLimitedError) throw err;
     return [
       'Gamification and mission-based learning platforms 2026',
       'Content creator monetization strategies',
