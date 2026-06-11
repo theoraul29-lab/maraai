@@ -198,6 +198,133 @@ function runMigrations() {
     console.error('[migrations] Failed to add journal_entries.is_ai_generated (non-fatal):', err);
   }
 
+  // ── Missions hardening migrations ───────────────────────────────────────────
+  // These self-heal existing production databases for the mission/program
+  // integrity fixes. db.ts only defines the fresh-DB schema (CREATE TABLE IF
+  // NOT EXISTS), so the column adds, table rebuild and unique indexes below are
+  // applied here where we can dedupe first and keep each step non-fatal.
+  const missionTableExists = (name: string): boolean => {
+    if (!IDENT_RE.test(name)) return false;
+    return (
+      rawSqlite
+        .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?")
+        .all(name) as Array<{ name: string }>
+    ).length > 0;
+  };
+
+  // missions.owner_user_id — scopes AI-generated missions to their creator.
+  try {
+    if (missionTableExists('missions')) ensureColumns('missions', [['owner_user_id', 'text']]);
+  } catch (err) {
+    console.error('[migrations] Failed to add missions.owner_user_id (non-fatal):', err);
+  }
+
+  // program_day_missions — re-key from UNIQUE(program_id, day_number) to
+  // UNIQUE(enrollment_id, day_number) so each enrollment gets its own
+  // AI-personalized days. SQLite can't drop a UNIQUE constraint in place, so we
+  // rebuild the table. Existing rows are preserved with enrollment_id = NULL
+  // (they become inert under the new per-enrollment reads and are regenerated
+  // on demand). Guarded by the presence of the enrollment_id column so it runs
+  // at most once.
+  try {
+    if (missionTableExists('program_day_missions')) {
+      const cols = rawSqlite.pragma('table_info(program_day_missions)') as ColumnInfo[];
+      if (!cols.some((c) => c.name === 'enrollment_id')) {
+        rawSqlite.transaction(() => {
+          rawSqlite.exec(`
+            CREATE TABLE program_day_missions_new (
+              id TEXT PRIMARY KEY,
+              enrollment_id TEXT,
+              program_id TEXT NOT NULL,
+              day_number INTEGER NOT NULL,
+              mission_id TEXT,
+              custom_title TEXT,
+              custom_description TEXT,
+              custom_proof_prompt TEXT,
+              intent TEXT,
+              is_ai_generated INTEGER DEFAULT 0,
+              UNIQUE(enrollment_id, day_number)
+            );
+            INSERT INTO program_day_missions_new
+              (id, enrollment_id, program_id, day_number, mission_id,
+               custom_title, custom_description, custom_proof_prompt, intent, is_ai_generated)
+              SELECT id, NULL, program_id, day_number, mission_id,
+                     custom_title, custom_description, custom_proof_prompt, intent, is_ai_generated
+              FROM program_day_missions;
+            DROP TABLE program_day_missions;
+            ALTER TABLE program_day_missions_new RENAME TO program_day_missions;
+            CREATE INDEX IF NOT EXISTS idx_day_missions_enrollment
+              ON program_day_missions(enrollment_id, day_number);
+          `);
+        })();
+        console.log('[migrations] Re-keyed program_day_missions on enrollment_id');
+      }
+    }
+  } catch (err) {
+    console.error('[migrations] Failed to re-key program_day_missions (non-fatal):', err);
+  }
+
+  // Dedupe + unique indexes. Each is dedup'd before the index is created so the
+  // CREATE UNIQUE INDEX can't fail on pre-existing duplicate rows (left behind
+  // by the very bugs these fixes address).
+  const dedupeAndIndex = (label: string, dedupeSql: string, indexSql: string) => {
+    try {
+      rawSqlite.transaction(() => {
+        rawSqlite.exec(dedupeSql);
+        rawSqlite.exec(indexSql);
+      })();
+    } catch (err) {
+      console.error(`[migrations] Failed to apply ${label} (non-fatal):`, err);
+    }
+  };
+
+  if (missionTableExists('mission_shares')) {
+    dedupeAndIndex(
+      'mission_shares unique',
+      `DELETE FROM mission_shares WHERE rowid NOT IN (
+         SELECT MIN(rowid) FROM mission_shares
+         GROUP BY user_id, user_mission_id, platform
+       );`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_mission_shares_unique
+         ON mission_shares(user_id, user_mission_id, platform);`,
+    );
+  }
+
+  if (missionTableExists('journal_entries')) {
+    dedupeAndIndex(
+      'journal_entries program-day unique',
+      `DELETE FROM journal_entries
+       WHERE program_enrollment_id IS NOT NULL
+         AND rowid NOT IN (
+           SELECT MIN(rowid) FROM journal_entries
+           WHERE program_enrollment_id IS NOT NULL
+           GROUP BY user_id, program_enrollment_id, day_number
+         );`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_journal_program_day_unique
+         ON journal_entries(user_id, program_enrollment_id, day_number)
+         WHERE program_enrollment_id IS NOT NULL;`,
+    );
+  }
+
+  if (missionTableExists('user_books')) {
+    dedupeAndIndex(
+      'user_books enrollment unique',
+      `DELETE FROM user_books
+       WHERE program_enrollment_id IS NOT NULL
+         AND rowid NOT IN (
+           SELECT rowid FROM (
+             SELECT rowid, ROW_NUMBER() OVER (
+               PARTITION BY user_id, program_enrollment_id
+               ORDER BY (status = 'completed') DESC, updated_at DESC, created_at DESC
+             ) rn
+             FROM user_books WHERE program_enrollment_id IS NOT NULL
+           ) WHERE rn = 1
+         );`,
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_books_enrollment_unique
+         ON user_books(user_id, program_enrollment_id);`,
+    );
+  }
+
   // user_posts: source_kind / source_id were added by migration
   // 0009_user_posts_source_kind. Same self-heal pattern — applied
   // separately from createTable below because the table itself is created

@@ -32,7 +32,7 @@ function getUserId(req: any): string {
   return req.user?.uid;
 }
 
-export function registerMissionRoutes(app: Express, requireAuth: any) {
+export function registerMissionRoutes(app: Express, requireAuth: any, requireRealUser: any) {
   // ── ONBOARDING ──────────────────────────────────────────────────────────────
 
   app.get('/api/missions/onboarding', requireAuth, (req: any, res: any) => {
@@ -69,6 +69,8 @@ export function registerMissionRoutes(app: Express, requireAuth: any) {
     const userId = getUserId(req);
     const { pillar, lang: rawLang } = req.query as { pillar?: string; lang?: string };
     const lang = getUserLang(userId, rawLang);
+    // owner_user_id scoping: show globally-seeded missions (owner NULL) plus the
+    // caller's own AI-generated missions — never another user's personalized ones.
     const missions = pillar
       ? rawSqlite
           .prepare(
@@ -77,9 +79,10 @@ export function registerMissionRoutes(app: Express, requireAuth: any) {
              FROM missions m
              LEFT JOIN user_missions um ON m.id = um.mission_id AND um.user_id = ?
              WHERE m.is_active = 1 AND m.is_daily = 0 AND m.pillar = ?
+               AND (m.owner_user_id IS NULL OR m.owner_user_id = ?)
              ORDER BY m.xp_reward ASC`,
           )
-          .all(userId, pillar)
+          .all(userId, pillar, userId)
       : rawSqlite
           .prepare(
             `SELECT m.*, um.status as user_status, um.progress as user_progress,
@@ -87,9 +90,10 @@ export function registerMissionRoutes(app: Express, requireAuth: any) {
              FROM missions m
              LEFT JOIN user_missions um ON m.id = um.mission_id AND um.user_id = ?
              WHERE m.is_active = 1 AND m.is_daily = 0
+               AND (m.owner_user_id IS NULL OR m.owner_user_id = ?)
              ORDER BY m.xp_reward ASC`,
           )
-          .all(userId);
+          .all(userId, userId);
 
     // Sequential unlock: mission N is locked until mission N-1 is completed.
     const withLocked = (missions as any[]).map((m, i) => ({
@@ -134,13 +138,13 @@ export function registerMissionRoutes(app: Express, requireAuth: any) {
     res.json({ mission });
   });
 
-  app.post('/api/missions/:id/start', requireAuth, missionWriteRateLimit, async (req: any, res: any) => {
+  app.post('/api/missions/:id/start', requireRealUser, missionWriteRateLimit, async (req: any, res: any) => {
     const userId = getUserId(req);
     const result = await startMission(userId, req.params.id);
     res.json(result);
   });
 
-  app.post('/api/missions/:id/proof', requireAuth, missionWriteRateLimit, async (req: any, res: any) => {
+  app.post('/api/missions/:id/proof', requireRealUser, missionWriteRateLimit, async (req: any, res: any) => {
     const userId = getUserId(req);
     const { lang: rawLang, ...proof } = req.body as { lang?: string; [key: string]: unknown };
     // Validate lang from body the same way we validate query params
@@ -149,7 +153,7 @@ export function registerMissionRoutes(app: Express, requireAuth: any) {
     res.json(result);
   });
 
-  app.post('/api/missions/share', requireAuth, missionWriteRateLimit, async (req: any, res: any) => {
+  app.post('/api/missions/share', requireRealUser, missionWriteRateLimit, async (req: any, res: any) => {
     const userId = getUserId(req);
     const { userMissionId, platform, caption } = req.body as {
       userMissionId: string;
@@ -224,7 +228,7 @@ export function registerMissionRoutes(app: Express, requireAuth: any) {
     res.json({ leaderboard });
   });
 
-  app.post('/api/missions/feedback', requireAuth, (req: any, res: any) => {
+  app.post('/api/missions/feedback', requireRealUser, (req: any, res: any) => {
     const userId = getUserId(req);
     const { missionId, rating, note } = req.body;
     if (!missionId || ![-1, 1].includes(rating)) {
@@ -272,7 +276,7 @@ export function registerMissionRoutes(app: Express, requireAuth: any) {
     res.json({ program });
   });
 
-  app.post('/api/programs/:slug/enroll', requireAuth, async (req: any, res: any) => {
+  app.post('/api/programs/:slug/enroll', requireRealUser, missionWriteRateLimit, async (req: any, res: any) => {
     const userId = getUserId(req);
     // Validate and normalize the language in enrollment settings so it
     // propagates correctly through generateDayMission and generateJournalPage.
@@ -302,7 +306,8 @@ export function registerMissionRoutes(app: Express, requireAuth: any) {
 
   app.post(
     '/api/programs/enrollment/:enrollmentId/complete',
-    requireAuth,
+    requireRealUser,
+    missionWriteRateLimit,
     async (req: any, res: any) => {
       const userId = getUserId(req);
       // Normalize proof.language before it reaches completeProgramDay so
