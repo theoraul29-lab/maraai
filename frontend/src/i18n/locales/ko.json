@@ -1239,7 +1239,9 @@
     "s7Li2": "Communication은 HTTPS를 통해 암호화됨",
     "s7Li3": "Sessions는 보안되며 logout 시 만료됨",
     "s8Title": "8. 문의",
-    "s8Text": "개인 데이터에 관한 질문이 있으시면 다음 주소로 문의하세요:"
+    "s8Text": "개인 데이터에 관한 질문이 있으시면 다음 주소로 문의하세요:",
+    "s9Title": "Security & Automated Request Logging",
+    "s9Text": "To protect the platform and its users, automated or abusive requests (such as vulnerability scanning, bot traffic, or attempts to access non-existent administrative interfaces) may be logged. The data collected is limited to: IP address, requested path, HTTP method, and a truncated User-Agent string. This data is retained for a maximum of 30 days and is processed on the basis of our legitimate interest in network and information security (Art. 6(1)(f) GDPR, Recital 49). IPs identified as the source of abusive traffic may be temporarily blocked. No request bodies, authentication tokens, or personal message content are ever stored for this purpose."
   },
   "admin": {
     "title": "🧠 Admin Dashboard",

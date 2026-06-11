@@ -1239,7 +1239,9 @@
     "s7Li2": "Komunikace je šifrována pomocí HTTPS",
     "s7Li3": "Relace jsou zabezpečené a vyprší se při odhlášení",
     "s8Title": "8. Kontakt",
-    "s8Text": "Máte-li jakékoli otázky týkající se vašich osobních údajů, kontaktujte nás na adrese:"
+    "s8Text": "Máte-li jakékoli otázky týkající se vašich osobních údajů, kontaktujte nás na adrese:",
+    "s9Title": "Security & Automated Request Logging",
+    "s9Text": "To protect the platform and its users, automated or abusive requests (such as vulnerability scanning, bot traffic, or attempts to access non-existent administrative interfaces) may be logged. The data collected is limited to: IP address, requested path, HTTP method, and a truncated User-Agent string. This data is retained for a maximum of 30 days and is processed on the basis of our legitimate interest in network and information security (Art. 6(1)(f) GDPR, Recital 49). IPs identified as the source of abusive traffic may be temporarily blocked. No request bodies, authentication tokens, or personal message content are ever stored for this purpose."
   },
   "admin": {
     "title": "🧠 Admin Dashboard",

@@ -882,4 +882,34 @@ export type Mission = typeof missions.$inferSelect;
 export type UserMission = typeof userMissions.$inferSelect;
 export type UserXp = typeof userXp.$inferSelect;
 export type UserPersonality = typeof userPersonality.$inferSelect;
+
+// === SECURITY — Honeypot + Auto-Blacklist ===
+// GDPR basis: Art. 6(1)(f) legitimate interest — network/information security
+// (Recital 49). Data minimization: IP, path, method, truncated UA only.
+// No bodies, cookies, or payload content stored. 30-day retention on events.
+
+export const blacklistedIps = pgTable('blacklisted_ips', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  ip: text('ip').notNull().unique(),
+  reason: text('reason').notNull(),
+  hitCount: integer('hit_count').default(1).notNull(),
+  firstSeenAt: integer('first_seen_at').default(sql`(unixepoch())`).notNull(),
+  lastSeenAt: integer('last_seen_at').default(sql`(unixepoch())`).notNull(),
+  expiresAt: integer('expires_at').notNull(),
+  permanent: integer('permanent', { mode: 'boolean' }).default(false).notNull(),
+});
+
+export const honeypotEvents = pgTable('honeypot_events', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  ip: text('ip').notNull(),
+  path: text('path').notNull(),
+  method: text('method').notNull(),
+  userAgent: text('user_agent').notNull(),
+  createdAt: integer('created_at').default(sql`(unixepoch())`).notNull(),
+});
+
+export type BlacklistedIp = typeof blacklistedIps.$inferSelect;
+export type InsertBlacklistedIp = typeof blacklistedIps.$inferInsert;
+export type HoneypotEvent = typeof honeypotEvents.$inferSelect;
+export type InsertHoneypotEvent = typeof honeypotEvents.$inferInsert;
 export type MissionShare = typeof missionShares.$inferSelect;

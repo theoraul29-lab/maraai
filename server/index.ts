@@ -32,6 +32,9 @@ import {
   unregisterComputePeer,
 } from './maraai/p2p-compute.js';
 import { startPaymentActivationChecker } from './modules/launch-countdown.js';
+import { registerHoneypotRoutes } from './security/honeypot.js';
+import { blacklistMiddleware } from './security/blacklist-middleware.js';
+import { startSecurityCleanup } from './security/cleanup.js';
 dotenv.config();
 
 // Process-level safety net for *runtime* bugs in request handlers.
@@ -517,6 +520,15 @@ app.use(
 );
 
 setupSessionAuth(app);
+
+// Honeypot traps must be registered BEFORE main routes so they intercept
+// scanner traffic before any legitimate handler sees it.
+registerHoneypotRoutes(app);
+
+// Blacklist check runs early — after IP resolution (trust proxy set in
+// setupSessionAuth) but before any application logic.
+app.use(blacklistMiddleware);
+
 const httpServer = createServer(app);
 
 declare module 'http' {
@@ -742,6 +754,9 @@ app.use((req, res, next) => {
 
   // Verifică la fiecare oră dacă sistemul de plăți trebuie activat automat.
   startPaymentActivationChecker();
+
+  // Security cleanup: purge expired bans + old honeypot events every hour.
+  startSecurityCleanup();
 
   // --- START P2P WEBSOCKET INTEGRATION ---
   const wss = new WebSocketServer({

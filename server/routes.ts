@@ -1704,6 +1704,76 @@ experiments, and learning cycles. If asked about experiments or strategy, be spe
     }
   });
 
+  // === Security Admin API ===
+  // Manage the honeypot/blacklist system. Requires admin auth (same pattern).
+
+  app.get('/api/admin/security/blacklist', requireAdmin, async (_req: any, res: any) => {
+    try {
+      const page = Math.max(1, parseInt(String((_req as any).query?.page ?? '1'), 10));
+      const limit = 50;
+      const offset = (page - 1) * limit;
+      const rows = rawSqlite
+        .prepare('SELECT * FROM blacklisted_ips ORDER BY last_seen_at DESC LIMIT ? OFFSET ?')
+        .all(limit, offset) as any[];
+      const { total } = rawSqlite.prepare('SELECT COUNT(*) as total FROM blacklisted_ips').get() as any;
+      res.json({ rows, total, page, limit });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.delete('/api/admin/security/blacklist/:ip', requireAdmin, async (req: any, res: any) => {
+    const { invalidateBlacklistCache } = await import('./security/blacklist-middleware.js');
+    const ip = decodeURIComponent(req.params.ip as string);
+    try {
+      rawSqlite.prepare('DELETE FROM blacklisted_ips WHERE ip = ?').run(ip);
+      invalidateBlacklistCache(ip);
+      res.json({ ok: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post('/api/admin/security/blacklist', requireAdmin, async (req: any, res: any) => {
+    const { invalidateBlacklistCache } = await import('./security/blacklist-middleware.js');
+    const { ip, hours, permanent } = req.body as { ip?: string; hours?: number; permanent?: boolean };
+    if (!ip) return res.status(400).json({ error: 'ip required' });
+    const now = Math.floor(Date.now() / 1000);
+    const expiresAt = permanent ? now + 365 * 24 * 3600 : now + (Number(hours) || 24) * 3600;
+    try {
+      rawSqlite
+        .prepare(
+          `INSERT INTO blacklisted_ips (ip, reason, hit_count, first_seen_at, last_seen_at, expires_at, permanent)
+           VALUES (?, 'manual_ban', 1, ?, ?, ?, ?)
+           ON CONFLICT(ip) DO UPDATE SET reason='manual_ban', last_seen_at=excluded.last_seen_at,
+             expires_at=excluded.expires_at, permanent=excluded.permanent`,
+        )
+        .run(ip, now, now, expiresAt, permanent ? 1 : 0);
+      invalidateBlacklistCache(ip);
+      res.json({ ok: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get('/api/admin/security/honeypot-events', requireAdmin, (_req: any, res: any) => {
+    try {
+      const days = Math.min(30, Math.max(1, parseInt(String((_req as any).query?.days ?? '7'), 10)));
+      const cutoff = Math.floor(Date.now() / 1000) - days * 86400;
+      const rows = rawSqlite
+        .prepare(
+          `SELECT ip, path, method, user_agent, created_at,
+                  COUNT(*) OVER (PARTITION BY ip) as ip_hit_count
+           FROM honeypot_events WHERE created_at >= ?
+           ORDER BY created_at DESC LIMIT 500`,
+        )
+        .all(cutoff) as any[];
+      res.json({ rows, days });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // ── Mara Brain Agent endpoint ─────────────────────────────────────────────
   // POST /api/agent/brain  — builds user context from DB and sends to Mara
   // Brain agent.  Returns personalized missions (JSON) + progress narrative.

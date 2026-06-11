@@ -1239,7 +1239,9 @@
     "s7Li2": "HTTPS",
     "s7Li3": "Sessions securisees",
     "s8Title": "8. Contact",
-    "s8Text": "Pour questions sur tes donnees :"
+    "s8Text": "Pour questions sur tes donnees :",
+    "s9Title": "Security & Automated Request Logging",
+    "s9Text": "To protect the platform and its users, automated or abusive requests (such as vulnerability scanning, bot traffic, or attempts to access non-existent administrative interfaces) may be logged. The data collected is limited to: IP address, requested path, HTTP method, and a truncated User-Agent string. This data is retained for a maximum of 30 days and is processed on the basis of our legitimate interest in network and information security (Art. 6(1)(f) GDPR, Recital 49). IPs identified as the source of abusive traffic may be temporarily blocked. No request bodies, authentication tokens, or personal message content are ever stored for this purpose."
   },
   "admin": {
     "title": "🧠 Admin Dashboard",

@@ -1342,6 +1342,8 @@
     "s7Li2": "Comunicatia este criptata prin HTTPS",
     "s7Li3": "Sesiunile sunt securizate si expira la deconectare",
     "s8Title": "8. Contact",
-    "s8Text": "Pentru intrebari despre datele personale, ne poti contacta la:"
+    "s8Text": "Pentru intrebari despre datele personale, ne poti contacta la:",
+    "s9Title": "Securitate și jurnalizarea cererilor automate",
+    "s9Text": "Pentru a proteja platforma și utilizatorii săi, cererile automate sau abuzive (cum ar fi scanarea vulnerabilităților, traficul de bot sau încercările de accesare a unor interfețe administrative inexistente) pot fi înregistrate. Datele colectate se limitează la: adresa IP, calea solicitată, metoda HTTP și un User-Agent trunchiat. Aceste date sunt păstrate maximum 30 de zile și sunt prelucrate în baza interesului nostru legitim privind securitatea rețelei și a informațiilor (Art. 6(1)(f) GDPR, Considerentul 49). IP-urile identificate ca sursă de trafic abuziv pot fi blocate temporar. Nu sunt stocate niciodată corpuri de cerere, token-uri de autentificare sau conținut personal de mesaje în acest scop."
   }
 }
