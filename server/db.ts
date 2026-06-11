@@ -254,6 +254,7 @@ sqlite.exec(`
     reflection TEXT,
     is_active INTEGER DEFAULT 1,
     is_daily INTEGER DEFAULT 0,
+    owner_user_id TEXT,
     created_at INTEGER DEFAULT (unixepoch())
   );
   CREATE TABLE IF NOT EXISTS user_missions (
@@ -459,6 +460,7 @@ sqlite.exec(`
 
   CREATE TABLE IF NOT EXISTS program_day_missions (
     id TEXT PRIMARY KEY,
+    enrollment_id TEXT,
     program_id TEXT NOT NULL,
     day_number INTEGER NOT NULL,
     mission_id TEXT,
@@ -467,11 +469,11 @@ sqlite.exec(`
     custom_proof_prompt TEXT,
     intent TEXT,
     is_ai_generated INTEGER DEFAULT 0,
-    UNIQUE(program_id, day_number)
+    UNIQUE(enrollment_id, day_number)
   );
 
-  CREATE INDEX IF NOT EXISTS idx_day_missions_program
-    ON program_day_missions(program_id, day_number);
+  CREATE INDEX IF NOT EXISTS idx_day_missions_enrollment
+    ON program_day_missions(enrollment_id, day_number);
 
   CREATE TABLE IF NOT EXISTS journal_entries (
     id TEXT PRIMARY KEY,

@@ -1834,7 +1834,7 @@ ${JSON.stringify({
   });
 
   // Mara Missions V3
-  registerMissionRoutes(app, requireAuth);
+  registerMissionRoutes(app, requireAuth, requireRealUser);
 
   // Universal content share endpoint — see server/share/routes.ts for the
   // full contract. Lives at /api/share so any future module gets it for free.
