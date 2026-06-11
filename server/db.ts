@@ -472,9 +472,6 @@ sqlite.exec(`
     UNIQUE(enrollment_id, day_number)
   );
 
-  CREATE INDEX IF NOT EXISTS idx_day_missions_enrollment
-    ON program_day_missions(enrollment_id, day_number);
-
   CREATE TABLE IF NOT EXISTS journal_entries (
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
