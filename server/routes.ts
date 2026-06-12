@@ -189,6 +189,7 @@ export async function registerRoutes(
   // before (or without) a login:
   //   • /api/auth/*      sign-up, login, logout, me, csrf, password reset, OAuth
   //   • /api/webhooks/*  Stripe (and any future) payment webhooks
+  //   • /api/waitlist    anonymous landing-page capture form (CSRF-exempt, IP-limited)
   //   • a few exact health/config endpoints the app shell reads pre-login
   // Health/runtime endpoints declared in index.ts are registered before this
   // middleware and are therefore unaffected. Non-/api requests (the SPA shell,
@@ -200,6 +201,7 @@ export async function registerRoutes(
     '/api/health',
     '/api/health/db',
     '/api/runtime',
+    '/api/waitlist',
   ]);
   const requireAccountGate = (req: any, res: any, next: any) => {
     const p: string = req.path;
