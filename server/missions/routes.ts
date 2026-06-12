@@ -130,7 +130,7 @@ export function registerMissionRoutes(app: Express, requireAuth: any, requireRea
     res.json({ mission });
   });
 
-  app.post('/api/missions/generate', requireAuth, async (req: any, res: any) => {
+  app.post('/api/missions/generate', requireRealUser, missionWriteRateLimit, async (req: any, res: any) => {
     const userId = getUserId(req);
     const { lang } = req.body as { lang?: string };
     const mission = await generatePersonalizedMission(userId, lang);
