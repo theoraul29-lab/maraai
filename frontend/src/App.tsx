@@ -63,6 +63,22 @@ function OnboardingGuard() {
   return null;
 }
 
+/**
+ * Login wall: every in-app route is gated behind a registered account.
+ * Anonymous visitors are bounced to the landing page (`/`), whose AuthButton
+ * opens the sign-up / login modal. Only the landing, pricing, privacy and the
+ * password-reset pages stay reachable without an account (see <Routes> below).
+ */
+function RequireAuth({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, loading } = useAuth();
+
+  // Still resolving /api/auth/me — render nothing rather than flashing a
+  // redirect that would race the session check.
+  if (loading) return null;
+  if (!isAuthenticated) return <Navigate to="/" replace />;
+  return <>{children}</>;
+}
+
 function AdminGuard({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, user, loading } = useAuth();
 
@@ -114,13 +130,13 @@ function App() {
             <Suspense fallback={null}>
               <Routes>
                 <Route path="/" element={<HomePage />} />
-                <Route path="/missions" element={<Missions />} />
-                <Route path="/membership" element={<VIP onClose={() => navigate('/')} />} />
-                <Route path="/creator-panel" element={<Creators onClose={() => navigate('/')} />} />
-                <Route path="/you" element={<You />} />
-                <Route path="/reels" element={<Reels />} />
-                <Route path="/writers-hub" element={<WritersHub onClose={() => navigate('/')} />} />
-                <Route path="/community" element={<Community />} />
+                <Route path="/missions" element={<RequireAuth><Missions /></RequireAuth>} />
+                <Route path="/membership" element={<RequireAuth><VIP onClose={() => navigate('/')} /></RequireAuth>} />
+                <Route path="/creator-panel" element={<RequireAuth><Creators onClose={() => navigate('/')} /></RequireAuth>} />
+                <Route path="/you" element={<RequireAuth><You /></RequireAuth>} />
+                <Route path="/reels" element={<RequireAuth><Reels /></RequireAuth>} />
+                <Route path="/writers-hub" element={<RequireAuth><WritersHub onClose={() => navigate('/')} /></RequireAuth>} />
+                <Route path="/community" element={<RequireAuth><Community /></RequireAuth>} />
                 <Route path="/pricing" element={<Pricing />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/reset-password/confirmation" element={<ResetPasswordConfirmation />} />
@@ -132,9 +148,9 @@ function App() {
                 <Route path="/admin/growth" element={<AdminGuard><AdminGrowthDashboard /></AdminGuard>} />
                 <Route
                   path="/onboarding"
-                  element={<OnboardingFlow onClose={() => navigate('/')} />}
+                  element={<RequireAuth><OnboardingFlow onClose={() => navigate('/')} /></RequireAuth>}
                 />
-                <Route path="/transparency" element={<TransparencyDashboard />} />
+                <Route path="/transparency" element={<RequireAuth><TransparencyDashboard /></RequireAuth>} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>

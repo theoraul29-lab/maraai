@@ -181,6 +181,35 @@ export async function registerRoutes(
     return res.status(403).json({ message: 'Forbidden — admin access required.' });
   };
 
+  // ── No anonymous access ─────────────────────────────────────────────────────
+  // Deny-by-default gate: every /api route below requires a *registered* account
+  // (requireRealUser). Anonymous session ids — handed out to every visitor by
+  // setupSessionAuth — are rejected with 401. The only exceptions are the
+  // acquisition/auth surface and machine callbacks, which must stay reachable
+  // before (or without) a login:
+  //   • /api/auth/*      sign-up, login, logout, me, csrf, password reset, OAuth
+  //   • /api/webhooks/*  Stripe (and any future) payment webhooks
+  //   • a few exact health/config endpoints the app shell reads pre-login
+  // Health/runtime endpoints declared in index.ts are registered before this
+  // middleware and are therefore unaffected. Non-/api requests (the SPA shell,
+  // static assets, the public landing/pricing pages) always pass through.
+  const PUBLIC_API_PREFIXES = ['/api/auth/', '/api/webhooks/'];
+  const PUBLIC_API_EXACT = new Set([
+    '/api/config/features',
+    '/api/ai/health',
+    '/api/health',
+    '/api/health/db',
+    '/api/runtime',
+  ]);
+  const requireAccountGate = (req: any, res: any, next: any) => {
+    const p: string = req.path;
+    if (!p.startsWith('/api/')) return next();
+    if (PUBLIC_API_EXACT.has(p)) return next();
+    if (PUBLIC_API_PREFIXES.some((pre) => p.startsWith(pre))) return next();
+    return requireRealUser(req, res, next);
+  };
+  app.use(requireAccountGate);
+
   // Inject dependencies into modules
   videoModule.injectDeps({ storage, db, api, z, creatorPostRequestSchema, likesTable });
   reelsModule.injectDeps({ storage });
