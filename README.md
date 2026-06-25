@@ -1,222 +1,478 @@
-# MaraAI
+# MaraAI – Businessplan (Bankvorlage)
 
-MaraAI – an AI companion platform with video reels, AI chat, trading academy, writers hub, and creator tools.
+> **Sprache / Language:** Dieses Dokument ist auf Deutsch verfasst und dient als bankgerechte Unternehmensunterlage für die Sparkasse- / KfW-Evaluation.  
+> Die technische Entwicklerdokumentation befindet sich in den Dateien `LOCAL_SETUP.md`, `DEPLOY.md` und `ARCHITECTURE.md`.
 
-## Quick Start (Local Dev)
+---
 
-### Prerequisites
-- Node.js 20+
-- npm 10+
+# Businessplan MaraAI
 
-### Setup
+**Vertraulich – Erstellt für die Finanzierungsanfrage (Sparkasse / KfW)**  
+Stand: Juni 2026
 
-```bash
-# 1. Install dependencies
-npm install
+---
 
-# 2. Copy the example env file and edit as needed
-cp .env.example .env
+## Inhaltsverzeichnis
 
-# 3. Start backend + frontend together
-npm run dev
-```
+1. [Executive Summary](#1-executive-summary)
+2. [Unternehmensbeschreibung](#2-unternehmensbeschreibung)
+3. [Problemstellung](#3-problemstellung)
+4. [Lösungsüberblick](#4-lösungsüberblick)
+5. [Marktanalyse](#5-marktanalyse)
+6. [Zielkunden](#6-zielkunden)
+7. [Geschäftsmodell / Monetarisierung](#7-geschäftsmodell--monetarisierung)
+8. [Marketing & Wachstum](#8-marketing--wachstum)
+9. [Wettbewerbsanalyse](#9-wettbewerbsanalyse)
+10. [Operativer Plan](#10-operativer-plan)
+11. [Finanzplan](#11-finanzplan)
+12. [Risikoanalyse](#12-risikoanalyse)
+13. [Finanzierungsbegründung](#13-finanzierungsbegründung)
+14. [Fazit](#14-fazit)
+- [Anlage: Variante 2 – Kurzfassung zur Kreditanfrage](#anlage-variante-2--kurzfassung-zur-kreditanfrage)
 
-- **Frontend** → http://localhost:5173
-- **Backend** → http://localhost:5000 (or next available port)
-- **Health check** → http://localhost:5000/api/health
+---
 
-> **AI provider:** MaraAI tries Ollama first (self-hosted, free) and falls back to Anthropic Claude if Ollama isn't reachable. At least one of `OLLAMA_BASE_URL` (with a running Ollama) or `ANTHROPIC_API_KEY` must be set — otherwise chat returns a localised "I'm catching my breath" message. See [AI Providers](#ai-providers) below.
+## 1. Executive Summary
 
-## Environment Variables
+**MaraAI** ist ein frühphasiges Startup-Konzept mit dem Ziel, eine modulare KI-Produktivitätsplattform für Kreative, Freiberufler und kleine Digitalunternehmen zu entwickeln. Das Angebot umfasst in der Konzeptphase einen KI-Chat-Companion, Schreibwerkzeuge für Content-Creator, leichte Automatisierungshilfen sowie einen KI-gestützten Interaktionslayer.
 
-Copy `.env.example` to `.env` and set the following:
+Das Unternehmen verfolgt eine **hybride KI-Architektur**: Primär wird eine lokal betriebene KI-Infrastruktur (Ollama mit Open-Source-Modellen der Familien Llama 3.1, Mistral, Qwen) eingesetzt. Externe Cloud-API-Dienste werden ausschließlich als Fallback-System genutzt, nicht als primäre Abhängigkeit.
 
-| Variable | Required | Description |
+**Kernziel dieser Finanzierungsanfrage:** Validierung des Produktmarkt-Fits und Aufbau der technischen Basisinfrastruktur mit einem Gesamtbudget von **20.000 €**.
+
+Das Geschäftsmodell basiert auf monatlichen und jährlichen Abonnements (SaaS-Modell). Die Projektion ist bewusst konservativ gehalten: keine Gewinnannahmen im ersten Jahr, klare Meilensteine für erste Zahlungsbereitschaftsnachweise.
+
+---
+
+## 2. Unternehmensbeschreibung
+
+### Unternehmenskonzept
+
+MaraAI wird als **B2C/B2B2C SaaS-Produkt** positioniert. Es richtet sich an Einzelpersonen und kleine Teams, die KI-gestützte Produktivitätswerkzeuge für kreative Inhalte und digitale Workflows benötigen.
+
+### Mission
+
+*Praktische KI-Produktivität für kleine Creator und Mikrounternehmen in Europa – einfach, erschwinglich und datenschutzbewusst.*
+
+### Vision
+
+MaraAI soll mittelfristig ein vertrauenswürdiger KI-Produktivitätsbegleiter für die Creator Economy im DACH-Raum werden. Wachstum erfolgt ausschließlich nach nachgewiesener Marktnachfrage.
+
+### Rechtsform und Gründungsplan (Deutschland)
+
+- Geplante Gründung als Einzelunternehmen oder UG (haftungsbeschränkt) nach steuerrechtlicher Beratung.
+- Betrieb von Beginn an DSGVO-konform.
+- Buchführung und Compliance gemäß deutschen handels- und steuerrechtlichen Anforderungen.
+
+---
+
+## 3. Problemstellung
+
+Creator, Freiberufler und kleine Digitalunternehmen stehen vor folgenden strukturellen Herausforderungen:
+
+- **Dauerhafter Content-Druck:** Kontinuierlicher Bedarf an Posts, Skripten, Captions, Hooks – bei begrenzten Ressourcen.
+- **Zeitknappheit:** Viele Kanäle, zu wenig Personal für Routineaufgaben.
+- **Tool-Fragmentierung:** Mehrere Einzelabonnements mit überlappenden Funktionen und steigenden Gesamtkosten.
+- **Fehlende Prozessautomatisierung:** Repetitive kreative Aufgaben werden weiterhin manuell erledigt.
+
+Bestehende Lösungen auf dem Markt sind häufig:
+- zu generisch und nicht auf kleine Creator-Workflows zugeschnitten,
+- im Gesamtpaket zu kostspielig,
+- datenschutzrechtlich für den deutschen Markt unzureichend positioniert.
+
+---
+
+## 4. Lösungsüberblick
+
+MaraAI entwickelt ein integriertes Ökosystem mit vier initialen Wertpfeilern:
+
+1. **KI-Chat-Companion** – tägliche Ideenfindung, Planung und Textentwürfe.
+2. **Schreibwerkzeuge für Creator** – strukturierte Hilfe für Posts, Skripte, Captions und Textwiederverwendung.
+3. **Creator-Automatisierungshilfen** – Vereinfachung wiederkehrender inhaltsbezogener Aufgaben.
+4. **Interaktions-Supportlayer** – KI-gestützte Vorschläge für Zielgruppeninteraktion und Engagement.
+
+### Technische Architekturstrategie (Hybridmodell)
+
+MaraAI setzt auf eine **privacy-aware hybride KI-Plattform** mit folgendem Aufbau:
+
+**1. Lokaler KI-Kern (Primärsystem)**
+
+- Als primäres Laufzeitsystem wird **Ollama** (selbstgehostet, Open-Source) eingesetzt.
+- Unterstützte Modellfamilien je nach Leistungsanforderung: **Llama 3.1, Mistral, Qwen**.
+- Zielsetzung: Reduzierung wiederkehrender API-Kosten, Kontrolle über Datenschutz, vorhersehbare Betriebskosten in der Frühphase.
+
+**2. Externer Cloud-Fallback (Sekundärsystem)**
+
+- Externe API-Dienste (z. B. Anthropic Claude) werden ausschließlich als **Fallback-Mechanismus** genutzt.
+- Einsatzszenario: temporäre Überlastung oder Nichtverfügbarkeit des lokalen Systems.
+- Dieser Dienst ist **keine primäre Betriebsabhängigkeit**.
+
+**3. Strategische Positionierung**
+
+MaraAI wird positioniert als:
+- „Privacy-aware hybride KI-Plattform"
+- „Kosteneffiziente Local-First-KI-Architektur"
+- „Unabhängiger KI-Kern mit optionalem Cloud-Fallback"
+
+Diese Architektur ist realistisch für die MVP-Phase: ein lokaler KI-Knoten, begrenztes Nutzervolumen, kontrollierter Rollout.
+
+> **Hinweis:** Das Produkt befindet sich in der Konzeptphase. Funktionstiefe wird durch Kundeninterviews und Pilotnutzung vor einer Erweiterung validiert.
+
+---
+
+## 5. Marktanalyse
+
+### Branchenkontext
+
+MaraAI bewegt sich an der Schnittstelle von:
+- KI-Produktivitätswerkzeugen,
+- Creator-Economy-Software,
+- und abonnementbasiertem SaaS.
+
+### Markttrends (Deutschland / DACH)
+
+- Steigende Akzeptanz von KI-Tools bei Freiberuflern und kleinen Unternehmen.
+- Anhaltende Nachfrage nach Kurzform-Content und KI-gestützter Texterstellung.
+- Zunehmende Zahlungsbereitschaft für Produktivitätswerkzeuge mit messbarem Mehrwert.
+- Wachsendes Bewusstsein für Datenschutz und DSGVO-Compliance als Differenzierungsmerkmal.
+
+### Marktgelegenheit
+
+Ein fokussiertes Produkt für kleine Creator in Deutschland kann sich über folgende Merkmale positionieren:
+- Benutzerfreundlichkeit statt Funktionskomplexität,
+- Lokale Vertrauens- und Compliance-Positionierung (Sprache, Kultur, DSGVO),
+- Geringere Gesamtkosten im Vergleich zu mehreren Einzelabonnements.
+
+### Go-to-Market-Geographie
+
+- **Phase 1:** Deutschland (deutschsprachiges und englisches Onboarding)
+- **Phase 2:** DACH-Erweiterung (Österreich, Schweiz)
+
+---
+
+## 6. Zielkunden
+
+### Primärsegment
+
+**Kleine Creator und Solopreneure (18–45 Jahre):**
+- Social-Media-Creator,
+- Coaches und Berater,
+- Freiberufler (Texter, Marketer, Designer),
+- Nischen-Educator und Kursanbieter.
+
+### Sekundärsegment
+
+**Mikro-Agenturen und kleine Teams (2–10 Personen):**
+- Content-Teams mit Bedarf an Ideen- und Textbeschleunigung.
+
+### Kundenbedürfnisse
+
+- Schnellere Content-Produktion,
+- Gleichbleibende Ausgabequalität,
+- Geringere monatliche Werkzeugkosten,
+- Einfaches Onboarding ohne technische Komplexität.
+
+---
+
+## 7. Geschäftsmodell / Monetarisierung
+
+### Erlösmodell
+
+Primär: **Monatliche und jährliche Abonnements (SaaS)**
+
+### Indikativer Preisrahmen (Frühphase)
+
+| Tarif | Preis | Zielgruppe |
 |---|---|---|
-| `PORT` | No | HTTP port (default: `5000`) |
-| `NODE_ENV` | No | `development` or `production` |
-| `SESSION_SECRET` | Production only | Random secret for sessions (auto-generated in dev) |
-| `DATABASE_URL` | No | SQLite path (default: `./maraai.sqlite`) |
-| `AUTH_MODE` | No | Set to `local` to bypass OAuth (dev-friendly default) |
-| `OLLAMA_BASE_URL` | No¹ | Ollama server URL (e.g. `http://localhost:11434`). Leave empty to disable Ollama. |
-| `OLLAMA_MODEL` | No | Ollama model tag (default: `llama3.1:8b`) |
-| `OLLAMA_TIMEOUT_MS` | No | Request timeout in ms (default: `120000`) |
-| `ANTHROPIC_API_KEY` | No¹ | Anthropic API key ([console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys)) — used as fallback when Ollama is down |
-| `ANTHROPIC_MODEL` | No | Claude model (default: `claude-sonnet-4-6`) |
-| `ANTHROPIC_MAX_TOKENS` | No | Max output tokens per reply (default: `1024`) |
-| `ANTHROPIC_TIMEOUT_MS` | No | Request timeout in ms (default: `120000`) |
-| `PROCESS_AI_TASKS` | No | Set to `true` to enable autonomous Mara brain cycle. Set `BRAIN_ENABLED=false` as a kill-switch override. |
-| `BRAIN_CYCLE_INTERVAL_MS` | No | How often the brain cycle runs (default: `7200000` = 2h) |
-| `BRAIN_CYCLE_TIMEOUT_MS` | No | Max time for one full brain cycle (default: `1200000` = 20min). Bump higher when routing through Ollama on commodity hardware. |
-| `BRAIN_PHASE_TIMEOUT_MS` | No | Max time per phase inside one cycle (default: `120000` = 2min). One slow phase no longer kills later phases. |
-| `BRAIN_SELF_POST_ENABLED` | No | Set to `false` to keep autonomous learning on but skip auto-publishing "Mara AI Insight" posts |
-| `BRAIN_SELF_POST_INTERVAL_MS` | No | How often Mara self-publishes when `BRAIN_SELF_POST_ENABLED!=false` (default: `14400000` = 4h) |
+| Free | kostenlos | Akquisition / Testen |
+| Starter | 12–19 €/Monat | Einzelpersonen / Einsteiger |
+| Pro | 29–49 €/Monat | Aktive Creator / Freiberufler |
+| Team (spätere Phase) | ab 79 €/Monat | Kleine Teams / Agenturen |
 
-¹ At least one of `OLLAMA_BASE_URL` (with a reachable Ollama) or `ANTHROPIC_API_KEY` must be set, otherwise the chat will return a localised "catching my breath" fallback message.
+### Ergänzende Erlösquellen (nach Validierung)
 
-## AI Providers
+- Template-Pakete und Creator-Workflow-Bundles,
+- selektive Partnerprovisionen (performance-basiert).
 
-Two providers are supported, picked at runtime by `server/lib/provider-router.ts`:
+### Grundprinzipien der Wirtschaftlichkeit
 
-1. **Ollama** — primary. Self-hosted, no per-token cost, can run any open-weights model (`llama3.1:8b`, `mistral:7b`, `qwen2.5:14b`, …). Required env: `OLLAMA_BASE_URL`. The router probes `GET {OLLAMA_BASE_URL}/api/tags` (3s timeout, cached for 30s) before sending each request.
-2. **Anthropic Claude** — paid fallback when Ollama isn't reachable. Required env: `ANTHROPIC_API_KEY`. Default model: `claude-sonnet-4-6`.
-3. **Graceful degrade** — when neither is configured (or both fail), `/api/chat` returns a localised "I'm catching my breath" message as a normal chat bubble (not an HTTP 500), so the UI never shows a red error.
+- Customer Acquisition Cost (CAC) durch organische Kanäle und Community niedrig halten.
+- Jahrespläne und Retention gegenüber bezahltem Wachstumseinsatz priorisieren.
 
-### Run Ollama locally
+---
 
-```bash
-# 1. Install — see https://ollama.com/download
-# 2. Pull a model and start the daemon:
-ollama pull llama3.1:8b
-ollama serve   # listens on http://localhost:11434
-# 3. Point MaraAI at it:
-echo 'OLLAMA_BASE_URL=http://localhost:11434' >> .env
-echo 'OLLAMA_MODEL=llama3.1:8b' >> .env
-npm run dev
-```
+## 8. Marketing & Wachstum
 
-### Recommended models
+### Positionierung
 
-| Use case | Suggested model | Notes |
+*„Praktische KI für Creator, die Ergebnisse brauchen – keine Komplexität."*
+
+### Kernkanäle (lean Budget)
+
+1. **Organisches Content-Marketing** – LinkedIn, Instagram, kurze Bildungsinhalte zu KI-Produktivität.
+2. **Founder-geführter Community-Aufbau** – Creator-Gruppen, Discord/Telegram-Communities.
+3. **Micro-Influencer-Partnerschaften** – performance-basiert, wo möglich.
+4. **Referral-Anreize** – kostenlose Credits oder rabattierte Monate für Empfehlungen.
+
+### Funnel-Strategie
+
+| Phase | Maßnahme |
+|---|---|
+| Awareness | Edukative Inhalte zu KI-Produktivität |
+| Consideration | Demos, Anwendungsfallbeispiele |
+| Conversion | Kostenloser Test / Freemium-Limits |
+| Retention | Onboarding-Flows, regelmäßige Mehrwertimpulse |
+
+### 12-Monats-Wachstumsfokus
+
+- Einen starken Anwendungsfall validieren, bevor eine Erweiterung erfolgt.
+- Ziel: erste 100–300 aktive Nutzer; danach Retention und Preisgestaltung optimieren.
+
+---
+
+## 9. Wettbewerbsanalyse
+
+### Wettbewerbertypen
+
+- Große horizontale KI-Tools (breite Funktionalität, hohe Bekanntheit).
+- Creator-spezifische Schreib- und Ideenwerkzeuge.
+- Social-Media-Scheduling- und Automatisierungstools.
+
+### Geplante Differenzierung von MaraAI
+
+- **Integrierter Creator-Workflow** statt mehrerer unverbundener Tools.
+- **Einfachheit und praxisnahe Ergebnisse** als zentrales Nutzererlebnis.
+- **DACH-Vertrauenspositionierung:** Sprachliche und kulturelle Anpassung sowie DSGVO-bewusster Betrieb.
+- **Local-First-Datenschutzarchitektur** als Alleinstellungsmerkmal im Vergleich zu Cloud-only-Wettbewerbern.
+
+### Wettbewerbsrisiko
+
+Große Anbieter können Funktionen kopieren. MaraAI muss sich daher differenzieren durch:
+- Nischenfokus und schnelle Reaktion auf Creator-Workflows,
+- Kundennähe und direkte Kommunikation,
+- Datenschutz-Positionierung als nachhaltiger Vertrauensvorteil.
+
+---
+
+## 10. Operativer Plan
+
+### Phase 1 (Monate 0–3): Validierung & Infrastrukturaufbau
+
+- Formalisierung der Unternehmensstruktur (Rechtsform, Steuerberatung, DSGVO-Basis).
+- Kundeninterviews mit 30–50 Zielpersonen.
+- Markenidentität, Landing Page, Warteliste und Pilotnetzwerk aufbauen.
+- Beschaffung und Einrichtung eines dedizierten KI-Arbeitsplatzrechners / Servers für lokale Inferenz.
+- Initiales Benchmarking ausgewählter Open-Source-Modelle (Qualität, Geschwindigkeit, Kosteneffizienz).
+
+### Phase 2 (Monate 3–6): MVP-Pilot mit hybrider Verfügbarkeit
+
+- MVP-Pilotbetrieb primär auf dem lokalen KI-Kern.
+- Fallback-API ausschließlich für Kontinuität bei Kapazitätsengpässen konfiguriert.
+- Frühe KPI-Erfassung:
+  - Inferenzstabilität,
+  - Antwortkonsistenz,
+  - Kosten pro aktivem Nutzer,
+  - Häufigkeit des Fallback-Einsatzes.
+
+### Phase 3 (Monate 6–12): Kontrollierte Kommerzialisierung
+
+- Einführung bezahlter Tarife mit strikter Kostenkontrolle.
+- Onboarding und Kundensupport optimieren.
+- Monatliches operatives Review: Conversion, Retention, KI-Betriebskostentrend und Fallback-Abhängigkeitsquote.
+
+### Betriebsgrundsatz
+
+- Kein Rechenzentrumsausbau.
+- Keine umfangreiche Personalexpansion im ersten Jahr.
+- Infrastruktur bleibt bewusst lean: **ein leistungsstarker lokaler KI-Knoten für MVP und frühe Skalierungsphase**.
+
+### Team (initial)
+
+- Gründergeführter Betrieb (Strategie, Kundenentwicklung, Partnerschaften).
+- Freiberufliche Unterstützung für Design, Content, Recht und Buchhaltung nach Bedarf.
+
+---
+
+## 11. Finanzplan
+
+### Mittelverwendung (Gesamtbudget: 20.000 €)
+
+| Position | Betrag |
+|---|---|
+| KI-Hardware (lokaler Inferenzserver / GPU-Workstation) | 10.000 € |
+| MVP / externe Produktdienstleistungen & Integrationsunterstützung | 3.000 € |
+| Recht, Steuer, Compliance, Verwaltung (Deutschland) | 2.500 € |
+| Marketing und Kundenakquisitionstests | 2.500 € |
+| Betrieb, Tools und Abonnements (nicht-KI-Infrastruktur) | 1.200 € |
+| Liquiditätspuffer / Contingency-Reserve | 800 € |
+| **Gesamtsumme** | **20.000 €** |
+
+### 12-Monats-Umsatzprognose (konservativ)
+
+| Zeitraum | Monatlicher Umsatz (Schätzung) |
+|---|---|
+| Monate 1–3 (Validierungsphase) | 0 – 300 € |
+| Monate 4–6 (Pilotphase) | 300 – 1.000 € |
+| Monate 7–12 (Frühkommerzialisierung) | 1.000 – 3.000 € |
+
+> Kein Break-even im ersten Jahr erwartet. Ziel dieser Finanzierungsrunde: **nachgewiesene Nachfrage und erste wiederholbare Umsätze**, die Folgefinanzierung oder organisches Wachstum ermöglichen.
+
+### Finanzielle Begründung für Hardware-Erstinvestition (10.000 €)
+
+Die Investition in einen lokalen KI-Inferenzknoten ist als strategische Kostenkontrollmaßnahme begründet:
+
+- **Reduzierung langfristiger variabler Kosten:** Lokale Inferenz senkt wiederkehrende API-Kosten je Anfrage erheblich, sobald eine Basisnutzung erreicht ist.
+- **Planungssicherheit:** Reduziert das Exposure gegenüber externen API-Preisänderungen, Kontingentlimits oder Richtlinienänderungen.
+- **Betriebliche Resilienz:** Hybrides Setup (Local-First + Cloud-Fallback) gewährleistet Servicekontinuität bei Lastspitzen oder temporären Ausfällen.
+- **Datenschutz und Vertrauensvorteil (Deutschland-relevant):** Lokale Verarbeitung stärkt die datenschutzkonforme Marktpositionierung für frühe Adopter.
+
+Der Hardware-Einsatz wird als **Einzel-Knoten-Grundlagenwert** behandelt – keine Überkapazitätsplanung, sondern zweckgebundene Infrastruktur für MVP-Ausführung und frühe Nutzergewinnung.
+
+### Kostendisziplin
+
+- Gründervergütung in der ersten Phase minimal / begrenzt.
+- Keine größeren Festanstellungen vor einem nachweisbaren Produkt-Markt-Signal.
+- Marketingausgaben werden schrittweise auf Basis von Conversion-Daten freigegeben.
+
+---
+
+## 12. Risikoanalyse
+
+### Hauptrisiken
+
+| Risiko | Beschreibung | Minderungsmaßnahme |
 |---|---|---|
-| General chat (Mara persona) | `llama3.1:8b` | Default. Good balance of quality/latency. |
-| Faster on modest hardware | `llama3.2:3b` | Lower quality but ~2× faster. |
-| Best open-weights quality | `qwen2.5:14b` | Needs ≥16 GB RAM / decent GPU. |
-| Code-heavy generation | `qwen2.5-coder:7b` | Specialised for code. |
+| **Produkt-Markt-Fit-Risiko** | Nachfrage konvertiert möglicherweise nicht in zahlende Nutzer. | Enger Fokus auf einen Kernanwendungsfall; frühe Zahlungsbereitschaftstests. |
+| **Wettbewerbsrisiko** | Starke globale Wettbewerber mit größeren Budgets. | Nischenfokus, Kundennähe und DACH-spezifische Positionierung. |
+| **Monetarisierungsrisiko** | Nutzer widersetzen sich möglicherweise der Konvertierung von kostenlosen Alternativen. | Lean-Kostenstruktur; frühzeitige Bezahlttests, nicht nur Nutzungstests. |
+| **Ausführungsrisiko** | Begrenzte Ressourcen können die Iterationsgeschwindigkeit verlangsamen. | Striktes Scope-Management; monatliche KPI-Überprüfung und schnelle Plananpassung. |
+| **Regulierungs- / Vertrauensrisiko** | Hohe Datenschutzerwartungen in Deutschland. | DSGVO-konforme Prozesse von Beginn an; transparente Datenkommunikation. |
 
-### Live health probe
+### Infrastrukturspezifische Risiken
 
-```bash
-curl https://hellomara.net/api/ai/health
-# { "provider": "ollama", "configured": true, "ok": true, "model": "llama3.1:8b",
-#   "fallback": { "provider": "anthropic", "configured": true, "ok": true, "model": "claude-sonnet-4-6" } }
-```
+| Risiko | Minderungsmaßnahme |
+|---|---|
+| **Lokaler Knoten bei Lastspitzen unterdimensioniert** | Fallback-API ausschließlich für Überlast / Kontinuität verfügbar. |
+| **Hardware-Konzentrationsrisiko (Single-Node-Abhängigkeit)** | Backup-/Recovery-Verfahren, geplante Wartungsfenster und Reservebudget für kritische Reparaturen. |
+| **Modell-Performanzvariabilität je Anwendungsfall** | Stufenweises Modell-Benchmarking und enger MVP-Anwendungsfallperimeter. |
 
-`provider` reports the one currently being used (Ollama if reachable, otherwise Anthropic). When neither is configured, the endpoint returns 503.
+---
 
-### Tuning
+## 13. Finanzierungsbegründung
 
-- For shorter/snappier Anthropic answers lower `ANTHROPIC_MAX_TOKENS` (e.g. `512`); for long-form replies raise it to `2048`+.
-- Temperature is set per call in code (0.95 for chat, 0.7 for structured generation) and is propagated to whichever provider serves the call.
+### Warum werden 20.000 € benötigt?
 
-## Configuration Map
+Das beantragte **Kapital von 20.000 €** dient als **Seed-Level-Validierungskapital**, nicht als Expansionsfinanzierung.
 
-Canonical app configuration (used by root `npm` scripts):
+Die Mittel werden für zwei gleichwertige Gründungsbedarfe eingesetzt:
 
-- Scripts/dependencies: `package.json` (root)
-- Runtime/env entry point: `server/index.ts` (loads `.env` via `dotenv`)
-- Drizzle ORM schema: `shared/schema.ts`; migrations: `migrations/`
-- Root Vite config: `vite.config.js` (currently only used by the root `dev` flow)
-- Frontend bundler (React app): `frontend/vite.config.ts`
-- Frontend TypeScript: `frontend/tsconfig.json`, `frontend/tsconfig.app.json`, `frontend/tsconfig.node.json`
-- Frontend Tailwind/PostCSS: `frontend/tailwind.config.js`, `frontend/postcss.config.cjs`
-- Frontend linting: `frontend/eslint.config.js` (plus `.eslintrc.js` / `.prettierrc.js` / `.stylelintrc.js` at root for editor integration)
-- Container builds: `Dockerfile.nodejs` (app)
-- Railway deployment: `railway.json`
+**1. Kommerzielle Validierung:**
+- Rechtskonformer Unternehmensaufbau in Deutschland,
+- Finanzierung der initialen Produkt- und Marktvalidierung,
+- Gewinnung erster zahlender Nutzer durch kontrollierte Marketing-Tests.
 
-Notes:
+**2. Aufbau grundlegender KI-Infrastruktur-Unabhängigkeit:**
+- Einmaliger Erwerb eines lokalen Inferenzknotens als betriebliche Grundlage,
+- Reduzierung der dauerhaften Abhängigkeit von externen API-Kosten,
+- Schaffung eines stabilen, skalierbaren technischen Fundaments für die Frühphase.
 
-- Root `npm run dev` / `npm run start` runs `tsx server/index.ts`.
-- Root `npm run build` runs `npm run build:frontend`, which installs and builds `frontend/` via its own Vite config.
-- `backend/src/modules/*` is imported by the root server (`server/routes.ts`) and is part of the active runtime.
-- `frontend/package.json` defines a standalone subproject workflow for the React app.
+### Bankbewertungsrelevanz
 
-## Build for Production
+Aus Bankperspektive demonstriert der überarbeitete Plan:
+- **Umsichtige Vorabinvestition** in Infrastruktur mit klarer Kostenlogik,
+- **Kontrolliertes Betriebsmodell** ohne unternehmensgroße Overheadstrukturen,
+- **Reduzierte Abhängigkeit** von volatilen Drittanbieter-API-Kostenstrukturen,
+- **Realistische Wachstumspfade** zu frühen wiederkehrenden Umsätzen.
 
-```bash
-npm run build   # builds the frontend (outputs to dist/public/)
-npm start       # starts the backend serving the built frontend
-```
+Für eine Bank handelt es sich um eine **meilensteinbasierte Kapitalverwendung mit messbarem Risikorahmen** – keine Wachstumsfinanzierung, sondern gezielte Validierungskapital mit definierten Ausgabenkategorien.
 
-## Deploy to Render (free tier)
+---
 
-1. Fork or connect this repo on [Render](https://render.com).
-2. Render auto-detects `render.yaml` and creates a **Web Service** with a **persistent disk**.
-3. Set `ANTHROPIC_API_KEY` in the Render dashboard under **Environment**.
-4. Deploy — `SESSION_SECRET` is auto-generated by Render.
+## 14. Fazit
 
-**Render build command:** `npm ci && npm run build`  
-**Render start command:** `npm start`
+MaraAI ist ein glaubwürdiges Frühphasen-Konzept in einem wachsenden Markt mit praktischem Fokus auf Creator-Produktivität und KI-gestützte Workflows.
 
-> SQLite data is stored on a persistent 1 GB disk mounted at `/var/data/maraai.sqlite`.
+Der Businessplan vermeidet bewusst aggressive Projektionen und priorisiert stattdessen:
+- disziplinierte Ausführung,
+- schlanken Betrieb,
+- frühe Umsatzvalidierung,
+- und transparente Finanzkontrolle.
 
-## Deploy to Railway
+Mit **20.000 € Startfinanzierung** kann MaraAI vom Konzept zum validierten Markteintritt in Deutschland übergehen und die operativen Nachweise aufbauen, die für eine langfristige Tragfähigkeit erforderlich sind. Der Local-First-KI-Ansatz bietet dabei einen strukturellen Kostenvorteil, der mit wachsender Nutzerzahl zunehmend wirksam wird.
 
-1. Push this repo to GitHub.
-2. In Railway, create a new project → **Deploy from GitHub repo**.
-3. Railway will detect [railway.json](railway.json) and use `Dockerfile.nodejs`.
-4. Add a **Volume** and mount it to `/data` so the SQLite file persists across deploys.
-5. Set environment variables:
+---
 
-| Variable | Value | Notes |
-|---|---|---|
-| `NODE_ENV` | `production` | |
-| `PORT` | `5000` | Railway also injects `PORT` automatically |
-| `AUTH_MODE` | `local` | |
-| `SESSION_SECRET` | *(random secret)* | Use Railway's "Generate" button |
-| `DATABASE_URL` | `sqlite:////data/maraai.sqlite` | Requires the Volume above. **Four** slashes encode an absolute path (`/data/...`); three slashes would be interpreted as relative to `CWD` and would not persist across redeploys. |
-| `ANTHROPIC_API_KEY` | *(your key)* | Get one from https://console.anthropic.com/settings/keys |
-| `ANTHROPIC_MODEL` | `claude-sonnet-4-6` | Optional — defaults to this model |
-| `PROCESS_AI_TASKS` | `false` | Set `true` to enable autonomous brain cycle |
+---
 
-### Verify after deploy
+## Anlage: Variante 2 – Kurzfassung zur Kreditanfrage
 
-```bash
-# App health
-curl https://<your-railway-domain>/api/health
-# Expected: {"status":"ok"}
+**Anlage zur Kreditanfrage – MaraAI**  
+Für: Sparkasse / KfW-Erstgespräch  
+Stand: Juni 2026
 
-# AI provider health (Anthropic key presence + model)
-curl https://<your-railway-domain>/api/ai/health
-# Expected: {"provider":"anthropic","configured":true,"ok":true,"model":"claude-sonnet-4-6"}
-```
+---
 
-## Talking to Mara from the terminal
+### Unternehmen
 
-`scripts/mara-cli.mjs` is a small CLI that talks to the live
-`/api/maraai/ai` chat endpoint from a shell — useful for admin-mode
-conversations or quick smoke checks without opening a browser.
+**MaraAI** ist ein frühphasiges Startup-Konzept mit Sitz in Deutschland. Das Vorhaben zielt auf die Entwicklung einer KI-gestützten Produktivitätsplattform für Content-Creator, Freiberufler und kleine Digitalunternehmen.
 
-```bash
-# Interactive REPL against production
-MARA_EMAIL=you@example.com MARA_PASSWORD=... npm run mara
+---
 
-# One-shot prompt
-npm run mara -- "ce drop-off vezi pe Trading?"
+### Kurzbeschreibung
 
-# Different host / module
-MARA_BASE_URL=http://localhost:3001 npm run mara -- --module=trading "salut"
-```
+MaraAI bietet ein modulares Toolset bestehend aus KI-Chat-Companion, Schreibwerkzeugen, Creator-Automatisierungshilfen und einem Interaktionslayer – als abonnementbasiertes SaaS-Produkt (monatlich / jährlich).
 
-After the first successful login the cookie is cached at
-`~/.config/mara/session.json` so subsequent runs don't need credentials.
-Slash commands inside the REPL: `/help`, `/quit`, `/clear`, `/history`,
-`/runtime`, `/health`, `/whoami`, `/module <name>`.
+Der technische Betrieb basiert auf einem **hybriden KI-Architekturmodell**:
+- **Primär:** lokal betriebener KI-Kern (Ollama, Open-Source-Modelle: Llama 3.1 / Mistral / Qwen)
+- **Fallback:** externer Cloud-API-Dienst ausschließlich bei Überlast oder Nichtverfügbarkeit
 
-Admin mode is detected server-side from `ADMIN_EMAILS` /
-`ADMIN_USER_IDS`. When the logged-in user matches, Mara switches to the
-direct/strategic persona automatically — no CLI flag needed.
+---
 
-## Smoke Tests
+### Finanzierungsanfrage
 
-```bash
-# Start the backend first, then:
-MARAAI_BASE_URL=http://localhost:5000 npm run smoke:runtime
-```
+**Gesamtbetrag:** 20.000 €  
+**Art der Finanzierung:** Seed-Kapital zur Validierung und Infrastrukturaufbau  
+**Zielmarkt:** Deutschland (Phase 1), DACH (Phase 2)
 
-Or run the full CI check:
+---
 
-```bash
-npm run build
-npm run start:backend &
-sleep 10
-npm run smoke:runtime
-```
+### Budgetübersicht
 
-## CI
+| Position | Betrag |
+|---|---|
+| KI-Hardware (lokaler Inferenzserver / GPU-Workstation) | 10.000 € |
+| MVP / externe Produktdienstleistungen | 3.000 € |
+| Recht, Steuer, Compliance, Verwaltung | 2.500 € |
+| Marketing und Kundenakquisitionstests | 2.500 € |
+| Betrieb, Tools und Abonnements | 1.200 € |
+| Liquiditätspuffer / Reserve | 800 € |
+| **Gesamt** | **20.000 €** |
 
-GitHub Actions (`.github/workflows/ci.yml`) runs on every push and PR:
-1. Install dependencies
-2. Build frontend
-3. Start backend
-4. Run smoke tests against `/api/health`, `/api/videos`, `/api/mara-feed`, etc.
+---
+
+### Erwarteter Nutzen der Finanzierung
+
+- Valider Markteintritt und erste zahlende Nutzer innerhalb von 6–12 Monaten.
+- Aufbau einer kosteneffizienten, unabhängigen KI-Infrastruktur (Local-First-Betrieb).
+- Rechtlich und steuerlich konformer Unternehmensstart in Deutschland.
+- Schaffung der Grundlage für Folgefinanzierung oder organisches Wachstum.
+
+---
+
+### Konservative Umsatzerwartung (12 Monate)
+
+| Zeitraum | Monatsumsatz (Schätzung) |
+|---|---|
+| Monate 1–3 | 0 – 300 € |
+| Monate 4–6 | 300 – 1.000 € |
+| Monate 7–12 | 1.000 – 3.000 € |
+
+> Break-even im ersten Jahr nicht erwartet. Ziel: Validierung der Zahlungsbereitschaft und wiederholbarer Frühvertrieb als Basis für Phase 2.
+
+---
+
+*Ende der Anlage Variante 2*
+
+---
+
+*Ende des Businessplans MaraAI*
