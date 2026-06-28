@@ -4,9 +4,13 @@ Use this checklist to validate that the platform is functional for real-user web
 
 ## Test Environment
 
-- Frontend URL: `https://humble-carnival-v6x6pxj6rwv73pvrq-5173.app.github.dev`
-- Backend health: `https://humble-carnival-v6x6pxj6rwv73pvrq-5000.app.github.dev/api/health`
-- Runtime info: `https://humble-carnival-v6x6pxj6rwv73pvrq-5000.app.github.dev/api/runtime`
+Replace `<base>` with your environment's origin (local dev or the deployed
+Railway domain). In local dev the frontend runs on `http://localhost:5173`
+and the backend on `http://localhost:5000` (or the next free port).
+
+- Frontend URL: `<base>` (e.g. `http://localhost:5173`)
+- Backend health: `<base>/api/health`
+- Runtime info: `<base>/api/runtime`
 
 ## Pre-Check
 
@@ -47,7 +51,10 @@ Expected:
 - Chat history persists per account.
 
 Note:
-- If `AI_INTEGRATIONS_OPENAI_API_KEY` is not set, chat may return a graceful fallback response instead of full AI output.
+- AI is served by Ollama (primary) with Anthropic Claude as fallback. If
+  neither `OLLAMA_BASE_URL` (with a reachable Ollama) nor `ANTHROPIC_API_KEY`
+  is configured, chat returns a graceful localised fallback message instead
+  of full AI output (not an HTTP error).
 
 ## Creator Flow
 
@@ -104,7 +111,7 @@ Expected HTTP status in normal conditions:
 
 - `GET /api/health` -> `200`
 - `GET /api/runtime` -> `200`
-- `GET /api/auth/user` -> `200` when logged in, `401` when logged out
+- `GET /api/auth/me` -> `200` when logged in, `401` when logged out
 - `GET /api/videos` -> `200`
 - `GET /api/mara-feed` -> `200`
 - `POST /api/chat` -> `200` when logged in

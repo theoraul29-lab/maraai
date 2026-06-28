@@ -1865,8 +1865,10 @@ ${JSON.stringify({
   // Must be registered AFTER all real /api/* routes but BEFORE the SPA
   // catch-all (which is added by serveStatic in server/index.ts). The
   // route handler for "/" only fires before the launch date — once we
-  // pass 2026-06-01T00:00:00Z it calls next() and the SPA index.html
-  // is served as it is today.
+  // pass the launch date it calls next() and the SPA index.html is served
+  // as it is today. The launch date is defined in one place,
+  // server/modules/launch-countdown.ts (LAUNCH_DATE, default
+  // 2026-05-28T00:00:00Z, overridable via LAUNCH_DATE_ISO).
   registerLaunchCountdown(app, requireAdmin);
 
   return httpServer;

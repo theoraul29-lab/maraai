@@ -1,517 +1,193 @@
-# 🏗️ MaraAI Platform Architecture
+# MaraAI Platform Architecture
+
+> This document describes the architecture **as it actually exists in the
+> repository**. It is intentionally factual — if you change the system,
+> update this file in the same PR.
 
 ## System Overview
 
-MaraAI is a modern AI platform with 6 specialized modules deployed on Railway with a Node.js backend.
+MaraAI is a **single-service** full-stack application:
+
+- One **Node.js / Express** process (`server/`) that serves both the JSON API
+  (`/api/**`) and the compiled **React SPA** (static files from `dist/public`).
+- **SQLite** (via `better-sqlite3` + **Drizzle ORM**) as the database.
+- AI provided through a **provider router** that prefers a self-hosted
+  **Ollama** model and falls back to **Anthropic Claude**.
+- Deployed as a **single Docker container on Railway** (`Dockerfile.nodejs`,
+  `railway.json`), with the SQLite file living on a mounted volume at `/data`.
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                     maraai.net (Railway)                        │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                   │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │              Frontend (React + TypeScript)               │   │
-│  │  ┌────────────┐ ┌────────────┐ ┌────────────┐           │   │
-│  │  │   Reels    │ │  Trading   │ │    VIP     │  ...      │   │
-│  │  │  Module    │ │  Module    │ │   Module   │           │   │
-│  │  └────────────┘ └────────────┘ └────────────┘           │   │
-│  │                                                            │   │
-│  │  - 6 Animated Cards (flip bottom-to-top)               │   │
-│  │  - Module-specific color themes                        │   │
-│  │  - Real-time Chat Interface                            │   │
-│  │  - Responsive Design (480px+)                          │   │
-│  │  - Vite + Tailwind CSS                                │   │
-│  └──────────────────────────────────────────────────────────┘   │
-│                              ↓                                    │
-│                   /api/** → Cloud Functions                      │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────────┐
-│           Cloud Functions (Express.js, europe-west1)            │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                   │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │            Express Server (functions/src/index.ts)      │   │
-│  ├─────────────────────────────────────────────────────────┤   │
-│  │                                                           │   │
-│  │  Routes:                   Handlers:                    │   │
-│  │  ├── /api/chat             ├── ChatModule              │   │
-│  │  ├── /api/trading/signals  ├── TradingModule           │   │
-│  │  ├── /api/reels            ├── ReelsModule             │   │
-│  │  ├── /api/creator/*        ├── CreatorModule           │   │
-│  │  ├── /api/writers/*        ├── WritersModule           │   │
-│  │  ├── /api/user/vip-status  └── PaymentModule           │   │
-│  │  └── /api/health                                        │   │
-│  │                                                           │   │
-│  │  Rate Limiting:     WebSocket:                           │   │
-│  │  - 10 msgs/min      - Real-time chat                    │   │
-│  │  - Per user         - P2P signaling                     │   │
-│  │                     - Connection pooling               │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│                                                                   │
-└─────────────────────────────────────────────────────────────────┘
-        ↓              ↓              ↓              ↓
-┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
-│ Anthropic API│ │   SQLite     │ │   Local      │ │    JWT       │
-│  (AI/Chat)   │ │ (Database)   │ │  (Files)     │ │   Auth       │
-└──────────────┘ └──────────────┘ └──────────────┘ └──────────────┘
-        ↓
-┌──────────────────────────────────┐
-│     Mara AI Brain System          │
-│  (server/mara-brain.ts)           │
-├──────────────────────────────────┤
-│ ├── Memory System                │
-│ │   ├── User Interactions        │
-│ │   ├── Chat History             │
-│ │   └── User Preferences         │
-│ │                                 │
-│ ├── Learning System              │
-│ │   ├── Topic Extraction         │
-│ │   ├── Sentiment Analysis       │
-│ │   └── Pattern Recognition      │
-│ │                                 │
-│ └── Personality System            │
-│     ├── Mood Detection            │
-│     ├── Response Styling          │
-│     └── Context Awareness         │
-└──────────────────────────────────┘
+                         Browser (React SPA + WebSocket)
+                                      │
+                                      ▼
+              ┌───────────────────────────────────────────────┐
+              │   Railway service (Docker, Node 20)            │
+              │   node dist/server/index.js                    │
+              │                                                │
+              │   Express app:                                 │
+              │     • /api/**            → API route handlers  │
+              │     • everything else    → SPA (dist/public)   │
+              │     • WebSocketServer    → chat + P2P signaling │
+              └───────────────────────────────────────────────┘
+                  │                 │                  │
+                  ▼                 ▼                  ▼
+          ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐
+          │  SQLite      │  │ Provider     │  │ Sessions store   │
+          │ /data/*.sqlite│  │ router:      │  │ connect-sqlite3  │
+          │ Drizzle ORM  │  │ Ollama →     │  │ (express-session)│
+          │ + migrations │  │ Anthropic    │  │                  │
+          └──────────────┘  └──────────────┘  └──────────────────┘
 ```
+
+There is **no** Firebase/Firestore, **no** JWT, **no** Python service, and
+**no** separate `functions/` deployment. (Earlier revisions of this document
+described such a stack; it was never the shipped architecture.)
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
-MaraAI/
+maraai/
+├── frontend/                     # React + TypeScript SPA (Vite)
+│   ├── src/                      # pages/, components/, contexts, hooks
+│   ├── tailwind.config.js
+│   ├── postcss.config.js
+│   └── vite.config.ts            # builds to ../dist/public
 │
-├── frontend/                          # React + TypeScript (Vite)
-│   ├── src/
-│   │   ├── HomePage.tsx              # 6 Module Cards + Navigation
-│   │   ├── HomePage.css              # Flip Animations
-│   │   ├── modules.css               # Module-Specific Styles
-│   │   ├── components/
-│   │   │   ├── ChatModule.tsx
-│   │   │   ├── TradingModule.tsx
-│   │   │   ├── ReelsModule.tsx
-│   │   │   ├── CreatorModule.tsx
-│   │   │   ├── WritersModule.tsx
-│   │   │   └── YouModule.tsx
-│   │   ├── hooks/                    # React Custom Hooks
-│   │   ├── styles/                   # Tailwind Config
-│   │   └── utils/                    # Helper Functions
-│   ├── dist/                         # [AUTO] Built Files
-│   ├── package.json                  # npm Dependencies
-│   └── vite.config.js                # Build Configuration
+├── server/                       # Express backend (TypeScript, ESM)
+│   ├── index.ts                  # app bootstrap, migrations, WS, listen
+│   ├── routes.ts                 # route registration + admin dashboard
+│   ├── db.ts                     # SQLite handle + Drizzle + bootstrap DDL
+│   ├── auth.ts                   # express-session + connect-sqlite3, bcrypt
+│   ├── ai.ts / llm.ts            # thin wrappers over lib/provider-router
+│   ├── static.ts                 # serves dist/public in production
+│   ├── vite.ts                   # dev-only Vite middleware
+│   ├── lib/                      # provider-router, email, sanitize, observability…
+│   ├── modules/                  # feature handlers (see below)
+│   ├── mara-core/                # executive / objective / cognitive-state
+│   ├── mara-brain/               # autonomous agent + agents/
+│   ├── missions/                 # gamified missions + program engine
+│   ├── billing/ notifications/ push/ security/ services/ middleware/
+│   └── ...
 │
-├── server/                           # Node.js Express Backend
-│   ├── index.ts                      # Main Server
-│   ├── routes.ts                     # Route Registration
-│   ├── ai.ts                         # Anthropic Claude API Client
-│   ├── auth.ts                       # JWT Authentication
-│   ├── mara-brain.ts                 # Memory + Learning System
-│   ├── storage.ts                    # Persistence Layer
-│   └── modules/                      # Business Logic
-│       ├── chat.ts
-│       ├── trading.ts
-│       ├── reels.ts
-│       ├── creator.ts
-│       ├── writers.ts
-│       └── payments.ts
-│
-├── DEPLOYMENT.md                     # Deploy Guide (Railway)
-├── .env.example                      # Environment Template
-│
-└── [Other Config Files]
-    ├── package.json                  # Root Dependencies
-    ├── tsconfig.json                 # TypeScript Config
-    ├── vite.config.js                # Vite Config
-    ├── railway.json                  # Railway Config
-    ├── Dockerfile.nodejs             # Container
-    └── requirements.txt              # Python Dependencies
+├── shared/                       # Drizzle schema + Zod types (server+frontend)
+├── migrations/                   # Drizzle SQL migrations (source of truth)
+├── scripts/                      # build-server.mjs, smoke tests, CLIs
+├── dist/                         # [build output] dist/server, dist/public, dist/shared
+├── Dockerfile.nodejs             # multi-stage build (builder → runtime)
+├── railway.json                  # builder=DOCKERFILE, startCommand=npm run start
+└── .env.example                  # environment template
 ```
+
+### `server/modules/`
+Each file owns a feature's HTTP handlers, e.g. `chat.ts`, `reels.ts`,
+`video.ts`, `writers.ts`, `creators.ts`, `payments.ts`, `orders.ts`,
+`profile.ts`, `search.ts`, `tts.ts`, `stt.ts`, `notifications.ts`, `push.ts`,
+`oauth-google.ts`, `oauth-facebook.ts`, `admin.ts`, `launch-countdown.ts`.
 
 ---
 
-## 🎯 Core Features
+## Authentication & Sessions
 
-### **1. Homepage with 6 Modules**
-
-Each module is a card that:
-- Animates on page load (flip from bottom)
-- Has unique color theme (gradient)
-- Links to dedicated module page
-- Shows module statistics/preview
-- Responsive on all devices
-
-**Modules:**
-1. **Reels** - Video streaming content
-2. **Trading** - Crypto signals & analysis
-3. **VIP** - Premium membership features
-4. **Creator** - Content creation tools
-5. **Writers** - Community writing platform
-6. **You** - Personal profile & settings
-
-### **2. Real-Time Chat with Mara AI**
-
-Features:
-- WebSocket connection for instant messages
-- Anthropic Claude API (claude-sonnet-4-6) for intelligent responses
-- Mood detection (happy, analytical, sarcastic, etc.)
-- Chat history persistence
-- Typing indicators
-- Message timestamp
-- User authentication
-
-### **3. Mara AI Brain System**
-
-Components:
-- **Memory:** Stores all user interactions
-- **Learning:** Extracts topics, sentiment, patterns
-- **Preferences:** User language, style, interests
-- **Context Awareness:** Previous conversations inform responses
-- **Auto-save:** Every 30 seconds to Firestore
-
-Features:
-```javascript
-MaraBrainMemory class:
-├── loadMemory()           // Load chat history + preferences
-├── recordInteraction()    // Save user-AI exchange
-├── buildContextPrompt()   // Create context string for AI
-├── updatePreferences()    // Store user settings
-├── buildLearningData()    // Extract topics + frequency
-└── saveToStorage()        // Persist to Firestore
-```
-
-### **4. Module-Specific Functionality**
-
-Each module has:
-- Dedicated page component
-- Unique styling (colors, layout)
-- API endpoints for data
-- User interaction tracking
-- Analytics integration
-
-Example:
-```javascript
-// Trading Module
-GET /api/trading/signals          // Get market signals
-POST /api/trading/analysis        // Request analysis
-GET /api/trading/portfolio        // User portfolio
-
-// Writers Module
-GET /api/writers/library          // List stories
-POST /api/writers/publish         // Publish story
-GET /api/writers/{id}/comments    // Get comments
-```
+- **Session-based**, not token-based. `express-session` stores sessions in
+  SQLite via `connect-sqlite3`; the browser holds an opaque session cookie.
+- Passwords hashed with **bcrypt**. OAuth via Google and Facebook
+  (`server/modules/oauth-*.ts`).
+- **CSRF**: clients fetch a token from `/api/auth/csrf`; mutating requests must
+  echo it. (PayPal flows rely on the global CSRF wrapper — see Faza 0.)
+- `AUTH_MODE=local` enables a local login path used by dev and the CI smokes.
+- Admin endpoints are gated by `requireAdmin`.
 
 ---
 
-## 🔐 Security Architecture
+## Data Layer
 
-### **Authentication Layers**
-
-1. **JWT Auth**
-   - Email/password login with bcrypt
-   - JWT token generation & validation (HMAC-SHA256)
-   - User context injection via middleware
-   - Session management
-
-3. **Admin Authorization**
-   - Role-based access control
-   - Admin-only endpoints
-   - Audit logging
-
-### **Data Protection**
-
-1. **API Security**
-   - CORS configured (maraai.net only)
-   - Rate limiting (10 msgs/min per user)
-   - Input validation
-   - SQL injection prevention (Drizzle ORM)
-
-2. **Database Security**
-   - SQLite with Drizzle ORM parameterized queries
-   - Row-level authorization in route handlers
-   - Encryption in transit (HTTPS/TLS)
-
-3. **Environment Security**
-   - API keys in .env (not in repo)
-   - Secrets managed via Railway environment variables
-   - No hardcoded credentials
-   - Audit trails for admin actions
+- **SQLite** opened in `server/db.ts` with WAL, `busy_timeout=5000`,
+  `synchronous=NORMAL`.
+- Path resolution: `DATABASE_URL`/`DATABASE_PATH` if set, else `/data/maraai.sqlite`
+  when the `/data` volume exists (Railway), else `./maraai.sqlite` (local).
+- **Schema ownership (single home per table):**
+  1. **`migrations/*.sql`** (Drizzle) own the core relational tables that have
+     a typed model in `shared/schema.ts`.
+  2. The idempotent `CREATE TABLE IF NOT EXISTS` bootstrap in `server/db.ts`
+     owns the auxiliary runtime tables (Mara Brain, Missions, Programs, P2P,
+     referrals) that are not part of the Drizzle schema.
+  3. An additive **self-heal guard** in `server/index.ts` backfills columns on
+     production DBs whose migration journal was historically corrupted. It is
+     gated on `PRAGMA table_info()` and `IF NOT EXISTS`, so it never mutates a
+     healthy DB.
 
 ---
 
-## 🗄️ Database Schema
+## AI / Mara
 
-### **SQLite Tables**
-
-```
-users/
-├── {userId}
-│   ├── email: string
-│   ├── username: string
-│   ├── preferences: object
-│   │   ├── language: "ro" | "en"
-│   │   ├── theme: "light" | "dark"
-│   │   └── notifications: boolean
-│   ├── createdAt: timestamp
-│   └── isPremium: boolean
-
-chats/
-├── {chatId}
-│   ├── userId: string
-│   ├── messages: array
-│   │   ├── role: "user" | "assistant"
-│   │   ├── text: string
-│   │   ├── mood: string
-│   │   └── timestamp: number
-│   ├── createdAt: timestamp
-│   └── updatedAt: timestamp
-
-mara_brain/
-├── {userId}
-│   ├── chatHistory: array (limited to last 100)
-│   ├── learningData: object
-│   │   ├── topics: {[topic]: frequency}
-│   │   ├── sentiment: {"positive": %, "negative": %}
-│   │   └── preferences: object
-│   ├── lastUpdated: timestamp
-│   └── preferences: object
-
-posts/
-├── {postId}
-│   ├── userId: string
-│   ├── title: string
-│   ├── content: string
-│   ├── category: string
-│   ├── likes: number
-│   ├── comments: array
-│   ├── createdAt: timestamp
-│   └── updatedAt: timestamp
-
-videos/
-├── {videoId}
-│   ├── userId: string
-│   ├── title: string
-│   ├── url: string
-│   ├── thumbnail: string
-│   ├── duration: number
-│   ├── views: number
-│   ├── likes: number
-│   ├── createdAt: timestamp
-│   └── metadata: object
-```
+- `server/lib/provider-router.ts` routes LLM calls: **Ollama** (primary,
+  self-hosted, free) with **Anthropic Claude** as paid fallback.
+  Env: `OLLAMA_BASE_URL`, `OLLAMA_MODEL`, `OLLAMA_TIMEOUT_MS`, `ANTHROPIC_API_KEY`.
+- `server/mara-core/` holds the executive reasoning, objective function, and
+  cognitive-state model. `server/mara-brain/` runs the autonomous agent cycle
+  (proposes work for admin approval — it is a scheduler around the LLM, not a
+  vector-DB RAG system).
 
 ---
 
-## 🔌 API Endpoints
+## Realtime
 
-### **Chat Module**
-
-```
-POST /api/chat
-{
-  "message": "Hello Mara",
-  "history": [
-    { "role": "user", "text": "Hi" },
-    { "role": "assistant", "text": "Hello!" }
-  ]
-}
-→ {
-  "message": "Response from Mara",
-  "mood": "helpful",
-  "timestamp": 1234567890
-}
-```
-
-### **Trading Module**
-
-```
-GET /api/trading/signals
-→ {
-  "module": "trading",
-  "content": "BTC analysis...",
-  "timestamp": "2024-01-15T10:30:00Z"
-}
-```
-
-### **Reels Module**
-
-```
-GET /api/reels?limit=10
-→ [
-  {
-    "id": "reel_1",
-    "title": "Video title",
-    "url": "storage-url",
-    "views": 1000,
-    "createdAt": 1234567890
-  }
-]
-```
-
-### **User Module**
-
-```
-GET /api/user/profile
-→ {
-  "id": "user_1",
-  "email": "user@example.com",
-  "premium": true,
-  "preferences": {...}
-}
-
-GET /api/user/vip-status
-→ { "isPremium": true }
-```
-
-### **Health Check**
-
-```
-GET /api/health
-→ {
-  "status": "ok",
-  "timestamp": "2024-01-15T10:30:00Z",
-  "uptime": 3600
-}
-```
+A `WebSocketServer` (`ws`) attached to the HTTP server handles live chat and
+P2P (WebRTC) signaling for the hybrid video/compute features.
 
 ---
 
-## 🚀 Deployment Architecture
+## Build & Deploy
 
-### **Railway Deployment**
+- **Build** (`npm run build`): `build:frontend` (Vite → `dist/public`) then
+  `build:server` (esbuild compiles `server/` + `shared/` → `dist/`, preserving
+  the tree; non-bundle mode).
+- **Start** (`npm run start`): `node dist/server/index.js`. Production no longer
+  runs `tsx` at runtime (see Faza 2).
+- **Container**: `Dockerfile.nodejs` builder stage runs `npm ci` + `npm run
+  build`; runtime stage runs the compiled output. `railway.json` selects the
+  Dockerfile and sets `startCommand: npm run start`, `healthcheckPath:
+  /api/health`.
+- Migrations run at boot inside `server/index.ts` before the server listens.
 
-```
-Railway Project (maraai)
-├── Service: Node.js Express + Vite static
-│   ├── Build: Dockerfile.nodejs (multi-stage)
-│   ├── Port: Injected via $PORT
-│   ├── Health: /api/health
-│   └── Custom Domain: maraai.net
-│
-├── Database: SQLite (volume-mounted)
-│   ├── Location: /data/maraai.sqlite
-│   └── Persistence: Railway volume
-│
-├── Auth: JWT (HMAC-SHA256)
-│   ├── Token expiry: 24h
-│   └── Secret: JWT_SECRET env var
-│
-└── AI: Anthropic Claude
-    └── Key: ANTHROPIC_API_KEY env var
-```
-
----
-
-## 🔄 Development Workflow
-
-### **Local Development**
-
+### Local development
 ```bash
-# Start frontend dev server
-cd frontend && npm run dev
-
-# Start backend server
-npm run dev
+npm install            # root deps
+cd frontend && npm install && cd ..
+npm run dev            # tsx server/index.ts (Vite middleware in dev)
 ```
-
-### **Testing**
-
-```bash
-# Unit tests
-npm test
-```
-
-### **Build & Deploy**
-
-```bash
-# Build for production
-npm run build:frontend
-
-# Deploy to Railway (via GitHub push)
-git push origin main
-```
+See `LOCAL_SETUP.md` for environment variables.
 
 ---
 
-## 📊 Performance Targets
+## Observability
 
-### **Frontend Performance**
-
-- Page Load Time: <3 seconds
-- First Contentful Paint: <1.5 seconds
-- Largest Contentful Paint: <2.5 seconds
-- Cumulative Layout Shift: <0.1
-- Mobile Score: >90 (Lighthouse)
-
-### **Backend Performance**
-
-- API Response Time: <500ms (p95)
-- Chat Message Latency: <1 second
-- Database Query Time: <100ms
-- Cloud Function Cold Start: <5 seconds
-
-### **Scaling Metrics**
-
-- Concurrent Users: 1,000+
-- Requests/Second: 100+
-- Database Queries/Second: 500+
-- Bandwidth: Railway CDN
+- **Sentry** is wired in both backend (`server/lib/observability.ts`) and
+  frontend (`frontend/src/observability.ts`). It is **optional**: with no
+  `SENTRY_DSN` / `VITE_SENTRY_DSN` it is a no-op (see Faza 0).
+- Operational visibility otherwise comes from server logs (Railway dashboard)
+  and the admin dashboard (`/api/admin/dashboard`).
 
 ---
 
-## 📈 Monitoring & Analytics
+## Testing
 
-### **Railway Dashboard Metrics**
-
-- Service traffic and errors
-- CPU and memory usage
-- Response times
-
-### **Error Tracking**
-
-- Server logs (Railway dashboard)
-- Browser console errors
-- API error rates
-- Database transaction failures
-
-### **User Analytics**
-
-- Monthly active users
-- Module usage breakdown
-- Chat interaction frequency
-- Feature adoption rates
-- Churn metrics
+CI (`.github/workflows/ci.yml`) runs: `npm run typecheck`, `npm run build`, and
+a suite of **smoke tests** (`scripts/smoke-*.mjs`) against a freshly-booted
+server (runtime, credits, growth, auth, admin-chat, mara-cli, code-explorer,
+audit-p2). There is currently **no** unit/component/E2E layer and frontend lint
+is not yet enforced in CI — see the repair roadmap.
 
 ---
 
-## 🔐 Compliance & Privacy
+## Known Constraints
 
-### **Data Protection**
-
-- GDPR compliant (EU hosting)
-- Data encryption at rest and in transit
-- Regular security audits
-- Penetration testing quarterly
-- Privacy policy in place
-
-### **Compliance Certifications**
-
-- SOC 2 (via Railway infrastructure)
-- GDPR compliant
-
----
-
-## ✨ Next Steps
-
-1. **Deploy:** Push to GitHub → Railway auto-deploys
-2. **Test:** Verify homepage and chat endpoints
-3. **Monitor:** Watch Railway dashboard for logs
-4. **Optimize:** Fine-tune performance as needed
-5. **Scale:** Add more modules or features
-
----
-
-**🎉 MaraAI is architected for scale, security, and AI-driven personalization!**
+- Single SQLite instance ⇒ single-writer; suitable for the current scale, not
+  for high write concurrency.
+- `server/routes.ts` and `server/index.ts` are large and slated for
+  decomposition.
+- The migration journal has historical corruption that the boot-time self-heal
+  compensates for; consolidating all DDL into versioned migrations is a planned
+  follow-up that requires a production backup + restore test.
