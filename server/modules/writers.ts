@@ -19,11 +19,12 @@
  * purchase record itself is still written when the flag is flipped on, so
  * author/platform shares are accounted for from day one.
  *
+ * Author-submitted HTML is sanitised server-side before persistence via
+ * `sanitizeArticleHtml` (see lib/sanitize-content.ts), mirroring the client
+ * DOMPurify allowlist. The client pass remains for editor UX but is no longer
+ * the only line of defence — direct API calls are sanitised too.
+ *
  * Scope explicitly deferred:
- *   - No rich-text / markdown sanitisation (author-submitted HTML is NOT
- *     trusted; we store raw content and render on the client with the same
- *     nosniff + CSP posture we use for reels static files). Proper
- *     server-side sanitisation comes in the Writers UI PR.
  *   - No draft auto-save endpoint; drafts live in localStorage on the client
  *     until the author hits "publish".
  *   - No full-text search infrastructure; we fall back to LIKE queries.
@@ -38,6 +39,7 @@ import {
   type FeatureKey,
 } from '../billing/features.js';
 import { CREATOR_REVENUE_SHARE } from '../billing/plans.js';
+import { sanitizeArticleHtml } from '../lib/sanitize-content.js';
 
 let deps: {
   storage: IStorage;
@@ -251,7 +253,9 @@ export async function publishArticle(req: Request, res: Response) {
 
     const body = req.body ?? {};
     const title = String(body.title ?? '').trim();
-    const content = String(body.content ?? '').trim();
+    // Sanitise author HTML server-side — the client DOMPurify pass is not a
+    // trust boundary against direct API calls.
+    const content = sanitizeArticleHtml(String(body.content ?? '').trim());
     if (!title || !content) {
       return res.status(400).json({ error: 'title and content are required' });
     }
@@ -340,8 +344,9 @@ export async function updateArticle(req: Request, res: Response) {
 
     if (typeof body.title === 'string') patch.title = body.title.trim().slice(0, 200);
     if (typeof body.content === 'string') {
-      patch.content = body.content;
-      patch.readTimeMinutes = computeReadTimeMinutes(body.content);
+      const clean = sanitizeArticleHtml(body.content);
+      patch.content = clean;
+      patch.readTimeMinutes = computeReadTimeMinutes(clean);
     }
     if (typeof body.excerpt === 'string') patch.excerpt = body.excerpt.trim().slice(0, 500);
     if (typeof body.coverImage === 'string') patch.coverImage = body.coverImage.trim().slice(0, 2000);
