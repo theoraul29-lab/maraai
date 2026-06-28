@@ -4,10 +4,6 @@ import Database from 'better-sqlite3';
 import * as schema from '../shared/schema.js';
 import path from 'path';
 import fs from 'fs';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 // Resolve the SQLite file path from either DATABASE_URL (preferred, matches
 // .env.example and SQLAlchemy convention) or DATABASE_PATH (legacy).
@@ -44,7 +40,7 @@ function resolveDbPath(): string {
   } catch {
     // fall through to local default
   }
-  return path.resolve(__dirname, '..', 'maraai.sqlite');
+  return path.resolve(process.cwd(), 'maraai.sqlite');
 }
 
 const dbPath = resolveDbPath();

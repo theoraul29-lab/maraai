@@ -4,16 +4,16 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files (root + frontend lockfiles) for deterministic installs
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+# Install dependencies deterministically from the lockfile
+RUN npm ci
 
 # Copy source code
 COPY . .
 
-# Build frontend
+# Build frontend (npm ci) + compile the backend to dist/ with esbuild
 RUN npm run build
 
 # Stage 2: Runtime

@@ -34,14 +34,14 @@
 import { createHash } from 'node:crypto';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import { rawSqlite } from '../../db.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-// server/mara-brain/agents/code-explorer.ts → repo root
-export const REPO_ROOT = path.resolve(__dirname, '..', '..', '..');
+// Source tree root. Resolved from the working directory (repo root in dev,
+// /app in the container — the Dockerfile copies server/ + shared/ there)
+// rather than relative to this file, which lives in dist/server/... under
+// the compiled prod build.
+export const REPO_ROOT = process.cwd();
 
 const ALLOWED_ROOTS = ['server', 'frontend/src', 'shared', 'migrations', 'scripts'];
 const ROOT_FILE_ALLOWLIST = new Set([

@@ -19,7 +19,6 @@ import { z } from 'zod';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { db, rawSqlite } from './db.js';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import { UPLOADS_DIR } from './modules/reels.js';
 import { IMAGE_UPLOADS_DIR } from './modules/uploads.js';
 import { seedPlans } from './billing/seed.js';
@@ -71,11 +70,12 @@ process.on('uncaughtException', (err) => {
   process.exit(1);
 });
 
-const __migrationFilename = fileURLToPath(import.meta.url);
-const __migrationDirname = path.dirname(__migrationFilename);
-
 function runMigrations() {
-  const migrationsFolder = path.resolve(__migrationDirname, '..', 'migrations');
+  // Resolve from the working directory (repo root in dev, /app in the
+  // container) rather than relative to this file — under the compiled prod
+  // build this module lives in dist/server/, so a file-relative path would
+  // point at the wrong place.
+  const migrationsFolder = path.resolve(process.cwd(), 'migrations');
   try {
     migrate(db, { migrationsFolder });
     console.log('[migrations] Drizzle migrations applied successfully');
