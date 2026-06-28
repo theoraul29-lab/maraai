@@ -38,7 +38,7 @@ export async function maraFeed(_req: Request, res: Response) {
     // streaming once 50 rows are emitted.
     const rows = rawSqlite.prepare(`
       SELECT v.id, v.url, v.type, v.title, v.description, v.creator_id AS creatorId,
-             v.likes, v.views, v.shares, v.uploaded_at AS uploadedAt,
+             v.likes, v.views, v.shares, v.created_at AS uploadedAt,
              v.moderation_status AS moderationStatus, v.topic,
              u.display_name AS displayName, u.profile_image_url AS profileImageUrl
         FROM videos v

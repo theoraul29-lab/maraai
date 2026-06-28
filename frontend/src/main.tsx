@@ -8,6 +8,8 @@ import { langReady } from './i18n';
 // fires its first POST/PATCH. Production (`hellomara.net`) rejects every
 // state-changing request without an `X-CSRF-Token` header.
 import './csrf';
+// Side-effect: initialise Sentry error tracking when VITE_SENTRY_DSN is set.
+import './observability';
 import './pwa/InstallPromptBanner.css';
 import { BrowserRouter } from 'react-router-dom';
 import { InstallPromptBanner } from './pwa/InstallPromptBanner';

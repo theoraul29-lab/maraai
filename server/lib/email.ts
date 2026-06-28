@@ -3,6 +3,18 @@ import { Resend } from 'resend';
 const FROM = process.env.EMAIL_FROM ?? 'Mara <noreply@hellomara.net>';
 const BASE = (process.env.FRONTEND_URL ?? 'https://hellomara.net').replace(/\/$/, '');
 
+// User-controlled values (e.g. firstName) must never be interpolated raw into
+// email HTML or subject lines — an attacker could inject markup or break the
+// header. Escape the five HTML-significant characters.
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function makeResend(): Resend | null {
   const key = process.env.RESEND_API_KEY;
   if (!key) return null;
@@ -50,7 +62,10 @@ export async function sendWelcomeEmail(email: string, firstName?: string): Promi
     console.warn('[email] RESEND_API_KEY not set — skipping welcome email');
     return;
   }
-  const name = firstName ?? 'Prietene';
+  // Strip CR/LF (header-injection defence) for the subject and HTML-escape
+  // the body interpolation, since firstName is user-controlled.
+  const rawName = (firstName ?? 'Prietene').replace(/[\r\n]+/g, ' ').trim() || 'Prietene';
+  const name = escapeHtml(rawName);
   const html = `
     <div style="background:#020008;font-family:'Inter',sans-serif;padding:0;margin:0">
       <div style="max-width:560px;margin:0 auto;padding:40px 24px">
@@ -92,7 +107,7 @@ export async function sendWelcomeEmail(email: string, firstName?: string): Promi
   await resend.emails.send({
     from: FROM,
     to: email,
-    subject: `Bun venit la HelloMara, ${name}! 🌱`,
+    subject: `Bun venit la HelloMara, ${rawName}! 🌱`,
     html,
   });
 }
