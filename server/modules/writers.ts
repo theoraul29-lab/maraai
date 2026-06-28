@@ -39,7 +39,7 @@ import {
   type FeatureKey,
 } from '../billing/features.js';
 import { CREATOR_REVENUE_SHARE } from '../billing/plans.js';
-import { sanitizeArticleHtml } from '../lib/sanitize-content.js';
+import { sanitizeArticleHtml, stripHtml } from '../lib/sanitize-content.js';
 
 let deps: {
   storage: IStorage;
@@ -289,8 +289,12 @@ export async function publishArticle(req: Request, res: Response) {
     const penName = String(body.penName ?? '').trim().slice(0, 60) || 'Anonymous';
     const category = String(body.category ?? 'story').trim().slice(0, 40) || 'story';
     const coverImage = String(body.coverImage ?? '').trim().slice(0, 2000) || null;
-    const excerpt = String(body.excerpt ?? '').trim().slice(0, 500)
-      || content.slice(0, 240).replace(/\s+/g, ' ') + (content.length > 240 ? '…' : '');
+    // Excerpt is rendered as a plain-text preview — strip any markup so a
+    // direct API call can't smuggle HTML past the content sanitiser. The
+    // auto fallback is derived from the already-sanitised content.
+    const plainContent = stripHtml(content);
+    const excerpt = stripHtml(String(body.excerpt ?? '')).trim().slice(0, 500)
+      || plainContent.slice(0, 240).replace(/\s+/g, ' ') + (plainContent.length > 240 ? '…' : '');
     const readTimeMinutes = computeReadTimeMinutes(content);
 
     // Two-phase insert: create the row first (we need the id for a stable
@@ -348,7 +352,7 @@ export async function updateArticle(req: Request, res: Response) {
       patch.content = clean;
       patch.readTimeMinutes = computeReadTimeMinutes(clean);
     }
-    if (typeof body.excerpt === 'string') patch.excerpt = body.excerpt.trim().slice(0, 500);
+    if (typeof body.excerpt === 'string') patch.excerpt = stripHtml(body.excerpt).trim().slice(0, 500);
     if (typeof body.coverImage === 'string') patch.coverImage = body.coverImage.trim().slice(0, 2000);
     if (typeof body.category === 'string') patch.category = body.category.trim().slice(0, 40);
     if (typeof body.visibility === 'string' && VISIBILITIES.has(body.visibility)) {

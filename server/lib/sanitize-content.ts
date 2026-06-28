@@ -31,14 +31,28 @@ export function sanitizeArticleHtml(html: string): string {
     // Only http(s) and mailto links / images; strips javascript:, data:, etc.
     allowedSchemes: ['http', 'https', 'mailto'],
     allowProtocolRelative: false,
-    // Force outbound links to be safe against tab-nabbing.
+    // Force outbound links to be safe against tab-nabbing while preserving
+    // any SEO-relevant tokens (e.g. `nofollow`) the editor already set —
+    // TipTap emits rel="noopener noreferrer nofollow".
     transformTags: {
       a: (tagName, attribs) => {
         if (attribs.target === '_blank') {
-          attribs.rel = 'noopener noreferrer';
+          const tokens = new Set((attribs.rel ?? '').split(/\s+/).filter(Boolean));
+          tokens.add('noopener');
+          tokens.add('noreferrer');
+          attribs.rel = Array.from(tokens).join(' ');
         }
         return { tagName, attribs };
       },
     },
   });
+}
+
+/**
+ * Strip ALL markup, returning plain text. Used for fields that are rendered
+ * as text but are user-controlled (e.g. article excerpts / previews) so a
+ * crafted request can't smuggle HTML through them.
+ */
+export function stripHtml(input: string): string {
+  return sanitizeHtml(input, { allowedTags: [], allowedAttributes: {} });
 }
