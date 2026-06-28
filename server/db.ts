@@ -60,6 +60,18 @@ sqlite.pragma('busy_timeout = 5000');
 // WAL; only OS-level crashes between checkpoints can lose the last txn.
 sqlite.pragma('synchronous = NORMAL');
 
+// ── Schema source of truth ───────────────────────────────────────────────
+// The schema is owned in exactly two layers, each with a single home:
+//   1. Drizzle migrations (migrations/*.sql, applied in server/index.ts) own
+//      the core relational tables that have a typed model in
+//      shared/schema.ts (users, billing, reels, writers, …).
+//   2. The idempotent `CREATE TABLE IF NOT EXISTS` blocks below own the
+//      auxiliary runtime tables (Mara Brain, Missions, Programs, P2P,
+//      referrals) that are not part of the Drizzle schema. This is the ONE
+//      place they are defined — do not re-declare them in routes/handlers.
+// Column backfills for older production DBs (whose migration journal was
+// corrupted) live in the additive self-heal guard in server/index.ts.
+//
 // Auto-create Mara Brain tables if they don't exist
 sqlite.exec(`
   CREATE TABLE IF NOT EXISTS mara_knowledge_base (
@@ -485,6 +497,10 @@ sqlite.exec(`
       CHECK(visibility IN ('private','community','public')),
     chapter_number INTEGER,
     is_milestone INTEGER DEFAULT 0,
+    -- NOTE: is_ai_generated is intentionally NOT declared here. Migration
+    -- 0024_journal_ai_flag.sql is its single source of truth (ALTER … ADD
+    -- COLUMN). Declaring it here too would make 0024 fail with
+    -- "duplicate column name" on a fresh DB.
     created_at INTEGER DEFAULT (unixepoch()),
     updated_at INTEGER DEFAULT (unixepoch())
   );

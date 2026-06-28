@@ -110,6 +110,10 @@ function runMigrations() {
     "text NOT NULL DEFAULT 'en'",
     "text NOT NULL DEFAULT 'dark'",
     "integer DEFAULT 0",
+    // journal_entries.is_ai_generated defaults to 1 (program entries are
+    // AI-authored). Without this the heal below threw "unsafe column type"
+    // and the column was never backfilled on older production DBs.
+    "integer DEFAULT 1",
   ]);
   const ensureColumns = (
     table: string,
