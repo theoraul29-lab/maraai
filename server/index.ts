@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { logError } from './logger.js';
+import { initSentry, captureException } from './lib/observability.js';
 import type { Request, Response, NextFunction } from 'express';
 import { registerRoutes } from './routes.js';
 import { serveStatic } from './static.js';
@@ -13,8 +14,7 @@ import { route as routeAi } from './maraai/ai-router.js';
 import { WebSocketServer } from 'ws';
 import { storage } from './storage.js';
 import { setupSessionAuth, csrfProtection } from './auth.js';
-import { checkRateLimit } from './rateLimit.js';
-import { globalApiRateLimit } from './rate-limit.js';
+import { checkRateLimit, globalApiRateLimit } from './rate-limit.js';
 import { z } from 'zod';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { db, rawSqlite } from './db.js';
@@ -782,6 +782,9 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Initialise error tracking as early as possible so failures during
+  // migrations/seed are still reported. No-op unless SENTRY_DSN is set.
+  initSentry();
   runMigrations();
 
   // Upsert the canonical plan catalogue (Free / Pro / VIP / Creator ×
@@ -1160,6 +1163,7 @@ app.use((req, res, next) => {
       query: req.query,
     };
     logError(err, errorLog);
+    captureException(err, errorLog);
     if (res.headersSent) {
       return next(err);
     }
@@ -1211,5 +1215,6 @@ app.use((req, res, next) => {
   // process would live on as a zombie — alive enough for liveness probes
   // to pass, but never bound to a port so no traffic is ever served.
   console.error('[startup] fatal:', err);
+  captureException(err, { phase: 'bootstrap' });
   process.exit(1);
 });

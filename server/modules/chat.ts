@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 import { storage } from '../storage.js';
 import { route as routeAi } from '../maraai/ai-router.js';
-import { checkRateLimit } from '../rateLimit.js';
+import { checkRateLimit } from '../rate-limit.js';
 import { callAgent, isSupportAgentEnabled, type AgentMessage } from '../lib/anthropic-agents.js';
 import { getUserXP } from '../missions/engine.js';
 import { rawSqlite } from '../db.js';

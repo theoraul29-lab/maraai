@@ -32,11 +32,15 @@ export default function PayPalProgramButton({ programId, programName: _programNa
 
       createOrder: async () => {
         setStatus('paying');
-        const csrf = document.cookie.match(/csrf_token=([^;]+)/)?.[1] ?? '';
+        // The global fetch wrapper in src/csrf.ts attaches the session-backed
+        // X-CSRF-Token (fetched from /api/auth/csrf) to every mutating request
+        // and retries once on rotation. Setting the header here — especially
+        // from a non-existent `csrf_token` cookie — would shadow that and send
+        // an empty token, so we leave it to the wrapper.
         const res = await fetch(`${API}/api/billing/program/purchase`, {
           method: 'POST',
           credentials: 'include',
-          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ programId }),
         });
         if (!res.ok) {
@@ -112,11 +116,11 @@ function FallbackButton({ programId, priceCents, disabled, onError }: Omit<Props
   const handleClick = async () => {
     setLoading(true);
     try {
-      const csrf = document.cookie.match(/csrf_token=([^;]+)/)?.[1] ?? '';
+      // CSRF header is attached by the global fetch wrapper (src/csrf.ts).
       const res = await fetch(`${API}/api/billing/program/purchase`, {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ programId }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
