@@ -5,7 +5,7 @@
 ### **Design & UI**
 - ✅ **HomePage with 6 animated cards** - flip animation from bottom to top
   - Reels (Purple/Pink gradient)
-  - Trading Academy (Orange/Red)
+  - Missions (Orange/Red)
   - VIP Membership (Gold/Yellow)
   - Creator Panel (Cyan/Blue)
   - Writers Hub (Green/Emerald)
@@ -169,7 +169,7 @@ const memory = await brain.loadMemory();
 | Module | Primary Color | Secondary | Gradient |
 |--------|------|-----------|----------|
 | Reels | #a855f7 (Purple) | #ec4899 (Pink) | Purple → Pink |
-| Trading | #f97316 (Orange) | #ef4444 (Red) | Orange → Red |
+| Missions | #f97316 (Orange) | #ef4444 (Red) | Orange → Red |
 | Writers | #10b981 (Green) | #059669 (Emerald) | Green → Emerald |
 | Creator | #22d3ee (Cyan) | #0ea5e9 (Blue) | Cyan → Blue |
 | VIP | #facc15 (Gold) | #eab308 (Amber) | Gold → Amber |
@@ -235,7 +235,7 @@ git push origin main
 #    Then set DATABASE_URL=sqlite:////data/maraai.sqlite (four slashes = absolute path /data/...)
 
 # 5. Custom domain:
-#    Settings → Domains → Add custom domain → maraai.net
+#    Settings → Domains → Add custom domain → hellomara.net
 #    Update DNS: CNAME → <your-railway-url>
 ```
 
