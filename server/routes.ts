@@ -1415,11 +1415,11 @@ export async function registerRoutes(
   app.post('/api/user/upgrade', requireAdmin, adminRateLimit, async (req: any, res: any) => {
     const adminId: string = req.user?.uid;
     const targetUserId: string = (req.body?.userId as string) || adminId;
-    const VALID_TIERS = ['free', 'trial', 'premium', 'vip'] as const;
+    const VALID_TIERS = ['free', 'vip'] as const;
     type ValidTier = typeof VALID_TIERS[number];
     const newTier = req.body?.newTier as string;
     if (!newTier || !(VALID_TIERS as readonly string[]).includes(newTier)) {
-      return res.status(400).json({ message: 'newTier must be one of: free, trial, premium, vip' });
+      return res.status(400).json({ message: 'newTier must be one of: free, vip' });
     }
     try {
       const updated = await db

@@ -34,32 +34,6 @@ export const getFeatureAccess = (tier: UserTier): FeatureAccess => {
         // Everything else is locked
       };
 
-    case 'trial':
-      // 1 hour full access
-      return {
-        you: true,
-        reels: true,
-            writers: true,
-        creators: true,
-        chat: true,
-        advanced_editing: true,
-        monetization: false, // Can't earn during trial
-        analytics: true,
-      };
-
-    case 'premium':
-      // Full access except VIP features
-      return {
-        you: true,
-        reels: true,
-            writers: true,
-        creators: true,
-        chat: true,
-        advanced_editing: true,
-        monetization: true,
-        analytics: true,
-      };
-
     case 'vip':
       // Full access to everything
       return {
@@ -84,7 +58,7 @@ export const canAccess = (features: FeatureAccess, feature: keyof FeatureAccess)
 
 export const getLockedMessage = (feature: string, tier: UserTier): string => {
   if (tier === 'free') {
-    return `10% access only. Upgrade to Premium to unlock ${feature}`;
+    return `10% access only. Upgrade to VIP to unlock ${feature}`;
   }
   return `${feature} is locked for ${tier} members`;
 };

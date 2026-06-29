@@ -574,7 +574,6 @@ def _base(common, nav, auth_login, auth_pw, auth_name, logout_lbl, settings_lbl,
         "nav": nav,
         "auth": {
             "welcomeBack": auth_login, "joinMaraAI": auth_name,
-            "trialInfo": "Start your 1-hour trial instantly",
             "email": "Email", "password": auth_pw, "yourName": auth_name,
             "emailRequired": "Email is required",
             "emailInvalid": "Please enter a valid email",
