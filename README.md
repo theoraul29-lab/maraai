@@ -1,6 +1,6 @@
 # MaraAI
 
-MaraAI – an AI companion platform with video reels, AI chat, trading academy, writers hub, and creator tools.
+MaraAI – an AI companion platform with video reels, AI chat, gamified missions, writers hub, and creator tools.
 
 ## Quick Start (Local Dev)
 
@@ -171,10 +171,10 @@ conversations or quick smoke checks without opening a browser.
 MARA_EMAIL=you@example.com MARA_PASSWORD=... npm run mara
 
 # One-shot prompt
-npm run mara -- "ce drop-off vezi pe Trading?"
+npm run mara -- "ce drop-off vezi pe Missions?"
 
 # Different host / module
-MARA_BASE_URL=http://localhost:3001 npm run mara -- --module=trading "salut"
+MARA_BASE_URL=http://localhost:3001 npm run mara -- --module=missions "salut"
 ```
 
 After the first successful login the cookie is cached at
