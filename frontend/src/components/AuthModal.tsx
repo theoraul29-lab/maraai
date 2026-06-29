@@ -255,7 +255,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           <h2 id="auth-modal-title">
             {mode === 'login' ? t('auth.welcomeBack') : t('auth.joinMaraAI')}
           </h2>
-          <p>{t('auth.trialInfo')}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form" noValidate>

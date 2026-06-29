@@ -8,15 +8,14 @@
  * the `free` tier's scope — they can still watch reels and read public
  * articles without an account.
  *
- * Downstream PRs (Writers Hub, Trading Academy, Creator Tools) wire their
- * endpoints through the `requireFeature()` middleware exported here.
+ * Downstream PRs (Writers Hub, Creator Tools) wire their endpoints through
+ * the `requireFeature()` middleware exported here.
  */
 
 import type { Request, Response, NextFunction } from 'express';
 import { eq, and, or, gt, desc } from 'drizzle-orm';
 import { db } from '../db.js';
 import { plans, subscriptions } from '../../shared/models/billing.js';
-import { users } from '../../shared/models/auth.js';
 import { PLAN_CATALOGUE } from './plans.js';
 
 // ---------------------------------------------------------------------------
@@ -76,23 +75,9 @@ export function validatePlanCatalogue(): void {
 // ---------------------------------------------------------------------------
 
 /**
- * Fallback: when a user has no active subscription, check the `users.tier`
- * column. If tier='trial' and trialEndsAt is still in the future, return
- * 'trial'. Otherwise return 'free'. This ensures that the one-hour trial
- * window set on signup is enforced server-side, not only in the UI.
- */
-async function getUserTierPlanId(userId: string): Promise<string> {
-  const rows = await db
-    .select({ id: users.id })
-    .from(users)
-    .where(eq(users.id, userId))
-    .limit(1);
-  return rows[0] ? 'free' : 'free';
-}
-
-/**
  * Derive the active plan id for a user. Anonymous users (null userId) and
- * users without an active subscription get `free`. A subscription grants
+ * users without an active subscription get `free` — there is no separate
+ * trial tier; the catalogue is `free` + `vip_monthly`. A subscription grants
  * access while its status is `active`, OR while it is `cancelled` with a
  * concrete `periodEnd` still in the future — so a user who cancels mid-cycle
  * keeps paid features until the period they already paid for expires. A
@@ -125,7 +110,7 @@ export async function getActivePlanId(userId: string | null): Promise<string> {
     .orderBy(desc(subscriptions.createdAt))
     .limit(1);
 
-  return rows[0]?.planId ?? (await getUserTierPlanId(userId));
+  return rows[0]?.planId ?? 'free';
 }
 
 /** Whether the user (or anonymous session) has access to the given feature. */

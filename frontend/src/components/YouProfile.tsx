@@ -645,9 +645,9 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
               )}
             </div>
           )}
-          {user?.tier && user.tier !== 'free' && (
-            <div className={`you-fb-tier-badge you-fb-tier-${user.tier}`}>
-              {user.tier === 'vip' ? '👑 VIP' : user.tier === 'premium' ? '💎 Premium' : '⚡ Trial'}
+          {user?.tier === 'vip' && (
+            <div className="you-fb-tier-badge you-fb-tier-vip">
+              👑 VIP
             </div>
           )}
         </div>

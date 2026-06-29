@@ -11,7 +11,7 @@
  * typos fail loudly instead of silently granting nothing.
  */
 
-export type PlanTier = 'free' | 'trial' | 'vip';
+export type PlanTier = 'free' | 'vip';
 export type PlanPeriod = 'monthly' | 'yearly' | 'none';
 
 export interface PlanDefinition {

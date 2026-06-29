@@ -3,15 +3,13 @@ import type { ReactNode } from 'react';
 import { changeLanguage as changeI18nLanguage } from '../i18n';
 import { clearCsrfToken, getCsrfToken } from '../csrf';
 
-export type UserTier = 'free' | 'trial' | 'premium' | 'vip';
+export type UserTier = 'free' | 'vip';
 
 export interface User {
   id: string;
   email: string;
   name: string;
   tier: UserTier;
-  trialStartTime: number | null;
-  trialEndsAt: number | null;
   createdAt: number;
   earnings: number;
   badges: string[];
@@ -69,8 +67,6 @@ interface AuthContextType {
   isAuthenticated: boolean;
   loading: boolean;
   userTier: UserTier;
-  isTrialActive: boolean;
-  trialTimeRemaining: number; // minutes
   /** Last OAuth error code pulled from the `?oauth_error=` query param. */
   oauthError: string | null;
   clearOAuthError: () => void;
@@ -112,10 +108,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // never reach the React tree.
   //
   // `?oauth=<provider>` is our signal that the user JUST completed an OAuth
-  // round-trip (vs. a plain refresh of an already-authenticated tab). We use
-  // it to apply the same trial-window affordance that email/password login &
-  // signup set client-side, so OAuth users don't land on `free` while their
-  // email-signed-up peers get `trial`.
+  // round-trip (vs. a plain refresh of an already-authenticated tab); we strip
+  // it from the URL so a manual refresh doesn't re-trigger the flow.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const err = params.get('oauth_error');
@@ -161,20 +155,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           setIsAuthenticated(false);
           return;
         }
-        const trialFields = freshOAuth
-          ? {
-              trialStartTime: Date.now(),
-              trialEndsAt: Date.now() + 60 * 60 * 1000,
-              tier: 'trial' as UserTier,
-            }
-          : {
-              trialStartTime: payload.user.trialStartTime ?? null,
-              trialEndsAt: payload.user.trialEndsAt ?? null,
-              tier: payload.user.tier || 'free',
-            };
         const sessionUser: User = {
           ...payload.user,
-          ...trialFields,
+          tier: payload.user.tier === 'vip' ? 'vip' : 'free',
           earnings: payload.user.earnings ?? 0,
           badges: payload.user.badges ?? [],
           isAdmin: payload?.user?.isAdmin ?? false,
@@ -192,15 +175,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     })();
     return () => { cancelled = true; };
   }, []);
-
-  const calculateTrialStatus = (user: User): { isActive: boolean; remaining: number } => {
-    if (user.tier !== 'trial' || !user.trialEndsAt) {
-      return { isActive: false, remaining: 0 };
-    }
-    const now = Date.now();
-    const remaining = Math.max(0, user.trialEndsAt - now);
-    return { isActive: remaining > 0, remaining: Math.floor(remaining / 60000) }; // minutes
-  };
 
   const login = async (email: string, password: string): Promise<void> => {
     try {
@@ -220,25 +194,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
 
       const userData = await response.json();
-      // Trust the server payload: a returning premium user must NOT be
-      // re-classified as `tier: 'trial'` on every login (that overwrites
-      // localStorage with a downgrade and looks like "login didn't work"
-      // when the avatar dropdown flips from Premium to Trial). Only a
-      // genuinely empty/missing tier (defensive guard against a malformed
-      // response) falls back to a fresh trial window.
-      const hasServerTier = typeof userData?.tier === 'string' && userData.tier.length > 0;
-      const newUser: User = hasServerTier
-        ? {
-            ...userData,
-            trialStartTime: userData.trialStartTime ?? null,
-            trialEndsAt: userData.trialEndsAt ?? null,
-          }
-        : {
-            ...userData,
-            trialStartTime: Date.now(),
-            trialEndsAt: Date.now() + 60 * 60 * 1000, // 1 hour trial
-            tier: 'trial',
-          };
+      const newUser: User = {
+        ...userData,
+        tier: userData.tier === 'vip' ? 'vip' : 'free',
+      };
 
       localStorage.setItem('user', JSON.stringify(newUser));
       setUser(newUser);
@@ -280,9 +239,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const userData = await response.json();
       const newUser: User = {
         ...userData,
-        trialStartTime: Date.now(),
-        trialEndsAt: Date.now() + 60 * 60 * 1000, // 1 hour trial
-        tier: 'trial',
+        tier: userData.tier === 'vip' ? 'vip' : 'free',
       };
 
       localStorage.setItem('user', JSON.stringify(newUser));
@@ -410,9 +367,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (!payload?.user) return;
       const sessionUser: User = {
         ...payload.user,
-        trialStartTime: payload.user.trialStartTime ?? null,
-        trialEndsAt: payload.user.trialEndsAt ?? null,
-        tier: payload.user.tier || 'free',
+        tier: payload.user.tier === 'vip' ? 'vip' : 'free',
         earnings: payload.user.earnings ?? 0,
         badges: payload.user.badges ?? [],
         isAdmin: payload?.user?.isAdmin ?? false,
@@ -429,9 +384,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const refresh = refreshUser;
 
   const userTier = user?.tier || 'free';
-  const { isActive: isTrialActive, remaining: trialTimeRemaining } = user
-    ? calculateTrialStatus(user)
-    : { isActive: false, remaining: 0 };
 
   return (
     <AuthContext.Provider
@@ -440,8 +392,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isAuthenticated,
         loading,
         userTier,
-        isTrialActive,
-        trialTimeRemaining,
         oauthError,
         clearOAuthError,
         login,

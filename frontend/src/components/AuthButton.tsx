@@ -9,12 +9,11 @@ import './AuthButton.css';
 
 export const AuthButton: React.FC = () => {
   const { t } = useTranslation();
-  const { user, isAuthenticated, isTrialActive, trialTimeRemaining, logout } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   const { handleError } = useErrorHandler();
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [displayTime, setDisplayTime] = useState(trialTimeRemaining);
   
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -27,10 +26,6 @@ export const AuthButton: React.FC = () => {
       }
     },
   });
-
-  useEffect(() => {
-    setDisplayTime(trialTimeRemaining);
-  }, [trialTimeRemaining]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -46,28 +41,9 @@ export const AuthButton: React.FC = () => {
     }
   }, [isDropdownOpen]);
 
-  const formatTime = (minutes: number): string => {
-    try {
-      const hours = Math.floor(minutes / 60);
-      const mins = minutes % 60;
-      if (hours > 0) return `${hours}h ${mins}m`;
-      return `${mins}m`;
-    } catch (error) {
-      handleError(error as Error, { context: 'formatTime' });
-      return '0m';
-    }
-  };
-
   const getTierColor = (): string => {
-    if (!user?.tier) return '#888888';
-    
-    const tierColors: Record<string, string> = {
-      trial: '#f59e0b', // amber
-      premium: '#10b981', // emerald
-      vip: '#8b5cf6', // violet
-    };
-    
-    return tierColors[user.tier] || '#888888';
+    if (user?.tier === 'vip') return '#8b5cf6'; // violet
+    return '#888888';
   };
 
   const handleDropdownToggle = (e: React.MouseEvent | React.TouchEvent) => {
@@ -148,15 +124,9 @@ export const AuthButton: React.FC = () => {
           <div className="auth-button-details">
             <div className="auth-button-name">{userName}</div>
             <div className="auth-button-status">
-              {isTrialActive ? (
-                <span className="auth-trial-badge" role="status">
-                  ⏱️ {formatTime(displayTime)}
-                </span>
-              ) : (
-                <span className={`auth-tier-badge ${userTier}`} role="status">
-                  {userTier.toUpperCase()}
-                </span>
-              )}
+              <span className={`auth-tier-badge ${userTier}`} role="status">
+                {userTier.toUpperCase()}
+              </span>
             </div>
           </div>
           <div
