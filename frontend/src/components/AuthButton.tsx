@@ -41,6 +41,15 @@ export const AuthButton: React.FC = () => {
     }
   }, [isDropdownOpen]);
 
+  // Accessibility hooks must run on every render (Rules of Hooks), so they are
+  // declared up front rather than inside the authenticated/anonymous branches.
+  const loginAccessibility = useAccessible({
+    label: t('auth.loginOrSignup'),
+    role: 'button',
+    initialFocused: false,
+  });
+  const dropdownAccessibility = useAccessibleDropdown(isDropdownOpen, 'auth-dropdown-menu');
+
   const getTierColor = (): string => {
     if (user?.tier === 'vip') return '#8b5cf6'; // violet
     return '#888888';
@@ -70,12 +79,6 @@ export const AuthButton: React.FC = () => {
   };
 
   if (!isAuthenticated) {
-    const loginAccessibility = useAccessible({
-      label: t('auth.loginOrSignup'),
-      role: 'button',
-      initialFocused: false,
-    });
-
     return (
       <>
         <button
@@ -99,8 +102,6 @@ export const AuthButton: React.FC = () => {
   const userInitial = userName.charAt(0).toUpperCase();
   const userEarnings = user?.earnings ?? 0;
   const userTier = user?.tier ?? 'free';
-
-  const dropdownAccessibility = useAccessibleDropdown(isDropdownOpen, 'auth-dropdown-menu');
 
   return (
     <>

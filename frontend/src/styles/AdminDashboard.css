@@ -680,8 +680,6 @@
 
 /* ── Growth tab ── */
 
-.adb-growth {}
-
 .adb-growth-list {
   display: flex;
   flex-direction: column;

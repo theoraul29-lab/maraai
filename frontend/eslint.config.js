@@ -22,15 +22,14 @@ export default defineConfig([
       globals: globals.browser,
     },
     rules: {
-      // Classic React-hooks correctness checks. `rules-of-hooks` has a few
-      // pre-existing violations (hooks called after an early return in
-      // AuthButton/AuthModal) whose fix is a component refactor tracked for
-      // Faza 7, so it stays a warning for now — that lets lint land green
-      // without dragging a refactor into this PR. The aggressive
-      // react-compiler rules shipped in eslint-plugin-react-hooks v7
-      // (set-state-in-effect, purity, immutability, refs, …) are intentionally
-      // NOT enabled on this legacy codebase.
-      'react-hooks/rules-of-hooks': 'warn',
+      // `rules-of-hooks` is a correctness rule (hooks must run in the same
+      // order every render). The former violations — hooks after an early
+      // return in AuthButton/AuthModal — were fixed in Faza 7, so it's now an
+      // error to keep the tree honest. The aggressive react-compiler rules
+      // shipped in eslint-plugin-react-hooks v7 (set-state-in-effect, purity,
+      // immutability, refs, …) are intentionally NOT enabled on this legacy
+      // codebase.
+      'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
       'react-refresh/only-export-components': 'warn',
       // The codebase leans on `any` in many places; surface it as a warning
