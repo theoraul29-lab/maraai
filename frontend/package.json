@@ -7,10 +7,13 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "npm run eslint && npm run stylelint",
+    "lint:ci": "eslint --ext .js,.jsx,.ts,.tsx ./",
     "preview": "vite preview",
     "eslint": "eslint --fix --ext  .js,.jsx,.ts,.tsx ./",
     "stylelint": "stylelint \"**/*.{css,scss,less}\"",
-    "prettier": "prettier **/* --write"
+    "prettier": "prettier **/* --write",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
@@ -37,13 +40,18 @@
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@iceworks/spec": "^1.0.0",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
     "eslint": "^10.0.3",
+    "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
+    "happy-dom": "^20.10.6",
     "playwright": "^1.60.0",
     "prettier": "^2.1.0",
     "stylelint": "^15.0.0",
@@ -52,6 +60,7 @@
     "typescript-eslint": "^8.48.0",
     "vite": "^7.3.1",
     "vite-plugin-pwa": "^1.2.0",
+    "vitest": "^4.1.9",
     "workbox-window": "^7.4.0"
   }
 }

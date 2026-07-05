@@ -38,6 +38,14 @@ jobs:
       - name: Build
         run: npm run build
 
+      # Frontend deps are installed by the Build step (build:frontend runs
+      # `npm ci`), so lint + tests run after it and reuse that install.
+      - name: Lint (frontend)
+        run: cd frontend && npm run lint:ci
+
+      - name: Test (frontend)
+        run: cd frontend && npm run test
+
       - name: Start backend and run smoke tests
         shell: bash
         run: |

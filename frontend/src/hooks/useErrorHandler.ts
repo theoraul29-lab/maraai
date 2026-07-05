@@ -43,7 +43,7 @@ export const useErrorHandler = ({
   onCriticalError,
 }: UseErrorHandlerOptions = {}) => {
   const errorLogsRef = useRef<ErrorLog[]>([]);
-  const errorCallbacksRef = useRef<Record<string, Function>>({});
+  const errorCallbacksRef = useRef<Record<string, (error: AppError) => void>>({});
 
   /**
    * Create user-friendly error message
