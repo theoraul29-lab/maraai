@@ -16,6 +16,12 @@ COPY . .
 # Build frontend (npm ci) + compile the backend to dist/ with esbuild
 RUN npm run build
 
+# Strip root devDependencies (esbuild/tsx/vite/@types/vitest are build-time
+# only) so the runtime image ships production deps exclusively. Safe because
+# the compiled backend never imports a devDep in production: server/vite.ts is
+# behind a `NODE_ENV !== 'production'` dynamic import in server/index.ts.
+RUN npm prune --omit=dev
+
 # Stage 2: Runtime
 FROM node:20-alpine
 

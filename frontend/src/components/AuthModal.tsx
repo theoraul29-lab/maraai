@@ -198,13 +198,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     setTimeout(() => emailInputRef.current?.focus(), 0);
   };
 
-  if (!isOpen) return null;
-
-  const loadingState = useAccessibleLoading(loading, `${loading ? (mode === 'login' ? t('auth.signingIn') : t('auth.creatingAccount')) : ''}`);
-
   const emailErrors = validation.email;
   const passwordErrors = validation.password;
   const nameErrors = validation.name;
+
+  // These accessibility hooks must run on every render (Rules of Hooks), so
+  // they are declared before the `!isOpen` early return below.
+  const loadingState = useAccessibleLoading(loading, `${loading ? (mode === 'login' ? t('auth.signingIn') : t('auth.creatingAccount')) : ''}`);
 
   const emailAccessibility = useAccessibleInput({
     label: 'Email address',
@@ -226,6 +226,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     isInvalid: nameErrors.length > 0,
     errorId: nameErrors.length > 0 ? 'name-error' : undefined,
   });
+
+  if (!isOpen) return null;
 
   return (
     <div
