@@ -38,7 +38,7 @@ function stripMarkdown(text: string): string {
     .replace(/\*\*(.+?)\*\*/g, '$1')
     .replace(/\*(.+?)\*/g, '$1')
     .replace(/(?:^|\n)\d+\. /gm, '\n• ')
-    .replace(/(?:^|\n)[•\-] /gm, '\n• ')
+    .replace(/(?:^|\n)[•-] /gm, '\n• ')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
@@ -61,7 +61,7 @@ function renderMarkdown(text: string): string {
     // Numbered lists
     .replace(/(?:^|\n)\d+\. (.+)/g, '\n<li>$1</li>')
     // Unordered lists
-    .replace(/(?:^|\n)[•\-] (.+)/g, '\n<li>$1</li>')
+    .replace(/(?:^|\n)[•-] (.+)/g, '\n<li>$1</li>')
     // Wrap consecutive <li> blocks in <ul>
     .replace(/(<li>[\s\S]+?<\/li>)(?!\s*<li>)/g, '<ul>$1</ul>')
     // Double newline → paragraph break

@@ -519,7 +519,7 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
     setCurrentStep(-1);
   };
 
-  const toggleBeat = () => { isPlaying ? stopBeat() : playBeat(); };
+  const toggleBeat = () => { if (isPlaying) { stopBeat(); } else { playBeat(); } };
 
   const startRecording = () => {
     if (!audioCtxRef.current) initAudio();
