@@ -810,11 +810,11 @@ app.use((req, res, next) => {
     console.error('[missions] seed failed (continuing):', err);
   }
 
-  // Pre-warm mission translation cache for the most common languages.
-  // Fire-and-forget: never blocks startup, errors are logged inside.
-  // The cache persists in SQLite across restarts so subsequent starts
-  // complete instantly (all missions already cached).
-  warmTranslationCache(['en', 'de', 'fr', 'es', 'pt', 'ru', 'ar', 'hi', 'ja', 'zh']).catch(
+  // Pre-warm only English — the pivot base every other translation derives
+  // from (see translateMissions). All other languages are translated lazily on
+  // first request and cached, so we no longer spend startup LLM budget warming
+  // languages nobody may use. Fire-and-forget: never blocks startup.
+  warmTranslationCache(['en']).catch(
     (err) => console.warn('[missions:warm] startup warm failed:', (err as Error).message),
   );
 

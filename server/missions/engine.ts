@@ -1,6 +1,8 @@
 import { rawSqlite } from '../db.js';
 import { llmGenerate } from '../llm.js';
 import { randomUUID } from 'crypto';
+import { missionContentHash } from './content.js';
+import { captureException } from '../lib/observability.js';
 
 const LANG_NAMES: Record<string, string> = {
   en: 'English', ro: 'Romanian', de: 'German', fr: 'French', es: 'Spanish',
@@ -36,7 +38,11 @@ function sanitizeForPrompt(value: unknown, maxLen = 1000): string {
   return s.replace(/```/g, "'''").slice(0, maxLen);
 }
 
-// Persistent translation cache so each mission is only translated once per language.
+// Persistent translation cache so each mission is only translated once per
+// language. `content_hash` records which source text a translation was made
+// from, so an edit to the mission in content/missions.json auto-invalidates
+// stale translations. `reviewed` marks human-checked translations that the
+// LLM must never overwrite.
 rawSqlite.exec(`
   CREATE TABLE IF NOT EXISTS mission_translations (
     mission_id TEXT NOT NULL,
@@ -46,10 +52,25 @@ rawSqlite.exec(`
     proof_prompt TEXT NOT NULL,
     steps TEXT NOT NULL,
     reflection TEXT,
+    content_hash TEXT,
+    reviewed INTEGER NOT NULL DEFAULT 0,
     translated_at INTEGER NOT NULL DEFAULT (unixepoch()),
     PRIMARY KEY (mission_id, lang)
   )
 `);
+
+// Self-heal: add the newer columns on databases created before they existed.
+for (const [col, ddl] of [
+  ['content_hash', 'ALTER TABLE mission_translations ADD COLUMN content_hash TEXT'],
+  ['reviewed', 'ALTER TABLE mission_translations ADD COLUMN reviewed INTEGER NOT NULL DEFAULT 0'],
+] as const) {
+  try {
+    rawSqlite.exec(ddl);
+  } catch {
+    /* column already exists */
+    void col;
+  }
+}
 
 const PILLAR_LABELS: Record<string, string> = {
   discipline: '🎯 Disciplină',
@@ -532,15 +553,13 @@ export function getMissionContextForMara(userId: string, lang?: string): string 
  * Call at server startup so the first real user doesn't pay the LLM latency.
  * This is fire-and-forget — errors are logged and swallowed.
  */
-export async function warmTranslationCache(langs: string[] = [
-  'en', 'de', 'fr', 'es', 'pt', 'ru', 'it', 'uk', 'nl', 'sv', 'bg', 'ja', 'ko',
-  'pl', 'cs', 'hu', 'hr', 'sr', 'tr', 'ar', 'hi', 'zh', 'th', 'vi', 'da', 'el',
-]): Promise<void> {
+export async function warmTranslationCache(langs: string[] = ['en']): Promise<void> {
   const allMissions = rawSqlite.prepare(
     'SELECT id, title, description, proof_prompt, steps, reflection FROM missions WHERE is_active = 1'
   ).all() as TranslatableMission[];
+  if (allMissions.length === 0) return;
 
-  // Process in parallel batches of 6 so startup doesn't serialize 26 LLM calls.
+  // Process in parallel batches of 6 so startup doesn't serialize many LLM calls.
   const BATCH_SIZE = 6;
   for (let i = 0; i < langs.length; i += BATCH_SIZE) {
     const batch = langs.slice(i, i + BATCH_SIZE);
@@ -548,22 +567,12 @@ export async function warmTranslationCache(langs: string[] = [
       const normalized = normalizeLang(lang);
       if (normalized === 'ro') return;
 
-      const cachedIds = new Set(
-        (rawSqlite.prepare(
-          'SELECT mission_id FROM mission_translations WHERE lang = ?'
-        ).all(normalized) as { mission_id: string }[]).map(r => r.mission_id)
-      );
-
-      const toTranslate = allMissions.filter(m => !cachedIds.has(m.id));
-      if (toTranslate.length === 0) {
-        console.log(`[missions:warm] ${lang} — all ${allMissions.length} missions already cached`);
-        return;
-      }
-
-      console.log(`[missions:warm] ${lang} — translating ${toTranslate.length}/${allMissions.length} missions...`);
+      // translateMissions is idempotent: it skips missions whose translation is
+      // still valid (matching content_hash) and only calls the LLM for missing
+      // or stale ones, so warming is safe to run on every startup.
       try {
-        await translateMissions(toTranslate, lang);
-        console.log(`[missions:warm] ${lang} — done`);
+        await translateMissions(allMissions, lang);
+        console.log(`[missions:warm] ${lang} — up to date (${allMissions.length} missions)`);
       } catch (err) {
         console.warn(`[missions:warm] ${lang} failed:`, (err as Error).message);
       }
@@ -595,41 +604,71 @@ export async function translateMissions<T extends TranslatableMission>(
   const normalized = normalizeLang(lang);
   if (!normalized || normalized === 'ro') return missions;
 
+  if (missions.length === 0) return missions;
+
   const langName = LANG_NAMES[normalized] ?? normalized;
+
+  // Source hash per mission, derived from the authored Romanian text. A cached
+  // translation whose stored hash no longer matches is stale (the mission was
+  // edited in content/missions.json) and gets re-translated.
+  const hashOf = new Map(missions.map(m => [m.id, missionContentHash(m)]));
 
   const placeholders = missions.map(() => '?').join(',');
   const cached = (rawSqlite.prepare(
-    `SELECT mission_id, title, description, proof_prompt, steps, reflection
+    `SELECT mission_id, title, description, proof_prompt, steps, reflection, content_hash, reviewed
      FROM mission_translations WHERE lang = ? AND mission_id IN (${placeholders})`
   ).all(normalized, ...missions.map(m => m.id))) as Array<{
     mission_id: string; title: string; description: string;
     proof_prompt: string; steps: string; reflection: string | null;
+    content_hash: string | null; reviewed: number;
   }>;
 
-  const cacheMap = new Map(cached.map(c => [c.mission_id, c]));
+  type CacheEntry = { title: string; description: string; proof_prompt: string; steps: string; reflection: string | null };
+  const cacheMap = new Map<string, CacheEntry>();
+  for (const c of cached) {
+    // Keep human-reviewed translations forever; keep machine ones only while
+    // their source hash still matches the current mission text.
+    if (c.reviewed === 1 || c.content_hash === hashOf.get(c.mission_id)) {
+      cacheMap.set(c.mission_id, c);
+    }
+  }
   const toTranslate = missions.filter(m => !cacheMap.has(m.id));
 
   if (toTranslate.length > 0) {
+    // Pivot through English: LLMs translate EN→X more faithfully than RO→X.
+    // For any non-English target we first ensure English versions exist, then
+    // translate from those. English itself is translated directly from Romanian.
+    let sourceFromLang = 'Romanian';
+    let sourceById = new Map<string, TranslatableMission>(toTranslate.map(m => [m.id, m]));
+    if (normalized !== 'en') {
+      const enVersions = await translateMissions(toTranslate, 'en');
+      sourceFromLang = 'English';
+      sourceById = new Map(enVersions.map(m => [m.id, m]));
+    }
+
     const CHUNK = 10;
     const insertStmt = rawSqlite.prepare(
       `INSERT OR REPLACE INTO mission_translations
-       (mission_id, lang, title, description, proof_prompt, steps, reflection)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
+       (mission_id, lang, title, description, proof_prompt, steps, reflection, content_hash, reviewed)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)`
     );
 
     for (let i = 0; i < toTranslate.length; i += CHUNK) {
       const chunk = toTranslate.slice(i, i + CHUNK);
-      const payload = chunk.map(m => ({
-        id: m.id,
-        title: m.title,
-        description: m.description,
-        proof_prompt: m.proof_prompt,
-        steps: m.steps,
-        reflection: m.reflection,
-      }));
+      const payload = chunk.map(m => {
+        const src = sourceById.get(m.id) ?? m;
+        return {
+          id: m.id,
+          title: src.title,
+          description: src.description,
+          proof_prompt: src.proof_prompt,
+          steps: src.steps,
+          reflection: src.reflection,
+        };
+      });
 
       try {
-        const prompt = `Translate the following JSON array from Romanian to ${langName}.
+        const prompt = `Translate the following JSON array from ${sourceFromLang} to ${langName}.
 Keep each "id" value unchanged. Translate only: title, description, proof_prompt, steps (it is a JSON array encoded as a string — translate the strings inside it but keep it as a JSON-encoded string), reflection.
 Return ONLY a valid JSON array, no markdown fences:
 ${JSON.stringify(payload)}`;
@@ -653,14 +692,24 @@ ${JSON.stringify(payload)}`;
             for (const t of translated) {
               const orig = chunk.find(m => m.id === t.id);
               if (orig && t.title) {
-                insertStmt.run(t.id, normalized, t.title, t.description ?? orig.description, t.proof_prompt ?? orig.proof_prompt, t.steps ?? orig.steps, t.reflection ?? null);
-                cacheMap.set(t.id, { mission_id: t.id, title: t.title, description: t.description, proof_prompt: t.proof_prompt, steps: t.steps, reflection: t.reflection ?? null });
+                const hash = hashOf.get(t.id) ?? null;
+                insertStmt.run(t.id, normalized, t.title, t.description ?? orig.description, t.proof_prompt ?? orig.proof_prompt, t.steps ?? orig.steps, t.reflection ?? null, hash);
+                cacheMap.set(t.id, { title: t.title, description: t.description, proof_prompt: t.proof_prompt, steps: t.steps, reflection: t.reflection ?? null });
               }
             }
           })();
         }
       } catch (err) {
+        // These missions fall back to the original Romanian for a non-Romanian
+        // user. Surface it so the silent fallback is visible (was invisible before).
         console.warn(`[translateMissions] ${langName} chunk ${i}: ${(err as Error).message}`);
+        captureException(err, {
+          scope: 'translateMissions',
+          lang: normalized,
+          source: sourceFromLang,
+          chunkStart: i,
+          missionIds: chunk.map(m => m.id),
+        });
       }
     }
   }

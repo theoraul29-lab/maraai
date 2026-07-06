@@ -1,0 +1,193 @@
+{
+  "progression": [
+    {
+      "id": "prog-new-mindset",
+      "slug": "new-mindset",
+      "name": "New Mindset",
+      "tagline": "O zi. O schimbare de perspectivă.",
+      "description": "Prima ta misiune în transformarea personală. O singură zi, o singură misiune — simplă, profundă, imediată. Descoperă cum un moment de claritate poate schimba totul.",
+      "duration_days": 1,
+      "price_cents": 0,
+      "pillar_focus": [
+        "self",
+        "acceptance"
+      ],
+      "difficulty": "gentle",
+      "is_featured": 1,
+      "sort_order": 0
+    },
+    {
+      "id": "prog-new-habit",
+      "slug": "new-habit",
+      "name": "New Habit",
+      "tagline": "21 de zile. Un obicei pentru viață.",
+      "description": "Știința confirmă: 21 de zile sunt suficiente pentru a consolida un nou obicei. Primele 10 zile sunt gratuite — ca să simți cum funcționează. Restul de 11 zile sunt ale tale dacă alegi să continui.",
+      "duration_days": 21,
+      "price_cents": 600,
+      "pillar_focus": [
+        "discipline",
+        "self"
+      ],
+      "difficulty": "gentle",
+      "is_featured": 1,
+      "sort_order": 1
+    },
+    {
+      "id": "prog-new-skills",
+      "slug": "new-skills",
+      "name": "New Skills",
+      "tagline": "90 de zile. O abilitate nouă.",
+      "description": "Trei luni de misiuni zilnice pentru a stăpâni ceva nou — o abilitate, un domeniu, o versiune mai competentă a ta. Mara generează fiecare zi în funcție de progresul tău real.",
+      "duration_days": 90,
+      "price_cents": 6000,
+      "pillar_focus": [
+        "discipline",
+        "self",
+        "hobby"
+      ],
+      "difficulty": "medium",
+      "is_featured": 1,
+      "sort_order": 2
+    },
+    {
+      "id": "prog-new-body",
+      "slug": "new-body",
+      "name": "New Body",
+      "tagline": "180 de zile. Un corp și o minte noi.",
+      "description": "Șase luni de transformare fizică și mentală autentică. Nu e o dietă și nu e un program de fitness standard — e o schimbare reală de identitate, construită zi cu zi prin misiuni personalizate de Mara.",
+      "duration_days": 180,
+      "price_cents": 16000,
+      "pillar_focus": [
+        "life",
+        "discipline",
+        "self"
+      ],
+      "difficulty": "medium",
+      "is_featured": 0,
+      "sort_order": 3
+    },
+    {
+      "id": "prog-new-life",
+      "slug": "new-life",
+      "name": "New Life",
+      "tagline": "365 de zile. O viață nouă.",
+      "description": "Un an întreg de misiuni zilnice personalizate. Carieră, relații, sănătate, scop — toate reconstruite pas cu pas. La final, nu vei fi o versiune îmbunătățită a ta. Vei fi tu, din nou.",
+      "duration_days": 365,
+      "price_cents": 36000,
+      "pillar_focus": [
+        "life",
+        "self",
+        "helping",
+        "discipline"
+      ],
+      "difficulty": "deep",
+      "is_featured": 0,
+      "sort_order": 4
+    },
+    {
+      "id": "prog-new-you",
+      "slug": "new-you",
+      "name": "New You",
+      "tagline": "1095 de zile. Un om nou.",
+      "description": "Trei ani. 1095 de misiuni zilnice. Calea completă de la cine ești acum la cine poți deveni. Cel mai ambițios program de transformare personală disponibil — pentru cei care au decis că vor cu adevărat să se schimbe.",
+      "duration_days": 1095,
+      "price_cents": 62000,
+      "pillar_focus": [
+        "self",
+        "life",
+        "discipline",
+        "acceptance",
+        "creativity"
+      ],
+      "difficulty": "deep",
+      "is_featured": 0,
+      "sort_order": 5
+    }
+  ],
+  "thematic": [
+    {
+      "id": "prog-morning-ritual",
+      "slug": "morning-ritual",
+      "name": "Morning Ritual",
+      "tagline": "Transformă dimineața. Transformă viața.",
+      "description": "Un program de 30 de zile care te ajută să construiești o rutină de dimineață care îți aparține complet. Fiecare zi începe cu o misiune scurtă, autentică, concretă.",
+      "duration_days": 30,
+      "price_cents": 0,
+      "pillar_focus": [
+        "discipline",
+        "self",
+        "life"
+      ],
+      "difficulty": "gentle",
+      "is_featured": 1,
+      "sort_order": 10
+    },
+    {
+      "id": "prog-inner-work",
+      "slug": "inner-work",
+      "name": "Inner Work",
+      "tagline": "Mergi înăuntru. Găsește-te.",
+      "description": "Un program de 90 de zile de explorare profundă. Misiuni care ating cele mai sensibile și mai importante aspecte ale vieții tale interioare. Pentru cei curajosi.",
+      "duration_days": 90,
+      "price_cents": 0,
+      "pillar_focus": [
+        "acceptance",
+        "self"
+      ],
+      "difficulty": "deep",
+      "is_featured": 1,
+      "sort_order": 11
+    },
+    {
+      "id": "prog-creative-expression",
+      "slug": "creative-expression",
+      "name": "Creative Expression",
+      "tagline": "Exprimă-te. Arta ta e adevărul tău.",
+      "description": "Un program de 45 de zile pentru cei care vor să se exprime autentic — prin scris, desen, fotografie, muzică. Nu trebuie să fii artist. Trebuie să fii tu.",
+      "duration_days": 45,
+      "price_cents": 0,
+      "pillar_focus": [
+        "creativity",
+        "self"
+      ],
+      "difficulty": "gentle",
+      "is_featured": 0,
+      "sort_order": 12
+    },
+    {
+      "id": "prog-story-of-you",
+      "slug": "story-of-you",
+      "name": "Story of You",
+      "tagline": "Scrie-ți povestea. Devii autorul vieții tale.",
+      "description": "Un program de 60 de zile în care construiești prima ta carte — cartea vieții tale. Fiecare misiune completată devine o pagină. La final primești cartea ta.",
+      "duration_days": 60,
+      "price_cents": 0,
+      "pillar_focus": [
+        "creativity",
+        "self",
+        "acceptance"
+      ],
+      "difficulty": "medium",
+      "is_featured": 1,
+      "sort_order": 13
+    },
+    {
+      "id": "prog-legacy-builder",
+      "slug": "legacy-builder",
+      "name": "Legacy Builder",
+      "tagline": "Construiește viața pe care o meriți.",
+      "description": "Un program de 120 de zile pentru schimbare reală de viață. Carieră, bani, relații, scop. Misiuni concrete, dificile, transformatoare. Numai pentru cei hotărâți.",
+      "duration_days": 120,
+      "price_cents": 0,
+      "pillar_focus": [
+        "discipline",
+        "self",
+        "helping",
+        "hobby"
+      ],
+      "difficulty": "medium",
+      "is_featured": 0,
+      "sort_order": 14
+    }
+  ]
+}

@@ -13,7 +13,7 @@
  * esbuild only transpiles.
  */
 import { build } from 'esbuild';
-import { readdirSync } from 'node:fs';
+import { readdirSync, mkdirSync, copyFileSync } from 'node:fs';
 import path from 'node:path';
 
 function collect(dir, exts, acc = []) {
@@ -46,3 +46,13 @@ await build({
 });
 
 console.log(`[build-server] compiled ${entryPoints.length} files to dist/`);
+
+// esbuild non-bundle only emits .ts/.js; copy runtime-read JSON assets so the
+// compiled modules can fs.readFileSync them next to dist/... at runtime.
+const jsonAssets = collect('server', ['.json']);
+for (const src of jsonAssets) {
+  const dest = path.join('dist', src);
+  mkdirSync(path.dirname(dest), { recursive: true });
+  copyFileSync(src, dest);
+}
+console.log(`[build-server] copied ${jsonAssets.length} JSON asset(s) to dist/`);
