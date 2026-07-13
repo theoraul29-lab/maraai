@@ -17,10 +17,17 @@
  * Translation pivots through English (LLMs translate EN→X more faithfully than
  * RO→X), mirroring the runtime translateMissions() logic.
  *
+ * Provider selection mirrors the app's runtime provider-router: Ollama first
+ * (local, no per-token cost — in line with the self-hosted AI strategy), with
+ * Anthropic as fallback. Pick explicitly with TRANSLATE_PROVIDER=ollama|anthropic.
+ *   • Ollama   env: OLLAMA_BASE_URL (default http://localhost:11434), OLLAMA_MODEL (default llama3.1:8b)
+ *   • Anthropic env: ANTHROPIC_API_KEY, ANTHROPIC_MODEL (default claude-sonnet-4-6)
+ *
  * Usage:
- *   ANTHROPIC_API_KEY=... node scripts/translate-missions.mjs            # all languages
- *   ANTHROPIC_API_KEY=... node scripts/translate-missions.mjs de es fr   # only these
- *   ANTHROPIC_API_KEY=... node scripts/translate-missions.mjs --force    # ignore hash, re-translate all
+ *   node scripts/translate-missions.mjs            # all languages (auto provider)
+ *   node scripts/translate-missions.mjs de es fr   # only these
+ *   node scripts/translate-missions.mjs --force     # ignore hash, re-translate all
+ *   TRANSLATE_PROVIDER=ollama node scripts/translate-missions.mjs   # force local Ollama
  */
 import Anthropic from '@anthropic-ai/sdk';
 import { createHash } from 'crypto';
@@ -42,7 +49,9 @@ const LANG_NAMES = {
   da: 'Danish', el: 'Greek',
 };
 
-const MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6';
+const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6';
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'llama3.1:8b';
+const OLLAMA_BASE_URL = (process.env.OLLAMA_BASE_URL || 'http://localhost:11434').replace(/\/+$/, '');
 const MAX_TOKENS = Number(process.env.ANTHROPIC_MAX_TOKENS) || 8192;
 const CHUNK = 10;
 
@@ -71,12 +80,83 @@ function sourceEntry(m) {
   };
 }
 
-const apiKey = process.env.ANTHROPIC_API_KEY;
-if (!apiKey) {
-  console.error('ANTHROPIC_API_KEY is not set. Cannot generate translations.');
-  process.exit(1);
+// ── Provider abstraction ────────────────────────────────────────────────────
+// generate(prompt) -> string. Chosen once at startup, mirroring provider-router:
+// Ollama first (if reachable), else Anthropic. Overridable via TRANSLATE_PROVIDER.
+async function ollamaReachable() {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 3000);
+  try {
+    const res = await fetch(`${OLLAMA_BASE_URL}/api/tags`, { signal: controller.signal });
+    return res.ok;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
 }
-const client = new Anthropic({ apiKey, timeout: 120_000 });
+
+async function makeOllamaGenerate() {
+  const res = await fetch(`${OLLAMA_BASE_URL}/api/tags`);
+  const tags = await res.json().catch(() => ({ models: [] }));
+  const have = (tags.models ?? []).map((m) => m.name);
+  if (have.length && !have.some((n) => n === OLLAMA_MODEL || n.startsWith(`${OLLAMA_MODEL.split(':')[0]}:`))) {
+    console.warn(`  ⚠ Ollama model "${OLLAMA_MODEL}" not found (have: ${have.join(', ') || 'none'}). Pull it with: ollama pull ${OLLAMA_MODEL}`);
+  }
+  return async (prompt) => {
+    const r = await fetch(`${OLLAMA_BASE_URL}/api/chat`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        model: OLLAMA_MODEL,
+        messages: [{ role: 'user', content: prompt }],
+        stream: false,
+        options: { temperature: 0.2 },
+      }),
+    });
+    if (!r.ok) throw new Error(`Ollama HTTP ${r.status}: ${await r.text().catch(() => '')}`);
+    const data = await r.json();
+    return (data.message?.content ?? '').trim();
+  };
+}
+
+function makeAnthropicGenerate() {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not set.');
+  const client = new Anthropic({ apiKey, timeout: 120_000 });
+  return async (prompt) => {
+    const res = await client.messages.create({
+      model: ANTHROPIC_MODEL,
+      max_tokens: MAX_TOKENS,
+      temperature: 0.2,
+      messages: [{ role: 'user', content: prompt }],
+    });
+    return res.content
+      .filter((b) => b.type === 'text')
+      .map((b) => b.text)
+      .join('')
+      .trim();
+  };
+}
+
+async function selectProvider() {
+  const forced = (process.env.TRANSLATE_PROVIDER || '').toLowerCase();
+  if (forced === 'anthropic') return { name: 'anthropic', model: ANTHROPIC_MODEL, generate: makeAnthropicGenerate() };
+  if (forced === 'ollama') {
+    if (!(await ollamaReachable())) throw new Error(`TRANSLATE_PROVIDER=ollama but ${OLLAMA_BASE_URL} is not reachable.`);
+    return { name: 'ollama', model: OLLAMA_MODEL, generate: await makeOllamaGenerate() };
+  }
+  // Auto: Ollama first (local, free), else Anthropic.
+  if (await ollamaReachable()) {
+    return { name: 'ollama', model: OLLAMA_MODEL, generate: await makeOllamaGenerate() };
+  }
+  if (process.env.ANTHROPIC_API_KEY) {
+    return { name: 'anthropic', model: ANTHROPIC_MODEL, generate: makeAnthropicGenerate() };
+  }
+  throw new Error(`No AI provider available. Start Ollama at ${OLLAMA_BASE_URL} (ollama serve) or set ANTHROPIC_API_KEY.`);
+}
+
+let provider = null; // set in main()
 
 async function translateChunk(chunk, fromLang, toLang) {
   const payload = chunk.map((m) => ({
@@ -93,17 +173,7 @@ Preserve tone: these are short personal-development mission cards. Keep it natur
 Return ONLY a valid JSON array, no markdown fences:
 ${JSON.stringify(payload)}`;
 
-  const res = await client.messages.create({
-    model: MODEL,
-    max_tokens: MAX_TOKENS,
-    temperature: 0.2,
-    messages: [{ role: 'user', content: prompt }],
-  });
-  const raw = res.content
-    .filter((b) => b.type === 'text')
-    .map((b) => b.text)
-    .join('')
-    .trim();
+  const raw = await provider.generate(prompt);
   const clean = raw.replace(/```json|```/g, '').trim();
   const parsed = JSON.parse(clean);
   if (!Array.isArray(parsed)) throw new Error('LLM did not return a JSON array');
@@ -165,7 +235,9 @@ async function main() {
 
   if (!existsSync(OUT_DIR)) mkdirSync(OUT_DIR, { recursive: true });
 
-  console.log(`Translating ${missions.length} missions → ${targets.length} languages (model ${MODEL})`);
+  provider = await selectProvider();
+  console.log(`Provider: ${provider.name} (${provider.model})`);
+  console.log(`Translating ${missions.length} missions → ${targets.length} languages`);
 
   // English is the pivot base for every other language.
   let english = null;
@@ -226,7 +298,8 @@ function writeBundle(lang, map, hashById, missions) {
     lang,
     lang_name: LANG_NAMES[lang],
     generated_at: new Date().toISOString(),
-    model: MODEL,
+    provider: provider?.name,
+    model: provider?.model,
     missions: entries,
   };
   const outPath = join(OUT_DIR, `${lang}.json`);
