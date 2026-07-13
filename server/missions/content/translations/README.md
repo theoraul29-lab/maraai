@@ -20,18 +20,29 @@ per-user personalized missions (which cannot be pre-translated).
 
 ## How to (re)generate
 
-Run the generator with a valid `ANTHROPIC_API_KEY`:
+The generator picks a provider the same way the app does: **Ollama first**
+(local, no per-token cost), **Anthropic as fallback**. Generation is a one-time
+offline step — no LLM is called at runtime once the bundles are committed.
 
 ```bash
-# All languages (skips bundles already up to date):
-ANTHROPIC_API_KEY=sk-ant-... node scripts/translate-missions.mjs
+# Auto provider (Ollama if reachable, else Anthropic). All languages,
+# skipping bundles already up to date:
+node scripts/translate-missions.mjs
 
-# Only specific languages:
-ANTHROPIC_API_KEY=sk-ant-... node scripts/translate-missions.mjs de es fr
+# Force local Ollama (must be running: `ollama serve`, model pulled):
+TRANSLATE_PROVIDER=ollama OLLAMA_MODEL=llama3.1:8b node scripts/translate-missions.mjs
 
-# Force re-translate everything (ignore hash freshness):
-ANTHROPIC_API_KEY=sk-ant-... node scripts/translate-missions.mjs --force
+# Force Anthropic:
+TRANSLATE_PROVIDER=anthropic ANTHROPIC_API_KEY=sk-ant-... node scripts/translate-missions.mjs
+
+# Only specific languages / force re-translate everything:
+node scripts/translate-missions.mjs de es fr
+node scripts/translate-missions.mjs --force
 ```
+
+Provider env:
+- **Ollama** — `OLLAMA_BASE_URL` (default `http://localhost:11434`), `OLLAMA_MODEL` (default `llama3.1:8b`)
+- **Anthropic** — `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` (default `claude-sonnet-4-6`)
 
 Then commit the resulting `<lang>.json` files.
 
