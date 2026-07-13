@@ -23,7 +23,7 @@ import { UPLOADS_DIR } from './modules/reels.js';
 import { IMAGE_UPLOADS_DIR } from './modules/uploads.js';
 import { seedPlans } from './billing/seed.js';
 import { seedDefaultObjective } from './mara-core/objective.js';
-import { seedMissions } from './missions/seed.js';
+import { seedMissions, seedMissionTranslations } from './missions/seed.js';
 import { warmTranslationCache } from './missions/engine.js';
 import { scheduleDbBackup } from './services/dbBackup.js';
 import {
@@ -810,10 +810,21 @@ app.use((req, res, next) => {
     console.error('[missions] seed failed (continuing):', err);
   }
 
-  // Pre-warm only English — the pivot base every other translation derives
-  // from (see translateMissions). All other languages are translated lazily on
-  // first request and cached, so we no longer spend startup LLM budget warming
-  // languages nobody may use. Fire-and-forget: never blocks startup.
+  // Seed pre-generated translations (content/translations/*.json) so missions
+  // render in the user's language with NO live LLM call at runtime. Deterministic
+  // and shipped with the app; the LLM path below is only a fallback for missions
+  // not covered by a fresh bundle.
+  try {
+    seedMissionTranslations();
+  } catch (err) {
+    console.error('[missions] translation seed failed (continuing):', err);
+  }
+
+  // Pre-warm English via LLM only as a fallback for any missions NOT already
+  // covered by a committed translation bundle (e.g. a freshly-added mission
+  // whose bundle hasn't been regenerated yet). translateMissions is idempotent
+  // and skips missions whose translation is already fresh, so when bundles are
+  // present and up to date this makes zero LLM calls. Fire-and-forget.
   warmTranslationCache(['en']).catch(
     (err) => console.warn('[missions:warm] startup warm failed:', (err as Error).message),
   );
