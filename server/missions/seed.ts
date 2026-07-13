@@ -1,5 +1,6 @@
 import { rawSqlite } from '../db.js';
 import { getMissionsForSeed, getProgramsForSeed } from './content.js';
+import { loadTranslationBundles } from './content-translations.js';
 
 // Content (missions + programs) is authored in ./content/*.json and validated
 // in content.ts. Seeding UPSERTs from that JSON so it is the single source of
@@ -92,6 +93,16 @@ export function seedMissions(): void {
   console.log(`[missions] ✅ ${missions.length} misiuni + ${totalPrograms} programe seed-uite (${progression.length} progression + ${thematic.length} tematice)`);
 
   // pillar_focus consistency check (non-fatal warning at startup): every pillar
+  // (declared below after translations helper)
+  runPillarFocusCheck(progression, thematic);
+}
+
+// Split out so seedMissions stays readable; behaviour unchanged.
+function runPillarFocusCheck(
+  progression: ReturnType<typeof getProgramsForSeed>['progression'],
+  thematic: ReturnType<typeof getProgramsForSeed>['thematic'],
+): void {
+  // every pillar
   // a program targets should have at least one active mission.
   for (const prog of [...progression, ...thematic]) {
     for (const pillar of prog.pillar_focus) {
@@ -106,4 +117,75 @@ export function seedMissions(): void {
       }
     }
   }
+}
+
+// Seed pre-generated mission translations (content/translations/<lang>.json)
+// into mission_translations so missions render in the user's language without a
+// live LLM call. Idempotent and safe to run on every boot:
+//   • only entries whose source_hash matches the current mission text are seeded
+//     (a stale bundle entry is skipped, leaving the runtime LLM fallback to
+//      regenerate it if a provider is available);
+//   • human-reviewed rows (reviewed = 1) are never overwritten;
+//   • machine rows are refreshed from the bundle (bundle is authoritative).
+const upsertTranslation = rawSqlite.prepare(`
+  INSERT INTO mission_translations (
+    mission_id, lang, title, description, proof_prompt, steps, reflection, content_hash, reviewed
+  ) VALUES (
+    @mission_id, @lang, @title, @description, @proof_prompt, @steps, @reflection, @content_hash, 0
+  )
+  ON CONFLICT(mission_id, lang) DO UPDATE SET
+    title = excluded.title,
+    description = excluded.description,
+    proof_prompt = excluded.proof_prompt,
+    steps = excluded.steps,
+    reflection = excluded.reflection,
+    content_hash = excluded.content_hash,
+    translated_at = unixepoch()
+  WHERE mission_translations.reviewed = 0
+`);
+
+export function seedMissionTranslations(): void {
+  const bundles = loadTranslationBundles();
+  if (bundles.length === 0) {
+    console.log('[missions] no translation bundles found — skipping (runtime LLM fallback stays active)');
+    return;
+  }
+
+  const hashById = new Map(getMissionsForSeed().map((m) => [m.id, m.content_hash]));
+
+  let seeded = 0;
+  let skippedStale = 0;
+  const insertAll = rawSqlite.transaction(() => {
+    for (const bundle of bundles) {
+      const lang = bundle.lang.split('-')[0].toLowerCase();
+      if (!lang || lang === 'ro') continue;
+      for (const [missionId, entry] of Object.entries(bundle.missions)) {
+        const currentHash = hashById.get(missionId);
+        if (!currentHash) continue; // mission no longer exists in the catalogue
+        // Only seed translations that match the current source text.
+        if (entry.source_hash && entry.source_hash !== currentHash) {
+          skippedStale++;
+          continue;
+        }
+        upsertTranslation.run({
+          mission_id: missionId,
+          lang,
+          title: entry.title,
+          description: entry.description,
+          proof_prompt: entry.proof_prompt,
+          steps: JSON.stringify(entry.steps),
+          reflection: entry.reflection ?? null,
+          content_hash: currentHash,
+        });
+        seeded++;
+      }
+    }
+  });
+  insertAll();
+
+  const langs = bundles.map((b) => b.lang).join(', ');
+  console.log(
+    `[missions] ✅ ${seeded} translation rows seeded across ${bundles.length} languages (${langs})` +
+    (skippedStale > 0 ? ` — ${skippedStale} stale entries skipped` : ''),
+  );
 }
