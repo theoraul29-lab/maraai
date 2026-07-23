@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from './contexts/AuthContext';
+import { usePreviewStatus } from './hooks/usePreviewStatus';
 import {
   Target, Books, NotePencil, BookOpen, UsersThree, Trophy,
   Lock, CheckCircle, ArrowLeft, Fire,
@@ -387,6 +388,11 @@ function MissionCardNew({
 export default function Missions() {
   const { t, i18n } = useTranslation();
   const { isAuthenticated, user } = useAuth();
+  // Anonymous visitors inside the read-only preview window may browse the
+  // mission catalogue (but not start/generate/enroll — those still require an
+  // account and route to sign-up).
+  const { active: previewActive } = usePreviewStatus(!isAuthenticated);
+  const canBrowse = isAuthenticated || previewActive;
   const navigate = useNavigate();
 
   const [view, setView] = useState<View>('list');
@@ -444,7 +450,7 @@ export default function Missions() {
 
   // ── data loaders ──────────────────────────────────────────────────────────
   const loadMissions = useCallback(async () => {
-    if (!isAuthenticated) return;
+    if (!canBrowse) return;
     setLoading(true);
     try {
       const langQ = `lang=${encodeURIComponent(i18n.language)}`;
@@ -461,7 +467,7 @@ export default function Missions() {
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, selectedPillar, t, i18n.language]);
+  }, [canBrowse, selectedPillar, t, i18n.language]);
 
   async function loadPrograms() {
     try {
@@ -543,10 +549,12 @@ export default function Missions() {
   }
 
   useEffect(() => {
-    if (!isAuthenticated) return;
-    // Start missions immediately — don't block on onboarding check
+    if (!canBrowse) return;
+    // Missions catalogue + programs are viewable in the anonymous preview.
     loadMissions();
     loadPrograms();
+    // Everything below is per-account and stays behind sign-in.
+    if (!isAuthenticated) return;
     loadEnrollments();
     loadPurchasedPrograms();
     // Onboarding check in parallel; if not done, switch view (missions already in flight)
@@ -554,7 +562,7 @@ export default function Missions() {
       .then((res) => { if (!res.done) setView('onboarding'); })
       .catch(() => {});
     // journal, books, community, stats are lazy — loaded on first tab visit below
-  }, [isAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [canBrowse, isAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle PayPal redirect back (?payment=success&program=new_habit)
   useEffect(() => {
@@ -588,9 +596,9 @@ export default function Missions() {
 
   // Re-fetch all translated content when user switches language
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!canBrowse) return;
     loadMissions();
-    loadEnrollments();
+    if (isAuthenticated) loadEnrollments();
   }, [i18n.language]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── handlers ──────────────────────────────────────────────────────────────
@@ -643,6 +651,7 @@ export default function Missions() {
   };
 
   const handleGenerateMission = async () => {
+    if (!isAuthenticated) { navigate('/'); return; }
     setGenerating(true);
     setError('');
     try {
@@ -733,7 +742,7 @@ export default function Missions() {
   ];
 
   // ── auth wall ─────────────────────────────────────────────────────────────
-  if (!isAuthenticated) {
+  if (!canBrowse) {
     return (
       <div className="missions-page">
         <div className="missions-auth-wall">
@@ -1273,7 +1282,7 @@ export default function Missions() {
                     <span>💪 {program.difficulty}</span>
                     <span>{program.price_cents === 0 ? t('missions.free') : `💰 ${(program.price_cents / 100).toFixed(2)} EUR`}</span>
                   </div>
-                  <button className="program-enroll-btn" onClick={() => setEnrollingSlug(program.slug)}>
+                  <button className="program-enroll-btn" onClick={() => { if (!isAuthenticated) { navigate('/'); return; } setEnrollingSlug(program.slug); }}>
                     {t('missions.startProgramCta', { name: program.name })}
                   </button>
                 </div>

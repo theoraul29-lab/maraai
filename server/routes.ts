@@ -212,7 +212,8 @@ export async function registerRoutes(
   // is deliberately read-only: only GET requests pass, and never the AI-chat or
   // monetisation surfaces — those keep requiring a registered account so a
   // preview visitor can neither burn AI tokens nor post/pay anonymously.
-  const PREVIEW_WINDOW_MS = 20 * 60 * 1000; // 20 minutes
+  // Default 20 minutes; overridable via env for tuning/tests without a redeploy.
+  const PREVIEW_WINDOW_MS = Number(process.env.PREVIEW_WINDOW_MS) || 20 * 60 * 1000;
   const PREVIEW_BLOCKED_PREFIXES = [
     '/api/maraai',
     '/api/chat',
