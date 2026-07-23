@@ -1,6 +1,8 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Route, Routes, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { PreviewBanner } from './components/PreviewBanner';
+import { usePreviewStatus } from './hooks/usePreviewStatus';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import './App.css';
 
@@ -64,19 +66,45 @@ function OnboardingGuard() {
 }
 
 /**
- * Login wall: every in-app route is gated behind a registered account.
+ * Login wall: in-app routes are gated behind a registered account.
  * Anonymous visitors are bounced to the landing page (`/`), whose AuthButton
  * opens the sign-up / login modal. Only the landing, pricing, privacy and the
  * password-reset pages stay reachable without an account (see <Routes> below).
+ *
+ * Routes marked `allowPreview` additionally let anonymous visitors browse
+ * (read-only) during the 20-minute preview window served by the backend
+ * (`/api/preview/status`). When the window closes, PreviewBanner sends them
+ * back to `/` to sign up.
  */
-function RequireAuth({ children }: { children: React.ReactNode }) {
+function RequireAuth({
+  children,
+  allowPreview = false,
+}: {
+  children: React.ReactNode;
+  allowPreview?: boolean;
+}) {
   const { isAuthenticated, loading } = useAuth();
+  const preview = usePreviewStatus(allowPreview && !loading && !isAuthenticated);
 
   // Still resolving /api/auth/me — render nothing rather than flashing a
   // redirect that would race the session check.
   if (loading) return null;
-  if (!isAuthenticated) return <Navigate to="/" replace />;
-  return <>{children}</>;
+  if (isAuthenticated) return <>{children}</>;
+
+  if (allowPreview) {
+    // Still resolving the preview window — avoid flashing the landing page.
+    if (preview.loading) return null;
+    if (preview.active) {
+      return (
+        <>
+          <PreviewBanner initialRemainingMs={preview.remainingMs} />
+          {children}
+        </>
+      );
+    }
+  }
+
+  return <Navigate to="/" replace />;
 }
 
 function AdminGuard({ children }: { children: React.ReactNode }) {
@@ -130,13 +158,13 @@ function App() {
             <Suspense fallback={null}>
               <Routes>
                 <Route path="/" element={<HomePage />} />
-                <Route path="/missions" element={<RequireAuth><Missions /></RequireAuth>} />
+                <Route path="/missions" element={<RequireAuth allowPreview><Missions /></RequireAuth>} />
                 <Route path="/membership" element={<RequireAuth><VIP onClose={() => navigate('/')} /></RequireAuth>} />
                 <Route path="/creator-panel" element={<RequireAuth><Creators onClose={() => navigate('/')} /></RequireAuth>} />
-                <Route path="/you" element={<RequireAuth><You /></RequireAuth>} />
-                <Route path="/reels" element={<RequireAuth><Reels /></RequireAuth>} />
-                <Route path="/writers-hub" element={<RequireAuth><WritersHub onClose={() => navigate('/')} /></RequireAuth>} />
-                <Route path="/community" element={<RequireAuth><Community /></RequireAuth>} />
+                <Route path="/you" element={<RequireAuth allowPreview><You /></RequireAuth>} />
+                <Route path="/reels" element={<RequireAuth allowPreview><Reels /></RequireAuth>} />
+                <Route path="/writers-hub" element={<RequireAuth allowPreview><WritersHub onClose={() => navigate('/')} /></RequireAuth>} />
+                <Route path="/community" element={<RequireAuth allowPreview><Community /></RequireAuth>} />
                 <Route path="/pricing" element={<Pricing />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/reset-password/confirmation" element={<ResetPasswordConfirmation />} />

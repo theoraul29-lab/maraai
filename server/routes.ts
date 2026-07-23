@@ -202,15 +202,58 @@ export async function registerRoutes(
     '/api/health/db',
     '/api/runtime',
     '/api/waitlist',
+    '/api/preview/status',
   ]);
+
+  // ── Anonymous read-only preview window ──────────────────────────────────────
+  // New visitors may browse the platform (feeds, reels, articles, profiles,
+  // Missions) for PREVIEW_WINDOW_MS before an account is required. The window is
+  // stamped per session (req.session.firstSeenAt, set in setupSessionAuth) and
+  // is deliberately read-only: only GET requests pass, and never the AI-chat or
+  // monetisation surfaces — those keep requiring a registered account so a
+  // preview visitor can neither burn AI tokens nor post/pay anonymously.
+  const PREVIEW_WINDOW_MS = 20 * 60 * 1000; // 20 minutes
+  const PREVIEW_BLOCKED_PREFIXES = [
+    '/api/maraai',
+    '/api/chat',
+    '/api/premium',
+    '/api/payments',
+    '/api/admin',
+  ];
+  const previewRemainingMs = (req: any): number => {
+    const start = req.session?.firstSeenAt;
+    if (typeof start !== 'number') return 0;
+    return Math.max(0, PREVIEW_WINDOW_MS - (Date.now() - start));
+  };
+  const previewAllowsBrowsing = (req: any): boolean => {
+    if (req.method !== 'GET') return false;
+    if (previewRemainingMs(req) <= 0) return false;
+    const p: string = req.path;
+    return !PREVIEW_BLOCKED_PREFIXES.some((pre) => p.startsWith(pre));
+  };
+
   const requireAccountGate = (req: any, res: any, next: any) => {
     const p: string = req.path;
     if (!p.startsWith('/api/')) return next();
     if (PUBLIC_API_EXACT.has(p)) return next();
     if (PUBLIC_API_PREFIXES.some((pre) => p.startsWith(pre))) return next();
+    // Anonymous visitors inside the read-only preview window may browse.
+    // Registered accounts fall through to requireRealUser as before.
+    if (previewAllowsBrowsing(req)) return next();
     return requireRealUser(req, res, next);
   };
   app.use(requireAccountGate);
+
+  // Preview timing for the current session. Public so the SPA can show a
+  // countdown and prompt sign-up when the window closes.
+  app.get('/api/preview/status', (req: any, res: any) => {
+    const remainingMs = previewRemainingMs(req);
+    res.json({
+      active: remainingMs > 0,
+      remainingMs,
+      windowMs: PREVIEW_WINDOW_MS,
+    });
+  });
 
   // Inject dependencies into modules
   videoModule.injectDeps({ storage, db, api, z, creatorPostRequestSchema, likesTable });
