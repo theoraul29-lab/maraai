@@ -20,7 +20,8 @@
     "smoke:code-explorer": "tsx scripts/test-code-explorer.mts",
     "mara": "node scripts/mara-cli.mjs",
     "typecheck": "tsc --noEmit",
-    "backup:db": "tsx server/services/dbBackup.ts"
+    "backup:db": "tsx server/services/dbBackup.ts",
+    "build:businessplan": "md-to-pdf docs/businessplan/businessplan-ro.md docs/businessplan/businessplan-de.md"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.33.1",
@@ -62,6 +63,7 @@
     "@types/ws": "^8.5.10",
     "@vitejs/plugin-react": "^6.0.1",
     "esbuild": "^0.28.1",
+    "md-to-pdf": "^5.2.5",
     "tsx": "^4.15.0",
     "typescript": "~5.5.0",
     "vite": "^8.0.5"
