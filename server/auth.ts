@@ -11,6 +11,9 @@ declare module 'express-session' {
   interface SessionData {
     userId?: string;
     csrfToken?: string;
+    /** Epoch ms when this session was first created. Drives the anonymous
+     *  read-only preview window (see requireAccountGate in routes.ts). */
+    firstSeenAt?: number;
   }
 }
 
@@ -180,6 +183,10 @@ export function setupSessionAuth(app: Express) {
   app.use((req: Request, _res: Response, next: NextFunction) => {
     if (!req.session.userId) req.session.userId = makeId();
     if (!req.session.csrfToken) req.session.csrfToken = randomBytes(32).toString('hex');
+    // First time we see this session, stamp it. Used by the read-only
+    // "preview window" that lets anonymous visitors browse the platform for a
+    // limited time before an account is required (see requireAccountGate).
+    if (typeof req.session.firstSeenAt !== 'number') req.session.firstSeenAt = Date.now();
     req.user = { uid: req.session.userId, email: null };
     next();
   });
