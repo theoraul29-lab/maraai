@@ -23,7 +23,7 @@
     "backup:db": "tsx server/services/dbBackup.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.33.1",
+    "@anthropic-ai/sdk": "^0.117.1",
     "@sentry/node": "10.59.0",
     "axios": "^1.15.0",
     "bcryptjs": "^2.4.3",
