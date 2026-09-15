@@ -71,10 +71,15 @@ export function registerPWA(): void {
   if (import.meta.env.DEV) return;
   if (!('serviceWorker' in navigator)) return;
 
-  // Lazy-load the Vite virtual module so the dev dep-scanner doesn't try to
-  // resolve it from disk (see note at the top of this file).
-    const pwaRegisterModule = 'virtual:' + 'pwa-register';
-    void import(/* @vite-ignore */ pwaRegisterModule)
+  // Lazy-load the Vite virtual module. `optimizeDeps.exclude` (vite.config.ts)
+  // already tells the dev dep-scanner to leave this id alone — a real static
+  // specifier (no @vite-ignore) is required for Rollup to actually resolve
+  // and inline vite-plugin-pwa's generated module in the production build;
+  // @vite-ignore was disabling that resolution too, shipping the literal
+  // unresolved string 'virtual:pwa-register' as a runtime import() attempt,
+  // which the browser tried to fetch as a URL and CSP correctly rejected —
+  // silently breaking service worker registration on every production load.
+  void import('virtual:pwa-register')
     .then((mod: { registerSW: RegisterSW }) => {
       const { registerSW } = mod;
       // `updateSW` returns a function that triggers skipWaiting + reload when
