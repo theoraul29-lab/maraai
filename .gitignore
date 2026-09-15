@@ -7,9 +7,13 @@
 node_modules/
 venv/
 venv_back/
+whisper-env/
 __pycache__/
 *.pyc
 *.pyo
+
+# Local STT model cache (downloaded on first run, machine-specific)
+server/stt/models/
 
 # Build outputs
 dist/

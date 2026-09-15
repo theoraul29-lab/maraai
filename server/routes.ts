@@ -1936,6 +1936,17 @@ experiments, and learning cycles. If asked about experiments or strategy, be spe
     }
   });
 
+  // Hands the local STT service's URL + bearer token to an authenticated admin
+  // session so the Control Center's renderer can call it directly (audio never
+  // transits Railway — see server/index.ts CSP comment for why). Kept out of
+  // the static frontend bundle: fetched at runtime, behind the same admin
+  // session check as everything else here, rather than baked into shipped JS.
+  app.get('/api/admin/mara/stt-config', requireAdmin, (_req: any, res: any) => {
+    const token = process.env.MARA_STT_TOKEN;
+    if (!token) return res.json({ configured: false });
+    res.json({ configured: true, url: process.env.MARA_STT_URL || 'https://stt.hellomara.net', token });
+  });
+
   // ─── ADMIN DASHBOARD ────────────────────────────────────────────────────────
   // Helpers — each query is wrapped so a missing table returns a safe default.
   const sqlGet = <T>(q: string): T | null => { try { return rawSqlite.prepare(q).get() as T; } catch { return null; } };

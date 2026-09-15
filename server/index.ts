@@ -31,10 +31,19 @@ const app = express();
 
 // Helmet sets secure HTTP response headers. contentSecurityPolicy is disabled
 // in development because Vite's HMR injects inline scripts that would be blocked
-// by a strict CSP. In production the default helmet CSP is applied.
+// by a strict CSP. In production, Helmet's own defaults apply except for
+// connect-src: the Nexus Core voice feature fetches audio-transcription
+// results directly from the owner's laptop (stt.hellomara.net, reachable
+// only via Cloudflare Tunnel + a bearer token) from the browser/Electron
+// renderer, which default-src 'self' would otherwise block.
 app.use(
   helmet({
-    contentSecurityPolicy: process.env.NODE_ENV === 'production' ? undefined : false,
+    contentSecurityPolicy: process.env.NODE_ENV === 'production' ? {
+      directives: {
+        ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+        'connect-src': ["'self'", 'https://stt.hellomara.net'],
+      },
+    } : false,
     crossOriginEmbedderPolicy: false,
   }),
 );
