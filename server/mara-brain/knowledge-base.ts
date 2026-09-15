@@ -8,6 +8,7 @@ import { brainSqlite } from './sandbox.js';
 import { maraKnowledgeBase } from '../../shared/schema.js';
 import { sql, inArray, eq, like, desc } from 'drizzle-orm';
 import { flagConflictsForKnowledge } from './conflict-detector.js';
+import { getBrainRunContext } from './run-context.js';
 
 export type KnowledgeCategory =
   | 'user_pattern'
@@ -59,6 +60,22 @@ export async function storeKnowledge(
   confidence = 70,
   metadata: Record<string, unknown> = {},
 ): Promise<number> {
+  const context = getBrainRunContext();
+  if (context?.dryRun) {
+    const duplicate = context.knowledge.find(
+      (entry) => entry.category === category && entry.source === source && similarity(entry.content, content) > 0.8,
+    );
+    if (duplicate) {
+      duplicate.confidence = Math.min(100, duplicate.confidence + 5);
+      if (content.length > duplicate.content.length) duplicate.content = content;
+      context.recordWrite('knowledge_update');
+      return duplicate.id;
+    }
+    const id = context.nextId();
+    context.knowledge.push({ id, category, topic, content, source, confidence, metadata });
+    context.recordWrite('knowledge_insert');
+    return id;
+  }
   return db.transaction((tx) => {
     // Pull candidate duplicates by topic (mirrors storage.getKnowledgeByTopic
     // which fans out to a LIKE search, ordered by confidence).
@@ -136,6 +153,12 @@ export async function storeKnowledge(
  */
 export async function searchKnowledge(query: string, limit = 10): Promise<KnowledgeSearchResult[]> {
   const allKnowledge = await storage.getKnowledgeByTopic(query);
+  const context = getBrainRunContext();
+  if (context?.dryRun) {
+    allKnowledge.push(...context.knowledge.filter((entry) =>
+      entry.topic.toLowerCase().includes(query.toLowerCase()) || entry.content.toLowerCase().includes(query.toLowerCase()),
+    ).map((entry) => ({ ...entry, metadata: JSON.stringify(entry.metadata), accessCount: 0, createdAt: new Date(), updatedAt: new Date() })) as unknown as typeof allKnowledge);
+  }
 
   // Score by relevance
   return allKnowledge
@@ -179,7 +202,7 @@ export async function getKnowledgeContext(topics: string[], maxTokens = 2000): P
   }
 
   // Batch all access increments in a single UPDATE … WHERE id IN (…)
-  if (accessedIds.length > 0) {
+  if (accessedIds.length > 0 && !getBrainRunContext()?.dryRun) {
     await db
       .update(maraKnowledgeBase)
       .set({ accessCount: sql`${maraKnowledgeBase.accessCount} + 1` })
@@ -206,6 +229,13 @@ export async function getKnowledgeStats(): Promise<Record<string, number>> {
   for (const row of rows) {
     stats[row.category] = row.count;
     stats.total += row.count;
+  }
+  const context = getBrainRunContext();
+  if (context?.dryRun) {
+    for (const entry of context.knowledge) {
+      stats[entry.category] = (stats[entry.category] ?? 0) + 1;
+      stats.total++;
+    }
   }
   return stats;
 }

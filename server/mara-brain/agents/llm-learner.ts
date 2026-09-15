@@ -5,6 +5,7 @@ import { llmGenerate, isLLMConfigured, LLMRateLimitedError } from '../../llm.js'
 import { storeKnowledge } from '../knowledge-base.js';
 import { storage } from '../../storage.js';
 import { rawSqlite } from '../../db.js';
+import { getBrainRunContext } from '../run-context.js';
 
 interface LearningResult {
   topic: string;
@@ -210,6 +211,10 @@ const VALID_EMOTIONS = new Set([
  * messages to produce a meaningful signal — skips silently otherwise.
  */
 export async function updateUserEmotionalProfile(userId: string): Promise<void> {
+  if (getBrainRunContext()?.dryRun) {
+    getBrainRunContext()?.recordWrite('emotional_profile_suppressed');
+    return;
+  }
   if (!isLLMConfigured()) return;
 
   try {

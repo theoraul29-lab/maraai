@@ -16,6 +16,7 @@ import { getObjective } from '../mara-core/objective.js';
 import { DEFAULT_OBJECTIVE, type ObjectiveFunction } from '../mara-core/types.js';
 import { executive } from '../mara-core/executive.js';
 import { loadSession, saveSession, parseContinuityMemo, ensureSessionTable } from './session-state.js';
+import { getBrainRunContext, withBrainRunContext, type BrainRunContext } from './run-context.js';
 
 /** Wrap a promise with a timeout (ms). Rejects with an error if it takes too long. */
 function withTimeout<T>(promise: Promise<T>, ms: number, label = 'operation'): Promise<T> {
@@ -67,13 +68,19 @@ const PHASE_TIMEOUT = parseTimeoutMs(
  * Run the full autonomous brain cycle
  * This is called every 6 hours by the scheduler
  */
-export async function runBrainCycle(): Promise<BrainCycleResult> {
-  return withTimeout(_runBrainCycleInner(), BRAIN_CYCLE_TIMEOUT, 'Brain cycle');
+export async function runBrainCycle(context?: BrainRunContext): Promise<BrainCycleResult> {
+  const activeContext = context ?? getBrainRunContext();
+  const execute = () => withTimeout(_runBrainCycleInner(), BRAIN_CYCLE_TIMEOUT, 'Brain cycle');
+  return activeContext ? withBrainRunContext(activeContext, execute) : execute();
 }
 
 async function _runBrainCycleInner(): Promise<BrainCycleResult> {
+  const runContext = getBrainRunContext();
+  runContext?.recordPhase('cycle:start');
   // Ensure session table exists (idempotent).
-  try { ensureSessionTable(); } catch { /* non-fatal */ }
+  if (!getBrainRunContext()?.dryRun) {
+    try { ensureSessionTable(); } catch { /* non-fatal */ }
+  }
 
   // Load persistent session — the "memory from last time".
   const session = loadSession();
@@ -84,10 +91,14 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
 
   // Refresh shared CognitiveState so all phases this cycle see the same
   // strategic snapshot. Failures are swallowed — the brain cycle must run.
-  try {
-    await executive.tick();
-  } catch (err) {
-    console.warn('[MaraBrain] executive.tick() failed (non-fatal):', err);
+  if (getBrainRunContext()?.dryRun) {
+    getBrainRunContext()?.recordPhase('executive:tick:skipped_dry_run');
+  } else {
+    try {
+      await executive.tick();
+    } catch (err) {
+      console.warn('[MaraBrain] executive.tick() failed (non-fatal):', err);
+    }
   }
 
   const startTime = Date.now();
@@ -135,6 +146,8 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
       );
     } else {
       console.log('[MaraBrain] Phase 0: Reading from library...');
+      runContext?.recordPhase('phase:0:library');
+      runContext?.recordAgent('learning', 'executed');
       try {
         await withTimeout((async () => {
           const progress = await getLibraryProgress();
@@ -166,6 +179,7 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
     // Wrapped in withTimeout + try/catch so this NEVER blocks the rest of
     // the cycle even if the queue insert misbehaves.
     console.log('[MaraBrain] Phase 0.5: Knowledge gap detection...');
+    runContext?.recordPhase('phase:0.5:knowledge-gaps');
     try {
       await withTimeout((async () => {
         const modules = ['creator', 'writers', 'reels', 'vip', 'chat', 'growth'];
@@ -238,6 +252,8 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
     }
 
     console.log('[MaraBrain] Phase 1: Processing learning queue...');
+    runContext?.recordPhase('phase:1:learning');
+    runContext?.recordAgent('learning', 'executed');
     // Collect user IDs whose chat excerpts are processed this cycle so we can
     // refresh their evolutionary emotional profiles afterward (fire-and-forget).
     const chatExcerptUserIds = new Set<string>();
@@ -306,6 +322,8 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
     // of Phase 2 without copy-pasting the body.
     const runAutonomousResearchPhase = async () => {
       console.log('[MaraBrain] Phase 2: Autonomous research...');
+      runContext?.recordPhase('phase:2:research');
+      runContext?.recordAgent('research', 'executed');
       try {
         await withTimeout((async () => {
           const agenda = await generateResearchAgenda();
@@ -336,6 +354,8 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
     //   5. measure due experiments and write learnings back to knowledge base
     const runGrowthEngineerPhase = async () => {
       console.log('[MaraBrain] Phase 4: Growth Engineer cycle...');
+      runContext?.recordPhase('phase:4:growth-engineer');
+      runContext?.recordAgent('growth', 'executed');
       try {
         await withTimeout((async () => {
           const cycle = await runGrowthEngineerCycle();
@@ -392,6 +412,8 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
 
     // === PHASE 3: Module Trend Research ===
     console.log('[MaraBrain] Phase 3: Module trend research...');
+    runContext?.recordPhase('phase:3:module-trends');
+    runContext?.recordAgent('research', 'executed');
     try {
       await withTimeout((async () => {
         const modulesToResearch = ['creator', 'growth', 'platform'];
@@ -437,6 +459,8 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
     // turned off without disabling the rest of the brain cycle.
     if (process.env.MARA_LEARNING_ENABLED !== 'false') {
       console.log('[MaraBrain] Phase 4.5: Per-module growth analysis...');
+      runContext?.recordPhase('phase:4.5:module-analysis');
+      runContext?.recordAgent('analysis', 'executed');
       try {
         await withTimeout((async () => {
           const moduleResults = await runAllModuleAnalyzers();
@@ -460,6 +484,7 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
 
     // === PHASE 5: Identify Weak Points ===
     console.log('[MaraBrain] Phase 5: Identifying weak modules...');
+    runContext?.recordPhase('phase:5:weak-modules');
     try {
       await withTimeout((async () => {
         const weakModules = await identifyWeakModules();
@@ -473,6 +498,7 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
 
     // === PHASE 6: Growth Suggestions ===
     console.log('[MaraBrain] Phase 6: Growth suggestions...');
+    runContext?.recordPhase('phase:6:growth-suggestions');
     try {
       await withTimeout((async () => {
         const growth = await generateGrowthSuggestions();
@@ -491,6 +517,7 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
       );
     } else {
       console.log('[MaraBrain] Phase 7: Validating ideas...');
+      runContext?.recordPhase('phase:7:validation');
       try {
         await withTimeout((async () => {
           if (productIdeas.length > 0) {
@@ -513,6 +540,7 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
       // Banner already pushed when Phase 0 was skipped; no second message.
     } else {
       console.log('[MaraBrain] Phase 8: Business strategy learning...');
+      runContext?.recordPhase('phase:8:business-strategy');
       try {
         await withTimeout((async () => {
           const knowledgeStats = await getKnowledgeStats();
@@ -538,6 +566,7 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
     console.log(
       `[MaraBrain] Phase 9: Self-improvement... (timeout=${phase9Timeout / 1000}s${retentionMode ? ', retention mode doubled' : ''})`,
     );
+    runContext?.recordPhase('phase:9:self-improvement');
     try {
       await withTimeout((async () => {
         const recentMessages = await storage.getChatMessages();
@@ -591,7 +620,9 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
 
     // === PHASE 10: Self Reflection ===
     console.log('[MaraBrain] Phase 10: Writing self-reflection...');
+    runContext?.recordPhase('phase:10:self-reflection');
     try {
+      runContext?.recordPhase('phase:11:continuity');
       await withTimeout((async () => {
         const reflection = await writeSelfReflection(
           research,

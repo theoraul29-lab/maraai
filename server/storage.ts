@@ -1,4 +1,5 @@
 import { db } from "./db.js";
+import { getBrainRunContext } from "./mara-brain/run-context.js";
 import {
   videos,
   videoComments,
@@ -1968,6 +1969,11 @@ export class DatabaseStorage implements IStorage {
 
   // === MARA SEARCH HISTORY ===
   async createSearchHistory(entry: InsertSearchHistoryEntry): Promise<SearchHistoryEntry> {
+    const context = getBrainRunContext();
+    if (context?.dryRun) {
+      context.recordWrite('search_history_suppressed');
+      return { ...entry, id: context.nextId(), createdAt: new Date() } as SearchHistoryEntry;
+    }
     const [created] = await db.insert(maraSearchHistory).values(entry).returning();
     return created;
   }
@@ -1982,20 +1988,45 @@ export class DatabaseStorage implements IStorage {
 
   // === MARA LEARNING QUEUE ===
   async createLearningTask(entry: InsertLearningQueueEntry): Promise<LearningQueueEntry> {
+    const context = getBrainRunContext();
+    if (context?.dryRun) {
+      const task = { ...entry, id: context.nextId(), createdAt: new Date(), completedAt: null } as LearningQueueEntry;
+      context.learningQueue.push(task as unknown as Record<string, unknown>);
+      context.recordWrite('learning_queue_insert');
+      return task;
+    }
     const [created] = await db.insert(maraLearningQueue).values(entry).returning();
     return created;
   }
 
   async getPendingLearningTasks(limit = 20): Promise<LearningQueueEntry[]> {
-    return await db
+    const tasks = await db
       .select()
       .from(maraLearningQueue)
       .where(eq(maraLearningQueue.status, 'pending'))
       .orderBy(desc(maraLearningQueue.createdAt))
       .limit(limit);
+    const context = getBrainRunContext();
+    if (context?.dryRun) {
+      const shadow = context.learningQueue
+        .filter((task) => task.status === 'pending')
+        .slice(0, limit) as unknown as LearningQueueEntry[];
+      return [...tasks, ...shadow].slice(0, limit);
+    }
+    return tasks;
   }
 
   async updateLearningTask(id: number, status: string, result?: string): Promise<LearningQueueEntry | null> {
+    const context = getBrainRunContext();
+    if (context?.dryRun) {
+      const task = context.learningQueue.find((item) => item.id === id) as LearningQueueEntry | undefined;
+      if (task) {
+        task.status = status;
+        if (result) task.result = result;
+        context.recordWrite('learning_queue_update');
+      }
+      return task ?? null;
+    }
     const updates: Record<string, unknown> = { status };
     if (result) updates.result = result;
     if (status === 'completed') updates.completedAt = new Date();
@@ -2009,6 +2040,11 @@ export class DatabaseStorage implements IStorage {
 
   // === MARA SELF REFLECTION ===
   async createSelfReflection(entry: InsertSelfReflection): Promise<SelfReflection> {
+    const context = getBrainRunContext();
+    if (context?.dryRun) {
+      context.recordWrite('self_reflection_suppressed');
+      return { ...entry, id: context.nextId(), createdAt: new Date() } as SelfReflection;
+    }
     const [created] = await db.insert(maraSelfReflection).values(entry).returning();
     return created;
   }
@@ -2023,6 +2059,13 @@ export class DatabaseStorage implements IStorage {
 
   // === MARA PLATFORM INSIGHTS ===
   async createPlatformInsight(entry: InsertPlatformInsight): Promise<PlatformInsight> {
+    const context = getBrainRunContext();
+    if (context?.dryRun) {
+      const insight = { ...entry, id: context.nextId(), createdAt: new Date() } as PlatformInsight;
+      context.platformInsights.push(insight as unknown as Record<string, unknown>);
+      context.recordWrite('platform_insight');
+      return insight;
+    }
     const [created] = await db.insert(maraPlatformInsights).values(entry).returning();
     return created;
   }

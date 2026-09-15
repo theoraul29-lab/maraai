@@ -21,6 +21,7 @@ export function attachWebSocketServer(input: {
   const { httpServer, allowedOrigins, log } = input;
   const wss = new WebSocketServer({
     server: httpServer,
+    path: '/p2p-ws',
     maxPayload: MAX_MESSAGE_BYTES,
     verifyClient: (info, done) => {
       const origin = info.origin || info.req.headers.origin;

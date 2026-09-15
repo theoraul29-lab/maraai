@@ -3,6 +3,7 @@
 // Single-row table (id=1) — UPSERT keeps it simple.
 
 import { rawSqlite } from '../db.js';
+import { getBrainRunContext } from './run-context.js';
 
 export interface BrainSession {
   cycleCount: number;
@@ -60,6 +61,12 @@ export function loadSession(): BrainSession {
 }
 
 export function saveSession(session: BrainSession): void {
+  const context = getBrainRunContext();
+  if (context?.dryRun) {
+    context.session = { ...session };
+    context.recordWrite('session');
+    return;
+  }
   try {
     rawSqlite
       .prepare(`

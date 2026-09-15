@@ -65,11 +65,16 @@ export function registerPWA(): void {
   registered = true;
 
   if (typeof window === 'undefined') return;
+  // The Express development server uses the root Vite config, which does not
+  // install vite-plugin-pwa. Service workers are intentionally disabled in
+  // development, so avoid adding the virtual module to Vite's dev graph.
+  if (import.meta.env.DEV) return;
   if (!('serviceWorker' in navigator)) return;
 
   // Lazy-load the Vite virtual module so the dev dep-scanner doesn't try to
   // resolve it from disk (see note at the top of this file).
-  void import(/* @vite-ignore */ 'virtual:pwa-register')
+    const pwaRegisterModule = 'virtual:' + 'pwa-register';
+    void import(/* @vite-ignore */ pwaRegisterModule)
     .then((mod: { registerSW: RegisterSW }) => {
       const { registerSW } = mod;
       // `updateSW` returns a function that triggers skipWaiting + reload when

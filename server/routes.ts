@@ -11,9 +11,6 @@ import { db, rawSqlite } from './db.js';
 import { getAllCircuitStatuses } from './lib/circuit-breaker.js';
 import { cleanupKnowledgeBase } from './mara-brain/knowledge-base.js';
 import {
-  getAllAlerts,
-  getUnreadAlerts,
-  getUnreadCount,
   markAlertRead,
   markAllAlertsRead,
   analyzePlatformAndAlert,
@@ -64,7 +61,6 @@ import {
   getBuiltInLibrary,
   listExperiments,
   getExperiment,
-  decideExperiment,
   markImplemented,
   readFunnelData,
   indexCode,
@@ -76,6 +72,32 @@ import {
 } from './mara-brain/index.js';
 import { learningRateLimiter } from './mara-brain/rate-limiter.js';
 import { executeApprovedExperiment } from './mara-brain/experiment-executor.js';
+import { approveExperiment, parseExperimentDecision, rejectExperiment } from './mara-brain/experiment-decisions.js';
+import { getBrainControlSnapshot } from './mara-brain/control-service.js';
+import { readControlLogs } from './services/log-reader.js';
+import { readTaskStatus } from './services/task-engine.js';
+import { readControlOverview } from './services/control-overview.js';
+import { readRepositoryGitStatus, readRepositoryStatus } from './services/repository-status.js';
+import { AGENT_CATALOG } from './services/agent-catalog.js';
+import { readToolCatalog } from './services/tool-catalog.js';
+import { readIntegrationStatus } from './services/integration-status.js';
+import { approveCodeAgentPlan, createCodeAgentRequestWithTask, getCodeAgentPlan, listCodeAgentPlans, rejectCodeAgentPlan } from './services/code-agent.js';
+import { isHelloMaraModuleId, readHelloMaraModule, readHelloMaraModules } from './services/hellomara-module-registry.js';
+import { readGitHubStatus } from './services/github/operations.js';
+import { readRailwayStatus } from './services/railway/operations.js';
+import { controlTaskWorkerStatus } from './bootstrap/control-task-worker.js';
+import { allowedAgentTools, createAgentTask } from './services/agent-runtime.js';
+import { requiredRiskForTool } from './services/tool-policy.js';
+import {
+  approveControlTask,
+  cancelControlTask,
+  createControlTask,
+  listControlTaskEvents,
+  listControlAdminActions,
+  reviewControlTask,
+  listControlTasks,
+  recordControlAdminAction,
+} from './services/control-task-engine.js';
 import { getABTestResults, hasABData } from './mara-brain/ab-testing.js';
 import { getObjectiveRow, setObjective } from './mara-core/objective.js';
 import {
@@ -1024,11 +1046,10 @@ export async function registerRoutes(
   // can become active on the next cycle (30 s warm-up after restart).
   app.post('/api/admin/mara/locks/release', requireAdmin, (req: any, res: any) => {
     try {
-      const { rawSqlite } = require('./db.js');
-      rawSqlite
-        .prepare("DELETE FROM mara_singleton_locks WHERE lock_name = 'brain_cycle'")
+      const result = rawSqlite
+        .prepare("DELETE FROM mara_singleton_locks WHERE name = 'brain_cycle'")
         .run();
-      res.json({ ok: true, message: 'Lock eliberat. Brain cycle pornește în 30s.' });
+      res.json({ ok: true, released: result.changes, message: 'Lock eliberat. Brain cycle pornește în 30s.' });
     } catch (err: any) {
       console.error('[admin/mara/locks/release] failed:', err);
       res.status(500).json({ error: err.message });
@@ -1096,13 +1117,9 @@ export async function registerRoutes(
 
   app.post('/api/admin/mara/experiments/:id/approve', requireAdmin, async (req: any, res: any) => {
     try {
-      const id = Number.parseInt(String(req.params.id), 10);
-      if (!Number.isFinite(id) || id <= 0) {
-        return res.status(400).json({ error: 'Invalid experiment id' });
-      }
-      const note = typeof req.body?.note === 'string' ? req.body.note : undefined;
-      const decidedBy = (req.user?.email as string | undefined) ?? 'unknown-admin';
-      const updated = await decideExperiment(id, 'approved', decidedBy, note);
+      const parsed = parseExperimentDecision(req, 'approved');
+      if (!parsed.ok) return res.status(400).json({ error: parsed.error });
+      const updated = await approveExperiment(parsed.id, parsed.decidedBy, parsed.note);
       if (!updated) return res.status(404).json({ error: 'Experiment not found' });
       res.json({ experiment: updated });
     } catch (error) {
@@ -1113,13 +1130,9 @@ export async function registerRoutes(
 
   app.post('/api/admin/mara/experiments/:id/reject', requireAdmin, async (req: any, res: any) => {
     try {
-      const id = Number.parseInt(String(req.params.id), 10);
-      if (!Number.isFinite(id) || id <= 0) {
-        return res.status(400).json({ error: 'Invalid experiment id' });
-      }
-      const note = typeof req.body?.note === 'string' ? req.body.note : undefined;
-      const decidedBy = (req.user?.email as string | undefined) ?? 'unknown-admin';
-      const updated = await decideExperiment(id, 'rejected', decidedBy, note);
+      const parsed = parseExperimentDecision(req, 'rejected');
+      if (!parsed.ok) return res.status(400).json({ error: parsed.error });
+      const updated = await rejectExperiment(parsed.id, parsed.decidedBy, parsed.note);
       if (!updated) return res.status(404).json({ error: 'Experiment not found' });
       res.json({ experiment: updated });
     } catch (error) {
@@ -1224,18 +1237,294 @@ export async function registerRoutes(
 
   // === Mara Brain status/logs/trigger (admin only) ===
   app.get('/api/admin/brain/status', requireAdmin, (_req: any, res: any) => {
+    void getBrainControlSnapshot()
+      .then((snapshot) => res.json(snapshot.brain))
+      .catch(() => res.status(500).json({ error: 'Failed to get brain status' }));
+  });
+
+  app.get('/api/control/brain/status', requireAdmin, async (_req: any, res: any) => {
     try {
-      res.json(brainManager.status());
-    } catch (error) {
-      res.status(500).json({ error: 'Failed to get brain status' });
+      res.json(await getBrainControlSnapshot());
+    } catch {
+      res.status(500).json({ error: 'Failed to get Brain control snapshot' });
     }
   });
+
+  app.get('/api/control/logs', requireAdmin, async (req: any, res: any) => {
+    try {
+      const snapshot = await readControlLogs({
+        brainLimit: Number(req.query?.brainLimit) || 20,
+        alertLimit: Number(req.query?.alertLimit) || 100,
+        userId: req.user?.uid,
+        activityLimit: Number(req.query?.activityLimit) || 100,
+      });
+      res.json(snapshot);
+    } catch {
+      res.status(500).json({ error: 'Failed to read Control Center logs' });
+    }
+  });
+
+  app.get('/api/control/tasks/status', requireAdmin, (_req: any, res: any) => {
+    try {
+      res.json(readTaskStatus());
+    } catch {
+      res.status(500).json({ error: 'Failed to read task status' });
+    }
+  });
+
+  app.get('/api/admin/tasks/status', requireAdmin, (_req: any, res: any) => {
+    try { res.json(readTaskStatus()); }
+    catch { res.status(500).json({ error: 'Failed to read task status' }); }
+  });
+
+  app.get('/api/control/overview', requireAdmin, (_req: any, res: any) => {
+    try { res.json(readControlOverview()); }
+    catch { res.status(500).json({ error: 'Failed to read Control Center overview' }); }
+  });
+
+  app.get('/api/control/repository', requireAdmin, (_req: any, res: any) => {
+    try { res.json(readRepositoryStatus()); }
+    catch { res.status(500).json({ error: 'Failed to read repository status' }); }
+  });
+
+  app.get('/api/control/repository/git', requireAdmin, async (_req: any, res: any) => {
+    try { res.json(await readRepositoryGitStatus()); }
+    catch { res.status(500).json({ error: 'Failed to read Git status' }); }
+  });
+
+  app.get('/api/control/modules', requireAdmin, async (_req: any, res: any) => {
+    try { res.json(await readHelloMaraModules()); }
+    catch (error) { res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to read module registry' }); }
+  });
+
+  app.post('/api/control/repository/proposals', requireAdmin, (req: any, res: any) => {
+    try {
+      const { title, summary, changes, affectedFiles } = req.body ?? {};
+      if (typeof title !== 'string' || typeof summary !== 'string' || !Array.isArray(changes)) {
+        return res.status(400).json({ error: 'title, summary, and changes are required' });
+      }
+      if (title.length > 300 || summary.length > 4_000 || changes.length === 0 || changes.length > 20) {
+        return res.status(413).json({ error: 'Repository proposal exceeds size limits' });
+      }
+      for (const change of changes) {
+        if (!change || typeof change.path !== 'string' || typeof change.content !== 'string' || typeof change.expectedSha256 !== 'string' || !/^[a-f0-9]{64}$/i.test(change.expectedSha256)) {
+          return res.status(400).json({ error: 'Each repository change requires path, content, and a SHA-256 hash.' });
+        }
+        if (change.path.length > 500 || change.content.length > 200_000) {
+          return res.status(413).json({ error: 'Repository file change exceeds size limits' });
+        }
+      }
+      const totalContent = changes.reduce((total: number, change: any) => total + (typeof change?.content === 'string' ? change.content.length : 0), 0);
+      if (totalContent > 200_000) return res.status(413).json({ error: 'Repository proposal content exceeds size limits' });
+      const task = createControlTask({
+        taskType: 'repository.apply_changes',
+        title: title.trim(),
+        risk: 'HIGH_RISK',
+        priority: 'high',
+        assignedAgent: 'code-agent',
+        createdBy: req.user?.uid ?? null,
+        payload: { summary, changes, affectedFiles: Array.isArray(affectedFiles) ? affectedFiles.slice(0, 100) : [] },
+      });
+      recordControlAdminAction('repository.proposal.created', task.id, req.user?.uid ?? null, { taskType: task.taskType });
+      res.status(201).json({ task });
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to create repository proposal' });
+    }
+  });
+
+  app.get('/api/control/agents', requireAdmin, (_req: any, res: any) => {
+    res.json({ agents: AGENT_CATALOG });
+  });
+
+  app.get('/api/control/tools', requireAdmin, (_req: any, res: any) => {
+    res.json({ tools: readToolCatalog() });
+  });
+
+  app.post('/api/control/code-agent/requests', requireAdmin, async (req: any, res: any) => {
+    try {
+      const description = typeof req.body?.description === 'string' ? req.body.description.trim() : '';
+      const priority = typeof req.body?.priority === 'string' ? req.body.priority : 'medium';
+      if (!description) return res.status(400).json({ error: 'description is required' });
+      if (description.length > 20_000) return res.status(413).json({ error: 'description exceeds the 20 KB limit' });
+      const moduleId = typeof req.body?.moduleId === 'string' ? req.body.moduleId : '';
+      const module = moduleId && isHelloMaraModuleId(moduleId) ? await readHelloMaraModule(moduleId) : null;
+      const moduleContext = module ? { moduleId: module.id, moduleName: module.displayName, frontendFiles: module.frontendFiles, backendFiles: module.backendFiles, databaseDependencies: module.databaseDependencies, apiEndpoints: module.apiEndpoints, sharedDependencies: module.sharedDependencies, sharedWarnings: module.sharedWarnings } : null;
+      const { request, task } = createCodeAgentRequestWithTask(description, priority, req.user?.uid ?? null, moduleContext);
+      recordControlAdminAction('code_agent.request.created', request.id, req.user?.uid ?? null, { taskId: task.id, moduleId: module?.id ?? null });
+      res.status(201).json({ request, task });
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to create Code Agent request' });
+    }
+  });
+
+  app.get('/api/control/code-agent/plans/:id', requireAdmin, (req: any, res: any) => {
+    const plan = getCodeAgentPlan(Number.parseInt(String(req.params.id), 10));
+    if (!plan) return res.status(404).json({ error: 'Code Agent plan not found' });
+    res.json({ plan });
+  });
+
+  app.get('/api/control/code-agent/plans', requireAdmin, (_req: any, res: any) => {
+    res.json({ plans: listCodeAgentPlans() });
+  });
+
+  app.post('/api/control/code-agent/plans/:id/approve', requireAdmin, (req: any, res: any) => {
+    const actor = String(req.user?.email ?? req.user?.uid ?? 'unknown-admin');
+    const planId = Number.parseInt(String(req.params.id), 10);
+    const plan = approveCodeAgentPlan(planId, actor);
+    if (!plan) return res.status(409).json({ error: 'Plan is not waiting for approval or was not found' });
+    recordControlAdminAction('code_agent.plan.approved', planId, actor, { modificationTaskId: plan.task.id });
+    res.json(plan);
+  });
+
+  app.post('/api/control/code-agent/plans/:id/reject', requireAdmin, (req: any, res: any) => {
+    const planId = Number.parseInt(String(req.params.id), 10);
+    const actor = String(req.user?.email ?? req.user?.uid ?? 'unknown-admin');
+    const plan = rejectCodeAgentPlan(planId, actor);
+    if (!plan) return res.status(409).json({ error: 'Plan is not waiting for approval or was not found' });
+    recordControlAdminAction('code_agent.plan.rejected', planId, actor);
+    res.json({ plan });
+  });
+
+  app.get('/api/control/integrations', requireAdmin, (_req: any, res: any) => {
+    res.json({ integrations: readIntegrationStatus() });
+  });
+
+  app.get('/api/control/github/status', requireAdmin, async (_req: any, res: any) => {
+    try { res.json(await readGitHubStatus()); }
+    catch (error) { res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to read GitHub status' }); }
+  });
+
+  app.get('/api/control/railway/status', requireAdmin, async (_req: any, res: any) => {
+    try { res.json(await readRailwayStatus()); }
+    catch (error) { res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to read Railway status' }); }
+  });
+
+  app.get('/api/control/worker/status', requireAdmin, (_req: any, res: any) => {
+    res.json(controlTaskWorkerStatus());
+  });
+
+  app.post('/api/control/agents/:agentId/tasks', requireAdmin, (req: any, res: any) => {
+    try {
+      const payload = req.body?.payload && typeof req.body.payload === 'object' ? req.body.payload : {};
+      if (JSON.stringify(payload).length > 100_000) return res.status(413).json({ error: 'Agent task payload exceeds the 100 KB limit' });
+      const task = createAgentTask({
+        agentId: String(req.params.agentId),
+        toolType: String(req.body?.toolType ?? ''),
+        payload,
+        createdBy: req.user?.uid ?? null,
+        moduleId: typeof req.body?.moduleId === 'string' ? req.body.moduleId : null,
+        moduleName: typeof req.body?.moduleName === 'string' ? req.body.moduleName : null,
+      });
+      recordControlAdminAction('agent_task.created', task.id, req.user?.uid ?? null, { agentId: task.assignedAgent, taskType: task.taskType });
+      res.status(201).json({ task });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Agent task creation failed';
+      const status = /not registered|not allowed/.test(message) ? 403 : 400;
+      res.status(status).json({ error: message });
+    }
+  });
+
+  app.get('/api/control/agents/:agentId/tools', requireAdmin, (req: any, res: any) => {
+    res.json({ agentId: String(req.params.agentId), tools: allowedAgentTools(String(req.params.agentId)) });
+  });
+
+  app.get('/api/control/tasks', requireAdmin, (_req: any, res: any) => {
+    try { res.json({ tasks: listControlTasks() }); }
+    catch { res.status(500).json({ error: 'Failed to list control tasks' }); }
+  });
+
+  app.post('/api/control/tasks', requireAdmin, (req: any, res: any) => {
+    try {
+      const { taskType, title, payload, risk, priority, assignedAgent } = req.body ?? {};
+      if (typeof taskType !== 'string' || typeof title !== 'string' || !taskType.trim() || !title.trim()) {
+        return res.status(400).json({ error: 'taskType and title are required' });
+      }
+      const requiredRisk = requiredRiskForTool(taskType.trim());
+      if (!requiredRisk) {
+        return res.status(400).json({ error: `Unknown control task type: ${taskType}` });
+      }
+      const allowedRisks = new Set(['READ_ONLY', 'LOW_RISK', 'MODERATE_RISK', 'HIGH_RISK', 'CRITICAL']);
+      if (risk !== undefined && !allowedRisks.has(String(risk))) {
+        return res.status(400).json({ error: 'Invalid task risk' });
+      }
+      if (risk !== undefined && risk !== requiredRisk) {
+        return res.status(400).json({ error: `Task ${taskType} must use risk ${requiredRisk}.` });
+      }
+      const normalizedPayload = payload && typeof payload === 'object' ? payload : {};
+      if (JSON.stringify(normalizedPayload).length > 100_000) {
+        return res.status(413).json({ error: 'Task payload exceeds the 100 KB limit' });
+      }
+      const task = createControlTask({
+        taskType: taskType.trim(),
+        title: title.trim(),
+        payload: normalizedPayload,
+        risk,
+        priority,
+        assignedAgent: typeof assignedAgent === 'string' ? assignedAgent : null,
+        createdBy: req.user?.uid ?? null,
+      });
+      recordControlAdminAction('control_task.created', task.id, req.user?.uid ?? null, { taskType: task.taskType });
+      res.status(201).json({ task });
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to create control task' });
+    }
+  });
+
+  app.post('/api/control/tasks/:id/approve', requireAdmin, (req: any, res: any) => {
+    const id = Number.parseInt(String(req.params.id), 10);
+    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'Invalid task id' });
+    try {
+      const task = approveControlTask(id, String(req.user?.email ?? req.user?.uid ?? 'unknown-admin'));
+      if (!task) return res.status(404).json({ error: 'Task not found' });
+      res.json({ task });
+    } catch (error) {
+      res.status(409).json({ error: error instanceof Error ? error.message : 'Task approval failed' });
+    }
+  });
+
+  app.post('/api/control/tasks/:id/cancel', requireAdmin, (req: any, res: any) => {
+    const id = Number.parseInt(String(req.params.id), 10);
+    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'Invalid task id' });
+    try {
+      const task = cancelControlTask(id, String(req.user?.email ?? req.user?.uid ?? 'unknown-admin'));
+      if (!task) return res.status(404).json({ error: 'Task not found' });
+      res.json({ task });
+    } catch (error) {
+      res.status(409).json({ error: error instanceof Error ? error.message : 'Task cancellation failed' });
+    }
+  });
+
+  app.post('/api/control/tasks/:id/review', requireAdmin, (req: any, res: any) => {
+    const id = Number.parseInt(String(req.params.id), 10);
+    const decision = req.body?.decision;
+    if (!Number.isInteger(id) || !['approved', 'rejected'].includes(decision)) return res.status(400).json({ error: 'Invalid task review request' });
+    try {
+      const task = reviewControlTask(id, decision, String(req.user?.email ?? req.user?.uid ?? 'unknown-admin'));
+      if (!task) return res.status(404).json({ error: 'Task not found or not reviewable' });
+      res.json({ task });
+    } catch (error) {
+      res.status(409).json({ error: error instanceof Error ? error.message : 'Task review failed' });
+    }
+  });
+
+  app.get('/api/control/tasks/:id/events', requireAdmin, (req: any, res: any) => {
+    const id = Number.parseInt(String(req.params.id), 10);
+    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'Invalid task id' });
+    try { res.json({ events: listControlTaskEvents(id) }); }
+    catch { res.status(500).json({ error: 'Failed to read task events' }); }
+  });
+
+  app.get('/api/control/audit/actions', requireAdmin, (_req: any, res: any) => {
+    try { res.json({ actions: listControlAdminActions() }); }
+    catch { res.status(500).json({ error: 'Failed to read control audit actions' }); }
+  });
+
 
   app.get('/api/admin/brain/logs', requireAdmin, async (req: any, res: any) => {
     try {
       const rawLimit = Number.parseInt(String(req.query.limit ?? '20'), 10);
       const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(rawLimit, 1), 200) : 20;
-      const logs = await storage.getBrainLogs(limit);
+      const logs = (await readControlLogs({ brainLimit: limit })).brainLogs;
       // BrainLog fields are plain newline-delimited strings. Expose both the
       // raw string and a best-effort array split so the UI can render either.
       const toLines = (val: unknown): string[] => {
@@ -1598,38 +1887,7 @@ experiments, and learning cycles. If asked about experiments or strategy, be spe
 
   app.get('/api/admin/dashboard', requireAdmin, async (_req: any, res: any) => {
     try {
-      const totalUsers   = sqlGet<{cnt:number}>('SELECT COUNT(*) as cnt FROM users')?.cnt ?? 0;
-      const newUsersToday = sqlGet<{cnt:number}>('SELECT COUNT(*) as cnt FROM users WHERE created_at > unixepoch()-86400')?.cnt ?? 0;
-      const activeUsers7d = sqlGet<{cnt:number}>('SELECT COUNT(DISTINCT user_id) as cnt FROM chat_messages WHERE created_at > unixepoch()-604800')?.cnt ?? 0;
-      const languages    = sqlAll('SELECT language, COUNT(*) as cnt FROM user_preferences WHERE language IS NOT NULL GROUP BY language ORDER BY cnt DESC LIMIT 10');
-      const totalRevenue  = sqlGet<{total:number}>('SELECT COALESCE(SUM(amount),0) as total FROM premium_orders WHERE status="confirmed"')?.total ?? 0;
-      const revenueMonth  = sqlGet<{total:number}>('SELECT COALESCE(SUM(amount),0) as total FROM premium_orders WHERE status="confirmed" AND created_at>unixepoch()-2592000')?.total ?? 0;
-      const pendingOrders = sqlGet<{cnt:number}>('SELECT COUNT(*) as cnt FROM premium_orders WHERE status="pending"')?.cnt ?? 0;
-      const notifTotal   = sqlGet<{cnt:number}>('SELECT COUNT(*) as cnt FROM notifications')?.cnt ?? 0;
-      const notifToday   = sqlGet<{cnt:number}>('SELECT COUNT(*) as cnt FROM notifications WHERE created_at>unixepoch()-86400')?.cnt ?? 0;
-      const pwaInstalls  = sqlGet<{cnt:number}>('SELECT COUNT(*) as cnt FROM push_subscriptions')?.cnt ?? 0;
-      const missionsComp = sqlGet<{cnt:number}>('SELECT COUNT(*) as cnt FROM user_missions WHERE status="completed"')?.cnt ?? 0;
-      const totalXP      = sqlGet<{total:number}>('SELECT COALESCE(SUM(xp),0) as total FROM user_xp')?.total ?? 0;
-      const aiRoutes     = sqlAll('SELECT route, COUNT(*) as cnt, AVG(latency_ms) as avg_latency, SUM(CASE WHEN success=1 THEN 1 ELSE 0 END) as successes FROM ai_route_log WHERE created_at>unixepoch()-86400 GROUP BY route');
-      const lastBrainLog = sqlGet('SELECT message, level, created_at FROM brain_logs ORDER BY created_at DESC LIMIT 1');
-      const brainToday   = sqlGet<{cnt:number}>('SELECT COUNT(*) as cnt FROM brain_logs WHERE created_at>unixepoch()-86400')?.cnt ?? 0;
-
-      res.json({
-        users:         { total: totalUsers, newToday: newUsersToday, active7d: activeUsers7d },
-        languages,
-        revenue:       { total: totalRevenue, thisMonth: revenueMonth, pendingOrders },
-        notifications: { total: notifTotal, today: notifToday },
-        pwa:           { installs: pwaInstalls },
-        missions:      { completed: missionsComp, totalXP },
-        aiRoutes,
-        system: {
-          uptimeSeconds:  process.uptime(),
-          memoryMB:       Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
-          totalMemoryMB:  Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
-          nodeVersion:    process.version,
-        },
-        brain: { lastLog: lastBrainLog, logsToday: brainToday },
-      });
+      res.json(readControlOverview());
     } catch (err: any) {
       console.error('[admin/dashboard]', err);
       res.status(500).json({ message: 'Eroare la dashboard stats.' });
@@ -1726,22 +1984,15 @@ experiments, and learning cycles. If asked about experiments or strategy, be spe
 
   // === Mara Alerts (admin only) ===
   app.get('/api/admin/alerts', requireAdmin, (_req: any, res: any) => {
-    try {
-      const alerts = getAllAlerts(100);
-      res.json({ alerts, count: alerts.length });
-    } catch (err: any) {
-      res.status(500).json({ error: err.message });
-    }
+    void readControlLogs({ alertLimit: 100 })
+      .then(({ alerts }) => res.json({ alerts, count: alerts.length }))
+      .catch((err: any) => res.status(500).json({ error: err.message }));
   });
 
   app.get('/api/admin/alerts/unread', requireAdmin, (_req: any, res: any) => {
-    try {
-      const count = getUnreadCount();
-      const alerts = getUnreadAlerts();
-      res.json({ alerts, count });
-    } catch (err: any) {
-      res.status(500).json({ error: err.message });
-    }
+    void readControlLogs({ alertLimit: 100 })
+      .then(({ unreadAlertRows: alerts, unreadAlerts: count }) => res.json({ alerts, count }))
+      .catch((err: any) => res.status(500).json({ error: err.message }));
   });
 
   app.post('/api/admin/alerts/:id/read', requireAdmin, (req: any, res: any) => {
@@ -1761,7 +2012,7 @@ experiments, and learning cycles. If asked about experiments or strategy, be spe
   app.post('/api/admin/alerts/analyze', requireAdmin, async (_req: any, res: any) => {
     try {
       await analyzePlatformAndAlert();
-      const alerts = getAllAlerts(100);
+      const alerts = (await readControlLogs({ alertLimit: 100 })).alerts;
       res.json({ ok: true, alerts, count: alerts.length });
     } catch (err: any) {
       res.status(500).json({ error: err.message });

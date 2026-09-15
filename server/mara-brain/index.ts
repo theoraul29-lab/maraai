@@ -30,6 +30,14 @@ export {
   type LibraryBook,
 } from './library.js';
 export { brainManager, type BrainStatus } from './manager.js';
+export {
+  approveExperiment,
+  rejectExperiment,
+  parseExperimentDecision,
+  type ExperimentDecision,
+  type ExperimentDecisionInput,
+} from './experiment-decisions.js';
+export { getBrainControlSnapshot, type BrainControlSnapshot } from './control-service.js';
 export { getPlatformContext } from './platform-context.js';
 export {
   indexCode,

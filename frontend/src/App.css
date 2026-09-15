@@ -1,3 +1,69 @@
+.control-center-login {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: #071014;
+  color: #e6f0ed;
+  font-family: 'DM Sans', 'Segoe UI', sans-serif;
+  padding: 24px;
+}
+
+.control-center-login form,
+.control-center-login section {
+  width: min(440px, 100%);
+  border: 1px solid #1a3331;
+  background: #0b191c;
+  padding: 28px;
+}
+
+.control-center-login p {
+  margin: 0 0 10px;
+  color: #58d4b5;
+  font: 700 .72rem/1.2 'JetBrains Mono', monospace;
+  letter-spacing: .14em;
+}
+
+.control-center-login h1 {
+  margin: 0 0 22px;
+  font-size: 1.8rem;
+  color: #baf7e6;
+}
+
+.control-center-login label,
+.control-center-login span {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+  color: #9cb2ac;
+}
+
+.control-center-login input {
+  border: 1px solid #1b3d39;
+  background: #071014;
+  color: #e6f0ed;
+  padding: 11px;
+  font: inherit;
+}
+
+.control-center-login strong {
+  display: block;
+  margin-top: 14px;
+  color: #ffb3a9;
+}
+
+.control-center-login button {
+  margin-top: 18px;
+  border: 1px solid #2d6b62;
+  background: #0f2425;
+  color: #baf7e6;
+  padding: 10px 13px;
+  cursor: pointer;
+}
+
+.control-center-login button:disabled {
+  cursor: wait;
+  opacity: .55;
+}
 /* ── Theme variables ────────────────────────────────────────────── */
 :root {
   --app-bg: #000000;

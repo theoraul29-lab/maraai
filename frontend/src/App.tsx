@@ -32,12 +32,59 @@ const AdminGrowthDashboard = lazy(() => import('./AdminGrowthDashboard'));
 const AdminExperiments = lazy(() => import('./AdminExperiments'));
 const AdminWaitlist = lazy(() => import('./AdminWaitlist'));
 const AdminMaraChat = lazy(() => import('./AdminMaraChat'));
+const MaraControlCenter = lazy(() => import('./MaraControlCenter'));
 const OnboardingFlow = lazy(() => import('./maraai/OnboardingFlow').then((m) => ({ default: m.OnboardingFlow })));
 const TransparencyDashboard = lazy(() => import('./maraai/TransparencyDashboard').then((m) => ({ default: m.TransparencyDashboard })));
 import { ThemeProvider } from './contexts/ThemeContext';
 const NotFound = lazy(() => import('./NotFound'));
 const PrivacyPolicy = lazy(() => import('./PrivacyPolicy'));
 import CookieBanner from './components/CookieBanner';
+
+function ControlCenterAuthGate({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, user, loading, login } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (loading) return null;
+  if (isAuthenticated && user?.isAdmin) return <>{children}</>;
+  if (isAuthenticated && user && !user.isAdmin) {
+    return (
+      <main className="control-center-login">
+        <section>
+          <p>MARA CONTROL CENTER</p>
+          <h1>Admin access required</h1>
+          <span>This desktop route is private and remains separate from public helloMara.</span>
+        </section>
+      </main>
+    );
+  }
+
+  return (
+    <main className="control-center-login">
+      <form onSubmit={async (event) => {
+        event.preventDefault();
+        setBusy(true);
+        setError(null);
+        try {
+          await login(email, password);
+        } catch (cause) {
+          setError(cause instanceof Error ? cause.message : 'Login failed');
+        } finally {
+          setBusy(false);
+        }
+      }}>
+        <p>MARA CONTROL CENTER</p>
+        <h1>Private Desktop Login</h1>
+        <label>Email<input value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" type="email" required /></label>
+        <label>Password<input value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" type="password" required /></label>
+        {error && <strong>{error}</strong>}
+        <button type="submit" disabled={busy}>{busy ? 'Signing in...' : 'Open Control Center'}</button>
+      </form>
+    </main>
+  );
+}
 
 /**
  * Redirectează userii noi la /onboarding dacă nu au completat flow-ul.
@@ -145,7 +192,8 @@ function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const isHomePage = location.pathname === '/';
-  const isFullscreenPanel = ['/creator-panel', '/writers-hub'].includes(location.pathname);
+  const isControlCenterRoute = location.pathname === '/control-center';
+  const isFullscreenPanel = ['/creator-panel', '/writers-hub', '/control-center'].includes(location.pathname);
 
   return (
     <ErrorBoundary level="page">
@@ -169,6 +217,7 @@ function App() {
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/reset-password/confirmation" element={<ResetPasswordConfirmation />} />
                 <Route path="/admin" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
+                <Route path="/control-center" element={<ControlCenterAuthGate><MaraControlCenter /></ControlCenterAuthGate>} />
                 <Route path="/admin/brain" element={<AdminGuard><AdminBrain /></AdminGuard>} />
                 <Route path="/admin/experiments" element={<AdminGuard><AdminExperiments /></AdminGuard>} />
                 <Route path="/admin/waitlist" element={<AdminGuard><AdminWaitlist /></AdminGuard>} />
@@ -185,14 +234,14 @@ function App() {
             </Suspense>
           </ErrorBoundary>
           {/* Mara Chat Widget - appears on all pages */}
-          <ErrorBoundary level="component">
+          {!isControlCenterRoute && <ErrorBoundary level="component">
             <MaraChatWidget />
-          </ErrorBoundary>
+          </ErrorBoundary>}
           {/* P2P background compute badge — visible only when actively contributing */}
-          <ErrorBoundary level="component">
+          {!isControlCenterRoute && <ErrorBoundary level="component">
             <AuthedP2PBadge />
-          </ErrorBoundary>
-          <CookieBanner />
+          </ErrorBoundary>}
+          {!isControlCenterRoute && <CookieBanner />}
         </div>
         </ThemeProvider>
       </AuthProvider>

@@ -7,6 +7,7 @@ import { storeKnowledge } from '../knowledge-base.js';
 import { storage } from '../../storage.js';
 import { webSearch, formatSearchResultsForPrompt } from '../../lib/web-search.js';
 import { learningRateLimiter } from '../rate-limiter.js';
+import { getBrainRunContext, recordResearchUnavailable } from '../run-context.js';
 
 interface WebResearchResult {
   query: string;
@@ -19,6 +20,11 @@ interface WebResearchResult {
  * Research a topic using the configured LLM's knowledge (grounded in training data)
  */
 export async function researchTopic(query: string, context?: string): Promise<WebResearchResult> {
+  const runContext = getBrainRunContext();
+  if (runContext?.dryRun && runContext.network === 'blocked') {
+    recordResearchUnavailable();
+    return { query, findings: 'research_unavailable_dry_run', knowledgeIds: [], source: 'research_unavailable_dry_run' };
+  }
   if (!isLLMConfigured()) {
     return { query, findings: 'LLM provider not configured', knowledgeIds: [], source: 'none' };
   }
