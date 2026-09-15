@@ -24,6 +24,7 @@ export function readToolCatalog(): ToolCatalogEntry[] {
     { id: 'git.create_branch', label: 'Create Git branch', description: 'Create a branch after explicit approval.', risk: 'HIGH_RISK', available: true, execution: 'approval_required' },
     { id: 'git.commit_staged', label: 'Commit staged changes', description: 'Commit already-staged changes without running hooks after explicit approval.', risk: 'HIGH_RISK', available: true, execution: 'approval_required' },
     { id: 'git.stage_proposal', label: 'Stage approved proposal', description: 'Stage only approved proposal paths after validation review.', risk: 'HIGH_RISK', available: true, execution: 'approval_required' },
+    { id: 'git.push', label: 'Push to origin', description: 'Push the current branch after a linked, completed commit task.', risk: 'HIGH_RISK', available: true, execution: 'approval_required' },
     { id: 'code-agent.plan', label: 'Code Agent plan', description: 'Generate a repository-aware plan through the existing Mara LLM router.', risk: 'LOW_RISK', available: true, execution: 'local_capability' },
     { id: 'repository.git_status', label: 'Git status', description: 'Read branch, diff, and recent commits.', risk: 'READ_ONLY', available: true, execution: 'local_capability' },
     { id: 'github.status', label: 'GitHub status', description: 'Read GitHub App repository, branches, commits, issues, PRs, and Actions status.', risk: 'READ_ONLY', available: true, execution: 'local_capability' },

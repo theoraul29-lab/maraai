@@ -85,6 +85,7 @@ import { readIntegrationStatus } from './services/integration-status.js';
 import { readSecuritySnapshot } from './services/security-status.js';
 import { setAnthropicApiKeyOverride } from './lib/anthropic-key-store.js';
 import { approveCodeAgentPlan, createCodeAgentRequestWithTask, getCodeAgentPlan, listCodeAgentPlans, rejectCodeAgentPlan } from './services/code-agent.js';
+import { detectCodeWriteIntent, handleAutonomousCodeRequest } from './services/autonomous-code-pipeline.js';
 import { isHelloMaraModuleId, readHelloMaraModule, readHelloMaraModules } from './services/hellomara-module-registry.js';
 import { readGitHubStatus } from './services/github/operations.js';
 import { readRailwayStatus } from './services/railway/operations.js';
@@ -1904,6 +1905,16 @@ export async function registerRoutes(
     try {
       const message = typeof req.body?.message === 'string' ? req.body.message.trim() : '';
       if (!message) return res.status(400).json({ error: 'message is required' });
+
+      // Full autonomy: an explicit code-write instruction from the owner, spoken
+      // or typed here, triggers plan → apply → typecheck/build gate → commit →
+      // push with zero further approval click. Only this admin-gated surface —
+      // never the public user chat — can reach this path.
+      const actor = req.user?.uid ?? 'owner';
+      if (await detectCodeWriteIntent(message)) {
+        const outcome = await handleAutonomousCodeRequest(message, actor);
+        return res.json({ reply: outcome.reply, codeAction: outcome.status });
+      }
 
       const status = brainManager.status();
       const systemPrompt = `You are Mara, an autonomous AI growth engineer for the MaraAI platform. \

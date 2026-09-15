@@ -21,6 +21,7 @@ const TOOL_RISKS: Record<string, TaskRisk> = {
   'git.create_branch': 'HIGH_RISK',
   'git.stage_proposal': 'HIGH_RISK',
   'git.commit_staged': 'HIGH_RISK',
+  'git.push': 'HIGH_RISK',
 };
 
 export function requiredRiskForTool(toolType: string): TaskRisk | null {

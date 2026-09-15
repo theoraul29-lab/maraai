@@ -31,6 +31,7 @@
     "mara": "node scripts/mara-cli.mjs",
     "typecheck": "tsc --noEmit",
     "backup:db": "tsx server/services/dbBackup.ts",
+    "bridge:server": "tsx server/bridge/bridge-server.ts",
     "desktop": "electron desktop/main.cjs",
     "desktop:install-shortcut": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-mara-desktop-shortcut.ps1"
   },
