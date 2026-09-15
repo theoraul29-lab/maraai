@@ -150,6 +150,20 @@ export interface IntegrationStatus {
   reason: string;
 }
 
+export interface SecuritySnapshot {
+  blacklistedIps: {
+    total: number;
+    recent: Array<{ ip: string; reason: string; hitCount: number; permanent: boolean; expiresAt: number }>;
+  };
+  honeypot: {
+    eventsLast24h: number;
+    recent: Array<{ ip: string; path: string; method: string; createdAt: number }>;
+  };
+  circuits: Array<{ provider: string; state: 'closed' | 'open' | 'half-open'; failures: number; lastFailureAt: number | null; openUntil: number | null }>;
+  controlWorker: { enabled: boolean; running: boolean; workerId: string };
+  generatedAt: string;
+}
+
 export interface GitHubStatusSnapshot {
   configured: boolean;
   connected: boolean;
