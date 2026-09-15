@@ -31,6 +31,7 @@ import * as adminModule from './modules/admin.js';
 import * as feedbackModule from './modules/feedback.js';
 import * as profileModule from './modules/profile.js';
 import * as notificationsModule from './modules/notifications.js';
+import * as pushModule from './modules/push.js';
 import * as searchModule from './modules/search.js';
 import * as ordersModule from './modules/orders.js';
 import * as adminOrdersModule from './modules/adminOrders.js';
@@ -147,6 +148,7 @@ import { createRequire } from 'module';
 const _cjsRequire = createRequire(import.meta.url);
 const pdfParse = _cjsRequire('pdf-parse') as (buf: Buffer) => Promise<{ text: string }>;
 import { startFacebook, facebookCallback } from './modules/oauth-facebook.js';
+import { startGoogle, googleCallback } from './modules/oauth-google.js';
 import { isOllamaForcedFallback, setOllamaForcedFallback } from './middleware/costGuard.js';
 
 export async function registerRoutes(
@@ -368,6 +370,13 @@ export async function registerRoutes(
     app.get('/api/auth/facebook/callback', facebookCallback);
     console.log('[auth] Facebook OAuth routes registered');
   }
+  // Google OAuth — same conditional-registration pattern as Facebook above.
+  // The implementation already existed but was never wired into any route.
+  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    app.get('/api/auth/google', startGoogle);
+    app.get('/api/auth/google/callback', googleCallback);
+    console.log('[auth] Google OAuth routes registered');
+  }
 
   app.post('/api/auth/signup', requireHttps, signupRateLimit, authSignup);
   app.post('/api/auth/login', requireHttps, loginRateLimit, authLogin);
@@ -450,6 +459,14 @@ export async function registerRoutes(
   app.get('/api/notifications/unread-count', requireAuth, notificationsModule.unreadCount);
   app.post('/api/notifications/:id/read', requireAuth, notificationsModule.markRead);
   app.post('/api/notifications/read-all', requireAuth, notificationsModule.markAllRead);
+
+  // Web Push (VAPID) — the send engine (server/push/vapid.ts) is already
+  // called from mara-brain/growth-engineer/storage, but no route ever let a
+  // browser actually create a subscription. Registering it here closes that
+  // gap.
+  app.get('/api/push/public-key', pushModule.publicKey);
+  app.post('/api/push/subscribe', requireAuth, pushModule.subscribe);
+  app.post('/api/push/unsubscribe', requireAuth, pushModule.unsubscribe);
 
   // --- Direct Messaging (Feature 5) ------------------------------------------
   app.get('/api/messenger/conversations', requireAuth, messengerModule.listConversations);

@@ -19,16 +19,6 @@ export async function getPremiumStatus(req: Request, res: Response) {
   }
 }
 
-export async function getTradingAccess(req: Request, res: Response) {
-  try {
-    const userId = (req.user as any)?.uid;
-    const access = await deps.storage.getUserTradingAccess(userId);
-    res.json(access);
-  } catch (error) {
-    res.status(500).json({ message: 'Failed to get trading access' });
-  }
-}
-
 export async function createPremiumOrder(req: Request, res: Response) {
   try {
     const userId = (req.user as any)?.uid;

@@ -328,12 +328,35 @@ export default function MaraControlCenter() {
     ['/admin/waitlist', 'Waitlist'],
   ];
 
+  // Each item links to a real panel (in-page anchor) or a real page
+  // (external href). Items with no backing panel yet (Changes/Diff, Tests,
+  // Ollama, Cloudflare, Settings) were removed rather than left as dead
+  // `#anchor` links to nowhere — Repository/Code Explorer/Git all point at
+  // the same "Repository visibility" panel below since that panel already
+  // is the Code Explorer index + git status view.
   const sidebarGroups = [
-    { title: 'Core', items: ['Dashboard', 'Mara Brain', 'Agents'] },
+    { title: 'Core', items: [
+      { label: 'Dashboard', href: '#dashboard' },
+      { label: 'Mara Brain', href: '/admin/brain' },
+      { label: 'Agents', href: '#agents' },
+    ] },
     { title: 'HELLOMARA.NET', items: modules.map((module) => `${module.icon} ${module.displayName}`) },
-    { title: 'Development', items: ['Repository', 'Code Explorer', 'Changes / Diff', 'Tests', 'Git'] },
-    { title: 'Infrastructure', items: ['GitHub', 'Railway', 'Ollama', 'Cloudflare'] },
-    { title: 'Operations', items: ['Tasks', 'Approvals', 'Audit & Logs', 'Integrations', 'Tools', 'Settings'] },
+    { title: 'Development', items: [
+      { label: 'Repository', href: '#repository' },
+      { label: 'Code Explorer', href: '#repository' },
+      { label: 'Git', href: '#repository' },
+    ] },
+    { title: 'Infrastructure', items: [
+      { label: 'GitHub', href: '#github' },
+      { label: 'Railway', href: '#railway' },
+    ] },
+    { title: 'Operations', items: [
+      { label: 'Tasks', href: '#tasks' },
+      { label: 'Approvals', href: '#approvals' },
+      { label: 'Audit & Logs', href: '#audit-logs' },
+      { label: 'Integrations', href: '#integrations' },
+      { label: 'Tools', href: '#tools' },
+    ] },
   ];
 
   return (
@@ -344,7 +367,7 @@ export default function MaraControlCenter() {
           <div className="mcc-sidebar-title">{group.title}</div>
           {group.title === 'HELLOMARA.NET'
             ? modules.map((module) => <button key={module.id} type="button" className={`mcc-sidebar-item ${selectedModule?.id === module.id ? 'mcc-sidebar-item--active' : ''}`} onClick={() => setSelectedModuleId(module.id)}><span>{module.icon} {module.displayName}</span><i className={healthDotClass(module.healthStatus.overall)} /></button>)
-            : group.items.map((item) => <a key={item} className="mcc-sidebar-item" href={`#${item.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>{item}</a>)}
+            : (group.items as { label: string; href: string }[]).map((item) => <a key={item.label} className="mcc-sidebar-item" href={item.href}>{item.label}</a>)}
         </div>)}
       </aside>
       <div className="mcc-main-workspace">
@@ -516,13 +539,13 @@ export default function MaraControlCenter() {
         <div className="mcc-signal"><span>Running</span><strong>{worker?.running ? 'YES' : 'NO'}</strong></div>
       </section>
 
-      <section className="mcc-panel mcc-panel--wide">
+      <section className="mcc-panel mcc-panel--wide" id="audit-logs">
         <div className="mcc-panel-heading"><h2>Control audit</h2><span>Persistent admin actions</span></div>
         {auditActions.slice(0, 8).map((action) => <div className="mcc-signal" key={action.id}><span>{action.action_type} · {action.target_type}:{action.target_id}</span><strong>{action.actor ?? 'system'}</strong></div>)}
         {!auditActions.length && <p className="mcc-muted">No control actions recorded.</p>}
       </section>
 
-      <section className="mcc-panel mcc-panel--wide">
+      <section className="mcc-panel mcc-panel--wide" id="integrations">
         <div className="mcc-panel-heading"><h2>Integrations</h2><span>Configuration status only</span></div>
         {integrations.map((integration) => <div className="mcc-signal" key={integration.id} title={integration.reason}><span>{integration.id}</span><strong>{integration.state}</strong></div>)}
       </section>
@@ -561,12 +584,12 @@ export default function MaraControlCenter() {
         {(railwayStatus?.logs ?? []).slice(0, 5).map((line, index) => <p className="mcc-muted" key={`${index}-${line.slice(0, 20)}`}>{line}</p>)}
       </section>
 
-      <section className="mcc-panel mcc-panel--wide">
+      <section className="mcc-panel mcc-panel--wide" id="tools">
         <div className="mcc-panel-heading"><h2>Tools</h2><span>Permission-aware catalog</span></div>
         {tools.map((tool) => <div className="mcc-signal" key={tool.id}><span>{tool.label} · {tool.description}</span><strong>{tool.available ? tool.risk : 'NOT CONFIGURED'}</strong></div>)}
       </section>
 
-      <section className="mcc-panel mcc-panel--wide">
+      <section className="mcc-panel mcc-panel--wide" id="repository">
         <div className="mcc-panel-heading"><h2>Repository visibility</h2><span>Code Explorer index</span></div>
         <div className="mcc-signal"><span>{repository?.root ?? 'Repository unavailable'}</span><strong>{repository?.indexedFiles ?? 0} files</strong></div>
         <div className="mcc-signal"><span>Git branch</span><strong>{gitStatus?.branch ?? '—'}{gitStatus?.dirty ? ' · dirty' : ' · clean'}</strong></div>
@@ -599,7 +622,7 @@ export default function MaraControlCenter() {
         {!logs?.activity.length && <p className="mcc-muted">No activity for this admin yet.</p>}
       </section>
 
-      <section className="mcc-panel mcc-panel--wide">
+      <section className="mcc-panel mcc-panel--wide" id="approvals">
         <div className="mcc-panel-heading"><h2>Approvals waiting</h2><span>{experiments?.count ?? 0} proposed</span></div>
         {(experiments?.experiments ?? []).map((experiment) => (
           <div className="mcc-signal" key={experiment.id}>
@@ -614,7 +637,7 @@ export default function MaraControlCenter() {
         {!experiments?.experiments.length && <p className="mcc-muted">No experiment approvals waiting.</p>}
       </section>
 
-      <section className="mcc-panel mcc-panel--wide">
+      <section className="mcc-panel mcc-panel--wide" id="tasks">
         <div className="mcc-panel-heading"><h2>Unified task state</h2><span>Read-only adapter</span></div>
         <div className="mcc-task-grid">
           {Object.entries(tasks?.counts ?? {}).map(([status, count]) => <div key={status}><strong>{count}</strong><span>{status}</span></div>)}
@@ -645,7 +668,7 @@ export default function MaraControlCenter() {
         </div>
       </section>
 
-      <section className="mcc-panel mcc-panel--wide">
+      <section className="mcc-panel mcc-panel--wide" id="agents">
         <div className="mcc-panel-heading"><h2>Agents</h2><span>Descriptive catalog</span></div>
         {agents.map((agent) => <div className="mcc-signal" key={agent.id}>
           <span>{agent.label} · {agent.role}</span>
