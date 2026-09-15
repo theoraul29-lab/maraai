@@ -82,6 +82,7 @@ import { readRepositoryGitStatus, readRepositoryStatus } from './services/reposi
 import { AGENT_CATALOG } from './services/agent-catalog.js';
 import { readToolCatalog } from './services/tool-catalog.js';
 import { readIntegrationStatus } from './services/integration-status.js';
+import { readSecuritySnapshot } from './services/security-status.js';
 import { setAnthropicApiKeyOverride } from './lib/anthropic-key-store.js';
 import { approveCodeAgentPlan, createCodeAgentRequestWithTask, getCodeAgentPlan, listCodeAgentPlans, rejectCodeAgentPlan } from './services/code-agent.js';
 import { isHelloMaraModuleId, readHelloMaraModule, readHelloMaraModules } from './services/hellomara-module-registry.js';
@@ -1405,6 +1406,11 @@ export async function registerRoutes(
 
   app.get('/api/control/integrations', requireAdmin, (_req: any, res: any) => {
     res.json({ integrations: readIntegrationStatus() });
+  });
+
+  app.get('/api/control/security', requireAdmin, (_req: any, res: any) => {
+    try { res.json(readSecuritySnapshot()); }
+    catch (error) { res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to read security status' }); }
   });
 
   // Optional Anthropic fallback key, settable from Control Center instead of

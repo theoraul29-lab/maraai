@@ -24,6 +24,7 @@ import type {
   ModuleHealthState,
   GitHubStatusSnapshot,
   RailwayStatusSnapshot,
+  SecuritySnapshot,
 } from './types/control';
 
 async function getJson<T>(url: string): Promise<T> {
@@ -74,6 +75,7 @@ export default function MaraControlCenter() {
   const [modules, setModules] = useState<HelloMaraModuleEntry[]>([]);
   const [githubStatus, setGithubStatus] = useState<GitHubStatusSnapshot | null>(null);
   const [railwayStatus, setRailwayStatus] = useState<RailwayStatusSnapshot | null>(null);
+  const [security, setSecurity] = useState<SecuritySnapshot | null>(null);
   const [selectedModuleId, setSelectedModuleId] = useState<HelloMaraModuleEntry['id'] | null>('missions');
   const [error, setError] = useState<string | null>(null);
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
@@ -104,6 +106,7 @@ export default function MaraControlCenter() {
         ['modules', getJson<{ modules: HelloMaraModuleEntry[] }>('/api/control/modules')],
         ['github', getJson<GitHubStatusSnapshot>('/api/control/github/status')],
         ['railway', getJson<RailwayStatusSnapshot>('/api/control/railway/status')],
+        ['security', getJson<SecuritySnapshot>('/api/control/security')],
       ] as const;
       const results = await Promise.allSettled(requests.map(([, request]) => request));
       if (!active) return;
@@ -124,6 +127,7 @@ export default function MaraControlCenter() {
         modules: { modules: HelloMaraModuleEntry[] };
         github: GitHubStatusSnapshot;
         railway: RailwayStatusSnapshot;
+        security: SecuritySnapshot;
       }>(requests.map(([name]) => name), results);
       if (values.overview) setDashboard(values.overview);
       if (values.brain) { setBrain(values.brain.brain); setProvider(values.brain.ai); }
@@ -144,6 +148,7 @@ export default function MaraControlCenter() {
       }
       if (values.github) setGithubStatus(values.github);
       if (values.railway) setRailwayStatus(values.railway);
+      if (values.security) setSecurity(values.security);
       setError(failures.length ? `Unavailable: ${failures.join(', ')}` : null);
       setUpdatedAt(new Date());
     };
@@ -394,6 +399,7 @@ export default function MaraControlCenter() {
       { label: 'Tasks', href: '#tasks' },
       { label: 'Approvals', href: '#approvals' },
       { label: 'Audit & Logs', href: '#audit-logs' },
+      { label: 'Security', href: '#security' },
       { label: 'Integrations', href: '#integrations' },
       { label: 'Tools', href: '#tools' },
     ] },
@@ -740,6 +746,30 @@ export default function MaraControlCenter() {
           </span>
         </div>)}
         {!agents.length && <p className="mcc-muted">Agent catalog unavailable.</p>}
+      </section>
+      <section className="mcc-panel mcc-panel--wide" id="security">
+        <div className="mcc-panel-heading"><h2>Security Agent</h2><span>Bans · honeypot · circuits</span></div>
+        <div className="mcc-module-health-grid">
+          <div><span>IP-uri blocate</span><strong>{security?.blacklistedIps.total ?? 0}</strong></div>
+          <div><span>Honeypot (24h)</span><strong>{security?.honeypot.eventsLast24h ?? 0}</strong></div>
+          <div><span>Control worker</span><strong>{security?.controlWorker.enabled ? (security.controlWorker.running ? 'RUNNING' : 'ENABLED') : 'OFF'}</strong></div>
+        </div>
+        {security?.circuits.map((circuit) => (
+          <div className="mcc-signal" key={circuit.provider}>
+            <span>circuit · {circuit.provider}</span>
+            <strong className={circuit.state === 'open' ? 'mcc-circuit-open' : undefined}>{circuit.state.toUpperCase()} ({circuit.failures} eșecuri)</strong>
+          </div>
+        ))}
+        {!!security?.blacklistedIps.recent.length && <>
+          <p className="mcc-muted" style={{ marginTop: 10 }}>IP-uri recente:</p>
+          {security.blacklistedIps.recent.slice(0, 5).map((ban) => (
+            <div className="mcc-signal" key={ban.ip}>
+              <span>{ban.ip} · {ban.reason}</span>
+              <strong>{ban.hitCount}× {ban.permanent ? 'permanent' : ''}</strong>
+            </div>
+          ))}
+        </>}
+        {!security && <p className="mcc-muted">Se încarcă starea de securitate...</p>}
       </section>
       <section className="mcc-panel mcc-panel--wide">
         <div className="mcc-panel-heading"><h2>Code Agent</h2><span>Persistent planning workflow</span></div>

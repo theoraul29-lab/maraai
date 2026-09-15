@@ -92,10 +92,10 @@ export const AGENT_CATALOG: readonly AgentCatalogEntry[] = [
   {
     id: 'security-agent',
     label: 'Security Agent',
-    role: 'Security review and controlled remediation.',
-    capabilities: ['security-review', 'hardening'],
-    risk: 'HIGH_RISK',
-    execution: 'not_configured',
+    role: 'Reports IP bans, honeypot activity, and provider circuit-breaker state.',
+    capabilities: ['security-review'],
+    risk: 'READ_ONLY',
+    execution: 'read_only',
   },
   {
     id: 'testing-agent',
