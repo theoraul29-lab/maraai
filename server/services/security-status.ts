@@ -1,3 +1,4 @@
+// (bridge end-to-end validation comment — safe to remove)
 import { rawSqlite } from '../db.js';
 import { getAllCircuitStatuses, type CircuitBreakerStatus } from '../lib/circuit-breaker.js';
 import { controlTaskWorkerStatus } from '../bootstrap/control-task-worker.js';
