@@ -42,8 +42,12 @@
 .mcc-shell--desktop {
   display: grid;
   grid-template-columns: 240px minmax(0, 1fr);
+  /* A single implicit row with no explicit sizing defaults to auto (fits its
+     content), which silently undoes .mcc-shell's height:100vh — the grid
+     container would be the right height but its row, and everything inside
+     it, would not. minmax(0, 1fr) forces the row to actually fill it. */
+  grid-template-rows: minmax(0, 1fr);
   gap: 16px;
-  height: 100%;
   min-height: 0;
 }
 
