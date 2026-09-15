@@ -61,7 +61,7 @@ export const api = {
       path: '/api/chat' as const,
       input: z.object({
         message: z.string(),
-        module: z.enum(['trading', 'writers', 'reels']).optional(),
+        module: z.enum(['missions', 'writers', 'reels']).optional(),
         language: z.enum(['en', 'ro', 'de', 'ru', 'ua']).optional(),
       }),
       responses: {

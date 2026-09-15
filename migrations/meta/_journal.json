@@ -183,6 +183,13 @@
       "when": 1779700000000,
       "tag": "0025_security_honeypot",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "6",
+      "when": 1779800000000,
+      "tag": "0026_drop_trading_academy",
+      "breakpoints": true
     }
   ]
 }

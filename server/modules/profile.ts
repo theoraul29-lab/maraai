@@ -686,9 +686,6 @@ export async function deleteAccount(req: Request, res: Response) {
       ['user_missions',              'user_id'],
       ['user_xp',                    'user_id'],
       ['user_personality',           'user_id'],
-      // --- trading ---
-      ['trading_lesson_progress',    'user_id'],
-      ['trading_certificates',       'user_id'],
       // --- preferences / history ---
       ['user_preferences',           'user_id'],
       ['mara_search_history',        'user_id'],
