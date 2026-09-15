@@ -13,8 +13,9 @@
  * esbuild only transpiles.
  */
 import { build } from 'esbuild';
-import { readdirSync, mkdirSync, copyFileSync } from 'node:fs';
+import { readdirSync, mkdirSync, copyFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 
 function collect(dir, exts, acc = []) {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -56,3 +57,25 @@ for (const src of jsonAssets) {
   copyFileSync(src, dest);
 }
 console.log(`[build-server] copied ${jsonAssets.length} JSON asset(s) to dist/`);
+
+// The production runtime image has neither the `git` binary nor the `.git`
+// directory (Dockerfile.nodejs's runtime stage only copies dist/server/shared),
+// so the Repository panel's git-status feature can't shell out to git there.
+// Snapshot the commit info here instead, while git IS available (this script
+// runs in the Docker builder stage, right after `COPY . .`) — the runtime
+// falls back to this file when live git commands aren't possible.
+try {
+  const git = (...args) => execFileSync('git', args, { encoding: 'utf8' }).trim();
+  const buildInfo = {
+    commit: git('rev-parse', 'HEAD'),
+    branch: git('branch', '--show-current') || 'detached',
+    subject: git('log', '-1', '--pretty=format:%s'),
+    author: git('log', '-1', '--pretty=format:%an'),
+    date: git('log', '-1', '--pretty=format:%aI'),
+    builtAt: new Date().toISOString(),
+  };
+  writeFileSync(path.join('dist', 'build-info.json'), `${JSON.stringify(buildInfo, null, 2)}\n`);
+  console.log(`[build-server] wrote dist/build-info.json (${buildInfo.commit.slice(0, 12)})`);
+} catch (err) {
+  console.warn('[build-server] could not snapshot git info (not a git checkout?):', err.message);
+}

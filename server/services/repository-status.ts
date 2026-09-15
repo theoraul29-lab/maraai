@@ -1,6 +1,8 @@
 import { getCodeOverview, listIndexedFiles, readSourceFile, searchIndexedFiles, REPO_ROOT } from '../mara-brain/agents/code-explorer.js';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 
 const execFileAsync = promisify(execFile);
 
@@ -38,13 +40,19 @@ export async function readRepositoryFile(path: string, maxBytes = 6_000) {
   return result;
 }
 
-export async function readRepositoryGitStatus(): Promise<{
+export interface RepositoryGitStatus {
   branch: string;
   dirty: boolean;
   summary: string[];
   recentCommits: Array<{ hash: string; subject: string; author: string; date: string }>;
   diff: { files: string[]; stat: string };
-}> {
+  /** 'live' = real git commands ran (local dev checkout); 'build-snapshot' =
+   *  fell back to the commit info captured at Docker build time, since the
+   *  production runtime image has neither the git binary nor .git. */
+  source: 'live' | 'build-snapshot' | 'unavailable';
+}
+
+async function readLiveGitStatus(): Promise<RepositoryGitStatus> {
   const { stdout: branchOutput } = await execFileAsync('git', ['branch', '--show-current'], { cwd: REPO_ROOT, windowsHide: true });
   const { stdout: statusOutput } = await execFileAsync('git', ['status', '--short'], { cwd: REPO_ROOT, windowsHide: true });
   const { stdout: logOutput } = await execFileAsync(
@@ -68,6 +76,45 @@ export async function readRepositoryGitStatus(): Promise<{
       files: diffNames.split(/\r?\n/).filter(Boolean).slice(0, 100),
       stat: diffStat.trim(),
     },
+    source: 'live',
   };
+}
+
+/**
+ * Read-only git status for the Control Center's Repository panel.
+ *
+ * The production runtime image (Dockerfile.nodejs) has neither the `git`
+ * binary nor a `.git` directory, so live git commands always fail there.
+ * Falls back to the commit snapshot `scripts/build-server.mjs` writes at
+ * Docker build time (when git IS available), and degrades to a clearly
+ * labeled "unavailable" response as a last resort — never throws/500s.
+ */
+export async function readRepositoryGitStatus(): Promise<RepositoryGitStatus> {
+  try {
+    return await readLiveGitStatus();
+  } catch {
+    // Not a git checkout, or git isn't installed — expected in production.
+  }
+  try {
+    const raw = await readFile(path.join(REPO_ROOT, 'dist', 'build-info.json'), 'utf8');
+    const info = JSON.parse(raw) as { commit: string; branch: string; subject: string; author: string; date: string; builtAt: string };
+    return {
+      branch: info.branch,
+      dirty: false,
+      summary: [],
+      recentCommits: [{ hash: info.commit, subject: info.subject, author: info.author, date: info.date }],
+      diff: { files: [], stat: '' },
+      source: 'build-snapshot',
+    };
+  } catch {
+    return {
+      branch: 'unknown',
+      dirty: false,
+      summary: [],
+      recentCommits: [],
+      diff: { files: [], stat: '' },
+      source: 'unavailable',
+    };
+  }
 }
 

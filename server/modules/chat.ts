@@ -88,8 +88,8 @@ export async function sendChatMessage(req: Request, res: Response) {
            WHERE um.user_id = ? AND um.status = 'active' LIMIT 5`
         ).all(userId) as Array<{ title: string; pillar: string; status: string }>);
         const enrollment = (rawSqlite.prepare(
-          `SELECT p.name, pe.current_day, pe.status FROM program_enrollments pe
-           JOIN programs p ON p.id = pe.program_id
+          `SELECT p.name, pe.current_day, pe.status FROM user_program_enrollments pe
+           JOIN mission_programs p ON p.id = pe.program_id
            WHERE pe.user_id = ? AND pe.status = 'active' LIMIT 1`
         ).get(userId) as { name: string; current_day: number; status: string } | undefined);
 
