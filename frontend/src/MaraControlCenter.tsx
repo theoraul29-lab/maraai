@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import './styles/MaraControlCenter.css';
 import { readCapabilityResults } from './utils/capability-refresh';
 import { MaraVoiceControl } from './components/MaraVoiceControl';
+import { MaraMark } from './components/MaraMark';
+import { AgentTopology } from './components/AgentTopology';
 import type {
   BrainControlSnapshot,
   BrainStatus,
@@ -408,7 +410,10 @@ export default function MaraControlCenter() {
   return (
     <main className="mcc-shell mcc-shell--desktop">
       <aside className="mcc-sidebar" aria-label="Mara Control Center navigation">
-        <div className="mcc-sidebar-brand">MARA CONTROL CENTER</div>
+        <div className="mcc-sidebar-brand">
+          <MaraMark size={26} />
+          <span className="mcc-mark-text">MARA<small>CONTROL CENTER</small></span>
+        </div>
         {sidebarGroups.map((group) => <div className="mcc-sidebar-group" key={group.title}>
           <div className="mcc-sidebar-title">{group.title}</div>
           {group.title === 'HELLOMARA.NET'
@@ -733,7 +738,8 @@ export default function MaraControlCenter() {
       </section>
 
       <section className="mcc-panel mcc-panel--wide" id="agents">
-        <div className="mcc-panel-heading"><h2>Agents</h2><span>Descriptive catalog</span></div>
+        <div className="mcc-panel-heading"><h2>Agents</h2><span>Live topology</span></div>
+        <AgentTopology agents={agents} />
         {agents.map((agent) => <div className="mcc-signal" key={agent.id}>
           <span>{agent.label} · {agent.role}</span>
           <span className="mcc-agent-actions">
