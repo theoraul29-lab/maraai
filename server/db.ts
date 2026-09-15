@@ -424,6 +424,13 @@ sqlite.exec(`
 }
 
 
+// Self-heal: production DBs created before `claimed_by` existed on
+// p2p_tasks still have the table without that column. Add it here so the
+// `idx_p2p_tasks_claimed_by` index below doesn't crash boot with
+// "no such column: claimed_by". No-op (caught) on a fresh DB where the
+// table doesn't exist yet, or where the column is already present.
+try { sqlite.exec(`ALTER TABLE p2p_tasks ADD COLUMN claimed_by TEXT`); } catch { /* already exists, or table doesn't exist yet */ }
+
 // ─── Missions V4 tables ──────────────────────────────────────────────────────
 
 sqlite.exec(`
