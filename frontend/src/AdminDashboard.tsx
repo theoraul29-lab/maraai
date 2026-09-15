@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import './styles/AdminDashboard.css';
+import type { AgentCatalogEntry, CodeAgentPlan, ControlAuditAction, DashboardOverview, TaskSnapshot } from './types/control';
 
 const AdminGrowthDashboard = lazy(() => import('./AdminGrowthDashboard'));
 
@@ -18,18 +19,6 @@ interface SectionHeaderProps {
   icon: string;
   title: string;
   action?: React.ReactNode;
-}
-
-interface DashboardStats {
-  users: { total: number; newToday: number; active7d: number };
-  languages: { language: string; cnt: number }[];
-  revenue: { total: number; thisMonth: number; pendingOrders: number };
-  notifications: { total: number; today: number };
-  pwa: { installs: number };
-  missions: { completed: number; totalXP: number };
-  aiRoutes: { route: string; cnt: number; avg_latency: number; successes: number }[];
-  system: { uptimeSeconds: number; memoryMB: number; totalMemoryMB: number; nodeVersion: string };
-  brain: { lastLog: { message: string; level: string; created_at: number } | null; logsToday: number };
 }
 
 interface KnowledgeEntry {
@@ -246,11 +235,15 @@ function CircuitBreakersPanel() {
   );
 }
 
-function OverviewTab({ stats }: { stats: DashboardStats | null }) {
+function OverviewTab({ stats }: { stats: DashboardOverview | null }) {
   const { t } = useTranslation();
   if (!stats) return <div className="adb-loading">{t('admin.loadingStats')}</div>;
   return (
     <div className="adb-overview">
+      <AgentCatalogPanel />
+      <ControlAuditPanel />
+      <CodeAgentPlansPanel />
+      <UnifiedTaskPanel />
       <div className="adb-stat-grid">
         <StatCard icon="👥" label={t('admin.totalUsers')} value={stats.users.total} sub={`+${stats.users.newToday} ${t('admin.today')}`} color="#6c63ff" />
         <StatCard icon="🟢" label={t('admin.active7d')} value={stats.users.active7d} color="#4ade80" />
@@ -310,6 +303,141 @@ function OverviewTab({ stats }: { stats: DashboardStats | null }) {
       <CircuitBreakersPanel />
     </div>
   );
+}
+
+function AgentCatalogPanel() {
+  const [agents, setAgents] = useState<AgentCatalogEntry[]>([]);
+
+  useEffect(() => {
+    fetch('/api/control/agents', { credentials: 'include' })
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error('Agent catalog unavailable')))
+      .then((data: { agents?: AgentCatalogEntry[] }) => setAgents(data.agents ?? []))
+      .catch(() => {});
+  }, []);
+
+  return (
+    <div className="adb-card adb-agent-panel">
+      <SectionHeader icon="🧩" title="Agent catalog" />
+      {agents.map((agent) => (
+        <div className="adb-agent-row" key={agent.id}>
+          <span>{agent.label} · {agent.role}</span>
+          <strong>{agent.risk}</strong>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function UnifiedTaskPanel() {
+  const [counts, setCounts] = useState<Record<string, number>>({});
+  const [tasks, setTasks] = useState<TaskSnapshot['tasks']>([]);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('/api/admin/tasks/status', { credentials: 'include' })
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error('Task status unavailable')))
+      .then((data: TaskSnapshot) => { setCounts(data.counts ?? {}); setTasks(data.tasks ?? []); })
+      .catch(() => {});
+  }, []);
+
+  async function decideTask(id: string, decision: 'approve' | 'cancel') {
+    if (!id.startsWith('control:')) return;
+    setBusy(id);
+    try {
+      const response = await fetch(`/api/control/tasks/${id.slice('control:'.length)}/${decision}`, { method: 'POST', credentials: 'include' });
+      if (!response.ok) throw new Error(`Task ${decision} returned ${response.status}`);
+      const nextStatus = decision === 'approve' ? 'PLANNING' : 'CANCELLED';
+      setTasks((current) => current.map((task) => task.id === id ? { ...task, status: nextStatus } : task));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function reviewTask(id: string, decision: 'approved' | 'rejected') {
+    if (!id.startsWith('control:')) return;
+    setBusy(id);
+    try {
+      const response = await fetch(`/api/control/tasks/${id.slice('control:'.length)}/review`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ decision }),
+      });
+      if (!response.ok) throw new Error(`Review returned ${response.status}`);
+      setTasks((current) => current.map((task) => task.id === id ? { ...task, metadata: { ...task.metadata, reviewDecision: decision } } : task));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <div className="adb-card adb-task-panel">
+      <SectionHeader icon="📋" title="Unified task state" />
+      <div className="adb-task-grid">
+        {Object.entries(counts).map(([status, count]) => (
+          <div key={status}><strong>{count}</strong><span>{status}</span></div>
+        ))}
+      </div>
+      <div className="adb-task-list">
+        {tasks.filter((task) => ['QUEUED', 'RUNNING', 'WAITING_APPROVAL'].includes(task.status)).slice(0, 8).map((task) => (
+          <div key={task.id}>
+            <span>{task.title}</span>
+            <span className="adb-task-actions">
+              <strong>{task.permission.approvalRequired ? 'APPROVAL · ' : ''}{task.risk} · {task.status}</strong>
+              {task.id.startsWith('control:') && task.status === 'WAITING_APPROVAL' && <>
+                <button type="button" disabled={busy !== null} onClick={() => void decideTask(task.id, 'approve')}>Approve</button>
+                <button type="button" disabled={busy !== null} onClick={() => void decideTask(task.id, 'cancel')}>Cancel</button>
+              </>}
+              {task.id.startsWith('control:') && task.status === 'COMPLETED' && task.metadata.taskType && !task.metadata.reviewDecision && <>
+                <button type="button" disabled={busy !== null} onClick={() => void reviewTask(task.id, 'approved')}>Review approve</button>
+                <button type="button" disabled={busy !== null} onClick={() => void reviewTask(task.id, 'rejected')}>Review reject</button>
+              </>}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ControlAuditPanel() {
+  const [actions, setActions] = useState<ControlAuditAction[]>([]);
+  useEffect(() => {
+    fetch('/api/control/audit/actions', { credentials: 'include' })
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error('Audit unavailable')))
+      .then((data: { actions?: ControlAuditAction[] }) => setActions(data.actions ?? []))
+      .catch(() => {});
+  }, []);
+  return (
+    <div className="adb-card adb-audit-panel">
+      <SectionHeader icon="🧾" title="Control audit" />
+      {actions.slice(0, 8).map((action) => <div className="adb-agent-row" key={action.id}><span>{action.action_type} · {action.target_type}:{action.target_id}</span><strong>{action.actor ?? 'system'}</strong></div>)}
+    </div>
+  );
+}
+
+function CodeAgentPlansPanel() {
+  const [plans, setPlans] = useState<CodeAgentPlan[]>([]);
+  const [busy, setBusy] = useState<number | null>(null);
+  useEffect(() => {
+    fetch('/api/control/code-agent/plans', { credentials: 'include' })
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error('Code Agent plans unavailable')))
+      .then((data: { plans?: CodeAgentPlan[] }) => setPlans(data.plans ?? []))
+      .catch(() => {});
+  }, []);
+  async function approve(planId: number) {
+    setBusy(planId);
+    try {
+      const response = await fetch(`/api/control/code-agent/plans/${planId}/approve`, { method: 'POST', credentials: 'include' });
+      if (!response.ok) throw new Error(`Plan approval returned ${response.status}`);
+      setPlans((current) => current.map((plan) => plan.id === planId ? { ...plan, status: 'approved_for_review' } : plan));
+    } finally { setBusy(null); }
+  }
+  return <div className="adb-card"><SectionHeader icon="🛠️" title="Code Agent plans" />{plans.slice(0, 8).map((plan) => <div className="adb-code-plan" key={plan.id}>
+    <div className="adb-agent-row"><span>Plan #{plan.id} · {plan.changes.length} proposed files</span><span className="adb-task-actions"><strong>{plan.status}</strong>{plan.status === 'waiting_approval' && <button type="button" disabled={busy !== null} onClick={() => void approve(plan.id)}>Approve plan</button>}</span></div>
+    {plan.analysis.summary && <p className="adb-plan-summary">{plan.analysis.summary}</p>}
+    <div className="adb-plan-files">{plan.changes.slice(0, 20).map((change, index) => <span key={`${plan.id}-${index}`}>{change.type ?? 'change'}: {change.path ?? 'unknown path'}</span>)}</div>
+  </div>)}{!plans.length && <p className="adb-empty">No Code Agent plans.</p>}</div>;
 }
 
 // ─── Tab: Brain ───────────────────────────────────────────────────────────────
@@ -1236,7 +1364,7 @@ const TAB_IDS = [
 export default function AdminDashboard() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('overview');
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [stats, setStats] = useState<DashboardOverview | null>(null);
   const [statsError, setStatsError] = useState('');
   const [unreadAlerts, setUnreadAlerts] = useState(0);
 
@@ -1259,6 +1387,7 @@ export default function AdminDashboard() {
     <div className="adb-root">
       <div className="adb-header">
         <h1 className="adb-title">{t('admin.title')}</h1>
+        <a className="adb-control-center-link" href="/control-center">Open Mara Control Center</a>
         {statsError && <span className="adb-error">{statsError}</span>}
       </div>
 

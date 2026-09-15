@@ -12,6 +12,29 @@
   "lang": "en",
   "dir": "ltr",
   "categories": ["social", "entertainment", "lifestyle"],
+  "shortcuts": [
+    {
+      "name": "Mara Control Center",
+      "short_name": "Control Center",
+      "description": "Open the unified Mara operational control surface.",
+      "url": "/control-center",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Mara Brain",
+      "short_name": "Brain",
+      "description": "Inspect MaraBrain state and cycle history.",
+      "url": "/admin/brain",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Pending approvals",
+      "short_name": "Approvals",
+      "description": "Review proposed growth experiments.",
+      "url": "/control-center",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
   "icons": [
     {
       "src": "/icons/icon-192.png",
