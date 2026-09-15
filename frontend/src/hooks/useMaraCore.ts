@@ -161,8 +161,16 @@ export function useMaraCore() {
     try {
       const form = new FormData();
       form.append('file', blob, 'speech.webm');
+      // credentials must be explicit 'omit': the app's global fetch wrapper
+      // (frontend/src/csrf.ts) defaults every POST to credentials:'include'
+      // + an X-CSRF-Token header for same-origin API calls — sending either
+      // to this different origin makes the browser require
+      // Access-Control-Allow-Credentials:true on the STT server's preflight
+      // response, which it correctly doesn't send (confirmed live: the
+      // fetch failed with exactly that CORS error until this was added).
       const res = await fetch(`${config.url}/transcribe`, {
         method: 'POST',
+        credentials: 'omit',
         headers: { Authorization: `Bearer ${config.token}` },
         body: form,
       });

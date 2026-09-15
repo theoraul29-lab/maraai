@@ -78,7 +78,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["https://hellomara.net"],
     allow_methods=["POST"],
-    allow_headers=["Authorization"],
+    allow_headers=["*"],
 )
 
 
