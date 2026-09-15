@@ -20,8 +20,9 @@ import {
 } from './ai-provider.js';
 import { anthropicProvider, anthropicBrainProvider } from './anthropic-provider.js';
 import { ollamaProvider } from './ollama-provider.js';
-import { circuitIsAvailable, circuitRecordSuccess, circuitRecordFailure } from './circuit-breaker.js';
+import { circuitIsAvailable, circuitRecordSuccess, circuitRecordFailure, getAllCircuitStatuses } from './circuit-breaker.js';
 import { isOllamaForcedFallback, recordOllamaFailure, recordOllamaSuccess } from '../middleware/costGuard.js';
+import { getEffectiveAnthropicApiKey } from './anthropic-key-store.js';
 import { getBrainRunContext } from '../mara-brain/run-context.js';
 
 function recordProviderCall(
@@ -56,7 +57,7 @@ function ollamaConfigured(): boolean {
 }
 
 function anthropicConfigured(): boolean {
-  return !!process.env.ANTHROPIC_API_KEY;
+  return !!getEffectiveAnthropicApiKey();
 }
 
 function fallbackEnabled(): boolean {
@@ -173,7 +174,22 @@ async function describeOllama(): Promise<ProviderHealth> {
 function describeAnthropic(): ProviderHealth {
   const configured = anthropicConfigured();
   const model = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6';
-  return { provider: 'anthropic', configured, ok: configured, model };
+  if (!configured) return { provider: 'anthropic', configured: false, ok: false, model };
+  // `configured` only proves the API key is set — it says nothing about
+  // whether real calls are actually succeeding. Fold in the circuit
+  // breaker so a genuinely broken Anthropic (bad key, exhausted credit
+  // balance, sustained API errors) shows ok:false here instead of a
+  // false-positive "fallback is healthy" that only gets discovered when
+  // both Ollama AND Anthropic are needed at the same time.
+  const breaker = getAllCircuitStatuses().find((s) => s.provider === 'anthropic');
+  const ok = breaker?.state !== 'open';
+  return {
+    provider: 'anthropic',
+    configured: true,
+    ok,
+    model,
+    ...(ok ? {} : { error: `circuit open after ${breaker?.failures} consecutive failure(s)` }),
+  };
 }
 
 /**

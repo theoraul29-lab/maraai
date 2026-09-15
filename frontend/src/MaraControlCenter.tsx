@@ -81,6 +81,8 @@ export default function MaraControlCenter() {
   const [taskBusy, setTaskBusy] = useState<string | null>(null);
   const [codeTaskDescription, setCodeTaskDescription] = useState('');
   const [codeTaskMessage, setCodeTaskMessage] = useState('');
+  const [anthropicKeyInput, setAnthropicKeyInput] = useState('');
+  const [anthropicKeyMessage, setAnthropicKeyMessage] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -288,6 +290,44 @@ export default function MaraControlCenter() {
       setCodeTaskMessage(`${module ? `${module.displayName}: ` : ''}Request #${data.request?.id ?? 'created'} queued for planning.`);
     } catch (cause) {
       setCodeTaskMessage(cause instanceof Error ? cause.message : 'Code Agent request failed');
+    } finally {
+      setTaskBusy(null);
+    }
+  }
+
+  async function saveAnthropicKey() {
+    const apiKey = anthropicKeyInput.trim();
+    if (!apiKey) return;
+    setTaskBusy('anthropic-key');
+    setAnthropicKeyMessage(null);
+    try {
+      const response = await fetch('/api/control/integrations/anthropic', {
+        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apiKey }),
+      });
+      const data = await response.json() as { integrations?: IntegrationStatus[]; error?: string };
+      if (!response.ok) throw new Error(data.error ?? `Save returned ${response.status}`);
+      if (data.integrations) setIntegrations(data.integrations);
+      setAnthropicKeyInput('');
+      setAnthropicKeyMessage('Saved. Anthropic will be used as a fallback when Ollama is unavailable.');
+    } catch (cause) {
+      setAnthropicKeyMessage(cause instanceof Error ? cause.message : 'Failed to save Anthropic key');
+    } finally {
+      setTaskBusy(null);
+    }
+  }
+
+  async function clearAnthropicKey() {
+    setTaskBusy('anthropic-key');
+    setAnthropicKeyMessage(null);
+    try {
+      const response = await fetch('/api/control/integrations/anthropic', { method: 'DELETE', credentials: 'include' });
+      const data = await response.json() as { integrations?: IntegrationStatus[]; error?: string };
+      if (!response.ok) throw new Error(data.error ?? `Clear returned ${response.status}`);
+      if (data.integrations) setIntegrations(data.integrations);
+      setAnthropicKeyMessage('Cleared. Running on Ollama only until a key is added again.');
+    } catch (cause) {
+      setAnthropicKeyMessage(cause instanceof Error ? cause.message : 'Failed to clear Anthropic key');
     } finally {
       setTaskBusy(null);
     }
@@ -548,6 +588,24 @@ export default function MaraControlCenter() {
       <section className="mcc-panel mcc-panel--wide" id="integrations">
         <div className="mcc-panel-heading"><h2>Integrations</h2><span>Configuration status only</span></div>
         {integrations.map((integration) => <div className="mcc-signal" key={integration.id} title={integration.reason}><span>{integration.id}</span><strong>{integration.state}</strong></div>)}
+        <div className="mcc-anthropic-key-form">
+          <p className="mcc-muted">Ollama is the primary provider. Anthropic is optional — add a key here anytime to enable it as a fallback, no Railway redeploy needed.</p>
+          <div className="mcc-task-actions">
+            <input
+              type="password"
+              placeholder="sk-ant-..."
+              value={anthropicKeyInput}
+              onChange={(event) => setAnthropicKeyInput(event.target.value)}
+              disabled={taskBusy === 'anthropic-key'}
+              autoComplete="off"
+            />
+            <button type="button" disabled={taskBusy === 'anthropic-key' || !anthropicKeyInput.trim()} onClick={() => void saveAnthropicKey()}>Save key</button>
+            {integrations.find((i) => i.id === 'anthropic')?.configured && (
+              <button type="button" disabled={taskBusy === 'anthropic-key'} onClick={() => void clearAnthropicKey()}>Clear key</button>
+            )}
+          </div>
+          {anthropicKeyMessage && <p className="mcc-muted">{anthropicKeyMessage}</p>}
+        </div>
       </section>
 
       <section className="mcc-panel mcc-panel--wide" id="github">

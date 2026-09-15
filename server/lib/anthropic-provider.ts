@@ -16,6 +16,7 @@ import type {
   AIProvider,
   AIResponse,
 } from './ai-provider.js';
+import { getEffectiveAnthropicApiKey } from './anthropic-key-store.js';
 
 const DEFAULT_MODEL = 'claude-sonnet-4-6';
 const DEFAULT_MAX_TOKENS = 1024;
@@ -42,9 +43,9 @@ function getTimeoutMs(): number {
 let clientInstance: Anthropic | null = null;
 let clientKey: string | null = null;
 function getClient(): Anthropic {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = getEffectiveAnthropicApiKey();
   if (!apiKey) {
-    throw new Error('ANTHROPIC_API_KEY is not set. Cannot call Anthropic Claude API.');
+    throw new Error('No Anthropic API key configured (env var or Control Center). Cannot call Anthropic Claude API.');
   }
   if (!clientInstance || clientKey !== apiKey) {
     clientInstance = new Anthropic({ apiKey, timeout: getTimeoutMs() });
@@ -101,7 +102,7 @@ class AnthropicProvider implements AIProvider {
   readonly name = 'anthropic' as const;
 
   async isAvailable(): Promise<boolean> {
-    return !!process.env.ANTHROPIC_API_KEY;
+    return !!getEffectiveAnthropicApiKey();
   }
 
   async chat(messages: AIMessage[], opts: AIChatOptions = {}): Promise<AIResponse> {
@@ -148,9 +149,9 @@ function getBrainClient(): Anthropic {
     // Warn once so operators know brain and chat share the same quota
     console.warn('[anthropic] ANTHROPIC_BRAIN_API_KEY not set — brain shares ANTHROPIC_API_KEY quota with user chat');
   }
-  const apiKey = dedicated || process.env.ANTHROPIC_API_KEY;
+  const apiKey = dedicated || getEffectiveAnthropicApiKey();
   if (!apiKey) {
-    throw new Error('No Anthropic key for brain. Set ANTHROPIC_BRAIN_API_KEY or ANTHROPIC_API_KEY.');
+    throw new Error('No Anthropic key for brain. Set ANTHROPIC_BRAIN_API_KEY/ANTHROPIC_API_KEY, or add one in the Control Center.');
   }
   if (!brainClientInstance || brainClientKey !== apiKey) {
     brainClientInstance = new Anthropic({ apiKey, timeout: getTimeoutMs() });
@@ -163,7 +164,7 @@ class AnthropicBrainProvider implements AIProvider {
   readonly name = 'anthropic' as const;
 
   async isAvailable(): Promise<boolean> {
-    return !!(process.env.ANTHROPIC_BRAIN_API_KEY || process.env.ANTHROPIC_API_KEY);
+    return !!(process.env.ANTHROPIC_BRAIN_API_KEY || getEffectiveAnthropicApiKey());
   }
 
   async chat(messages: AIMessage[], opts: AIChatOptions = {}): Promise<AIResponse> {
@@ -212,8 +213,8 @@ export async function checkAnthropicHealth(): Promise<{
   error?: string;
 }> {
   const model = getModel();
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return { ok: false, model, error: 'ANTHROPIC_API_KEY is not set' };
+  if (!getEffectiveAnthropicApiKey()) {
+    return { ok: false, model, error: 'No Anthropic API key configured (env var or Control Center)' };
   }
   try {
     getClient();

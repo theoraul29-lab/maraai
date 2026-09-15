@@ -82,6 +82,7 @@ import { readRepositoryGitStatus, readRepositoryStatus } from './services/reposi
 import { AGENT_CATALOG } from './services/agent-catalog.js';
 import { readToolCatalog } from './services/tool-catalog.js';
 import { readIntegrationStatus } from './services/integration-status.js';
+import { setAnthropicApiKeyOverride } from './lib/anthropic-key-store.js';
 import { approveCodeAgentPlan, createCodeAgentRequestWithTask, getCodeAgentPlan, listCodeAgentPlans, rejectCodeAgentPlan } from './services/code-agent.js';
 import { isHelloMaraModuleId, readHelloMaraModule, readHelloMaraModules } from './services/hellomara-module-registry.js';
 import { readGitHubStatus } from './services/github/operations.js';
@@ -1404,6 +1405,32 @@ export async function registerRoutes(
 
   app.get('/api/control/integrations', requireAdmin, (_req: any, res: any) => {
     res.json({ integrations: readIntegrationStatus() });
+  });
+
+  // Optional Anthropic fallback key, settable from Control Center instead of
+  // requiring a Railway env var. Never echoes the key back — only whether one
+  // is configured and where it came from (env vs Control Center).
+  app.post('/api/control/integrations/anthropic', requireAdmin, (req: any, res: any) => {
+    const apiKey = typeof req.body?.apiKey === 'string' ? req.body.apiKey.trim() : '';
+    if (!apiKey) return res.status(400).json({ error: 'apiKey is required' });
+    if (apiKey.length > 500) return res.status(413).json({ error: 'apiKey is unexpectedly long' });
+    try {
+      setAnthropicApiKeyOverride(apiKey);
+      recordControlAdminAction('integrations.anthropic.key_set', 0, req.user?.uid ?? null, {}, 'integration');
+      res.json({ ok: true, integrations: readIntegrationStatus() });
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to save Anthropic key' });
+    }
+  });
+
+  app.delete('/api/control/integrations/anthropic', requireAdmin, (req: any, res: any) => {
+    try {
+      setAnthropicApiKeyOverride(null);
+      recordControlAdminAction('integrations.anthropic.key_cleared', 0, req.user?.uid ?? null, {}, 'integration');
+      res.json({ ok: true, integrations: readIntegrationStatus() });
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to clear Anthropic key' });
+    }
   });
 
   app.get('/api/control/github/status', requireAdmin, async (_req: any, res: any) => {
