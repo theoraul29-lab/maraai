@@ -16,7 +16,6 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 const DISMISS_KEY = 'mara_pwa_install_dismissed_v1';
-const UPDATE_DISMISS_KEY = 'mara_pwa_update_dismissed_v1';
 
 function isStandalone(): boolean {
   if (typeof window === 'undefined') return false;
@@ -76,12 +75,16 @@ export function InstallPromptBanner(): ReactElement | null {
     };
   }, []);
 
-  // Listen for SW update events.
+  // Listen for SW update events. Workbox only fires `onNeedRefresh` (and
+  // therefore this) when a genuinely new build is waiting — never repeatedly
+  // for the same version — so every occurrence deserves showing, regardless
+  // of whether an earlier, different update was dismissed this session. A
+  // stale bundle silently breaks lazy-loaded route chunks (404s on
+  // navigation) until the user updates, so under-prompting is the worse
+  // failure mode here.
   useEffect(() => {
     const unsub = subscribePWA((e: PWAEvent) => {
       if (e.type === 'update-available') {
-        const dismissed = sessionStorage.getItem(UPDATE_DISMISS_KEY);
-        if (dismissed) return;
         setUpdateAvailable(() => e.updateNow);
       }
     });
@@ -108,7 +111,8 @@ export function InstallPromptBanner(): ReactElement | null {
   };
 
   const dismissUpdate = () => {
-    sessionStorage.setItem(UPDATE_DISMISS_KEY, '1');
+    // Local-only: closes the banner for this render, but does not suppress
+    // future update-available events (see the effect above for why).
     setUpdateAvailable(null);
   };
 
