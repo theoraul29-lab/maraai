@@ -39,7 +39,7 @@ export async function maraFeed(_req: Request, res: Response) {
     const rows = rawSqlite.prepare(`
       SELECT v.id, v.url, v.type, v.title, v.description, v.creator_id AS creatorId,
              v.likes, v.views, v.shares, v.created_at AS uploadedAt,
-             v.moderation_status AS moderationStatus, v.topic,
+             v.moderation_status AS moderationStatus,
              u.display_name AS displayName, u.profile_image_url AS profileImageUrl
         FROM videos v
         LEFT JOIN users u ON u.id = v.creator_id
