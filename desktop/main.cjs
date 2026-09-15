@@ -177,6 +177,20 @@ async function boot() {
   }
 
   appendLog('Runtime health: OK');
+  // This is an admin tool pointed at a site that redeploys often — a stale
+  // cached JS chunk that references a now-deleted hashed asset from a
+  // previous build (the server only ever keeps the latest build's files)
+  // is a real failure mode ("unable to preload css"), and unlike a normal
+  // browser tab, quitting and relaunching this app does NOT clear it: the
+  // Electron session's HTTP cache and Service Worker storage persist to
+  // disk in userData across restarts by design. Clear the cache on every
+  // launch so the app always fetches whatever is actually live right now.
+  try {
+    await mainWindow.webContents.session.clearCache();
+    appendLog('Cleared HTTP cache before loading Control Center');
+  } catch (error) {
+    appendLog(`Cache clear failed (non-fatal): ${error instanceof Error ? error.message : String(error)}`);
+  }
   appendLog(`Opening Control Center: ${DESKTOP_TARGET_URL}`);
   await mainWindow.loadURL(DESKTOP_TARGET_URL);
 }
