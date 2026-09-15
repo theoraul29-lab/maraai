@@ -167,6 +167,8 @@
 .mcc-voice-button:disabled { cursor: not-allowed; opacity: .5; }
 .mcc-code-request { display: grid; gap: 10px; margin-top: 14px; }
 .mcc-code-request textarea { min-height: 100px; resize: vertical; border: 1px solid #1b3d39; background: #071014; color: #e6f0ed; padding: 10px; font: inherit; }
+.mcc-anthropic-key-form { margin-top: 14px; padding-top: 14px; border-top: 1px solid #1b3d39; }
+.mcc-anthropic-key-form input { flex: 1 1 240px; min-width: 0; border: 1px solid #1b3d39; background: #071014; color: #e6f0ed; padding: 8px 10px; font: inherit; }
 .mcc-code-request button { justify-self: start; border: 1px solid #2d6b62; background: #0f2425; color: #baf7e6; padding: 9px 13px; cursor: pointer; }
 .mcc-code-request button:disabled { cursor: not-allowed; opacity: .5; }
 .mcc-code-plan { border-top: 1px solid #18302f; padding: 10px 0; }
