@@ -439,7 +439,6 @@ export default function Missions() {
   const [journalTotal, setJournalTotal] = useState(0);
   const [books, setBooks] = useState<Book[]>([]);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
-  const [bookUnlocked, setBookUnlocked] = useState(false);
   const [communityFeed, setCommunityFeed] = useState<any[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
@@ -514,9 +513,8 @@ export default function Missions() {
   async function loadBooks() {
     if (!isAuthenticated) return;
     try {
-      const r = await apiFetchJson<{ books: Book[]; bookUnlocked: boolean }>('/api/books/my');
+      const r = await apiFetchJson<{ books: Book[] }>('/api/books/my');
       setBooks(r.books ?? []);
-      setBookUnlocked(!!r.bookUnlocked);
     } catch {}
   }
 
