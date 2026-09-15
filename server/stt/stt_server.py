@@ -41,6 +41,7 @@ if sys.platform == "win32":
     os.environ["PATH"] = os.pathsep.join(bin_dirs + [os.environ.get("PATH", "")])
 
 from fastapi import FastAPI, Header, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from faster_whisper import WhisperModel
 
@@ -65,6 +66,20 @@ except Exception as exc:  # GPU/CUDA unavailable — fall back to CPU rather tha
 print(f"[stt] model ready on {DEVICE}", flush=True)
 
 app = FastAPI()
+
+# The Control Center calls this service directly from the browser/Electron
+# renderer at https://hellomara.net (not proxied through Railway), which
+# makes it a cross-origin request — the Authorization header on it isn't a
+# CORS "simple" header, so the browser sends an OPTIONS preflight first.
+# Without this middleware FastAPI has no OPTIONS handler at all (confirmed
+# live: preflight came back 405), which silently breaks every voice request
+# from an actual browser even though direct POSTs (curl, no preflight) work.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://hellomara.net"],
+    allow_methods=["POST"],
+    allow_headers=["Authorization"],
+)
 
 
 def check_auth(authorization: str | None) -> None:
