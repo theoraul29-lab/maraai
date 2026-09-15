@@ -18,9 +18,21 @@
     "smoke:admin-chat": "tsx scripts/test-admin-chat.mts",
     "smoke:mara-cli": "node scripts/smoke-mara-cli.mjs",
     "smoke:code-explorer": "tsx scripts/test-code-explorer.mts",
+    "test:brain-dry": "tsx scripts/test-brain-dry.mts",
+    "test:control-capabilities": "tsx scripts/test-control-capabilities.mts",
+    "test:controlled-execution": "tsx scripts/test-controlled-execution.mts",
+    "run:control-task-e2e": "tsx scripts/run-control-task-e2e.mts",
+    "run:brain-dry": "tsx scripts/run-mara-brain-dry.mts",
+    "github:setup": "tsx scripts/setup-github-app.mts",
+    "github:verify": "tsx scripts/verify-github-app.mts",
+    "railway:setup-token": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup-railway-token.ps1",
+    "railway:setup-token:stdin": "tsx scripts/setup-railway-token.mts",
+    "railway:verify": "tsx scripts/verify-railway.mts",
     "mara": "node scripts/mara-cli.mjs",
     "typecheck": "tsc --noEmit",
-    "backup:db": "tsx server/services/dbBackup.ts"
+    "backup:db": "tsx server/services/dbBackup.ts",
+    "desktop": "electron desktop/main.cjs",
+    "desktop:install-shortcut": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-mara-desktop-shortcut.ps1"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.33.1",
@@ -64,7 +76,8 @@
     "esbuild": "^0.28.1",
     "tsx": "^4.15.0",
     "typescript": "~7.0.2",
-    "vite": "^8.0.5"
+    "vite": "^8.0.5",
+    "electron": "^38.2.0"
   },
   "engines": {
     "node": ">=20.0.0"
