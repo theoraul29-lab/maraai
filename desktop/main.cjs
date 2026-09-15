@@ -2,15 +2,27 @@ const { app, BrowserWindow, dialog, shell } = require('electron');
 const { spawn } = require('child_process');
 const fs = require('fs');
 const http = require('http');
+const https = require('https');
 const os = require('os');
 const path = require('path');
 
 const REPO_ROOT = path.resolve(__dirname, '..');
+
+// Desktop app targets production (hellomara.net) by default — the whole
+// point of the Control Center desktop shell is a native window onto the
+// live site, logged in with a real admin account. Set MARA_DESKTOP_LOCAL=true
+// to fall back to the previous behavior: boot/reuse a local dev server on
+// MARA_DESKTOP_HOST:MARA_DESKTOP_PORT instead. MARA_DESKTOP_TARGET overrides
+// the base URL outright (any origin) if neither of the above fit.
+const LOCAL_MODE = process.env.MARA_DESKTOP_LOCAL === 'true';
 const PORT = Number(process.env.MARA_DESKTOP_PORT || '5000');
 const HOST = process.env.MARA_DESKTOP_HOST || '127.0.0.1';
-const DESKTOP_TARGET_URL = `http://${HOST}:${PORT}/control-center`;
-const HEALTH_URL = `http://${HOST}:${PORT}/api/health`;
-const RUNTIME_URL = `http://${HOST}:${PORT}/api/runtime`;
+const DEFAULT_REMOTE_ORIGIN = 'https://hellomara.net';
+const BASE_URL = process.env.MARA_DESKTOP_TARGET
+  || (LOCAL_MODE ? `http://${HOST}:${PORT}` : DEFAULT_REMOTE_ORIGIN);
+const DESKTOP_TARGET_URL = `${BASE_URL}/control-center`;
+const HEALTH_URL = `${BASE_URL}/api/health`;
+const RUNTIME_URL = `${BASE_URL}/api/runtime`;
 const LOG_DIR = path.join(process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local'), 'MaraAI', 'desktop');
 const LOG_FILE = path.join(LOG_DIR, 'mara-runtime.log');
 const ICON_PATH = path.join(REPO_ROOT, 'frontend', 'public', 'favicon.ico');
@@ -25,9 +37,10 @@ function appendLog(line) {
   fs.appendFileSync(LOG_FILE, `[${new Date().toISOString()}] ${line}\n`);
 }
 
-function requestJson(url, timeoutMs = 2500) {
+function requestJson(url, timeoutMs = 8000) {
   return new Promise((resolve) => {
-    const req = http.get(url, { timeout: timeoutMs }, (res) => {
+    const client = url.startsWith('https:') ? https : http;
+    const req = client.get(url, { timeout: timeoutMs }, (res) => {
       let body = '';
       res.setEncoding('utf8');
       res.on('data', (chunk) => { body += chunk; });
@@ -51,6 +64,10 @@ async function isMaraHealthy() {
   const health = await requestJson(HEALTH_URL);
   appendLog(`Runtime health probe: ${HEALTH_URL} -> status=${health.statusCode} ok=${health.ok}`);
   if (!health.ok || health.json?.status !== 'ok') return false;
+  // The bound-port self-check only makes sense when we might have started
+  // the server ourselves (local mode); for a remote target, a healthy
+  // /api/health response is sufficient.
+  if (!LOCAL_MODE) return true;
   const runtime = await requestJson(RUNTIME_URL);
   const ok = runtime.ok && Number(runtime.json?.boundPort || runtime.json?.requestedPort) === PORT;
   appendLog(`Runtime state probe: ${RUNTIME_URL} -> status=${runtime.statusCode} ok=${ok} boundPort=${runtime.json?.boundPort ?? 'null'}`);
@@ -121,7 +138,7 @@ function createWindow() {
     if (isMainFrame) appendLog(`BrowserWindow load failed: ${validatedURL} code=${errorCode} error=${errorDescription}`);
   });
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith(`http://${HOST}:${PORT}`)) return { action: 'allow' };
+    if (url.startsWith(BASE_URL)) return { action: 'allow' };
     shell.openExternal(url);
     return { action: 'deny' };
   });
@@ -131,22 +148,30 @@ function createWindow() {
 async function boot() {
   fs.mkdirSync(LOG_DIR, { recursive: true });
   appendLog('Desktop startup');
-  appendLog(`Desktop target URL: ${DESKTOP_TARGET_URL}`);
+  appendLog(`Mode: ${LOCAL_MODE ? 'local' : 'remote'}; target: ${DESKTOP_TARGET_URL}`);
   app.setName('Mara');
   app.setPath('userData', path.join(LOG_DIR, 'profile'));
 
   createWindow();
-  await mainWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(`<!doctype html><title>Mara</title><body style="margin:0;background:#071014;color:#e6f0ed;font:16px Segoe UI,sans-serif;display:grid;place-items:center;height:100vh"><main><h1 style="margin:0 0 10px;font-size:32px">Starting Mara</h1><p style="opacity:.75;margin:0">Checking the local runtime on port ${PORT}...</p></main></body>`)}`);
+  const startingLabel = LOCAL_MODE ? `Checking the local runtime on port ${PORT}...` : `Connecting to ${BASE_URL}...`;
+  await mainWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(`<!doctype html><title>Mara</title><body style="margin:0;background:#071014;color:#e6f0ed;font:16px Segoe UI,sans-serif;display:grid;place-items:center;height:100vh"><main><h1 style="margin:0 0 10px;font-size:32px">Starting Mara</h1><p style="opacity:.75;margin:0">${startingLabel}</p></main></body>`)}`);
 
   if (!(await isMaraHealthy())) {
-    startMaraRuntime();
+    if (LOCAL_MODE) {
+      startMaraRuntime();
+    } else {
+      appendLog(`Remote target ${BASE_URL} is not reachable yet; waiting (no local process to start)`);
+    }
   } else {
-    appendLog('Mara runtime already healthy; reusing existing server');
+    appendLog(LOCAL_MODE ? 'Mara runtime already healthy; reusing existing server' : 'Remote target healthy');
   }
 
   const ready = await waitForMara();
   if (!ready) {
-    dialog.showErrorBox('Mara failed to start', `Mara did not become healthy at ${HEALTH_URL}.\n\nRuntime log:\n${LOG_FILE}`);
+    const hint = LOCAL_MODE
+      ? `Mara did not become healthy at ${HEALTH_URL}.\n\nRuntime log:\n${LOG_FILE}`
+      : `Could not reach ${HEALTH_URL}. Check your internet connection, or set MARA_DESKTOP_LOCAL=true to run against a local dev server instead.\n\nLog:\n${LOG_FILE}`;
+    dialog.showErrorBox('Mara failed to start', hint);
     app.quit();
     return;
   }
