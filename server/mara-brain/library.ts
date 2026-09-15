@@ -15,7 +15,7 @@ export interface LibraryBook {
   id: string;
   title: string;
   content: string;
-  category: 'business' | 'trading' | 'content_creation' | 'writing' | 'ai' | 'psychology' | 'marketing' | 'general';
+  category: 'business' | 'content_creation' | 'writing' | 'ai' | 'psychology' | 'marketing' | 'general';
   priority: number; // 1=highest
 }
 
@@ -110,56 +110,6 @@ Nu vinde doar planuri — vinde outcomes. "Vrei să îți crească portfeliul? S
 - Arată economiile: "Economisești $36/an cu planul anual"
 - Anchoring: arată planul cel mai scump primul
 - Highlight "Most Popular" pe planul din mijloc`,
-    },
-
-    // === TRADING & CRYPTO ===
-    {
-      id: 'trading-fundamentals',
-      title: 'Fundamente Trading Crypto pentru AI Assistant',
-      category: 'trading',
-      priority: 1,
-      content: `Trading Crypto — Ce Trebuie Să Știe un AI Trading Assistant
-
-1. ANALIZĂ TEHNICĂ — BAZA
-- Support & Resistance: niveluri de preț unde cererea/oferta se concentrează
-- Moving Averages: SMA (Simple), EMA (Exponential) — crossover = semnal
-- RSI (Relative Strength Index): >70 = supracumpărat, <30 = supravândut
-- MACD: Signal line crossover, divergențe
-- Volume: confirmă sau infirmă mișcările de preț
-- Bollinger Bands: volatilitate, squeeze = mișcare iminentă
-
-2. RISK MANAGEMENT — ESENȚIAL
-- Nu risca mai mult de 1-2% din portofoliu per trade
-- Stop-Loss OBLIGATORIU pe fiecare trade
-- Take-Profit la ratio minim 1:2 (risc:reward)
-- Nu face leverage peste 5x dacă ești începător
-- Diversifică: nu pune tot în BTC sau tot în altcoins
-
-3. PSIHOLOGIA TRADING-ULUI
-- FOMO (Fear Of Missing Out): cel mai mare dușman. Nu intra în trade-uri bazat pe emoție
-- Greed: setează take-profit și respectă-l. "Pigs get slaughtered"
-- Fear: nu vinde la panic. Ai un plan ÎNAINTE de a intra în trade
-- Revenge trading: după o pierdere, NU face imediat alt trade. Ia o pauză
-
-4. TIPURI DE TRADING
-- Scalping: minute, profit mic per trade, volum mare. Stresant, necesită experiență
-- Day Trading: în cadrul zilei, nu ține overnight. Risc moderat
-- Swing Trading: zile-săptămâni. Potrivit pentru MaraAI — timp de analiză
-- Position Trading: luni-ani. HODLing strategic
-
-5. INDICATORI FUNDAMENTALI CRYPTO
-- Market Cap: volum total × preț. Top 10 = mai sigur
-- TVL (Total Value Locked): pentru DeFi, arată încrederea
-- Hash Rate: pentru PoW, indică securitatea rețelei
-- On-chain metrics: active addresses, transaction count, whale movements
-
-6. STRATEGII PENTRU AI ASSISTANT
-- Alertele de preț personalizate per utilizator
-- Sentiment analysis din social media (Twitter/X, Reddit)
-- Backtesting pe date istorice
-- Portfolio tracking cu profit/loss în timp real
-- Educational content adaptat la nivelul utilizatorului
-- NICIODATĂ nu da "financial advice" — oferă "educational information"`,
     },
 
     // === CONTENT CREATION ===
@@ -942,10 +892,10 @@ f) Experiență în sine recompensatoare (autotelic)
 g) Obiective clare
 h) Feedback imediat
 
-3. APLICAȚIE MARAAI — TRADING MODULE
-- Fiecare sesiune de analiză trading trebuie să aibă un obiectiv clar: "Analizează BTC/USDT pe 4h și identifică suportul cheie"
-- Feedback imediat: după ce userul face o predicție, arată-i backtestul instant
-- Dificultate progresivă: strategie de bază → intermediate → avansată — nu oferi toate odată
+3. APLICAȚIE MARAAI — MISSIONS
+- Fiecare misiune zilnică trebuie să aibă un obiectiv clar, nu vag: "scrie 3 lucruri pentru care ești recunoscător azi", nu "reflectează puțin"
+- Feedback imediat: după ce userul trimite dovada (foto/text/sentiment), Mara răspunde pe loc, nu a doua zi
+- Dificultate progresivă: gentle → medium → deep, pe măsură ce programul avansează — nu arunci userul direct la nivelul greu
 
 4. APLICAȚIE MARAAI — WRITERS HUB
 - Prompt de scriere cu obiectiv precis: "Scrie primul paragraf al unui articol despre..."
@@ -1101,10 +1051,10 @@ d) Natura ca portal al prezentului: un copac nu are trecut sau viitor
 - Streak de prezență (meditation log sau breathing exercises)
 - Mara celebrează micile momente: "Ai luat o pauză azi? Asta contează mai mult decât pare."
 
-6. APLICAȚIE MARAAI — TRADING MODULE
-- Traderul prezent = traderul disciplinat. Anxietatea → FOMO → greșeli.
-- Mara poate oferi un "grounding exercise" de 2 minute înainte de o sesiune de trading
-- "Înainte de a deschide un trade: respiră de 3 ori și întreabă-te: acționez pe baza planului sau pe baza fricii?"`,
+6. APLICAȚIE MARAAI — MISSIONS
+- Userul prezent = userul consecvent. Anxietatea de a "rămâne în urmă" duce la abandon, nu la progres.
+- Mara poate oferi un "grounding exercise" de 2 minute înainte de misiunea zilnică, pentru zilele grele
+- "Înainte să sari peste misiunea de azi: respiră de 3 ori și întreabă-te: renunț pe baza unui motiv real sau pe baza fricii de a nu fi suficient?"`,
     },
     {
       id: 'psych-willpower-mcgonigal',
@@ -1141,9 +1091,9 @@ CONCEPTUL CENTRAL: Voința nu e o trăsătură de caracter — e o resursă biol
 - La prima greșeală în streak: Mara nu judecă, ci oferă perspectivă: "Ai ratat o zi? Normal. Reluăm azi."
 - Badge "Comeback" mai valoros decât "Perfect Streak" — normalizeaza imperfecțiunea
 
-6. APLICAȚIE MARAAI — TRADING
-- Tranzacțiile impulsive se fac seara sau după pierderi (voința epuizată + moral licensing invers)
-- Mara poate detecta ore critice și să sugereze o pauză: "E târziu și ai avut o zi grea. Amână tranzacțiile importante pentru mâine dimineață."
+6. APLICAȚIE MARAAI — MISIUNI
+- Renunțarea la o misiune se întâmplă cel mai des seara sau după o zi proastă (voința epuizată)
+- Mara poate detecta orele critice și oferi o variantă scurtă: "E târziu și ai avut o zi grea. Nu sări peste azi — fă doar versiunea de 2 minute a misiunii."
 
 7. ANTRENAREA VOINȚEI
 - Meditație: 5-10 min/zi crește voința în 2 săptămâni (studiu McGonigal)
@@ -1700,11 +1650,11 @@ CONCEPTUL CENTRAL: YouTube e cel mai mare motor de căutare video din lume și a
 - Calendar optimizat de postare: "Audiența ta e activă miercuri și vineri la 18:00"`,
     },
 
-    // --- TRADING & FINANCE ---
+    // --- DISCIPLINE & PSYCHOLOGY (originally read for the trading module, now Missions) ---
     {
       id: 'trading-trading-in-the-zone-douglas',
       title: 'Trading in the Zone — Psihologia Traderului de Succes (Mark Douglas)',
-      category: 'trading',
+      category: 'psychology',
       priority: 1,
       content: `Trading in the Zone — Mentalitatea Câștigătoare în Trading
 
@@ -1738,16 +1688,16 @@ Trebuie să fie: clar definit, mecanic (nu intuitiv), testabil pe date istorice,
 - Frica de a lăsa bani pe masă → ieșire prea devreme, înainte de target
 Soluție: acceptă din start că vei pierde pe o parte din trade-uri. E parte din joc.
 
-6. APLICAȚIE MARAAI — TRADING MODULE
-- Mara ajută utilizatorul să-și documenteze edge-ul personal în trade journal
-- La fiecare trade intrat emoțional, Mara detectează pattern-ul și oferă reframing
-- Post-trade analysis: "Ce emoție ai simțit când ai intrat? A respectat sistemul tău?"
-- Mara NU oferă "sfaturi de trading" — oferă coaching psihologic pe decizii`,
+6. APLICAȚIE MARAAI — MISIUNI
+- Mara ajută userul să-și documenteze tiparul personal de disciplină în jurnalul de misiuni
+- La fiecare misiune abandonată sau amânată emoțional, Mara detectează tiparul și oferă reframing
+- Analiză post-misiune: "Ce ai simțit când ai făcut misiunea azi? A respectat planul tău sau ai improvizat din vină?"
+- Mara NU dă "sfaturi generice de motivație" — oferă coaching psihologic real pe deciziile userului`,
     },
     {
       id: 'trading-psychology-of-money-housel',
       title: 'The Psychology of Money — Comportamentul Financiar (Morgan Housel)',
-      category: 'trading',
+      category: 'psychology',
       priority: 1,
       content: `The Psychology of Money — De ce Comportamentul Bate Cunoașterea Financiară
 
@@ -1759,7 +1709,7 @@ APLICAȚIE: Mara nu judecă deciziile financiare ale utilizatorului — le explo
 
 2. NOROCUL ȘI RISCUL (Luck & Risk)
 Succesul financiar are o componentă mare de noroc pe care oamenii o atribuie abilității. Eșecul are o componentă mare de risc pe care oamenii îl atribuie greșelilor proprii. Ambele sunt adevărate simultan.
-APLICAȚIE: Mara ajută utilizatorul să separe noroc de skill în analiza trade-urilor.
+APLICAȚIE: Mara ajută utilizatorul să separe norocul de disciplina reală când analizează propriul progres în programe.
 
 3. SUFICIENT (Enough)
 Unul din cele mai importante concepte: a ști când ai destul. Goana fără limită duce la risc excesiv și, în final, la pierdere.
@@ -1780,7 +1730,7 @@ APLICAȚIE: Mara susține obiceiuri de economisire ca fundament, indiferent de s
     {
       id: 'trading-market-wizards-schwager',
       title: 'Market Wizards — Lecții de la Cei Mai Buni Traderi din Lume (Jack Schwager)',
-      category: 'trading',
+      category: 'psychology',
       priority: 2,
       content: `Market Wizards — Pattern-urile Comune ale Traderilor de Succes
 
@@ -1810,50 +1760,11 @@ Acceptarea erorilor fără drama emoțională e o caracteristică majoră.
 "Cel mai important lucru e să ai un edge... și disciplina de a executa."
 Nu există succes fără edge definit + execuție disciplinată.
 
-6. APLICAȚIE MARAAI — TRADING MODULE
-- Trade journal cu întrebări de tip Market Wizards: "Ce a declanșat intrarea? Ai respectat sistemul? Ce vei face diferit?"
-- Mara face coaching post-trade bazat pe principiile traderilor legend ați
-- Lecții săptămânale din Market Wizards integrate în conținutul educational al platformei`,
+6. APLICAȚIE MARAAI — MISIUNI
+- Jurnal de misiuni cu întrebări de tip Market Wizards: "Ce te-a făcut să continui azi? Ai respectat planul tău de program? Ce vei face diferit mâine?"
+- Mara face coaching post-misiune bazat pe principiile disciplinei celor care au reușit, indiferent de domeniu
+- Lecții săptămânale din cărțile citite, integrate direct în misiunile de reflecție ale programelor`,
     },
-    {
-      id: 'trading-crypto-defi-advanced',
-      title: 'DeFi & Web3 — Ecosistemul Descentralizat pentru AI Assistant',
-      category: 'trading',
-      priority: 2,
-      content: `DeFi & Web3 — Ce Trebuie Să Știe Mara despre Finanțele Descentralizate
-
-CONCEPTUL CENTRAL: DeFi (Decentralized Finance) e un ecosistem financiar construit pe blockchain care elimină intermediarii (bănci, brokeri). Explodeaza ca dimensiune din 2020.
-
-1. CONCEPTE FUNDAMENTALE DeFi
-- DEX (Decentralized Exchange): Uniswap, dYdX — tranzacționare fără custodian central
-- Liquidity Pools: utilizatorii furnizează lichiditate și câștigă fees
-- Yield Farming: maximizarea randamentelor prin rotirea capitalului între protocoale
-- Staking: blocare de monede pentru a valida tranzacții, câștig de rewards
-- Lending/Borrowing: Aave, Compound — împrumuturi fără bancă
-
-2. RISCURI SPECIFICE DeFi
-- Smart contract bugs (Hack-urile de protocol — miliarde pierdute)
-- Impermanent Loss (în Liquidity Pools — prețul activelor se modifică față de ratio inițial)
-- Rug pulls (echipa abandon ează proiectul cu fondurile utilizatorilor)
-- Gas fees (pe Ethereum = costuri de tranzacție variabile, pot face unprofitable tranzacțiile mici)
-- Regulatory risk (incertitudine legală în multe jurisdicții)
-
-3. NFT ECOSYSTEM
-- NFT = Non-Fungible Token: token unic reprezentând dreptul de proprietate
-- Use cases reale: artă digitală, ticketing, gaming, real estate tokenizat
-- Valoarea e 100% percepție + comunitate — fără utilitate = speculație pură
-
-4. LAYER 2 SOLUTIONS
-- Scalarea Ethereum prin L2: Arbitrum, Optimism, Polygon, Base
-- Tranzacții mai rapide și mai ieftine menținând securitatea L1
-- Ecosistemul se mută rapid spre L2
-
-5. APLICAȚIE MARAAI — TRADING MODULE
-- Educație DeFi structurată: de la beginner (ce e un wallet) la avansat (yield strategies)
-- Mara nu recomandă specific protocoale — explică mecanismele și riscurile
-- Alertă specială: "DeFi are riscuri mai mari decât trading spot — asigură-te că înțelegi înainte de a investi"`,
-    },
-
     // --- AI / TECHNOLOGY ---
     {
       id: 'ai-human-compatible-russell',
@@ -1914,10 +1825,10 @@ APLICAȚIE MARAAI: Datele de comportament ale utilizatorului (ce content face, c
 Joburile care constau din predicție vor fi automatizate. Joburile care constau din judecată, creativitate, empatie — rămân umane și devin mai valoroase.
 APLICAȚIE: Mara nu amenință creativii — îi ajută cu predicția (care trend urmează?) ca ei să se concentreze pe judecată (ce creez eu cu acest trend?).
 
-5. APLICAȚIE MARAAI — TRADING MODULE
-- Mara poate oferi predicții bazate pe date istorice și analiză tehnică
-- Dar sublinierează mereu: "Aceasta e o analiză probabilistică, nu o certitudine. Decizia finală e a ta."
-- Feature: probability scores pe semnale de trading, cu explicații clare ale datelor din spate`,
+5. APLICAȚIE MARAAI — MISIUNI
+- Mara poate oferi predicții despre progresul userului bazate pe istoricul lui real (streak, rată de completare, momentele când abandonează)
+- Dar subliniază mereu: "Asta e o estimare bazată pe tiparul tău, nu o certitudine. Decizia de a continua e a ta."
+- Feature: scor de probabilitate de completare a programului, cu explicații clare ale datelor din spate`,
     },
     {
       id: 'ai-power-of-generative-ai',
@@ -2320,10 +2231,10 @@ APLICAȚIE: Mara ca accountability partner digital. "Ieri ai spus că vrei să s
 - Streak vizibil = reprezentarea vizuală a efectului compus
 - Mara calculează și arată utilizatorului "proiecția compusă": "Dacă continui la ritmul ăsta 90 de zile, vei fi la..."
 
-6. APLICAȚIE MARAAI — TRADING MODULE
-- Un mic îmbunătățiri consistent bate o strategie spectaculoasă inconsistentă
-- Jurnalul de trading zilnic = 5 minute/zi = mii de îmbunătățiri în 1 an
-- Mara celebrează consistența mai mult decât câștigurile spectaculoase`,
+6. APLICAȚIE MARAAI — MISIUNI
+- O mică îmbunătățire consistentă bate un efort spectaculos, dar inconsistent
+- Jurnalul zilnic de misiuni = 5 minute/zi = mii de îmbunătățiri mici de-a lungul unui program de 1095 de zile
+- Mara celebrează consistența mai mult decât zilele "eroice", izolate`,
     },
   ];
 }
@@ -2399,7 +2310,7 @@ async function markBookAsRead(book: LibraryBook): Promise<void> {
   );
 }
 
-const MARAAI_MODULES = ['Trading Academy', 'Creator Studio', 'WritersHub', 'Reels', 'VIP', 'AI Chat (Mara)'] as const;
+const MARAAI_MODULES = ['Missions', 'Creator Studio', 'WritersHub', 'Reels', 'VIP', 'AI Chat (Mara)'] as const;
 
 /**
  * Etapa 3 Task 6 — after reading a book, run a SECOND extraction pass that

@@ -401,7 +401,7 @@ export async function listProfilePosts(req: Request, res: Response) {
 // Kinds we allow for cross-module attribution (Phase 2 P2.2). Kept as a
 // frozen set here (not in the DB) so adding a new share source — e.g.
 // 'course' — is a code change, not a migration.
-const ALLOWED_SOURCE_KINDS = new Set(['writers', 'trading', 'reel']);
+const ALLOWED_SOURCE_KINDS = new Set(['writers', 'missions', 'reel']);
 
 export async function createProfilePost(req: Request, res: Response) {
   try {
@@ -443,7 +443,7 @@ export async function createProfilePost(req: Request, res: Response) {
       imageUrl = parsed.value;
     }
 
-    // Cross-module share attribution. Callers (Writers Hub, Trading Akademie)
+    // Cross-module share attribution. Callers (Writers Hub, Missions, Reels)
     // send `source` + `sourceId`; we accept both as a pair, or neither.
     // Invalid kinds silently drop to a plain post rather than 400-ing — this
     // keeps existing clients working while they adopt the new fields.

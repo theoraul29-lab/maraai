@@ -49,12 +49,23 @@ function hasCompletedPurchase(userId: string, item: string): boolean {
   return !!row;
 }
 
-/** All item ids the user has completed a purchase for (raw, no bundle expansion). */
+/**
+ * All item ids the user effectively has access to: raw completed purchases,
+ * plus — if they bought the bundle — the 4 individual programs it includes,
+ * so a bundle buyer's program cards show as unlocked without the frontend
+ * needing to know bundle contents itself.
+ */
 export function purchasedItemIds(userId: string): string[] {
   const rows = rawSqlite
     .prepare(`SELECT DISTINCT program_id FROM program_purchases WHERE user_id = ? AND status = 'completed'`)
     .all(userId) as Array<{ program_id: string }>;
-  return rows.map((r) => r.program_id);
+  const raw = rows.map((r) => r.program_id);
+  if (raw.includes(PROGRAM_BUNDLE.id)) {
+    for (const id of PROGRAM_BUNDLE.includes) {
+      if (!raw.includes(id)) raw.push(id);
+    }
+  }
+  return raw;
 }
 
 /** Whether the user can access the given program — free programs always yes. */

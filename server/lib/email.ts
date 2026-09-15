@@ -137,7 +137,7 @@ export async function sendWaitlistConfirmationEmail(email: string): Promise<void
                     border-radius:8px;padding:16px;margin-bottom:24px">
           <p style="color:rgba(255,255,255,0.5);font-size:13px;margin:0">
             💡 Activează P2P la înregistrare pentru acces complet gratuit —
-            100 mesaje/zi, upload video, Trading module 1-3.
+            100 mesaje/zi, upload video, primele programe Missions.
           </p>
         </div>
         <p style="color:rgba(255,255,255,0.3);font-size:12px">

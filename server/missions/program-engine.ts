@@ -3,6 +3,7 @@ import { llmGenerate, isLLMConfigured } from '../llm.js';
 import { PROGRAM_CATALOGUE, type ProgramId } from '../billing/plans.js';
 import { hasFeature } from '../billing/features.js';
 import { hasPurchasedProgram as hasPurchasedProgramItem } from '../billing/programs.js';
+import { storage } from '../storage.js';
 import { translateMissions, addXP, normalizeLang } from './engine.js';
 
 // ─── PROGRAM ACCESS ───────────────────────────────────────────────────────────
@@ -28,6 +29,20 @@ export async function hasPurchasedProgram(userId: string, programId: string): Pr
   if (!(await hasFeature(userId, 'programs.all'))) return false;
   return hasPurchasedProgramItem(userId, programId as ProgramId);
 }
+
+// Shared by every LLM prompt that needs to tell Mara which language to write
+// in — daily missions, streak messages, and (see generateUserBook below) the
+// book's own title/chapter titles, which used to hardcode English regardless
+// of the enrollment's language even though the journal entries they're built
+// from were already written natively in it.
+const LANG_DISPLAY: Record<string, string> = {
+  en: 'English', ro: 'Romanian', de: 'German', fr: 'French', es: 'Spanish',
+  it: 'Italian', pt: 'Portuguese', ru: 'Russian', uk: 'Ukrainian', nl: 'Dutch',
+  sv: 'Swedish', bg: 'Bulgarian', ja: 'Japanese', ko: 'Korean', pl: 'Polish',
+  cs: 'Czech', hu: 'Hungarian', hr: 'Croatian', sr: 'Serbian', tr: 'Turkish',
+  ar: 'Arabic', hi: 'Hindi', zh: 'Chinese (Simplified)', th: 'Thai', vi: 'Vietnamese',
+  da: 'Danish', el: 'Greek',
+};
 
 function slugToProgramId(slug: string): string {
   // Slugs like 'new-mindset' map to program IDs like 'new_mindset'
@@ -208,14 +223,6 @@ async function generateDayMission(
 
   // normalizeLang validates against LANG_NAMES and falls back to 'en' for unknown codes
   const userLang = normalizeLang(settings?.language ?? 'en');
-  const LANG_DISPLAY: Record<string, string> = {
-    en: 'English', ro: 'Romanian', de: 'German', fr: 'French', es: 'Spanish',
-    it: 'Italian', pt: 'Portuguese', ru: 'Russian', uk: 'Ukrainian', nl: 'Dutch',
-    sv: 'Swedish', bg: 'Bulgarian', ja: 'Japanese', ko: 'Korean', pl: 'Polish',
-    cs: 'Czech', hu: 'Hungarian', hr: 'Croatian', sr: 'Serbian', tr: 'Turkish',
-    ar: 'Arabic', hi: 'Hindi', zh: 'Chinese (Simplified)', th: 'Thai', vi: 'Vietnamese',
-    da: 'Danish', el: 'Greek',
-  };
   const langName = LANG_DISPLAY[userLang] ?? 'English';
 
   const prompt = `You are Mara — an empathetic life coach.
@@ -568,7 +575,32 @@ export async function completeProgramDay(
     return { success: false, message: "You have already completed today's mission!" };
   }
 
-  if (programCompleted) {
+  // Distribute milestone missions to the user's own "You" profile timeline —
+  // same mechanism Writers Hub and Reels already use (user_posts,
+  // sourceKind-tagged) — rather than posting every single day, which would
+  // flood the timeline over a journey that can run past 1000 days. sourceId
+  // stays null: journal entries use UUID ids, but user_posts.sourceId is
+  // integer-only (built for writer articles/reels' auto-increment ids), so
+  // there's no numeric id to attribute a deep link to.
+  if (MILESTONES.includes(enrollment.current_day)) {
+    storage
+      .createUserPost({
+        userId,
+        content: (journalData.journalPage ?? '').slice(0, 2000) || `Day ${enrollment.current_day} — ${enrollment.program_name}`,
+        imageUrl: proof.mediaUrl ?? null,
+        sourceKind: 'missions',
+        sourceId: null,
+      })
+      .catch((err) => console.error('[program-engine] milestone share-to-profile failed:', err));
+  }
+
+  // The transformation book is the reward for finishing the *entire*
+  // ~1752-day journey (New Mindset -> New Habit -> New Skills -> New Body
+  // -> New Life -> New You), not a per-program souvenir — only generate it
+  // when New You itself (the ~1095-day final program) completes. Earlier
+  // this fired for every completed program, including the 1-day New
+  // Mindset, which made no sense against the €50 "book at the end" pricing.
+  if (programCompleted && enrollment.slug === 'new-you') {
     // Bug fix #2 — book generation: retry up to 3 times before giving up;
     // on final failure insert a 'pending' row so an admin/brain cycle can
     // trigger regeneration without losing the user's journal entries.
@@ -772,6 +804,14 @@ export async function generateUserBook(
     .all(userId, enrollmentId) as any[];
   if (entries.length === 0) return;
 
+  // The journal entries these chapters are built from were already written
+  // natively in the user's language (see generateProgramDays above) — the
+  // book's own titles need the same instruction, or a Romanian user's
+  // Romanian journal ends up bound inside an English-titled book.
+  const bookSettings = enrollment.settings ? JSON.parse(enrollment.settings) : {};
+  const bookLang = normalizeLang(bookSettings?.language ?? 'en');
+  const bookLangName = LANG_DISPLAY[bookLang] ?? 'English';
+
   const chapters = [];
   for (let i = 0; i < entries.length; i += 7) {
     const chapterEntries = entries.slice(i, i + 7);
@@ -781,7 +821,7 @@ export async function generateUserBook(
     try {
       const titlePrompt = `Generate a short, poetic title (4-6 words) for a personal journal chapter covering days ${i + 1}-${Math.min(i + 7, entries.length)}.
 Detected moods: ${chapterEntries.map((e: any) => e.mood).filter(Boolean).join(', ')}.
-Reply ONLY with the title, no quotes, no extra text.`;
+Write the title in ${bookLangName}. Reply ONLY with the title, no quotes, no extra text.`;
       chapterTitle = (
         await llmGenerate(titlePrompt, { source: 'agent.book-chapter-title' })
       ).trim();
@@ -804,7 +844,7 @@ Reply ONLY with the title, no quotes, no extra text.`;
   let bookSubtitle = `A ${enrollment.duration_days}-day journey`;
   try {
     const bookTitlePrompt = `Generate an inspiring title for a book about the personal transformation of someone who completed the program "${enrollment.program_name}" in ${enrollment.duration_days} days.
-Reply with JSON only: {"title": "...", "subtitle": "..."}`;
+Write in ${bookLangName}. Reply with JSON only: {"title": "...", "subtitle": "..."}`;
     const r = await llmGenerate(bookTitlePrompt, { source: 'agent.book-title' });
     const parsed = JSON.parse(r.replace(/```json|```/g, '').trim());
     bookTitle = parsed.title ?? bookTitle;

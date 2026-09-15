@@ -114,8 +114,11 @@ interface Book {
   subtitle: string;
   total_pages: number;
   program_name: string;
+  program_slug?: string;
   chapters: string;
+  chapterCount?: number;
   status: string;
+  locked?: boolean;
 }
 
 type View = 'list' | 'onboarding';
@@ -436,6 +439,7 @@ export default function Missions() {
   const [journalTotal, setJournalTotal] = useState(0);
   const [books, setBooks] = useState<Book[]>([]);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+  const [bookUnlocked, setBookUnlocked] = useState(false);
   const [communityFeed, setCommunityFeed] = useState<any[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
@@ -510,8 +514,9 @@ export default function Missions() {
   async function loadBooks() {
     if (!isAuthenticated) return;
     try {
-      const r = await apiFetchJson<{ books: Book[] }>('/api/books/my');
+      const r = await apiFetchJson<{ books: Book[]; bookUnlocked: boolean }>('/api/books/my');
       setBooks(r.books ?? []);
+      setBookUnlocked(!!r.bookUnlocked);
     } catch {}
   }
 
@@ -1170,6 +1175,30 @@ export default function Missions() {
                   );
                 })}
               </div>
+              {!['new_skills', 'new_body', 'new_life', 'new_you'].every((id) => purchasedPrograms.includes(id)) && (
+                <div className="billing-bundle-card">
+                  <div className="billing-bundle-info">
+                    <h3>{t('missions.bundleTitle')}</h3>
+                    <p>{t('missions.bundleDesc')}</p>
+                  </div>
+                  <PayPalProgramButton
+                    programId="bundle_all_programs"
+                    programName={t('missions.bundleTitle')}
+                    priceCents={2800}
+                    onSuccess={() => {
+                      loadPurchasedPrograms();
+                      loadEnrollments();
+                      setPaymentNotice('success');
+                      setPaymentProgram('bundle_all_programs');
+                      setTimeout(() => setPaymentNotice(null), 6000);
+                    }}
+                    onError={() => {
+                      setPaymentNotice('failed');
+                      setTimeout(() => setPaymentNotice(null), 6000);
+                    }}
+                  />
+                </div>
+              )}
             </div>
           )}
           {enrollments.filter((e) => e.status === 'active').map((enrollment) => {
@@ -1383,18 +1412,37 @@ export default function Missions() {
           ) : (
             books.map((book) => (
               <div key={book.id} className="book-card">
-                <div className="book-cover" onClick={() => setSelectedBook(selectedBook?.id === book.id ? null : book)}>
+                <div
+                  className="book-cover"
+                  onClick={() => !book.locked && setSelectedBook(selectedBook?.id === book.id ? null : book)}
+                >
                   <div className="book-cover-spine" />
                   <div className="book-cover-content">
                     <h1 className="book-title">{book.title}</h1>
                     {book.subtitle && <h2 className="book-subtitle">{book.subtitle}</h2>}
-                    <p className="book-meta">{t('missions.bookMeta', { pages: book.total_pages, program: book.program_name })}</p>
-                    <button className="book-read-btn">
-                      {selectedBook?.id === book.id ? t('missions.bookClose') : t('missions.bookRead')}
-                    </button>
+                    <p className="book-meta">
+                      {book.locked
+                        ? t('missions.bookMetaLocked', { chapters: book.chapterCount ?? 0 })
+                        : t('missions.bookMeta', { pages: book.total_pages, program: book.program_name })}
+                    </p>
+                    {book.locked ? (
+                      <div className="book-unlock-cta" onClick={(e) => e.stopPropagation()}>
+                        <PayPalProgramButton
+                          programId="book_new_you"
+                          programName={t('missions.bookTitle')}
+                          priceCents={5000}
+                          onSuccess={() => { void loadBooks(); }}
+                          onError={() => {}}
+                        />
+                      </div>
+                    ) : (
+                      <button className="book-read-btn">
+                        {selectedBook?.id === book.id ? t('missions.bookClose') : t('missions.bookRead')}
+                      </button>
+                    )}
                   </div>
                 </div>
-                {selectedBook?.id === book.id && (
+                {!book.locked && selectedBook?.id === book.id && (
                   <div className="book-content">
                     {(() => {
                       try {

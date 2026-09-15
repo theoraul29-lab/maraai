@@ -18,6 +18,7 @@ import {
   getDayMission,
   completeProgramDay,
 } from './program-engine.js';
+import { hasPurchasedBook } from '../billing/programs.js';
 
 const SUPPORTED_LANGS = new Set([
   'en','ro','de','fr','es','it','pt','ru','uk','nl','sv','bg','ja','ko',
@@ -403,15 +404,28 @@ export function registerMissionRoutes(app: Express, requireAuth: any, requireRea
     const userId = getUserId(req);
     const books = rawSqlite
       .prepare(
-        `SELECT b.*, p.name as program_name
+        `SELECT b.*, p.name as program_name, p.slug as program_slug
          FROM user_books b
          LEFT JOIN user_program_enrollments e ON e.id = b.program_enrollment_id
          LEFT JOIN mission_programs p ON p.id = e.program_id
          WHERE b.user_id = ?
          ORDER BY b.created_at DESC`,
       )
-      .all(userId);
-    res.json({ books });
+      .all(userId) as any[];
+
+    // The New You book (the only one generated — see program-engine.ts) is
+    // the €50 paid product. Redact its content server-side for anyone who
+    // hasn't purchased it, rather than just hiding it in the UI — a curious
+    // user opening devtools should not be able to read it for free.
+    const unlocked = hasPurchasedBook(userId);
+    const redacted = books.map((b) => {
+      if (b.program_slug !== 'new-you' || unlocked) return { ...b, locked: false };
+      let chapterCount = 0;
+      try { chapterCount = (JSON.parse(b.chapters) as unknown[]).length; } catch { /* ignore */ }
+      return { ...b, chapters: '[]', chapterCount, locked: true };
+    });
+
+    res.json({ books: redacted, bookUnlocked: unlocked });
   });
 
   app.get('/api/books/:id', requireAuth, (req: any, res: any) => {

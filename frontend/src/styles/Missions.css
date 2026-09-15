@@ -1183,6 +1183,7 @@
   font-size: 12px;
   cursor: pointer;
 }
+.book-unlock-cta { max-width: 260px; }
 .book-content {
   background: rgba(10,8,20,0.95);
   border: 1px solid rgba(168,85,247,0.15);
@@ -1282,6 +1283,30 @@
 }
 .billing-program-card--free {
   border-color: rgba(168,85,247,0.25);
+}
+.billing-bundle-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  background: linear-gradient(135deg, rgba(168,85,247,0.12), rgba(124,58,237,0.06));
+  border: 1px solid rgba(168,85,247,0.3);
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin-top: 12px;
+}
+.billing-bundle-info h3 {
+  margin: 0 0 4px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+.billing-bundle-info p {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #94a3b8;
+  max-width: 46ch;
 }
 .billing-program-icon { font-size: 1.6rem; flex-shrink: 0; }
 .billing-program-info {

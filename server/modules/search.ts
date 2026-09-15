@@ -7,7 +7,6 @@
  *   - users          (display name + bio + first/last name)
  *   - reels/videos   (title + description)
  *   - writer pages   (title + excerpt + content)
- *   - trading lessons (title + content; gated at render time, not here)
  *
  * Implementation: plain SQL LIKE with case-insensitive matching and a rough
  * popularity weighting per surface. At our current scale (<100k rows per
@@ -22,15 +21,10 @@
  */
 
 import type { Request, Response } from 'express';
-import { or, like, desc, eq, sql, type SQL } from 'drizzle-orm';
+import { or, like, desc, sql, type SQL } from 'drizzle-orm';
 import { db } from '../db.js';
 import { users } from '../../shared/models/auth.js';
-import {
-  videos,
-  writerPages,
-  tradingLessons,
-  tradingModules,
-} from '../../shared/schema.js';
+import { videos, writerPages } from '../../shared/schema.js';
 
 type Kind = 'people' | 'reels' | 'articles' | 'lessons';
 
@@ -188,32 +182,13 @@ async function searchArticles(q: string, limit: number): Promise<SearchResult[]>
   });
 }
 
-async function searchLessons(q: string, limit: number): Promise<SearchResult[]> {
-  const pat = `%${escapeLike(q)}%`;
-  const rows = await db
-    .select({
-      id: tradingLessons.id,
-      slug: tradingLessons.slug,
-      title: tradingLessons.title,
-      content: tradingLessons.content,
-      moduleSlug: tradingModules.slug,
-    })
-    .from(tradingLessons)
-    .innerJoin(tradingModules, eq(tradingModules.id, tradingLessons.moduleId))
-    .where(
-      or(like(tradingLessons.title, pat), like(tradingLessons.content, pat)) as SQL,
-    )
-    .limit(limit);
-  const hit = titleHit(q);
-  return rows.map((r) => ({
-    kind: 'lessons' as const,
-    id: String(r.id),
-    title: r.title,
-    snippet: makeSnippet(stripHtml(r.content), q),
-    href: `/trading/${r.moduleSlug}/${r.slug}`,
-    thumbnail: null,
-    score: (hit(r.title) ? 2 : 1) * 20,
-  }));
+// Trading Academy (trading_modules/trading_lessons) was replaced by Missions
+// — no route ever served /trading/:module/:lesson (confirmed: not in
+// App.tsx), so any result this used to return was already a dead link.
+// Kept as a no-op rather than removing the 'lessons' Kind/counts field
+// outright, since GlobalSearch.tsx on the frontend still types against it.
+async function searchLessons(_q: string, _limit: number): Promise<SearchResult[]> {
+  return [];
 }
 
 export async function search(req: Request, res: Response) {

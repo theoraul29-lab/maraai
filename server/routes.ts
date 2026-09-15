@@ -564,9 +564,6 @@ export async function registerRoutes(
   app.get('/api/writers/:id/access', writersModule.getAccess);
   app.post('/api/writers/:id/purchase', requireAuth, writersModule.purchaseArticle);
 
-
-  // app.get('/api/trading/certificates', requireAuth, tradingAcademyModule.getCertificates);
-
   // --- Creator Tools (PR G) -------------------------------------------------
   // Aggregated earnings (requires creator.revenue_share feature).
   app.get('/api/creator/earnings', requireAuth, creatorsModule.getEarnings);
@@ -1754,40 +1751,6 @@ export async function registerRoutes(
   // (~line 277). Express ar fi păstrat handler-ul de aici, fără diferență de
   // comportament — îl comentăm ca să avem o singură sursă de adevăr.
   // app.get('/api/search', searchModule.search);
-
-  // Trading signals — returns the most recent Mara-generated insight for the
-  // trading module, or the latest brain log as a fallback. Until PR #108 this
-  // endpoint always returned a hardcoded placeholder string regardless of
-  // what Mara had produced, so the frontend showed the same "analyzing"
-  // message forever.
-  //
-  // Lookup order:
-  //   1. mara_platform_insights WHERE module='trading' ORDER BY created_at DESC
-  //   2. brain_logs (most recent) — `growthIdeas` / `productIdeas` often
-  //      contain trading-relevant signals when no module-specific insight
-  //      has been published yet.
-  //   3. placeholder string with `placeholder: true` so the frontend can
-  //      render a "no data yet" state instead of a stale signal.
-  // DEZACTIVAT: modulul Trading Academy a fost înlocuit complet de Mara
-  // Missions. Frontend-ul nu mai apelează acest endpoint și ținerea lui în
-  // viață obliga proiectul să importe maraPlatformInsights/brainLogs doar
-  // pentru o rută orfană. Lăsat ca comentariu istoric — dacă revenim la
-  // module de trading, ne dorim oricum o agregare/format nou.
-  //
-  // app.get('/api/trading/signals', async (_req: any, res: any) => {
-  //   try {
-  //     const [insight] = await db
-  //       .select()
-  //       .from(maraPlatformInsights)
-  //       .where(eq(maraPlatformInsights.module, 'trading'))
-  //       .orderBy(desc(maraPlatformInsights.createdAt))
-  //       .limit(1);
-  //     ...
-  //   } catch (error) {
-  //     console.error('[trading/signals] lookup failed:', error);
-  //     return res.status(500).json({ error: 'Failed to get signals' });
-  //   }
-  // });
 
   // Upgrade user tier — admin-only. Before this guard was just `requireAuth`,
   // which let ANY logged-in account set its own tier to 'premium' / 'vip' for
