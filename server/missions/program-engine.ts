@@ -8,13 +8,14 @@ import { translateMissions, addXP, normalizeLang } from './engine.js';
 
 /**
  * Check if a user can access a specific day of a program.
- * Programs are now included with VIP (and Creator) subscriptions.
+ * `programs.all` is a free-tier feature (see FREE_FEATURES in
+ * server/billing/plans.ts) — every account, free or VIP, has it.
  */
 export async function hasAccessToDay(userId: string, programSlug: string, day: number): Promise<boolean> {
   const programId = slugToProgramId(programSlug);
   const def = PROGRAM_CATALOGUE.find((p) => p.id === programId);
   if (!def) return false;
-  void day; // all days accessible once user has VIP
+  void day; // all days accessible to any registered user
   return hasFeature(userId, 'programs.all');
 }
 
@@ -271,7 +272,8 @@ export async function getDayMission(
 
   const currentDay = enrollment.current_day;
 
-  // Enforce access: programs require VIP or Creator subscription
+  // Enforce access: `programs.all` is free-tier, but this still requires a
+  // registered account (hasAccessToDay checks hasFeature, not anonymous).
   if (!(await hasAccessToDay(userId, enrollment.program_slug, currentDay))) {
     return { locked: true, currentDay, programSlug: enrollment.program_slug };
   }
