@@ -6,7 +6,9 @@
  *   - MAX_TOKENS_PER_REQUEST (default 1000) — 400 when message is too long
  *   - Ollama permanent fallback: after OLLAMA_PERM_FAILURE_THRESHOLD consecutive
  *     failures the provider-router flag `ollama_forced_anthropic` is set in DB.
- *     Reset only via admin endpoint.
+ *     Auto-expires after OLLAMA_FORCED_FALLBACK_TTL_MS (or admin endpoint) —
+ *     a transient outage on a self-hosted Ollama (home network blip, laptop
+ *     sleep) must not pin the app to paid Anthropic forever with no recovery.
  *
  * Logs every request to `ai_usage_log` table (regardless of outcome).
  */
@@ -86,12 +88,26 @@ function logRequest(
   }
 }
 
+export const OLLAMA_FORCED_FALLBACK_TTL_MS = Number(process.env.OLLAMA_FORCED_FALLBACK_TTL_MS) || 5 * 60 * 1000;
+
 export function isOllamaForcedFallback(): boolean {
   try {
     const row = rawSqlite.prepare(
-      `SELECT value FROM system_config WHERE key = 'ollama_forced_anthropic'`
-    ).get() as { value: string } | undefined;
-    return row?.value === 'true';
+      `SELECT value, updated_at FROM system_config WHERE key = 'ollama_forced_anthropic'`
+    ).get() as { value: string; updated_at: number } | undefined;
+    if (row?.value !== 'true') return false;
+    const ageMs = Date.now() - row.updated_at * 1000;
+    if (ageMs > OLLAMA_FORCED_FALLBACK_TTL_MS) {
+      // Auto-recovery: a home-network Ollama blip (sleep, Wi-Fi drop, tunnel
+      // restart) shouldn't pin the app on paid Anthropic until an admin
+      // manually resets the flag. Clear it and let the next request probe
+      // Ollama fresh; three new consecutive failures re-arm it.
+      setOllamaForcedFallback(false);
+      consecutiveOllamaFailures = 0;
+      console.log(`[costGuard] Ollama forced-fallback auto-expired after ${Math.round(ageMs / 1000)}s; re-probing.`);
+      return false;
+    }
+    return true;
   } catch {
     return false;
   }
