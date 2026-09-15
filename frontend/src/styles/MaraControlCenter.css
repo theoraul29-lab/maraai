@@ -159,7 +159,7 @@
 @keyframes mcc-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
 
 .mcc-alert, .mcc-error { flex: none; margin: 0 0 10px; padding: 10px 14px; border: 1px solid rgba(255, 80, 100, .35); border-radius: 10px; background: rgba(255, 80, 100, .08); color: #ffc2ca; font-size: .82rem; }
-.mcc-view { min-height: 0; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 14px; padding-right: 4px; }
+.mcc-view { min-height: 0; overflow-y: auto; overflow-x: hidden; flex: 1; display: flex; flex-direction: column; gap: 14px; padding-right: 4px; }
 .mcc-grid, .mcc-lower-grid { display: grid; gap: 14px; }
 .mcc-grid { grid-template-columns: 1.35fr repeat(3, 1fr); }
 .mcc-lower-grid { grid-template-columns: 1.2fr .8fr; }
@@ -276,7 +276,7 @@
 
 /* ---------- Agent topology ---------- */
 .mcc-topology { position: relative; width: 100%; max-width: 340px; aspect-ratio: 1 / 1; margin: 10px auto 4px; }
-.mcc-topology svg.mcc-topology-links { position: absolute; inset: 0; width: 100%; height: 100%; }
+.mcc-topology svg.mcc-topology-links, .mcc-nexus-topology svg.mcc-topology-links { position: absolute; inset: 0; width: 100%; height: 100%; }
 .mcc-topology-link { stroke: var(--mcc-cyan); stroke-width: 1; fill: none; opacity: .28; }
 .mcc-topology-link--active { opacity: .65; stroke-width: 1.4; }
 .mcc-topology-node { position: absolute; transform: translate(-50%, -50%); text-align: center; width: 96px; }
@@ -319,6 +319,144 @@
   background: var(--mcc-border-strong); border-radius: 4px;
 }
 
+/* ---------- Nexus layout: left telemetry | center Mara | right hover-reveal ---------- */
+.mcc-nexus-layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr) 44px;
+  /* Same fix as .mcc-shell--desktop: a single implicit row with no explicit
+     sizing defaults to auto (fits content) even when the grid container's
+     own height is correctly pinned — force it to actually fill that height. */
+  grid-template-rows: minmax(0, 1fr);
+  gap: 14px;
+  flex: 1;
+  min-height: 0;
+}
+.mcc-nexus-left { display: flex; flex-direction: column; gap: 12px; overflow-y: auto; min-height: 0; }
+.mcc-nexus-center { min-width: 0; min-height: 0; }
+.mcc-nexus-left .mcc-panel { padding: 14px 16px; flex: none; }
+.mcc-nexus-left .mcc-big-value { font-size: 1.15rem; margin-top: 10px; }
+.mcc-nexus-left .mcc-details { margin-top: 14px; }
+
+/*
+ * Hover-reveal, deliberately NOT built on :has() — verified live via CDP
+ * (CSS.forcePseudoState) that Chromium's :has()-triggered style
+ * recalculation did not reliably repaint a change on an unrelated sibling
+ * even though both .matches(':hover') and .matches(':has(...)') correctly
+ * returned true. A direct :hover on the same element whose descendant
+ * changes is plain CSS support since forever and was confirmed working the
+ * same way (verified: opacity flips 0 -> 1 under forced :hover via CDP).
+ * The panel is position:absolute and anchored right:0 so it overlays
+ * leftward within .mcc-nexus-right's own box — it never extends past
+ * .mcc-view's right edge, so it can't be clipped by that ancestor's
+ * overflow-y:auto (which implicitly makes overflow-x 'auto' too).
+ */
+.mcc-nexus-right {
+  position: relative;
+  border-radius: 12px;
+  border: 1px solid var(--mcc-border);
+  background: var(--mcc-panel);
+}
+.mcc-nexus-right-inner {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 320px;
+  height: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--mcc-border-strong);
+  background: var(--mcc-panel-solid);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .15s ease;
+  z-index: 5;
+}
+.mcc-nexus-right:hover .mcc-nexus-right-inner,
+.mcc-nexus-right-inner:focus-within {
+  opacity: 1;
+  pointer-events: auto;
+}
+.mcc-nexus-right-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  writing-mode: vertical-rl;
+  font-family: var(--mcc-mono);
+  font-size: 10px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--mcc-text-faint);
+  transition: opacity .15s ease;
+  pointer-events: none;
+}
+.mcc-nexus-right:hover .mcc-nexus-right-hint { opacity: 0; }
+.mcc-nexus-right-inner .mcc-panel { flex: none; padding: 12px 14px; }
+
+/* ---------- Nexus core: Mara's central presence, agents orbiting her ---------- */
+.mcc-nexus { display: flex; flex-direction: column; gap: 12px; min-height: 0; height: 100%; }
+.mcc-nexus-topology { position: relative; flex: 1.3; min-height: 200px; overflow: hidden; }
+.mcc-nexus-core-node {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  border: 1.6px solid var(--mcc-cyan);
+  background: radial-gradient(circle at 35% 30%, rgba(79, 215, 232, .28), rgba(10, 14, 18, .96) 68%);
+  box-shadow: 0 0 0 1px rgba(79, 215, 232, .18), 0 0 46px rgba(79, 215, 232, .3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: box-shadow .2s ease, transform .15s ease;
+  padding: 0;
+}
+.mcc-nexus-core-node:hover:not(:disabled) { transform: translate(-50%, -50%) scale(1.04); }
+.mcc-nexus-core-node:disabled { cursor: not-allowed; opacity: .55; }
+.mcc-nexus-core-ring {
+  position: absolute;
+  inset: -11px;
+  border-radius: 50%;
+  border: 1px dashed rgba(79, 215, 232, .3);
+  animation: mcc-nexus-spin 20s linear infinite;
+}
+.mcc-nexus-core-label { font-family: var(--mcc-disp); font-weight: 600; font-size: 13px; letter-spacing: .07em; color: var(--mcc-text); z-index: 1; }
+@keyframes mcc-nexus-spin { to { transform: rotate(360deg); } }
+.mcc-nexus-core-node--listening {
+  box-shadow: 0 0 0 1px rgba(79, 215, 232, .32), 0 0 60px rgba(79, 215, 232, .55);
+  animation: mcc-nexus-pulse 1.1s ease-in-out infinite;
+}
+.mcc-nexus-core-node--speaking {
+  box-shadow: 0 0 0 1px rgba(72, 224, 171, .35), 0 0 60px rgba(72, 224, 171, .5);
+  border-color: var(--mcc-green);
+  animation: mcc-nexus-pulse .7s ease-in-out infinite;
+}
+@keyframes mcc-nexus-pulse { 0%, 100% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.06); } }
+
+.mcc-nexus-chat { display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 150px; border: 1px solid var(--mcc-border); border-radius: 14px; background: var(--mcc-panel); padding: 14px; }
+.mcc-nexus-log { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.mcc-nexus-msg { display: flex; flex-direction: column; gap: 2px; max-width: 80%; }
+.mcc-nexus-msg--user { align-self: flex-end; align-items: flex-end; }
+.mcc-nexus-msg--mara { align-self: flex-start; }
+.mcc-nexus-msg-role { font-family: var(--mcc-mono); font-size: 9px; letter-spacing: .1em; color: var(--mcc-text-faint); }
+.mcc-nexus-msg p { margin: 2px 0 0; padding: 8px 12px; border-radius: 10px; font-size: .86rem; line-height: 1.4; }
+.mcc-nexus-msg--user p { background: rgba(79, 215, 232, .12); border: 1px solid rgba(79, 215, 232, .25); color: var(--mcc-text); }
+.mcc-nexus-msg--mara p { background: rgba(255, 255, 255, .04); border: 1px solid var(--mcc-border); color: var(--mcc-text-dim); }
+.mcc-nexus-msg--pending p { opacity: .6; }
+.mcc-nexus-input-row { display: flex; gap: 8px; flex: none; }
+.mcc-nexus-input-row input { flex: 1; min-width: 0; border: 1px solid var(--mcc-border); border-radius: 8px; background: rgba(0, 0, 0, .25); color: var(--mcc-text); padding: 9px 11px; font: inherit; }
+.mcc-nexus-input-row button[type="submit"] { border: 1px solid var(--mcc-border-strong); border-radius: 8px; background: rgba(79, 215, 232, .08); color: var(--mcc-cyan); padding: 9px 14px; cursor: pointer; font: inherit; }
+.mcc-nexus-input-row button:disabled { opacity: .5; cursor: not-allowed; }
+.mcc-nexus-mic { width: 38px; flex: none; border-radius: 8px; border: 1px solid var(--mcc-border-strong); background: rgba(255, 255, 255, .03); color: var(--mcc-text-dim); cursor: pointer; font-size: 14px; }
+.mcc-nexus-mic--active { color: var(--mcc-red); border-color: rgba(255, 80, 100, .4); background: rgba(255, 80, 100, .08); }
+.mcc-nexus-status { font-family: var(--mcc-mono); font-size: 10px; letter-spacing: .05em; text-transform: uppercase; color: var(--mcc-text-faint); text-align: right; flex: none; }
+
 /* The fixed single-viewport frame is a desktop command-center layout. Below
    ~900px there isn't room for it — fall back to a normal scrolling page. */
 @media (max-width: 900px) {
@@ -329,6 +467,11 @@
   .mcc-view { overflow: visible; }
   .mcc-command-grid { grid-template-columns: 1fr; }
   .mcc-command-grid > .mcc-panel { overflow: visible; }
+  .mcc-nexus-layout { grid-template-columns: 1fr; grid-template-rows: auto auto auto; }
+  .mcc-nexus-right { width: 100%; }
+  .mcc-nexus-right-inner { position: static; width: 100%; opacity: 1; pointer-events: auto; }
+  .mcc-nexus-right-hint { display: none; }
+  .mcc-nexus-topology { min-height: 260px; }
 }
 @media (max-width: 980px) { .mcc-grid { grid-template-columns: repeat(2, 1fr); } .mcc-lower-grid { grid-template-columns: 1fr; } .mcc-module-file-grid { grid-template-columns: 1fr; } }
 @media (max-width: 560px) { .mcc-header { display: block; } .mcc-status { margin-top: 12px; } .mcc-grid { grid-template-columns: 1fr; } .mcc-links { grid-template-columns: 1fr; } .mcc-topology { max-width: 280px; } }
