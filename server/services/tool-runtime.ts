@@ -10,8 +10,7 @@ import {
 import { permissionForRisk } from './permission-policy.js';
 import type { ControlTaskRow } from './control-task-engine.js';
 import { getControlTask, recordControlTaskEvent } from './control-task-engine.js';
-import { applyApprovedRepositoryChanges } from './repository-modifier.js';
-import { commitApprovedStaged, createApprovedBranch, runControlledCommand, stageApprovedPaths } from './controlled-execution.js';
+import { callBridge, type BridgeAction } from './bridge-client.js';
 import { planCodeAgentRequest } from './code-agent.js';
 import { requiredRiskForTool as getRequiredRiskForTool } from './tool-policy.js';
 import { prepareGitHubWriteOperation, readGitHubStatus } from './github/operations.js';
@@ -33,14 +32,15 @@ const handlers: Record<string, ToolHandler> = {
   'railway.write_plan': async (payload) => prepareRailwayWriteOperation(readRailwayWriteOperation(payload.operation), payload.payload && typeof payload.payload === 'object' ? payload.payload as Record<string, unknown> : {}, String(payload.reason ?? 'Owner requested Railway write operation planning.')),
   'repository.search': async (payload) => readRepositorySearch(String(payload.query ?? ''), Number(payload.limit ?? 20)),
   'repository.preview': async (payload) => readRepositoryFile(String(payload.path ?? ''), Number(payload.maxBytes ?? 6_000)),
-  'repository.apply_changes': async (payload) => applyApprovedRepositoryChanges(Number(payload.taskId), payload.changes),
-  'project.typecheck': async (_payload, task) => runSuccessfulCommand('project.typecheck', task),
-  'server.build': async (_payload, task) => runSuccessfulCommand('server.build', task),
-  'frontend.typecheck': async (_payload, task) => runSuccessfulCommand('frontend.typecheck', task),
-  'frontend.build': async (_payload, task) => runSuccessfulCommand('frontend.build', task),
-  'git.create_branch': async (payload) => createApprovedBranch(String(payload.branch ?? '')),
-  'git.commit_staged': async (payload) => commitApprovedStaged(String(payload.message ?? '')),
-  'git.stage_proposal': async (payload) => stageApprovedPaths(payload.paths),
+  'repository.apply_changes': async (payload) => callBridge('repository.apply_changes', payload),
+  'project.typecheck': async (_payload, task) => runBridgeCommand('project.typecheck', task),
+  'server.build': async (_payload, task) => runBridgeCommand('server.build', task),
+  'frontend.typecheck': async (_payload, task) => runBridgeCommand('frontend.typecheck', task),
+  'frontend.build': async (_payload, task) => runBridgeCommand('frontend.build', task),
+  'git.create_branch': async (payload) => callBridge('git.create_branch', payload),
+  'git.commit_staged': async (payload) => callBridge('git.commit_staged', payload),
+  'git.stage_proposal': async (payload) => callBridge('git.stage_proposal', payload),
+  'git.push': async (payload) => callBridge('git.push', payload),
   'code-agent.plan': async (payload) => planCodeAgentRequest(Number(payload.requestId)),
 };
 
@@ -56,16 +56,16 @@ function readRailwayWriteOperation(value: unknown): Parameters<typeof prepareRai
   throw new Error(`railway.write_plan operation must be one of: ${allowed.join(', ')}`);
 }
 
-async function runSuccessfulCommand(command: Parameters<typeof runControlledCommand>[0], task: ControlTaskRow) {
-  const result = await runControlledCommand(command, {
-    taskId: task.id,
-    onEvent: (event, metadata) => recordControlTaskEvent(task.id, event, metadata),
-  });
+async function runBridgeCommand(command: BridgeAction, task: ControlTaskRow) {
+  recordControlTaskEvent(task.id, 'PROCESS_STARTING', { command, via: 'bridge' });
+  const result = await callBridge(command, { taskId: task.id }) as { exitCode: number | null; state: string; errorClass: string };
   if (result.exitCode !== 0 || result.state !== 'COMPLETED' || result.errorClass !== 'none') {
+    recordControlTaskEvent(task.id, 'PROCESS_FAILED', { command, exitCode: result.exitCode });
     const error = new Error(`${command} failed: ${result.errorClass}, exitCode=${result.exitCode ?? 'null'}`) as Error & { executionResult?: unknown };
     error.executionResult = result;
     throw error;
   }
+  recordControlTaskEvent(task.id, 'PROCESS_COMPLETED', { command, exitCode: result.exitCode });
   return result;
 }
 
@@ -92,6 +92,7 @@ function validatePayload(toolType: string, payload: Record<string, unknown>): vo
   if (toolType === 'git.commit_staged' && (typeof payload.message !== 'string' || typeof payload.validationTaskId !== 'number' || typeof payload.proposalTaskId !== 'number')) {
     throw new Error('git.commit_staged requires a message, proposalTaskId, and validationTaskId');
   }
+  if (toolType === 'git.push' && typeof payload.commitTaskId !== 'number') throw new Error('git.push requires a commitTaskId');
   if (toolType === 'code-agent.plan' && typeof payload.requestId !== 'number') throw new Error('code-agent.plan requires requestId');
   if (toolType === 'github.write_plan' && typeof payload.operation !== 'string') throw new Error('github.write_plan requires an operation');
   if (toolType === 'railway.write_plan' && typeof payload.operation !== 'string') throw new Error('railway.write_plan requires an operation');
@@ -105,7 +106,7 @@ export async function executeSafeTool(task: ControlTaskRow): Promise<ToolExecuti
   const handler = handlers[task.taskType];
   if (!handler) throw new Error(`Tool is not registered: ${task.taskType}`);
   const permission = permissionForRisk(task.risk);
-  const approvedWriteTool = ['repository.apply_changes', 'git.create_branch', 'git.stage_proposal', 'git.commit_staged', 'github.write_plan', 'railway.write_plan'].includes(task.taskType);
+  const approvedWriteTool = ['repository.apply_changes', 'git.create_branch', 'git.stage_proposal', 'git.commit_staged', 'git.push', 'github.write_plan', 'railway.write_plan'].includes(task.taskType);
   const approvalRequired = ['MODERATE_RISK', 'HIGH_RISK', 'CRITICAL'].includes(permission.level);
   if (approvalRequired && !task.approvedBy) {
     throw new Error(`Tool execution requires administrative approval: ${task.taskType}`);
@@ -127,6 +128,12 @@ export async function executeSafeTool(task: ControlTaskRow): Promise<ToolExecuti
     const validationFor = validationTask?.payload.validationForTaskId;
     if (!validationTask || !proposalTask || validationTask.status !== 'COMPLETED' || validationTask.reviewDecision !== 'approved' || !['project.typecheck', 'server.build', 'frontend.typecheck', 'frontend.build'].includes(validationTask.taskType) || Number(validationFor) !== proposalTask.id || validationTask.createdAt < proposalTask.createdAt) {
       throw new Error('git.commit_staged requires a reviewed, successful validation task linked to the approved proposal');
+    }
+  }
+  if (task.taskType === 'git.push') {
+    const commitTask = getControlTask(Number(task.payload.commitTaskId));
+    if (!commitTask || commitTask.taskType !== 'git.commit_staged' || commitTask.status !== 'COMPLETED') {
+      throw new Error('git.push requires a completed git.commit_staged task');
     }
   }
   return handler({ ...task.payload, taskId: task.id }, task);

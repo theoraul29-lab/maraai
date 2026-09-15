@@ -40,20 +40,28 @@ export interface ControlledProcessResult {
 
 export type ControlledCommand = 'project.typecheck' | 'server.build' | 'frontend.typecheck' | 'frontend.build';
 
-function localBin(name: string): string {
-  return path.join(REPO_ROOT, 'node_modules', '.bin', process.platform === 'win32' ? `${name}.cmd` : name);
+// Invoke each tool's actual Node entry script (its package's bin/*.js) with
+// process.execPath rather than the node_modules/.bin/<name>.cmd shim. On
+// Windows, spawn() with shell:false cannot launch a .cmd file at all — it
+// throws EINVAL synchronously, before the process even starts — so the
+// shim only works with shell:true, which this module deliberately avoids
+// (no shell means no argv injection surface). Running the real .js entry
+// point directly works identically on every platform without a shell.
+function nodeBin(pkgRoot: string, relativeEntry: string): string {
+  return path.join(pkgRoot, 'node_modules', ...relativeEntry.split('/'));
 }
 
 function commandSpec(command: ControlledCommand): { executable: string; args: string[]; cwd: string } {
+  const frontendRoot = path.join(REPO_ROOT, 'frontend');
   switch (command) {
     case 'project.typecheck':
-      return { executable: localBin('tsc'), args: ['--noEmit'], cwd: REPO_ROOT };
+      return { executable: process.execPath, args: [nodeBin(REPO_ROOT, 'typescript/bin/tsc'), '--noEmit'], cwd: REPO_ROOT };
     case 'server.build':
       return { executable: process.execPath, args: ['scripts/build-server.mjs'], cwd: REPO_ROOT };
     case 'frontend.typecheck':
-      return { executable: path.join(REPO_ROOT, 'frontend', 'node_modules', '.bin', process.platform === 'win32' ? 'tsc.cmd' : 'tsc'), args: ['-b'], cwd: path.join(REPO_ROOT, 'frontend') };
+      return { executable: process.execPath, args: [nodeBin(frontendRoot, 'typescript/bin/tsc'), '-b'], cwd: frontendRoot };
     case 'frontend.build':
-      return { executable: path.join(REPO_ROOT, 'frontend', 'node_modules', '.bin', process.platform === 'win32' ? 'vite.cmd' : 'vite'), args: ['build'], cwd: path.join(REPO_ROOT, 'frontend') };
+      return { executable: process.execPath, args: [nodeBin(frontendRoot, 'vite/bin/vite.js'), 'build'], cwd: frontendRoot };
   }
 }
 
@@ -223,4 +231,14 @@ export async function stageApprovedPaths(paths: unknown) {
   }
   await gitPreflight();
   return runGit(['add', '--', ...paths.map((item) => validateGitPath(item))]);
+}
+
+/** Pushes whatever branch is currently checked out — always the branch the linked commit was just made on. */
+export async function pushCurrentBranch() {
+  await gitPreflight();
+  const branch = await runGit(['rev-parse', '--abbrev-ref', 'HEAD']);
+  if (branch.exitCode !== 0 || !branch.stdout.trim() || branch.stdout.trim() === 'HEAD') {
+    throw new Error(`Unable to determine current branch: ${branch.stderr}`);
+  }
+  return runGit(['push', 'origin', `HEAD:${branch.stdout.trim()}`]);
 }

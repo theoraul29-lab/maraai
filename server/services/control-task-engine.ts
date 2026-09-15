@@ -130,6 +130,17 @@ export function getControlTask(id: number): ControlTaskRow | null {
   return row ? rowToTask(row) : null;
 }
 
+/** Finds the validation task control-task-worker auto-created for a given repository.apply_changes task, if any. */
+export function findValidationTaskForProposal(proposalTaskId: number): ControlTaskRow | null {
+  const row = rawSqlite.prepare(`
+    SELECT * FROM mara_control_tasks
+    WHERE task_type IN ('project.typecheck','server.build','frontend.typecheck','frontend.build')
+      AND json_extract(payload, '$.validationForTaskId') = ?
+    ORDER BY id DESC LIMIT 1
+  `).get(proposalTaskId) as Record<string, unknown> | undefined;
+  return row ? rowToTask(row) : null;
+}
+
 export function listControlTasks(limit = 100): ControlTaskRow[] {
   const safeLimit = Math.min(Math.max(limit, 1), 500);
   const rows = rawSqlite.prepare('SELECT * FROM mara_control_tasks ORDER BY updated_at DESC, id DESC LIMIT ?').all(safeLimit) as Array<Record<string, unknown>>;
