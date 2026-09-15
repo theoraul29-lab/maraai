@@ -158,8 +158,8 @@ export async function generateProgramDays(
           .prepare(
             `INSERT OR IGNORE INTO program_day_missions
               (id, enrollment_id, program_id, day_number, mission_id,
-               custom_title, custom_description, custom_proof_prompt, intent, is_ai_generated)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+               custom_title, custom_description, custom_proof_prompt, custom_steps, intent, is_ai_generated)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           )
           .run(
             crypto.randomUUID(),
@@ -170,6 +170,7 @@ export async function generateProgramDays(
             mission.customTitle ?? null,
             mission.customDescription ?? null,
             mission.customProofPrompt ?? null,
+            mission.customSteps ? JSON.stringify(mission.customSteps) : null,
             mission.intent ?? null,
             mission.isAiGenerated ? 1 : 0,
           );
@@ -203,6 +204,7 @@ async function generateDayMission(
   customTitle?: string;
   customDescription?: string;
   customProofPrompt?: string;
+  customSteps?: string[];
   intent?: string;
   isAiGenerated: boolean;
 }> {
@@ -268,8 +270,9 @@ SAFETY — never violate this regardless of phase/tier/difficulty:
 - If in doubt, choose the safer mission. There is no difficulty level where safety is negotiable.
 
 IMPORTANT:
+- Break today's mission into exactly 5 concrete steps — small, sequential actions the user checks off through the day, not 5 unrelated tasks. Each step should take a few minutes; the whole day's mission stays realistic (well under an hour total).
 - Proof via: photo OR drawing OR text OR any combination
-- Mission must be concrete and achievable in 5-30 minutes
+- One proof/reflection covers all 5 steps together — the user submits once, at the end, not once per step
 - Mara's journal transforms the proof into a beautiful literary page
 - Write ALL text fields in ${langName}.
 ${suggestShareToday ? '- Today, naturally invite the user to share their proof or reflection outside the app (with a friend, or on social media) as part of the reflection — not as a separate ask, woven into the mission itself.' : ''}
@@ -277,8 +280,9 @@ ${suggestShareToday ? '- Today, naturally invite the user to share their proof o
 Respond ONLY with valid JSON (no markdown fences):
 {
   "title": "short inspiring title",
-  "description": "2-3 personalized sentences",
-  "proofPrompt": "what to do / photograph / draw",
+  "description": "2-3 personalized sentences introducing today's mission as a whole",
+  "steps": ["step 1", "step 2", "step 3", "step 4", "step 5"],
+  "proofPrompt": "what to do / photograph / draw, covering all 5 steps",
   "intent": "how Mara will transform this into a journal page",
   "reflection": "deep reflection question",
   "proofType": "text|photo|any|drawing"
@@ -295,10 +299,15 @@ Respond ONLY with valid JSON (no markdown fences):
     return { seedMissionId: seed?.id, isAiGenerated: false };
   }
 
+  const steps = Array.isArray(gen.steps)
+    ? gen.steps.filter((s): s is string => typeof s === 'string' && s.trim().length > 0)
+    : [];
+
   return {
     customTitle: typeof gen.title === 'string' ? gen.title : undefined,
     customDescription: typeof gen.description === 'string' ? gen.description : undefined,
     customProofPrompt: typeof gen.proofPrompt === 'string' ? gen.proofPrompt : undefined,
+    customSteps: steps.length > 0 ? steps : undefined,
     intent: typeof gen.intent === 'string' ? gen.intent : undefined,
     isAiGenerated: true,
   };
@@ -403,7 +412,11 @@ export async function getDayMission(
           difficulty: dayMission.difficulty,
           xpReward: dayMission.xp_reward ?? 100,
           proofType: dayMission.proof_type ?? 'text',
-          steps: dayMission.steps ? JSON.parse(translatedBase?.steps ?? dayMission.steps) : [],
+          steps: dayMission.custom_steps
+            ? JSON.parse(dayMission.custom_steps)
+            : dayMission.steps
+              ? JSON.parse(translatedBase?.steps ?? dayMission.steps)
+              : [],
           reflection: translatedBase?.reflection ?? dayMission.reflection,
           isAiGenerated: !!dayMission.is_ai_generated,
         }

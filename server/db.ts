@@ -435,6 +435,12 @@ sqlite.exec(`
 // table doesn't exist yet, or where the column is already present.
 try { sqlite.exec(`ALTER TABLE p2p_tasks ADD COLUMN claimed_by TEXT`); } catch { /* already exists, or table doesn't exist yet */ }
 
+// Self-heal: production DBs created before AI-generated missions had a
+// steps checklist (5-per-day, not just one description) still have
+// program_day_missions without this column. No-op on a fresh DB, where the
+// CREATE TABLE below already includes it.
+try { sqlite.exec(`ALTER TABLE program_day_missions ADD COLUMN custom_steps TEXT`); } catch { /* already exists, or table doesn't exist yet */ }
+
 // ─── Missions V4 tables ──────────────────────────────────────────────────────
 
 sqlite.exec(`
@@ -486,6 +492,7 @@ sqlite.exec(`
     custom_title TEXT,
     custom_description TEXT,
     custom_proof_prompt TEXT,
+    custom_steps TEXT,
     intent TEXT,
     is_ai_generated INTEGER DEFAULT 0,
     UNIQUE(enrollment_id, day_number)
