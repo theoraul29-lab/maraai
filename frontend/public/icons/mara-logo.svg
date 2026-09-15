@@ -1,27 +1,65 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <defs>
-    <radialGradient id="core" cx="35%" cy="30%" r="70%">
-      <stop offset="0%" stop-color="#bff3fb"/>
-      <stop offset="55%" stop-color="#4fd7e8"/>
-      <stop offset="100%" stop-color="#1c7f8c"/>
+    <radialGradient id="bgGrad" cx="50%" cy="40%" r="65%">
+      <stop offset="0%" stop-color="#111820"/>
+      <stop offset="100%" stop-color="#040607"/>
     </radialGradient>
+    <linearGradient id="mGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#a6f4ff"/>
+      <stop offset="45%" stop-color="#4fd7e8"/>
+      <stop offset="100%" stop-color="#2d7dff"/>
+    </linearGradient>
+    <radialGradient id="coreHot" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="30%" stop-color="#c9fbff"/>
+      <stop offset="100%" stop-color="#4fd7e8" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="9" height="9" patternUnits="userSpaceOnUse">
+      <path d="M9 0H0V9" fill="none" stroke="#1a444c" stroke-width=".35"/>
+    </pattern>
+    <clipPath id="clipCircle"><circle cx="50" cy="50" r="49"/></clipPath>
   </defs>
-  <circle cx="50" cy="50" r="49" fill="#0a0d11"/>
-  <g fill="none" stroke="#3a5a60" stroke-width="1.6">
-    <line x1="50" y1="50" x2="50" y2="12"/>
-    <line x1="50" y1="50" x2="83" y2="30"/>
-    <line x1="50" y1="50" x2="83" y2="70"/>
-    <line x1="50" y1="50" x2="50" y2="88"/>
-    <line x1="50" y1="50" x2="17" y2="70"/>
-    <line x1="50" y1="50" x2="17" y2="30"/>
+  <circle cx="50" cy="50" r="49" fill="url(#bgGrad)"/>
+  <rect x="1" y="1" width="98" height="98" fill="url(#grid)" opacity=".55" clip-path="url(#clipCircle)"/>
+  <g stroke="#3f6a72" stroke-width=".6" fill="none" opacity=".85">
+    <circle cx="50" cy="50" r="45" stroke-dasharray="1.6 3.4"/>
+    <circle cx="50" cy="50" r="41.2"/>
   </g>
-  <g fill="#0d1418" stroke="#4fd7e8" stroke-width="2.4">
-    <circle cx="50" cy="12" r="7.5"/>
-    <circle cx="83" cy="30" r="7.5"/>
-    <circle cx="83" cy="70" r="7.5"/>
-    <circle cx="50" cy="88" r="7.5"/>
-    <circle cx="17" cy="70" r="7.5"/>
-    <circle cx="17" cy="30" r="7.5"/>
+  <g stroke="#6fd6e2" stroke-width="1" opacity=".8">
+    <line x1="50" y1="4" x2="50" y2="9.2"/>
+    <line x1="96" y1="50" x2="90.8" y2="50"/>
+    <line x1="50" y1="96" x2="50" y2="90.8"/>
+    <line x1="4" y1="50" x2="9.2" y2="50"/>
   </g>
-  <circle cx="50" cy="50" r="18" fill="url(#core)"/>
+  <g stroke="#4fd7e8" stroke-width="1.1" fill="none" opacity=".55" stroke-linecap="round">
+    <path d="M9 20 V11 H18"/>
+    <path d="M82 11 H91 V20"/>
+    <path d="M91 80 V89 H82"/>
+    <path d="M18 89 H9 V80"/>
+  </g>
+  <g stroke="#2f7d8c" stroke-width=".9" fill="none" opacity=".6">
+    <path d="M25 74 H14 V64"/>
+    <path d="M75 74 H86 V64"/>
+    <path d="M25 26 H14 V36"/>
+    <path d="M75 26 H86 V36"/>
+    <path d="M50 58 H62"/>
+    <path d="M50 58 H38"/>
+  </g>
+  <g fill="#0a0f12" stroke="#3f9aa8" stroke-width=".9">
+    <rect x="12" y="61" width="4" height="4"/>
+    <rect x="84" y="61" width="4" height="4"/>
+    <rect x="12" y="33" width="4" height="4"/>
+    <rect x="84" y="33" width="4" height="4"/>
+    <circle cx="63.5" cy="58" r="1.7"/>
+    <circle cx="36.5" cy="58" r="1.7"/>
+  </g>
+  <path d="M25,75 V29 L34,20 H36 L50,44 L64,20 H66 L75,29 V75" fill="none" stroke="url(#mGrad)" stroke-width="4.4" stroke-linejoin="round" stroke-linecap="round"/>
+  <g fill="#081014" stroke="url(#mGrad)" stroke-width="1.5">
+    <circle cx="25" cy="75" r="2.8"/>
+    <circle cx="25" cy="29" r="2.8"/>
+    <circle cx="75" cy="29" r="2.8"/>
+    <circle cx="75" cy="75" r="2.8"/>
+  </g>
+  <circle cx="50" cy="58" r="6.4" fill="url(#coreHot)"/>
+  <circle cx="50" cy="58" r="2.6" fill="#ffffff"/>
 </svg>
