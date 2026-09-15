@@ -1,6 +1,6 @@
 import { rawSqlite } from '../db.js';
 import { llmGenerate } from '../llm.js';
-import { readRepositoryStatus, readRepositorySearch } from './repository-status.js';
+import { readRepositoryFile, readRepositoryStatus, readRepositorySearch } from './repository-status.js';
 import { getControlTask, insertControlTask, type ControlTaskRow } from './control-task-engine.js';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
@@ -71,16 +71,34 @@ async function sanitizePlanChanges(changes: unknown): Promise<Array<Record<strin
     const filePath = typeof item.path === 'string' ? item.path : '';
     const content = typeof item.content === 'string' ? item.content : '';
     const safePath = resolveSafePath(filePath);
-    if (!safePath || !['modify', 'create'].includes(String(item.type))) throw new Error(`Planner proposed an unsafe path or operation: ${filePath}`);
+    const changeType = normalizeChangeType(item.type);
+    if (!safePath || !changeType) throw new Error(`Planner proposed an unsafe path or operation: ${filePath}`);
+    if (!content) throw new Error(`Planner proposed a change with no content: ${filePath}`);
     const normalized = safePath.relative.toLowerCase();
     if (normalized.startsWith('.git/') || normalized.startsWith('node_modules/') || normalized.startsWith('scripts/') || normalized.startsWith('.github/') || normalized.startsWith('migrations/') || normalized === '.env' || normalized.startsWith('.env.') || normalized.startsWith('dockerfile') || normalized.includes('sqlite') || normalized.endsWith('.db')) throw new Error(`Planner proposed protected path: ${safePath.relative}`);
     if (filePath.length > 500 || content.length > 200_000) throw new Error(`Planner proposed oversized change: ${filePath}`);
     totalBytes += Buffer.byteLength(content, 'utf8');
     if (totalBytes > 200_000) throw new Error('Planner proposal exceeds total size limit');
     const existing = await readFile(path.join(REPO_ROOT, safePath.relative)).catch(() => Buffer.alloc(0));
-    safe.push({ path: safePath.relative, type: item.type, reason: typeof item.reason === 'string' ? item.reason.slice(0, 1000) : '', content, expectedSha256: createHash('sha256').update(existing).digest('hex') });
+    // Smaller local models occasionally "modify" a file by replacing its
+    // entire body with a one-line stub instead of editing in place. A
+    // real targeted edit rarely shrinks a non-trivial file by more than
+    // half; catch that class of destructive rewrite here, at plan time,
+    // rather than relying solely on the downstream typecheck/build gate.
+    if (changeType === 'modify' && existing.length > 200 && content.length < existing.length * 0.5) {
+      throw new Error(`Planner proposed a modify that deletes most of the file's content: ${safePath.relative} (${existing.length} -> ${content.length} bytes)`);
+    }
+    safe.push({ path: safePath.relative, type: changeType, reason: typeof item.reason === 'string' ? item.reason.slice(0, 1000) : '', content, expectedSha256: createHash('sha256').update(existing).digest('hex') });
   }
   return safe;
+}
+
+/** Small local models drift from the exact 'modify'/'create' enum; accept common synonyms rather than rejecting an otherwise-valid proposal. */
+function normalizeChangeType(value: unknown): 'modify' | 'create' | null {
+  const raw = String(value ?? '').trim().toLowerCase();
+  if (['modify', 'update', 'edit', 'change', 'patch'].includes(raw)) return 'modify';
+  if (['create', 'new', 'add', 'add_file', 'new_file'].includes(raw)) return 'create';
+  return null;
 }
 
 export function createCodeAgentRequest(description: string, priority: string, createdBy: string | null): CodeAgentRequestRow {
@@ -123,8 +141,34 @@ export async function planCodeAgentRequest(requestId: number): Promise<CodeAgent
   try {
     const repository = readRepositoryStatus();
     const search = readRepositorySearch(request.description, 10);
-    const prompt = `You are Mara's controlled Code Agent planner. Do not modify code. Analyze this request and return ONLY valid JSON with keys analysis and changes.\nRequest: ${request.description}\nRepository root: ${repository.root}\nIndexed files: ${repository.indexedFiles}\nRelevant indexed files: ${JSON.stringify(search)}\nRespect any Module context in the request. Warn when a shared dependency affects more than one module.\nChanges must be an array of {path,type,reason}; never include secrets, databases, migrations, .env, node_modules, scripts, .github, Dockerfiles, or deployment files. If uncertain, return an empty changes array.\nAnalysis must include summary, affectedModules, dependencies, risks, validationPlan.`;
-    const raw = await llmGenerate(prompt, { source: 'agent.code-agent.plan', temperature: 0.2 });
+    // The model cannot propose an accurate full-file rewrite for an existing
+    // file it has never seen. Pull the current content of the most relevant
+    // matches so a 'modify' change can actually reflect the real file.
+    const previews = await Promise.all(
+      search.slice(0, 3).map(async (entry) => {
+        try {
+          const file = await readRepositoryFile(entry.path, 4_000);
+          return `--- ${entry.path} ---\n${file.content}`;
+        } catch {
+          return null;
+        }
+      }),
+    );
+    const fileContext = previews.filter((item): item is string => item !== null).join('\n\n');
+    const prompt = `You are Mara's controlled Code Agent planner. Do not modify code. Analyze this request and return ONLY valid JSON (no markdown fences, no commentary) with keys analysis and changes.
+Request: ${request.description}
+Repository root: ${repository.root}
+Indexed files: ${repository.indexedFiles}
+Relevant indexed files: ${JSON.stringify(search)}
+Current content of the most relevant files (use this as the basis for any 'modify' change — never guess at existing content):
+${fileContext || '(no relevant file content found)'}
+
+Respect any Module context in the request. Warn when a shared dependency affects more than one module.
+Changes must be an array of objects, each with EXACTLY these keys: "path" (string, repo-relative), "type" (the literal string "modify" for an existing file or "create" for a new one — no other value is valid), "reason" (short string), "content" (the COMPLETE new file content as a string — not a diff, not a snippet; for "modify" this must be the full file with your change applied, keeping everything else byte-for-byte identical to what was shown above).
+Never touch secrets, databases, migrations, .env, node_modules, scripts, .github, Dockerfiles, or deployment files. If you are not confident you know the full current content of a file, return an empty changes array instead of guessing.
+Example shape (structure only, not real content): {"analysis":{"summary":"...","affectedModules":[],"dependencies":[],"risks":[],"validationPlan":[]},"changes":[{"path":"server/example.ts","type":"modify","reason":"...","content":"...full file..."}]}
+Analysis must include summary, affectedModules, dependencies, risks, validationPlan.`;
+    const raw = await llmGenerate(prompt, { source: 'agent.code-agent.plan', temperature: 0.1 });
     const match = raw.match(/\{[\s\S]*\}/);
     const parsed = match ? parseJson(match[0], null) : null;
     const rawAnalysis = parsed?.analysis && typeof parsed.analysis === 'object' ? parsed.analysis as Record<string, unknown> : {};
