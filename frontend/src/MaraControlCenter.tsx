@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import './styles/MaraControlCenter.css';
 import { readCapabilityResults } from './utils/capability-refresh';
-import { MaraVoiceControl } from './components/MaraVoiceControl';
 import { MaraMark } from './components/MaraMark';
+import { MaraCore } from './components/MaraCore';
 import { AgentTopology } from './components/AgentTopology';
 import type {
   BrainControlSnapshot,
@@ -33,11 +33,6 @@ async function getJson<T>(url: string): Promise<T> {
   const response = await fetch(url, { credentials: 'include' });
   if (!response.ok) throw new Error(`${url} returned ${response.status}`);
   return response.json() as Promise<T>;
-}
-
-function formatDuration(ms: number | null): string {
-  if (ms === null) return 'Not run';
-  return `${(ms / 1000).toFixed(1)}s`;
 }
 
 function formatTime(value: string | null): string {
@@ -447,86 +442,81 @@ export default function MaraControlCenter() {
         {error && <div className="mcc-alert">Unable to refresh live state: {error}</div>}
 
         {activeView === 'command' && <div className="mcc-view">
-          <section className="mcc-grid" aria-label="System overview">
-            <article className="mcc-panel mcc-panel--hero">
-              <div className="mcc-panel-label">MaraBrain</div>
-              <div className="mcc-big-value">{brain?.enabled ? 'ENABLED' : 'DISABLED'}</div>
-              <div className="mcc-meta">
-                {brain?.passive ? 'Passive: another instance owns the lock' : brain?.running ? 'Executing autonomous work' : 'Waiting for next cycle'}
-              </div>
-              <dl className="mcc-details">
-                <div><dt>Last cycle</dt><dd>{formatTime(brain?.lastRunAt ?? null)}</dd></div>
-                <div><dt>Duration</dt><dd>{formatDuration(brain?.lastDurationMs ?? null)}</dd></div>
-                <div><dt>Next cycle</dt><dd>{formatTime(brain?.nextRunAt ?? null)}</dd></div>
-              </dl>
-            </article>
-
-            <article className="mcc-panel">
-              <div className="mcc-panel-label">Local AI</div>
-              <div className="mcc-big-value">{provider?.provider?.toUpperCase() ?? '...'}</div>
-              <div className="mcc-meta">{provider?.model ?? 'Checking model'}</div>
-              <div className={`mcc-health ${provider?.ok ? 'mcc-health--good' : 'mcc-health--bad'}`}>
-                <span /> {provider?.ok ? 'Provider reachable' : 'Provider unavailable'}
-              </div>
-              {provider?.fallback && <small className="mcc-muted">Fallback: {provider.fallback.provider}</small>}
-            </article>
-
-            <article className="mcc-panel">
-              <div className="mcc-panel-label">Platform</div>
-              <div className="mcc-metric-row"><strong>{dashboard?.users.total ?? '—'}</strong><span>users</span></div>
-              <div className="mcc-metric-row"><strong>{dashboard?.users.active7d ?? '—'}</strong><span>active in 7d</span></div>
-              <div className="mcc-metric-row"><strong>{dashboard?.brain.logsToday ?? '—'}</strong><span>brain logs today</span></div>
-            </article>
-
-            <article className="mcc-panel">
-              <div className="mcc-panel-label">Runtime</div>
-              <div className="mcc-metric-row"><strong>{dashboard?.system.uptimeSeconds ? `${Math.floor(dashboard.system.uptimeSeconds / 3600)}h` : '—'}</strong><span>uptime</span></div>
-              <div className="mcc-metric-row"><strong>{dashboard?.system.memoryMB ?? '—'} MB</strong><span>heap used</span></div>
-              <div className="mcc-metric-row"><strong>{dashboard?.eventBus.backend ?? '—'}</strong><span>event bus</span></div>
-            </article>
-          </section>
-
-          <section className="mcc-command-grid" aria-label="Live topology and security">
-            <article className="mcc-panel">
-              <div className="mcc-panel-heading"><h2>Agent topology</h2><span>{agents.length} registered</span></div>
-              <AgentTopology agents={agents} />
-              {!agents.length && <p className="mcc-muted">Agent catalog unavailable.</p>}
-            </article>
-            <article className="mcc-panel">
-              <div className="mcc-panel-heading"><h2>Security</h2><span>Bans · honeypot · circuits</span></div>
-              <div className="mcc-module-health-grid">
-                <div><span>IP-uri blocate</span><strong>{security?.blacklistedIps.total ?? 0}</strong></div>
-                <div><span>Honeypot (24h)</span><strong>{security?.honeypot.eventsLast24h ?? 0}</strong></div>
-                <div><span>Worker</span><strong>{security?.controlWorker.enabled ? (security.controlWorker.running ? 'RUNNING' : 'ENABLED') : 'OFF'}</strong></div>
-              </div>
-              {security?.circuits.map((circuit) => (
-                <div className="mcc-signal" key={circuit.provider}>
-                  <span>circuit · {circuit.provider}</span>
-                  <strong className={circuit.state === 'open' ? 'mcc-circuit-open' : undefined}>{circuit.state.toUpperCase()}</strong>
+          <div className="mcc-nexus-layout">
+            <div className="mcc-nexus-left">
+              <article className="mcc-panel mcc-panel--hero">
+                <div className="mcc-panel-label">MaraBrain</div>
+                <div className="mcc-big-value">{brain?.enabled ? 'ENABLED' : 'DISABLED'}</div>
+                <div className="mcc-meta">
+                  {brain?.passive ? 'Passive: another instance owns the lock' : brain?.running ? 'Executing autonomous work' : 'Waiting for next cycle'}
                 </div>
-              ))}
-              {!!security?.blacklistedIps.recent.length && security.blacklistedIps.recent.slice(0, 4).map((ban) => (
-                <div className="mcc-signal" key={ban.ip}><span>{ban.ip} · {ban.reason}</span><strong>{ban.hitCount}×</strong></div>
-              ))}
-              {!security && <p className="mcc-muted">Se încarcă starea de securitate...</p>}
-            </article>
-          </section>
+                <dl className="mcc-details">
+                  <div><dt>Last cycle</dt><dd>{formatTime(brain?.lastRunAt ?? null)}</dd></div>
+                  <div><dt>Next cycle</dt><dd>{formatTime(brain?.nextRunAt ?? null)}</dd></div>
+                </dl>
+              </article>
 
-          <section className="mcc-lower-grid">
-            <article className="mcc-panel mcc-panel--scroll">
-              <div className="mcc-panel-heading"><h2>Recent Brain logs</h2><span>{logs?.brainLogs.length ?? 0} loaded</span></div>
-              {(logs?.brainLogs ?? []).map((log) => <div className="mcc-signal" key={log.id}><span>{log.research?.split('\n')[0] || 'Brain cycle'}</span><strong>#{log.id}</strong></div>)}
-              {!logs?.brainLogs.length && <p className="mcc-muted">No Brain logs available.</p>}
-            </article>
-            <article className="mcc-panel mcc-panel--scroll">
-              <div className="mcc-panel-heading"><h2>Alerts</h2><span>{logs?.unreadAlerts ?? 0} unread</span></div>
-              {(logs?.alerts ?? []).map((alert) => <div className="mcc-signal" key={alert.id}><span>{alert.title}</span><strong>{alert.severity}</strong></div>)}
-              {!logs?.alerts.length && <p className="mcc-muted">No alerts available.</p>}
-              {brain?.lastError && <div className="mcc-error">Last Brain error: {brain.lastError}</div>}
-            </article>
-          </section>
+              <article className="mcc-panel">
+                <div className="mcc-panel-label">Local AI</div>
+                <div className="mcc-big-value">{provider?.provider?.toUpperCase() ?? '...'}</div>
+                <div className="mcc-meta">{provider?.model ?? 'Checking model'}</div>
+                <div className={`mcc-health ${provider?.ok ? 'mcc-health--good' : 'mcc-health--bad'}`}>
+                  <span /> {provider?.ok ? 'Provider reachable' : 'Provider unavailable'}
+                </div>
+              </article>
 
-          <MaraVoiceControl />
+              <article className="mcc-panel">
+                <div className="mcc-panel-label">Platform</div>
+                <div className="mcc-metric-row"><strong>{dashboard?.users.total ?? '—'}</strong><span>users</span></div>
+                <div className="mcc-metric-row"><strong>{dashboard?.users.active7d ?? '—'}</strong><span>active in 7d</span></div>
+              </article>
+
+              <article className="mcc-panel">
+                <div className="mcc-panel-label">Runtime</div>
+                <div className="mcc-metric-row"><strong>{dashboard?.system.uptimeSeconds ? `${Math.floor(dashboard.system.uptimeSeconds / 3600)}h` : '—'}</strong><span>uptime</span></div>
+                <div className="mcc-metric-row"><strong>{dashboard?.system.memoryMB ?? '—'} MB</strong><span>heap used</span></div>
+              </article>
+            </div>
+
+            <div className="mcc-nexus-center">
+              <MaraCore agents={agents} />
+            </div>
+
+            <div className="mcc-nexus-right">
+              <div className="mcc-nexus-right-hint">SECURITY · LOGS · ALERTS</div>
+              <div className="mcc-nexus-right-inner">
+                <article className="mcc-panel">
+                  <div className="mcc-panel-heading"><h2>Security</h2><span>Bans · honeypot · circuits</span></div>
+                  <div className="mcc-module-health-grid">
+                    <div><span>IP-uri blocate</span><strong>{security?.blacklistedIps.total ?? 0}</strong></div>
+                    <div><span>Honeypot (24h)</span><strong>{security?.honeypot.eventsLast24h ?? 0}</strong></div>
+                    <div><span>Worker</span><strong>{security?.controlWorker.enabled ? (security.controlWorker.running ? 'RUNNING' : 'ENABLED') : 'OFF'}</strong></div>
+                  </div>
+                  {security?.circuits.map((circuit) => (
+                    <div className="mcc-signal" key={circuit.provider}>
+                      <span>circuit · {circuit.provider}</span>
+                      <strong className={circuit.state === 'open' ? 'mcc-circuit-open' : undefined}>{circuit.state.toUpperCase()}</strong>
+                    </div>
+                  ))}
+                  {!!security?.blacklistedIps.recent.length && security.blacklistedIps.recent.slice(0, 4).map((ban) => (
+                    <div className="mcc-signal" key={ban.ip}><span>{ban.ip} · {ban.reason}</span><strong>{ban.hitCount}×</strong></div>
+                  ))}
+                  {!security && <p className="mcc-muted">Se încarcă starea de securitate...</p>}
+                </article>
+                <article className="mcc-panel">
+                  <div className="mcc-panel-heading"><h2>Recent Brain logs</h2><span>{logs?.brainLogs.length ?? 0} loaded</span></div>
+                  {(logs?.brainLogs ?? []).slice(0, 5).map((log) => <div className="mcc-signal" key={log.id}><span>{log.research?.split('\n')[0] || 'Brain cycle'}</span><strong>#{log.id}</strong></div>)}
+                  {!logs?.brainLogs.length && <p className="mcc-muted">No Brain logs available.</p>}
+                </article>
+                <article className="mcc-panel">
+                  <div className="mcc-panel-heading"><h2>Alerts</h2><span>{logs?.unreadAlerts ?? 0} unread</span></div>
+                  {(logs?.alerts ?? []).map((alert) => <div className="mcc-signal" key={alert.id}><span>{alert.title}</span><strong>{alert.severity}</strong></div>)}
+                  {!logs?.alerts.length && <p className="mcc-muted">No alerts available.</p>}
+                  {brain?.lastError && <div className="mcc-error">Last Brain error: {brain.lastError}</div>}
+                </article>
+              </div>
+            </div>
+          </div>
         </div>}
 
         {activeView === 'modules' && <div className="mcc-view">
