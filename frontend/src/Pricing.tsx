@@ -1,14 +1,22 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from './contexts/AuthContext';
+import { AuthModal } from './components/AuthModal';
 import './styles/Pricing.css';
 
 export default function Pricing() {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { isAuthenticated } = useAuth();
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [pendingTier, setPendingTier] = useState<'free' | 'vip_monthly' | null>(null);
+  const [subscribing, setSubscribing] = useState(false);
+  const [vipNotice, setVipNotice] = useState<string | null>(null);
 
   const TIERS = [
     {
-      id: 'free',
+      id: 'free' as const,
       name: t('pricing.tierExplorerName'),
       price: 0 as number | null,
       color: '#6b7280',
@@ -22,10 +30,9 @@ export default function Pricing() {
         t('pricing.tierExplorerCommunity'),
       ],
       cta: t('pricing.tierExplorerCta'),
-      ctaPath: '/register',
     },
     {
-      id: 'vip_monthly',
+      id: 'vip_monthly' as const,
       name: 'VIP',
       price: 20,
       color: '#a855f7',
@@ -40,9 +47,67 @@ export default function Pricing() {
         t('pricing.tierVipCreatorMonetize'),
       ],
       cta: t('pricing.tierVipCta'),
-      ctaPath: '/billing?plan=vip_monthly',
     },
   ];
+
+  // Both /register and /billing?plan=... used to be dead ends here — neither
+  // route exists in App.tsx, so every CTA click 404'd (confirmed live).
+  // Free just needs an account (real signup flow, via the same AuthModal
+  // used everywhere else); VIP calls the real (now-registered)
+  // /api/billing/subscribe, which gracefully answers "not enabled yet"
+  // until PAYMENTS_ENABLED + provider keys are configured, instead of
+  // silently doing nothing.
+  async function startSubscribe() {
+    setSubscribing(true);
+    setVipNotice(null);
+    try {
+      const res = await fetch('/api/billing/subscribe', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ planId: 'vip_monthly', provider: 'stripe' }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      setVipNotice(
+        data.error === 'payments_disabled' || res.status === 503
+          ? t('pricing.vipComingSoon', 'VIP se activează în curând — revino în câteva zile.')
+          : t('pricing.vipError', 'Nu am putut porni abonarea. Încearcă din nou.'),
+      );
+    } catch {
+      setVipNotice(t('pricing.vipError', 'Nu am putut porni abonarea. Încearcă din nou.'));
+    } finally {
+      setSubscribing(false);
+    }
+  }
+
+  function handleCta(tierId: 'free' | 'vip_monthly') {
+    if (!isAuthenticated) {
+      setPendingTier(tierId);
+      setAuthModalOpen(true);
+      return;
+    }
+    if (tierId === 'free') {
+      navigate('/missions');
+    } else {
+      void startSubscribe();
+    }
+  }
+
+  // Once the modal closes after a successful signup, isAuthenticated flips —
+  // finish whichever CTA the user originally clicked instead of making them
+  // click twice.
+  useEffect(() => {
+    if (!isAuthenticated || !pendingTier) return;
+    const tier = pendingTier;
+    setPendingTier(null);
+    if (tier === 'free') navigate('/missions');
+    else void startSubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, pendingTier]);
 
   const PROGRAMS = [
     { icon: '🧠', name: 'New Mindset',  days: 1,    desc: t('pricing.mindsetDesc') },
@@ -90,13 +155,19 @@ export default function Pricing() {
 
             <button
               className="pricing-cta"
-              onClick={() => navigate(tier.ctaPath)}
+              onClick={() => handleCta(tier.id)}
+              disabled={subscribing && tier.id === 'vip_monthly'}
             >
-              {tier.cta}
+              {subscribing && tier.id === 'vip_monthly' ? t('common.loading') : tier.cta}
             </button>
+            {tier.id === 'vip_monthly' && vipNotice && (
+              <p className="pricing-vip-notice">{vipNotice}</p>
+            )}
           </div>
         ))}
       </div>
+
+      <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
 
       <div className="pricing-section-divider">
         <h2 className="pricing-section-title">{t('pricing.programsTitle')}</h2>

@@ -542,6 +542,13 @@ sqlite.exec(`
   CREATE INDEX IF NOT EXISTS idx_books_user
     ON user_books(user_id);
 
+  -- NOTE: program_purchases (one-time program/bundle/book unlocks) is
+  -- defined further below, near referrals — it already existed from
+  -- earlier scaffolding (program_id/amount_cents/paypal_order_id columns,
+  -- with a completed-purchase uniqueness constraint) before any route ever
+  -- used it. server/billing/programs.ts builds on that existing shape
+  -- rather than defining a second, colliding table here.
+
   CREATE TABLE IF NOT EXISTS mission_proofs (
     id TEXT PRIMARY KEY,
     user_mission_id TEXT NOT NULL,

@@ -90,13 +90,42 @@ export interface ProgramDefinition {
   id: ProgramId;
   name: string;
   durationDays: number;
+  /** 0 = free for every registered account. Otherwise a one-time unlock price. */
+  priceCents: number;
 }
 
+// New Mindset + New Habit are the free on-ramp (~22 days combined) — enough
+// to feel the daily mission rhythm before any payment. Each program after
+// that is a flat, cheap one-time unlock (not scaled by length — New You is
+// 1095 days for the same €7 as the 90-day New Skills) so the price is never
+// the reason someone stops; see PROGRAM_BUNDLE for unlocking all four at
+// once, and TRANSFORMATION_BOOK for the paid PDF at the end of New You.
 export const PROGRAM_CATALOGUE: readonly ProgramDefinition[] = [
-  { id: 'new_mindset', name: 'New Mindset', durationDays: 1 },
-  { id: 'new_habit',   name: 'New Habit',   durationDays: 21 },
-  { id: 'new_skills',  name: 'New Skills',  durationDays: 90 },
-  { id: 'new_body',    name: 'New Body',    durationDays: 180 },
-  { id: 'new_life',    name: 'New Life',    durationDays: 365 },
-  { id: 'new_you',     name: 'New You',     durationDays: 1095 },
+  { id: 'new_mindset', name: 'New Mindset', durationDays: 1,    priceCents: 0 },
+  { id: 'new_habit',   name: 'New Habit',   durationDays: 21,   priceCents: 0 },
+  { id: 'new_skills',  name: 'New Skills',  durationDays: 90,   priceCents: 700 },
+  { id: 'new_body',    name: 'New Body',    durationDays: 180,  priceCents: 700 },
+  { id: 'new_life',    name: 'New Life',    durationDays: 365,  priceCents: 700 },
+  { id: 'new_you',     name: 'New You',     durationDays: 1095, priceCents: 700 },
 ] as const;
+
+/** Unlocks New Skills + New Body + New Life + New You in one purchase (vs. €7 × 4 à la carte). */
+export const PROGRAM_BUNDLE = {
+  id: 'bundle_all_programs',
+  name: 'All Programs Bundle',
+  priceCents: 2800,
+  includes: ['new_skills', 'new_body', 'new_life', 'new_you'] as const,
+} as const;
+
+/** The personalized PDF book compiled from a user's New You journal, sold once they complete it. */
+export const TRANSFORMATION_BOOK = {
+  id: 'book_new_you',
+  name: 'Your Transformation Book (PDF)',
+  priceCents: 5000,
+  requiresProgram: 'new_you' as const,
+} as const;
+
+export type PurchasableItemId =
+  | ProgramId
+  | typeof PROGRAM_BUNDLE.id
+  | typeof TRANSFORMATION_BOOK.id;

@@ -21,9 +21,9 @@
       "slug": "new-habit",
       "name": "New Habit",
       "tagline": "21 days. A habit for life.",
-      "description": "Science confirms it: 21 days are enough to lock in a new habit. The first 10 days are free — so you can feel how it works. The remaining 11 days are yours if you choose to continue.",
+      "description": "Science confirms it: 21 days are enough to lock in a new habit. Free, all 21 days — part of your on-ramp into Mara's programs before New Skills.",
       "duration_days": 21,
-      "price_cents": 600,
+      "price_cents": 0,
       "pillar_focus": [
         "discipline",
         "self"
@@ -39,7 +39,7 @@
       "tagline": "90 days. A new skill.",
       "description": "Three months of daily missions to master something new — a skill, a field, a more capable version of yourself. Mara generates each day based on your real progress.",
       "duration_days": 90,
-      "price_cents": 6000,
+      "price_cents": 700,
       "pillar_focus": [
         "discipline",
         "self",
@@ -56,7 +56,7 @@
       "tagline": "180 days. A new body and mind.",
       "description": "Six months of genuine physical and mental transformation. It's not a diet and it's not a standard fitness program — it's a real change of identity, built day by day through missions personalized by Mara.",
       "duration_days": 180,
-      "price_cents": 16000,
+      "price_cents": 700,
       "pillar_focus": [
         "life",
         "discipline",
@@ -73,7 +73,7 @@
       "tagline": "365 days. A new life.",
       "description": "A whole year of personalized daily missions. Career, relationships, health, purpose — all rebuilt step by step. In the end, you won't be an improved version of yourself. You'll be you, all over again.",
       "duration_days": 365,
-      "price_cents": 36000,
+      "price_cents": 700,
       "pillar_focus": [
         "life",
         "self",
@@ -91,7 +91,7 @@
       "tagline": "1095 days. A new person.",
       "description": "Three years. 1095 daily missions. The complete path from who you are now to who you can become. The most ambitious personal transformation program available — for those who have decided they truly want to change.",
       "duration_days": 1095,
-      "price_cents": 62000,
+      "price_cents": 700,
       "pillar_focus": [
         "self",
         "life",

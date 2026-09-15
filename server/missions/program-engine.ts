@@ -1,26 +1,32 @@
 import { rawSqlite } from '../db.js';
 import { llmGenerate, isLLMConfigured } from '../llm.js';
-import { PROGRAM_CATALOGUE } from '../billing/plans.js';
+import { PROGRAM_CATALOGUE, type ProgramId } from '../billing/plans.js';
 import { hasFeature } from '../billing/features.js';
+import { hasPurchasedProgram as hasPurchasedProgramItem } from '../billing/programs.js';
 import { translateMissions, addXP, normalizeLang } from './engine.js';
 
 // ─── PROGRAM ACCESS ───────────────────────────────────────────────────────────
 
 /**
- * Check if a user can access a specific day of a program.
- * `programs.all` is a free-tier feature (see FREE_FEATURES in
- * server/billing/plans.ts) — every account, free or VIP, has it.
+ * Check if a user can access a specific day of a program: needs a real
+ * account (`programs.all` — every plan, free or VIP, has it) AND, for the
+ * four paid programs (New Skills/Body/Life/You), a completed one-time
+ * purchase of that program or of the all-programs bundle. New Mindset and
+ * New Habit are priceCents:0 in PROGRAM_CATALOGUE, so they pass for any
+ * registered account. See server/billing/programs.ts.
  */
 export async function hasAccessToDay(userId: string, programSlug: string, day: number): Promise<boolean> {
   const programId = slugToProgramId(programSlug);
   const def = PROGRAM_CATALOGUE.find((p) => p.id === programId);
   if (!def) return false;
-  void day; // all days accessible to any registered user
-  return hasFeature(userId, 'programs.all');
+  void day; // access is per-program, not metered by day
+  if (!(await hasFeature(userId, 'programs.all'))) return false;
+  return hasPurchasedProgramItem(userId, programId as ProgramId);
 }
 
-export async function hasPurchasedProgram(userId: string, _programId: string): Promise<boolean> {
-  return hasFeature(userId, 'programs.all');
+export async function hasPurchasedProgram(userId: string, programId: string): Promise<boolean> {
+  if (!(await hasFeature(userId, 'programs.all'))) return false;
+  return hasPurchasedProgramItem(userId, programId as ProgramId);
 }
 
 function slugToProgramId(slug: string): string {
@@ -57,6 +63,14 @@ export async function enrollUserInProgram(
     .prepare('SELECT * FROM mission_programs WHERE slug = ? AND is_active = 1')
     .get(programSlug) as any;
   if (!program) return { success: false, message: 'Program not found.' };
+
+  // Block enrollment (and the LLM day-generation it triggers below) for a
+  // paid program the user hasn't unlocked yet, rather than letting them
+  // enroll and only discovering the paywall when they try to open day 1.
+  const programId = slugToProgramId(programSlug);
+  if (!(await hasPurchasedProgramItem(userId, programId as ProgramId))) {
+    return { success: false, message: 'purchase_required' };
+  }
 
   const existing = rawSqlite
     .prepare(

@@ -41,7 +41,7 @@ export default function PayPalProgramButton({ programId, programName: _programNa
           method: 'POST',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ programId }),
+          body: JSON.stringify({ item: programId }),
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({ error: 'unknown' }));
@@ -121,7 +121,7 @@ function FallbackButton({ programId, priceCents, disabled, onError }: Omit<Props
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ programId }),
+        body: JSON.stringify({ item: programId }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const { approvalUrl } = await res.json() as { approvalUrl: string };

@@ -143,6 +143,8 @@ import {
 import { registerLaunchCountdown } from './modules/launch-countdown.js';
 import { registerMissionRoutes } from './missions/routes.js';
 import { registerShareRoutes } from './share/routes.js';
+import { registerBillingApi } from './billing/api.js';
+import { registerProgramBillingApi } from './billing/programs-api.js';
 import { callAgent, isBrainAgentEnabled } from './lib/anthropic-agents.js';
 import { getUserXP, getPersonality } from './missions/engine.js';
 import multer from 'multer';
@@ -2222,6 +2224,14 @@ ${JSON.stringify({
 
   // Mara Missions V3
   registerMissionRoutes(app, requireAuth, requireRealUser);
+
+  // Billing — VIP subscription (plans/me/subscribe/cancel/webhooks) and
+  // one-time program/bundle/book purchases. Both were fully written but
+  // never actually registered until now (confirmed via grep: zero callers) —
+  // every /api/billing/* route 404'd in production regardless of provider
+  // configuration.
+  registerBillingApi(app);
+  registerProgramBillingApi(app, requireRealUser);
 
   // Universal content share endpoint — see server/share/routes.ts for the
   // full contract. Lives at /api/share so any future module gets it for free.

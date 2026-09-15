@@ -449,6 +449,19 @@
   transition-duration: 60ms;
 }
 
+.pricing-cta:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.pricing-vip-notice {
+  margin: 10px 0 0;
+  font-size: 0.82rem;
+  text-align: center;
+  color: var(--accent, #a855f7);
+}
+
 .pricing-faq {
   max-width: 900px;
   margin: 0 auto;
