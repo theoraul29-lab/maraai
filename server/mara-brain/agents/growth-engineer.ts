@@ -33,6 +33,7 @@ import { llmGenerate, isLLMConfigured } from '../../llm.js';
 import { getObjective } from '../../mara-core/objective.js';
 import type { ObjectiveFunction, ObjectiveWeights } from '../../mara-core/types.js';
 import { executive } from '../../mara-core/executive.js';
+import { getBrainRunContext } from '../run-context.js';
 
 // === Types ===
 export type DropOffStage =
@@ -682,6 +683,38 @@ Rules:
     if (Number.isInteger(n) && validKnowledgeIds.has(n)) citedKnowledgeIds.push(n);
   }
 
+  const runContext = getBrainRunContext();
+  if (runContext?.dryRun) {
+    const experimentId = runContext.nextId();
+    runContext.growthExperiments.push({
+      id: experimentId,
+      dropOffStage: dropOff.stage,
+      baselineDropOffRate: dropOff.dropOffRate,
+      baselineMetrics: snapshot,
+      hypothesis,
+      framework,
+      codeSketch,
+      iceImpact: impact,
+      iceConfidence: confidence,
+      iceEase: ease,
+      iceScore,
+      expectedImpactPct,
+      citedKnowledgeIds,
+      status: 'proposed',
+    });
+    runContext.recordWrite('growth_experiment');
+    return {
+      experimentId,
+      hypothesis,
+      framework,
+      codeSketch,
+      expectedImpactPct,
+      ice: { impact, confidence, ease, score: iceScore },
+      citedKnowledgeIds,
+      dropOff,
+    };
+  }
+
   // Persist the proposal. baselineMetrics is a frozen snapshot so we can
   // compare against it in step 5 without needing to re-derive the same
   // window later (events outside the window will have moved on by then).
@@ -741,6 +774,10 @@ Rules:
 export async function measureExperimentOutcome(
   maxToMeasure = 3,
 ): Promise<MeasuredExperiment[]> {
+  if (getBrainRunContext()?.dryRun) {
+    getBrainRunContext()?.recordWrite('experiment_measurement_suppressed');
+    return [];
+  }
   const now = Date.now();
   // Sort ascending so the oldest-due experiments (smallest measureAfterAt,
   // i.e. furthest in the past) come first. Previously this used desc(), which

@@ -22,6 +22,25 @@ import { anthropicProvider, anthropicBrainProvider } from './anthropic-provider.
 import { ollamaProvider } from './ollama-provider.js';
 import { circuitIsAvailable, circuitRecordSuccess, circuitRecordFailure } from './circuit-breaker.js';
 import { isOllamaForcedFallback, recordOllamaFailure, recordOllamaSuccess } from '../middleware/costGuard.js';
+import { getBrainRunContext } from '../mara-brain/run-context.js';
+
+function recordProviderCall(
+  provider: AIProviderName,
+  model: string,
+  source: string | undefined,
+  startedAt: number,
+  success: boolean,
+  error?: unknown,
+): void {
+  getBrainRunContext()?.recordLLMCall({
+    provider,
+    model,
+    source,
+    success,
+    latencyMs: Date.now() - startedAt,
+    ...(error ? { error: error instanceof Error ? error.message : String(error) } : {}),
+  });
+}
 
 export class NoProviderAvailableError extends Error {
   constructor() {
@@ -38,6 +57,17 @@ function ollamaConfigured(): boolean {
 
 function anthropicConfigured(): boolean {
   return !!process.env.ANTHROPIC_API_KEY;
+}
+
+function fallbackEnabled(): boolean {
+  return process.env.ANTHROPIC_FALLBACK_ENABLED !== 'false';
+}
+
+function preferredProvider(): AIProviderName {
+  const configured = process.env.AI_PROVIDER?.trim().toLowerCase();
+  if (configured === 'anthropic') return 'anthropic';
+  if (configured === 'ollama') return 'ollama';
+  return ollamaConfigured() ? 'ollama' : 'anthropic';
 }
 
 let lastLoggedProvider: AIProviderName | null = null;
@@ -59,22 +89,27 @@ export async function getAIResponse(
   messages: AIMessage[],
   opts: AIChatOptions = {},
 ): Promise<AIResponse> {
-  // 1) Try Ollama if we have an explicit base URL configured and not permanently forced to Anthropic.
-  if (ollamaConfigured() && !isOllamaForcedFallback()) {
+  const primary = preferredProvider();
+
+  // 1) Try the configured primary provider.
+  if (primary === 'ollama' && ollamaConfigured() && !isOllamaForcedFallback()) {
     if (!circuitIsAvailable('ollama')) {
       // eslint-disable-next-line no-console
       console.warn('[AI Router] Ollama circuit open; skipping to Anthropic.');
     } else {
+      const startedAt = Date.now();
       try {
         if (await ollamaProvider.isAvailable()) {
           logProviderOnce('ollama');
           const result = await ollamaProvider.chat(messages, opts);
+          recordProviderCall('ollama', result.model, opts.source, startedAt, true);
           circuitRecordSuccess('ollama');
           recordOllamaSuccess();
           return result;
         }
         recordOllamaFailure();
       } catch (err) {
+        recordProviderCall('ollama', process.env.OLLAMA_MODEL || 'llama3.1:8b', opts.source, startedAt, false, err);
         circuitRecordFailure('ollama');
         recordOllamaFailure();
         // eslint-disable-next-line no-console
@@ -83,17 +118,21 @@ export async function getAIResponse(
     }
   }
 
-  // 2) Fall back to Anthropic.
-  if (anthropicConfigured()) {
+  // 2) Fall back to Anthropic when enabled. This is the default for
+  // backwards compatibility and can be disabled explicitly.
+  if (fallbackEnabled() && anthropicConfigured()) {
     if (!circuitIsAvailable('anthropic')) {
       throw new NoProviderAvailableError();
     }
+    const startedAt = Date.now();
     try {
       logProviderOnce('anthropic');
       const result = await anthropicProvider.chat(messages, opts);
+      recordProviderCall('anthropic', result.model, opts.source, startedAt, true);
       circuitRecordSuccess('anthropic');
       return result;
     } catch (err) {
+      recordProviderCall('anthropic', process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6', opts.source, startedAt, false, err);
       circuitRecordFailure('anthropic');
       throw err;
     }
@@ -146,17 +185,55 @@ export async function getBrainAIResponse(
   messages: AIMessage[],
   opts: AIChatOptions = {},
 ): Promise<AIResponse> {
-  if (!circuitIsAvailable('anthropic')) {
-    throw new NoProviderAvailableError();
+  const primary = preferredProvider();
+
+  // Brain uses the same provider decision as user chat. Extended thinking is
+  // still available when the Anthropic fallback answers the request.
+  if (primary === 'ollama' && ollamaConfigured() && !isOllamaForcedFallback()) {
+    if (circuitIsAvailable('ollama')) {
+      const startedAt = Date.now();
+      try {
+        if (await ollamaProvider.isAvailable()) {
+          logProviderOnce('ollama');
+          const result = await ollamaProvider.chat(messages, opts);
+          recordProviderCall('ollama', result.model, opts.source, startedAt, true);
+          circuitRecordSuccess('ollama');
+          recordOllamaSuccess();
+          return result;
+        }
+        recordOllamaFailure();
+      } catch (err) {
+        recordProviderCall('ollama', process.env.OLLAMA_MODEL || 'llama3.1:8b', opts.source, startedAt, false, err);
+        circuitRecordFailure('ollama');
+        recordOllamaFailure();
+        // eslint-disable-next-line no-console
+        console.warn('[AI Router] Brain Ollama failed; falling back to Anthropic:', err);
+      }
+    } else {
+      // eslint-disable-next-line no-console
+      console.warn('[AI Router] Brain Ollama circuit open; skipping to Anthropic.');
+    }
   }
-  try {
-    const result = await anthropicBrainProvider.chat(messages, opts);
-    circuitRecordSuccess('anthropic');
-    return result;
-  } catch (err) {
-    circuitRecordFailure('anthropic');
-    throw err;
+
+  if (fallbackEnabled() && await anthropicBrainProvider.isAvailable()) {
+    if (!circuitIsAvailable('anthropic')) {
+      throw new NoProviderAvailableError();
+    }
+    const startedAt = Date.now();
+    try {
+      logProviderOnce('anthropic');
+      const result = await anthropicBrainProvider.chat(messages, opts);
+      recordProviderCall('anthropic', result.model, opts.source, startedAt, true);
+      circuitRecordSuccess('anthropic');
+      return result;
+    } catch (err) {
+      recordProviderCall('anthropic', process.env.ANTHROPIC_BRAIN_MODEL || process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6', opts.source, startedAt, false, err);
+      circuitRecordFailure('anthropic');
+      throw err;
+    }
   }
+
+  throw new NoProviderAvailableError();
 }
 
 // ── P2P browser-task fallback ──────────────────────────────────────────────
@@ -214,10 +291,10 @@ export async function getProvidersHealth(): Promise<{
   const anthropic = describeAnthropic();
 
   // Primary == whichever we'd actually pick *right now*.
-  if (ollama.configured && ollama.ok) {
+  if (preferredProvider() === 'ollama' && ollama.configured && ollama.ok) {
     return { primary: ollama, fallback: anthropic.configured ? anthropic : null };
   }
-  if (anthropic.configured) {
+  if (preferredProvider() === 'anthropic' && anthropic.configured) {
     return { primary: anthropic, fallback: ollama.configured ? ollama : null };
   }
   // Nothing configured — surface Ollama as primary anyway so the dashboard

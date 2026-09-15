@@ -10,6 +10,8 @@
  * `script/`, etc. keep compiling without any churn.
  *
  * Env (Ollama):
+ *   AI_PROVIDER        (optional: ollama or anthropic; legacy auto-selection when unset)
+ *   ANTHROPIC_FALLBACK_ENABLED (optional, default: true)
  *   OLLAMA_BASE_URL    (default: http://localhost:11434)
  *   OLLAMA_MODEL       (default: llama3.1:8b)
  *   OLLAMA_TIMEOUT_MS  (default: 120000)
@@ -46,6 +48,7 @@ import {
   type ProviderHealth,
 } from './lib/provider-router.js';
 import { guardedLLMCall } from './mara-brain/rate-limiter.js';
+import { getBrainRunContext } from './mara-brain/run-context.js';
 
 // Retained for API compatibility with callers that read it.
 export type LLMProvider = 'ollama' | 'anthropic';
@@ -112,6 +115,7 @@ export class LLMRateLimitedError extends Error {
  * primary actually responding?" picture, hit `/api/ai/health` instead.
  */
 export function getActiveProvider(): LLMProvider {
+  if (process.env.AI_PROVIDER === 'anthropic') return 'anthropic';
   if (process.env.OLLAMA_BASE_URL) return 'ollama';
   return 'anthropic';
 }
@@ -154,11 +158,11 @@ export async function llmChat(
 
   if (source === 'user_chat') {
     // Chat cu userii → ANTHROPIC_API_KEY (cu fallback Ollama dacă e configurat)
-    return (await getAIResponse(messages, { temperature })).text;
+    return (await getAIResponse(messages, { temperature, source })).text;
   }
 
   // Brain autonom → ANTHROPIC_BRAIN_API_KEY (fallback la ANTHROPIC_API_KEY)
-  const exec = async () => (await getBrainAIResponse(messages, { temperature, thinkingBudget })).text;
+  const exec = async () => (await getBrainAIResponse(messages, { temperature, thinkingBudget, source })).text;
   const result = await guardedLLMCall(source, exec);
   if (result === null) {
     throw new LLMRateLimitedError(source);

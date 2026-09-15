@@ -44,21 +44,22 @@ function resolveDbPath(): string {
 }
 
 const dbPath = resolveDbPath();
+const brainDryRun = process.env.BRAIN_DRY_RUN === 'true';
 
-const sqlite = new Database(dbPath);
-sqlite.pragma('journal_mode = WAL');
+const sqlite = new Database(dbPath, brainDryRun ? { readonly: true } : undefined);
+if (!brainDryRun) sqlite.pragma('journal_mode = WAL');
 sqlite.pragma('foreign_keys = ON');
 // Bound the time better-sqlite3 will block on a write lock. Without an
 // explicit timeout, contended writes can wait indefinitely (which on
 // Railway has been observed to make /api/auth/signup hang past the
 // edge proxy's response deadline). 5s is well above any healthy
 // transaction time and still fails fast on real deadlocks.
-sqlite.pragma('busy_timeout = 5000');
+if (!brainDryRun) sqlite.pragma('busy_timeout = 5000');
 // WAL+NORMAL is the recommended combo for write throughput on commodity
 // disks; FULL fsyncs every commit, which can stall multi-second on slow
 // network volumes. NORMAL still survives application crashes because of
 // WAL; only OS-level crashes between checkpoints can lose the last txn.
-sqlite.pragma('synchronous = NORMAL');
+if (!brainDryRun) sqlite.pragma('synchronous = NORMAL');
 
 // ── Schema source of truth ───────────────────────────────────────────────
 // The schema is owned in exactly two layers, each with a single home:
@@ -72,6 +73,9 @@ sqlite.pragma('synchronous = NORMAL');
 // Column backfills for older production DBs (whose migration journal was
 // corrupted) live in the additive self-heal guard in server/index.ts.
 //
+// Auto-create Mara Brain tables if they don't exist. Dry-run uses read-only
+// access and must skip all bootstrap DDL and backfills.
+if (!brainDryRun) {
 // Auto-create Mara Brain tables if they don't exist
 sqlite.exec(`
   CREATE TABLE IF NOT EXISTS mara_knowledge_base (
@@ -657,6 +661,94 @@ sqlite.exec(`
   CREATE UNIQUE INDEX IF NOT EXISTS idx_program_purchases_completed_unique
     ON program_purchases(user_id, program_id) WHERE status = 'completed';
 `);
+
+}
+
+if (!brainDryRun) {
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS mara_control_tasks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      task_type TEXT NOT NULL,
+      title TEXT NOT NULL,
+      payload TEXT NOT NULL DEFAULT '{}',
+      status TEXT NOT NULL DEFAULT 'QUEUED'
+        CHECK(status IN ('QUEUED','PLANNING','RUNNING','WAITING_APPROVAL','COMPLETED','FAILED','CANCELLED')),
+      risk TEXT NOT NULL DEFAULT 'READ_ONLY'
+        CHECK(risk IN ('READ_ONLY','LOW_RISK','MODERATE_RISK','HIGH_RISK','CRITICAL')),
+      priority TEXT NOT NULL DEFAULT 'medium',
+      created_by TEXT,
+      assigned_agent TEXT,
+      worker_id TEXT,
+      result TEXT,
+      error TEXT,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      started_at INTEGER,
+      completed_at INTEGER,
+      approved_by TEXT,
+      approved_at INTEGER,
+      updated_at INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+    CREATE INDEX IF NOT EXISTS idx_mara_control_tasks_state
+      ON mara_control_tasks(status, priority, created_at);
+    CREATE TABLE IF NOT EXISTS mara_control_task_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      task_id INTEGER NOT NULL,
+      event_type TEXT NOT NULL,
+      from_status TEXT,
+      to_status TEXT,
+      actor TEXT,
+      metadata TEXT NOT NULL DEFAULT '{}',
+      created_at INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+    CREATE INDEX IF NOT EXISTS idx_mara_control_task_events_task
+      ON mara_control_task_events(task_id, created_at);
+    CREATE TABLE IF NOT EXISTS mara_admin_actions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      action_type TEXT NOT NULL,
+      target_type TEXT NOT NULL,
+      target_id TEXT NOT NULL,
+      actor TEXT,
+      metadata TEXT NOT NULL DEFAULT '{}',
+      created_at INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+    CREATE INDEX IF NOT EXISTS idx_mara_admin_actions_target
+      ON mara_admin_actions(target_type, target_id, created_at);
+    CREATE TABLE IF NOT EXISTS mara_code_agent_requests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      description TEXT NOT NULL,
+      priority TEXT NOT NULL DEFAULT 'medium',
+      status TEXT NOT NULL DEFAULT 'submitted',
+      created_by TEXT,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      error TEXT
+    );
+    CREATE TABLE IF NOT EXISTS mara_code_agent_plans (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      request_id INTEGER NOT NULL,
+      analysis TEXT NOT NULL DEFAULT '{}',
+      changes TEXT NOT NULL DEFAULT '[]',
+      status TEXT NOT NULL DEFAULT 'draft',
+      approved_by TEXT,
+      approved_at INTEGER,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      error TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_mara_code_agent_requests_status ON mara_code_agent_requests(status, created_at);
+    CREATE INDEX IF NOT EXISTS idx_mara_code_agent_plans_request ON mara_code_agent_plans(request_id, created_at);
+  `);
+  for (const statement of [
+    "ALTER TABLE mara_control_tasks ADD COLUMN attempts INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE mara_control_tasks ADD COLUMN max_attempts INTEGER NOT NULL DEFAULT 3",
+    "ALTER TABLE mara_control_tasks ADD COLUMN next_attempt_at INTEGER",
+    "ALTER TABLE mara_control_tasks ADD COLUMN review_decision TEXT",
+    "ALTER TABLE mara_control_tasks ADD COLUMN reviewed_by TEXT",
+    "ALTER TABLE mara_control_tasks ADD COLUMN reviewed_at INTEGER",
+  ]) {
+    try { sqlite.exec(statement); } catch { /* already exists */ }
+  }
+}
 
 export const db = drizzle(sqlite, { schema });
 

@@ -162,7 +162,26 @@ Generează 5 sugestii concrete de growth. Răspunde ca JSON array: ["sugestie1",
       await llmGenerate(prompt, { source: 'agent.platform-analyzer.growth-suggestions' })
     ).trim();
     const jsonMatch = text.match(/\[[\s\S]*\]/);
-    return jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+    const parsed: unknown = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+    if (!Array.isArray(parsed)) return [];
+    // Smaller/local models (e.g. Ollama) don't always follow the
+    // "array of strings" instruction as reliably as Claude — some return
+    // an array of objects instead. Coerce defensively so a format slip
+    // never surfaces as a literal "[object Object]" in brain output.
+    return parsed
+      .map((item): string | null => {
+        if (typeof item === 'string') return item;
+        if (item && typeof item === 'object') {
+          const candidate = (item as Record<string, unknown>).suggestion
+            ?? (item as Record<string, unknown>).text
+            ?? (item as Record<string, unknown>).idea
+            ?? (item as Record<string, unknown>).title
+            ?? (item as Record<string, unknown>).description;
+          if (typeof candidate === 'string') return candidate;
+        }
+        return null;
+      })
+      .filter((s): s is string => typeof s === 'string' && s.trim().length > 0);
   } catch {
     return [];
   }

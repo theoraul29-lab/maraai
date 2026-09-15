@@ -2,9 +2,11 @@ import { rawSqlite } from '../db.js';
 import { startPaymentActivationChecker } from '../modules/launch-countdown.js';
 import { startSecurityCleanup } from '../security/cleanup.js';
 import { scheduleDbBackup } from '../services/dbBackup.js';
+import { startControlTaskWorker } from './control-task-worker.js';
 
 export function startBackgroundJobs(): void {
   scheduleDbBackup();
+  startControlTaskWorker();
 
   function purgeOldMessages() {
     const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;

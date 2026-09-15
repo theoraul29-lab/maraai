@@ -9,6 +9,7 @@ import { db } from '../db.js';
 import { maraKnowledgeBase } from '../../shared/schema.js';
 import { like } from 'drizzle-orm';
 import { webSearch } from '../lib/web-search.js';
+import { getBrainRunContext, recordResearchUnavailable } from './run-context.js';
 
 export interface LibraryBook {
   id: string;
@@ -2545,6 +2546,11 @@ async function markWebTopicAsRead(id: string): Promise<void> {
 }
 
 async function readNextWebTopic(): Promise<DocumentReadResult | null> {
+  if (getBrainRunContext()?.dryRun) {
+    recordResearchUnavailable();
+    console.warn('[Library] research_unavailable_dry_run');
+    return null;
+  }
   const alreadyRead = await getReadWebTopicIds();
   let topic = WEB_TOPICS.find((t) => !alreadyRead.has(t.id));
 

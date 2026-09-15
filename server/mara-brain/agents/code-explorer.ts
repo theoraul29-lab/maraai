@@ -36,6 +36,7 @@ import { readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 
 import { rawSqlite } from '../../db.js';
+import { getBrainRunContext } from '../run-context.js';
 
 // Source tree root. Resolved from the working directory (repo root in dev,
 // /app in the container — the Dockerfile copies server/ + shared/ there)
@@ -340,14 +341,18 @@ export async function readSourceFile(
   const content = sliced.toString('utf8');
   const lines = content.split('\n').length;
 
-  try {
-    rawSqlite.prepare(`
-      INSERT INTO mara_code_reads (path, accessed_by, reason, size, truncated)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(safe.relative, opts.accessedBy, opts.reason ?? DEFAULT_READ_REASON, buf.length, truncated ? 1 : 0);
-  } catch (err) {
-    // Audit failure must never block a read — log and continue.
-    console.error('[code-explorer] audit insert failed:', (err as Error).message);
+  if (getBrainRunContext()?.dryRun) {
+    getBrainRunContext()?.recordWrite('code_read_audit_suppressed');
+  } else {
+    try {
+      rawSqlite.prepare(`
+        INSERT INTO mara_code_reads (path, accessed_by, reason, size, truncated)
+        VALUES (?, ?, ?, ?, ?)
+      `).run(safe.relative, opts.accessedBy, opts.reason ?? DEFAULT_READ_REASON, buf.length, truncated ? 1 : 0);
+    } catch (err) {
+      // Audit failure must never block a read — log and continue.
+      console.error('[code-explorer] audit insert failed:', (err as Error).message);
+    }
   }
 
   return { path: safe.relative, content, size: buf.length, truncated, lines };

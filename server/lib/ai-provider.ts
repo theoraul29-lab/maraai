@@ -23,6 +23,8 @@ export interface AIResponse {
 }
 
 export interface AIChatOptions {
+  /** Internal source label for Brain dry-run telemetry. */
+  source?: string;
   /**
    * Sampling temperature.
    *
