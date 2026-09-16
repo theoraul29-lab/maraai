@@ -682,7 +682,11 @@
     "noConversations": "No conversations yet.",
     "userFallback": "User",
     "selectConversation": "Select a conversation",
-    "messagePlaceholder": "Write a message…"
+    "messagePlaceholder": "Write a message…",
+    "attachFile": "Attach a photo or file",
+    "fileTooLarge": "That file is too big to send (max {{max}}).",
+    "fileQueued": "Waiting for them to come online…",
+    "fileUnavailable": "file unavailable"
   },
   "onboarding": {
     "welcomeTitle": "Welcome to Mara",

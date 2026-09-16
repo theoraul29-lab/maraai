@@ -1,9 +1,38 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
+import { useP2PFileTransfer, type FileTransfer } from '../hooks/useP2PFileTransfer';
 import './MessengerPanel.css';
 
 const API_URL = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:5000');
+
+// Text messages stay a plain string column server-side (no schema change) —
+// a file "message" is a normal message whose content carries this marker
+// prefix plus JSON metadata, so the thread survives a reload even though
+// the actual bytes only ever travel peer-to-peer and are never stored here.
+const FILE_MARKER = 'FILE';
+
+interface FileMarkerMeta {
+  id: string;
+  name: string;
+  size: number;
+  mime: string;
+}
+
+function parseFileMarker(content: string): FileMarkerMeta | null {
+  if (!content.startsWith(FILE_MARKER)) return null;
+  try {
+    const meta = JSON.parse(content.slice(FILE_MARKER.length));
+    if (meta && typeof meta.id === 'string' && typeof meta.name === 'string') return meta;
+  } catch { /* not a valid marker */ }
+  return null;
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 interface Conversation {
   id: number;
@@ -37,7 +66,10 @@ const MessengerPanel: React.FC<MessengerPanelProps> = ({
   const { t } = useTranslation();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConvId, setSelectedConvId] = useState<number | null>(null);
+  const [selectedOtherId, setSelectedOtherId] = useState<string | null>(null);
   const [selectedOtherName, setSelectedOtherName] = useState<string>('');
+  const [fileError, setFileError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageInput, setMessageInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -97,6 +129,7 @@ const MessengerPanel: React.FC<MessengerPanelProps> = ({
         { withCredentials: true },
       );
       setSelectedConvId(res.data.id);
+      setSelectedOtherId(recipientId);
       setSelectedOtherName(recipientName);
       await fetchMessages(res.data.id);
     } catch { /* silent */ }
@@ -136,8 +169,36 @@ const MessengerPanel: React.FC<MessengerPanelProps> = ({
 
   const selectConversation = async (conv: Conversation) => {
     setSelectedConvId(conv.id);
+    setSelectedOtherId(conv.otherId);
     setSelectedOtherName(conv.otherName || t('messenger.userFallback'));
     await fetchMessages(conv.id);
+  };
+
+  const { transfers, sendFile, rehydrate, maxFileBytes } = useP2PFileTransfer(currentUserId);
+
+  const handlePickFile = () => fileInputRef.current?.click();
+
+  const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !selectedConvId || !selectedOtherId) return;
+    setFileError(null);
+    if (file.size > maxFileBytes) {
+      setFileError(t('messenger.fileTooLarge', { max: formatBytes(maxFileBytes) }));
+      return;
+    }
+    const { id } = await sendFile(selectedOtherId, file);
+    if (!id) return;
+    try {
+      const marker = FILE_MARKER + JSON.stringify({ id, name: file.name, size: file.size, mime: file.type || 'application/octet-stream' } as FileMarkerMeta);
+      const res = await axios.post<Message>(
+        `${API_URL}/api/messenger/conversations/${selectedConvId}/messages`,
+        { content: marker },
+        { withCredentials: true },
+      );
+      setMessages(prev => [...prev, res.data]);
+      await fetchConversations();
+    } catch { /* the P2P transfer still proceeds even if the history marker fails to save */ }
   };
 
   const sendMessage = async () => {
@@ -185,7 +246,9 @@ const MessengerPanel: React.FC<MessengerPanelProps> = ({
               <div className="mp-conv-info">
                 <strong className="mp-conv-name">{conv.otherName || t('messenger.userFallback')}</strong>
                 {conv.lastMessage && (
-                  <span className="mp-conv-preview">{conv.lastMessage}</span>
+                  <span className="mp-conv-preview">
+                    {parseFileMarker(conv.lastMessage) ? `📎 ${parseFileMarker(conv.lastMessage)!.name}` : conv.lastMessage}
+                  </span>
                 )}
               </div>
               {conv.unreadCount > 0 && (
@@ -210,20 +273,44 @@ const MessengerPanel: React.FC<MessengerPanelProps> = ({
             </div>
             <div className="mp-messages">
               {loadingMsgs && <p className="mp-muted">{t('messenger.loading')}</p>}
-              {messages.map(msg => (
-                <div
-                  key={msg.id}
-                  className={`mp-message${msg.senderId === currentUserId ? ' mp-message-own' : ''}`}
-                >
-                  <span className="mp-message-content">{msg.content}</span>
-                  <span className="mp-message-time">
-                    {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                </div>
-              ))}
+              {messages.map(msg => {
+                const fileMeta = parseFileMarker(msg.content);
+                return (
+                  <div
+                    key={msg.id}
+                    className={`mp-message${msg.senderId === currentUserId ? ' mp-message-own' : ''}`}
+                  >
+                    {fileMeta ? (
+                      <FileBubble meta={fileMeta} live={transfers[fileMeta.id]} rehydrate={rehydrate} />
+                    ) : (
+                      <span className="mp-message-content">{msg.content}</span>
+                    )}
+                    <span className="mp-message-time">
+                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                );
+              })}
               <div ref={messagesEndRef} />
             </div>
+            {fileError && <p className="mp-file-error">{fileError}</p>}
             <div className="mp-input-row">
+              <input
+                ref={fileInputRef}
+                type="file"
+                hidden
+                accept="image/*,.pdf,.doc,.docx,.txt,.zip"
+                onChange={handleFileSelected}
+              />
+              <button
+                type="button"
+                className="mp-attach-btn"
+                onClick={handlePickFile}
+                aria-label={t('messenger.attachFile')}
+                title={t('messenger.attachFile')}
+              >
+                📎
+              </button>
               <input
                 className="mp-input"
                 placeholder={t('messenger.messagePlaceholder')}
@@ -251,6 +338,64 @@ const MessengerPanel: React.FC<MessengerPanelProps> = ({
       </div>
     </div>
   );
+};
+
+interface FileBubbleProps {
+  meta: FileMarkerMeta;
+  live?: FileTransfer;
+  rehydrate: (id: string) => Promise<FileTransfer | null>;
+}
+
+const FileBubble: React.FC<FileBubbleProps> = ({ meta, live, rehydrate }) => {
+  const { t } = useTranslation();
+  const [stored, setStored] = useState<FileTransfer | null>(null);
+  const [checked, setChecked] = useState(false);
+
+  useEffect(() => {
+    if (live) return;
+    let cancelled = false;
+    rehydrate(meta.id).then((rec) => {
+      if (!cancelled) { setStored(rec); setChecked(true); }
+    });
+    return () => { cancelled = true; };
+  }, [live, meta.id, rehydrate]);
+
+  const t2 = live || stored;
+  const isImage = meta.mime.startsWith('image/');
+
+  if (t2?.blobUrl) {
+    return isImage ? (
+      <a href={t2.blobUrl} target="_blank" rel="noreferrer" className="mp-file-image-link">
+        <img src={t2.blobUrl} alt={meta.name} className="mp-file-image" />
+      </a>
+    ) : (
+      <a href={t2.blobUrl} download={meta.name} className="mp-file-doc">
+        📄 <span className="mp-file-doc-name">{meta.name}</span>
+        <span className="mp-file-doc-size">{formatBytes(meta.size)}</span>
+      </a>
+    );
+  }
+
+  if (t2 && t2.status !== 'done') {
+    const label = t2.status === 'queued' || t2.status === 'failed'
+      ? t('messenger.fileQueued')
+      : `${Math.round((t2.progress || 0) * 100)}%`;
+    return (
+      <div className="mp-file-progress">
+        📎 {meta.name}
+        <div className="mp-file-progress-bar">
+          <div className="mp-file-progress-fill" style={{ width: `${Math.round((t2.progress || 0) * 100)}%` }} />
+        </div>
+        <span className="mp-file-progress-label">{label}</span>
+      </div>
+    );
+  }
+
+  if (checked && !t2) {
+    return <div className="mp-file-unavailable">📎 {meta.name} — {t('messenger.fileUnavailable')}</div>;
+  }
+
+  return <div className="mp-file-progress">📎 {meta.name}</div>;
 };
 
 export default MessengerPanel;

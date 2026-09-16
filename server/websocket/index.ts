@@ -5,6 +5,7 @@ import { unregisterComputePeer } from '../maraai/p2p-compute.js';
 import { handleChatMessage } from './chat-handler.js';
 import { handleComputeGone, handleComputeReady } from './compute-handler.js';
 import { relayP2PSignalingMessage } from './p2p-signaling.js';
+import { relayMessengerSignal } from './messenger-signaling.js';
 import type { UserSocket } from './types.js';
 
 const MAX_MESSAGE_BYTES = 1_000_000;
@@ -126,6 +127,17 @@ export function attachWebSocketServer(input: {
           case 'p2p-answer':
           case 'p2p-candidate':
             await relayP2PSignalingMessage({
+              data,
+              senderSocket: ws,
+              userConnections,
+              log,
+            });
+            break;
+
+          case 'msg-file-offer':
+          case 'msg-file-answer':
+          case 'msg-file-candidate':
+            await relayMessengerSignal({
               data,
               senderSocket: ws,
               userConnections,

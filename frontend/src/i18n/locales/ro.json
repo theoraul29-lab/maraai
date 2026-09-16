@@ -682,7 +682,11 @@
     "noConversations": "Nicio conversație.",
     "userFallback": "Utilizator",
     "selectConversation": "Selectează o conversație",
-    "messagePlaceholder": "Scrie un mesaj…"
+    "messagePlaceholder": "Scrie un mesaj…",
+    "attachFile": "Atașează o poză sau un fișier",
+    "fileTooLarge": "Fișierul este prea mare pentru a fi trimis (max {{max}}).",
+    "fileQueued": "Se așteaptă ca persoana să fie online…",
+    "fileUnavailable": "fișier indisponibil"
   },
   "onboarding": {
     "welcomeTitle": "Welcome to Mara",
