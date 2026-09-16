@@ -2,6 +2,45 @@
 <html lang="en" style="margin: 0; padding: 0; height: 100%; width: 100%; background: #000000;">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // One-time forced reset for any service worker installed before the
+      // registration fix (previously blocked by CSP — see server/index.ts /
+      // vite.config.ts history). Confirmed live: the server was serving
+      // fresh code the whole time, but a browser with an old SW already
+      // active kept intercepting requests and serving its own stale cache,
+      // surviving even a full app restart, with no code path left to update
+      // it — this runs once per browser, unregisters it, clears every
+      // Cache Storage bucket, and reloads — after which the normal
+      // vite-plugin-pwa registration (registerType: 'autoUpdate') takes over
+      // on a clean slate. Self-limiting via the localStorage flag: a no-op
+      // on every load after the first, and an immediate no-op for anyone
+      // who never had a service worker at all.
+      (function () {
+        try {
+          if (!('serviceWorker' in navigator)) return;
+          if (localStorage.getItem('mara_sw_reset_v1')) return;
+          navigator.serviceWorker.getRegistrations().then(function (regs) {
+            if (regs.length === 0) {
+              localStorage.setItem('mara_sw_reset_v1', '1');
+              return;
+            }
+            Promise.all(regs.map(function (r) { return r.unregister(); }))
+              .then(function () {
+                if ('caches' in window) {
+                  return caches.keys().then(function (keys) {
+                    return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+                  });
+                }
+              })
+              .catch(function () {})
+              .then(function () {
+                localStorage.setItem('mara_sw_reset_v1', '1');
+                location.reload();
+              });
+          }).catch(function () {});
+        } catch (e) {}
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no, interactive-widget=resizes-content" />
     <meta name="theme-color" content="#0b0b0f" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
