@@ -48,16 +48,37 @@ async function precacheOnce(): Promise<boolean> {
   }
   console.log(`[library-precache] warming cache for ${missing.length}/${candidateIds.length} popular book(s)`);
 
+  // Confirmed in production: a first pass over ~50 books saw a ~35% failure
+  // rate, all Gutenberg-mirror timeouts — this class of failure is often
+  // transient (the SAME book usually succeeds on a second try minutes
+  // later), so one retry pass over just what failed is worth it before
+  // leaving a book for tomorrow's run.
   let succeeded = 0;
+  const stillMissing: number[] = [];
   for (const id of missing) {
     try {
       await fetchAndCacheBook(id);
       succeeded += 1;
     } catch (err) {
       console.warn(`[library-precache] failed to cache book ${id}:`, err);
+      stillMissing.push(id);
     }
     await new Promise((resolve) => setTimeout(resolve, FETCH_DELAY_MS));
   }
+
+  if (stillMissing.length > 0) {
+    console.log(`[library-precache] retrying ${stillMissing.length} failed book(s) once`);
+    for (const id of stillMissing) {
+      try {
+        await fetchAndCacheBook(id);
+        succeeded += 1;
+      } catch (err) {
+        console.warn(`[library-precache] retry also failed for book ${id}:`, err);
+      }
+      await new Promise((resolve) => setTimeout(resolve, FETCH_DELAY_MS));
+    }
+  }
+
   console.log(`[library-precache] done — cached ${succeeded}/${missing.length} book(s)`);
   return true;
 }
