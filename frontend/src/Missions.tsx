@@ -9,6 +9,7 @@ import {
 } from '@phosphor-icons/react';
 import ShareButton from './components/ShareButton';
 import PayPalProgramButton from './components/PayPalProgramButton';
+import { copyToClipboard } from './lib/clipboard';
 import './styles/Missions.css';
 
 const API = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:5000');
@@ -433,6 +434,17 @@ export default function Missions() {
   });
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
+  // Copy-to-clipboard for Mara's actual generated text (mission content,
+  // completion feedback) — 'copiedKey' tracks which bubble was just copied
+  // so only that one shows the checkmark, distinct bubbles use distinct keys.
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const handleCopyMaraText = useCallback(async (text: string, key: string) => {
+    const ok = await copyToClipboard(text);
+    if (ok) {
+      setCopiedKey(key);
+      setTimeout(() => setCopiedKey((cur) => (cur === key ? null : cur)), 2000);
+    }
+  }, []);
 
   const [programs, setPrograms] = useState<Program[]>([]);
   const [billingPrograms, setBillingPrograms] = useState<Array<{
@@ -913,6 +925,25 @@ export default function Missions() {
                     <span className="mara-difficulty" style={{ color: DIFFICULTY_META[activeMission.difficulty]?.color }}>
                       {t(`missions.difficulty.${activeMission.difficulty}`, activeMission.difficulty)}
                     </span>
+                    <button
+                      type="button"
+                      className={`missions-copy-btn${copiedKey === `mission-${activeMission.id}` ? ' missions-copy-btn--done' : ''}`}
+                      onClick={() => {
+                        let stepsText = '';
+                        try {
+                          const steps = JSON.parse(activeMission.steps) as string[];
+                          stepsText = steps.length ? '\n' + steps.map((s, i) => `${i + 1}. ${s}`).join('\n') : '';
+                        } catch { /* no steps to append */ }
+                        void handleCopyMaraText(
+                          `${activeMission.title}\n\n${activeMission.description}${stepsText}`,
+                          `mission-${activeMission.id}`,
+                        );
+                      }}
+                      title={copiedKey === `mission-${activeMission.id}` ? 'Copiat!' : 'Copiază misiunea'}
+                      aria-label="Copiază misiunea"
+                    >
+                      {copiedKey === `mission-${activeMission.id}` ? '✓' : '📋'}
+                    </button>
                   </div>
                   <h3 className="mara-mission-title">{activeMission.title}</h3>
                   <p className="mara-mission-desc">{activeMission.description}</p>
@@ -1002,7 +1033,20 @@ export default function Missions() {
                   <div className="mara-bubble mara-bubble--mara mara-bubble--celebration">
                     <div className="mara-done-icon">{completionResult.leveledUp ? '🎉' : '✅'}</div>
                     <p className="mara-done-message">{completionResult.message}</p>
-                    <p className="mara-done-feedback">"{completionResult.maraFeedback}"</p>
+                    <p className="mara-done-feedback">
+                      "{completionResult.maraFeedback}"
+                      {completionResult.maraFeedback && (
+                        <button
+                          type="button"
+                          className={`missions-copy-btn${copiedKey === 'done-feedback' ? ' missions-copy-btn--done' : ''}`}
+                          onClick={() => handleCopyMaraText(completionResult.maraFeedback!, 'done-feedback')}
+                          title={copiedKey === 'done-feedback' ? 'Copiat!' : 'Copiază'}
+                          aria-label="Copiază"
+                        >
+                          {copiedKey === 'done-feedback' ? '✓' : '📋'}
+                        </button>
+                      )}
+                    </p>
                   </div>
                   <div className="mara-done-actions">
                     {activeMission && (

@@ -3,6 +3,7 @@ import { startPaymentActivationChecker } from '../modules/launch-countdown.js';
 import { startSecurityCleanup } from '../security/cleanup.js';
 import { scheduleDbBackup } from '../services/dbBackup.js';
 import { startControlTaskWorker } from './control-task-worker.js';
+import { startWriterPayoutRetryChecker } from '../billing/writer-payout-retry.js';
 
 export function startBackgroundJobs(): void {
   scheduleDbBackup();
@@ -24,4 +25,5 @@ export function startBackgroundJobs(): void {
 
   startPaymentActivationChecker();
   startSecurityCleanup();
+  startWriterPayoutRetryChecker();
 }

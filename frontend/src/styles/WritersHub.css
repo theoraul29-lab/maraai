@@ -1090,3 +1090,89 @@
   color: #fbbf24;
   margin: 0;
 }
+
+/* ===== MY SALES PANEL ===== */
+.writers-sales-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin: 16px 0 24px;
+}
+
+.writers-sales-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  background: rgba(139, 92, 246, 0.06);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 12px;
+}
+
+.writers-sales-stat-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #f0e6ff;
+}
+
+.writers-sales-stat-value--sent { color: #6ee7a8; }
+.writers-sales-stat-value--owed { color: #fbbf24; }
+
+.writers-sales-stat-label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.writers-sales-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.writers-sales-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.writers-sales-row-title {
+  color: #e4d9ff;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.writers-sales-row-amount {
+  color: #6ee7a8;
+  font-weight: 700;
+}
+
+.writers-sales-row-status {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.writers-sales-row-status--sent { color: #6ee7a8; }
+.writers-sales-row-status--failed,
+.writers-sales-row-status--no_payout_email { color: #fbbf24; }
+.writers-sales-row-status--pending { color: rgba(255, 255, 255, 0.5); }
+
+.writers-sales-row-date {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .writers-sales-row {
+    grid-template-columns: 1fr auto;
+    row-gap: 4px;
+  }
+}

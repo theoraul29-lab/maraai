@@ -3,45 +3,12 @@ import DOMPurify from 'dompurify';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { AuthModal } from './AuthModal';
+// stripMarkdown and copyToClipboard now live in lib/clipboard.ts, shared
+// with Missions.tsx and MaraCore.tsx's own copy-message buttons instead of
+// each surface duplicating the same logic.
+import { copyToClipboard, stripMarkdown } from '../lib/clipboard';
 import './MaraChatWidget.css';
 import i18n from '../i18n';
-
-// ─── Clipboard utility ────────────────────────────────────────────────────────
-async function copyToClipboard(text: string): Promise<boolean> {
-  try {
-    if (navigator.clipboard && window.isSecureContext) {
-      await navigator.clipboard.writeText(text);
-      return true;
-    }
-    // Fallback: DOM textarea trick — funcționează și pe mobile (iOS Safari)
-    const el = document.createElement('textarea');
-    el.value = text;
-    el.setAttribute('readonly', '');
-    el.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none';
-    document.body.appendChild(el);
-    el.focus();
-    el.select();
-    el.setSelectionRange(0, el.value.length); // mobil
-    document.execCommand('copy');
-    document.body.removeChild(el);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-// Elimină markdown → text plain, păstrând conținutul blocurilor de cod
-function stripMarkdown(text: string): string {
-  return text
-    .replace(/```[\w]*\n?([\s\S]*?)```/g, (_, code) => code.trim())
-    .replace(/`([^`\n]+)`/g, '$1')
-    .replace(/\*\*(.+?)\*\*/g, '$1')
-    .replace(/\*(.+?)\*/g, '$1')
-    .replace(/(?:^|\n)\d+\. /gm, '\n• ')
-    .replace(/(?:^|\n)[•-] /gm, '\n• ')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
-}
 
 // Converts Mara's plain-text/markdown responses to sanitized HTML.
 // Build the raw HTML first, then run it through DOMPurify so even

@@ -88,6 +88,23 @@ interface Draft {
   savedAt: number;
 }
 
+interface SalesSummary {
+  totalSales: number;
+  totalEarnedCents: number;
+  totalSentCents: number;
+  totalOwedCents: number;
+  sales: Array<{
+    purchaseId: number;
+    pageId: number;
+    pageTitle: string;
+    amountCents: number;
+    authorShareCents: number;
+    currency: string;
+    payoutStatus: string;
+    createdAt: string;
+  }>;
+}
+
 interface Props { onClose: () => void; }
 
 const MAX_DRAFTS = 20;
@@ -129,7 +146,7 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
   const { t, i18n } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [view, setView] = useState<'landing' | 'write' | 'library' | 'drafts' | 'read'>('landing');
+  const [view, setView] = useState<'landing' | 'write' | 'library' | 'drafts' | 'read' | 'sales'>('landing');
 
   // Editor state
   const [title, setTitle] = useState('');
@@ -145,6 +162,11 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
   const [loading, setLoading] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
+
+  // "My Sales" panel — open to any author, not just VIP/1000-follower
+  // creators (see server/storage.ts's getWriterSalesSummary doc comment).
+  const [sales, setSales] = useState<SalesSummary | null>(null);
+  const [salesLoading, setSalesLoading] = useState(false);
 
   // Drafts (localStorage, per browser)
   const [drafts, setDrafts] = useState<Draft[]>(() => {
@@ -205,6 +227,17 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
   }, []);
 
   useEffect(() => { fetchLibrary(); }, [fetchLibrary]);
+
+  useEffect(() => {
+    if (view !== 'sales' || !user) return;
+    let cancelled = false;
+    setSalesLoading(true);
+    axios.get(`${API_URL}/api/writers/my-sales`, { withCredentials: true })
+      .then((res) => { if (!cancelled) setSales(res.data); })
+      .catch(() => { if (!cancelled) setSales(null); })
+      .finally(() => { if (!cancelled) setSalesLoading(false); });
+    return () => { cancelled = true; };
+  }, [view, user]);
 
   // Lands here after a real PayPal checkout (server/modules/writers.ts's
   // captureArticlePurchase redirects to /writers-hub?payment=...&article=id)
@@ -509,6 +542,11 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
         <button onClick={() => setView('drafts')} className={`writers-tab ${view === 'drafts' ? 'active' : ''}`}>
           📂 {t('writers.drafts')}
         </button>
+        {user && (
+          <button onClick={() => setView('sales')} className={`writers-tab ${view === 'sales' ? 'active' : ''}`}>
+            💰 {t('writers.sales', 'My Sales')}
+          </button>
+        )}
         {readingWork && (
           <button onClick={() => setView('read')} className={`writers-tab ${view === 'read' ? 'active' : ''}`}>
             📖 {t('writers.reading')}
@@ -858,6 +896,61 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* SALES */}
+        {view === 'sales' && (
+          <div className="writers-sales">
+            <h2 className="writers-section-title">{t('writers.salesTitle', 'My Sales')}</h2>
+            {salesLoading && <p className="writers-dim">{t('common.loading')}</p>}
+            {!salesLoading && sales && sales.totalSales === 0 && (
+              <p className="writers-dim">{t('writers.noSales', "No sales yet — set a price on a paid article to start selling.")}</p>
+            )}
+            {!salesLoading && sales && sales.totalSales > 0 && (
+              <>
+                <div className="writers-sales-summary">
+                  <div className="writers-sales-stat">
+                    <span className="writers-sales-stat-value">{sales.totalSales}</span>
+                    <span className="writers-sales-stat-label">{t('writers.salesCount', 'Sales')}</span>
+                  </div>
+                  <div className="writers-sales-stat">
+                    <span className="writers-sales-stat-value">€{(sales.totalEarnedCents / 100).toFixed(2)}</span>
+                    <span className="writers-sales-stat-label">{t('writers.salesEarned', 'Earned (90%)')}</span>
+                  </div>
+                  <div className="writers-sales-stat">
+                    <span className="writers-sales-stat-value writers-sales-stat-value--sent">€{(sales.totalSentCents / 100).toFixed(2)}</span>
+                    <span className="writers-sales-stat-label">{t('writers.salesSent', 'Sent to PayPal')}</span>
+                  </div>
+                  {sales.totalOwedCents > 0 && (
+                    <div className="writers-sales-stat">
+                      <span className="writers-sales-stat-value writers-sales-stat-value--owed">€{(sales.totalOwedCents / 100).toFixed(2)}</span>
+                      <span className="writers-sales-stat-label">{t('writers.salesOwed', 'Owed (not sent yet)')}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="writers-sales-list">
+                  {sales.sales.map((s) => (
+                    <div key={s.purchaseId} className="writers-sales-row">
+                      <span className="writers-sales-row-title">{s.pageTitle}</span>
+                      <span className="writers-sales-row-amount">€{(s.authorShareCents / 100).toFixed(2)}</span>
+                      <span className={`writers-sales-row-status writers-sales-row-status--${s.payoutStatus}`}>
+                        {s.payoutStatus === 'sent' ? t('writers.payoutSent', '✓ Sent')
+                          : s.payoutStatus === 'no_payout_email' ? t('writers.payoutNoEmail', '⚠ No PayPal email')
+                          : s.payoutStatus === 'failed' ? t('writers.payoutFailed', '⚠ Failed — will retry')
+                          : t('writers.payoutPending', '⏳ Pending')}
+                      </span>
+                      <span className="writers-sales-row-date">{new Date(s.createdAt).toLocaleDateString(i18n.language)}</span>
+                    </div>
+                  ))}
+                </div>
+                {sales.totalOwedCents > 0 && (
+                  <p className="writers-payout-warning" style={{ marginTop: 12 }}>
+                    ⚠️ {t('writers.salesOwedHint', 'Set your PayPal email (in the composer, under "paid" visibility) so future sales — and this owed amount — can be sent.')}
+                  </p>
+                )}
+              </>
+            )}
           </div>
         )}
 

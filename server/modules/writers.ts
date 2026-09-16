@@ -749,6 +749,24 @@ export async function getPayoutEmail(req: Request, res: Response) {
   }
 }
 
+/**
+ * GET /api/writers/my-sales — the "how much have I made from Writers Hub"
+ * panel, open to any author regardless of plan/followers (see
+ * storage.getWriterSalesSummary's doc comment for why this is separate
+ * from the older, VIP+1000-follower-gated /api/creator/earnings).
+ */
+export async function getMySales(req: Request, res: Response) {
+  try {
+    const userId = getUserId(req);
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const summary = await deps.storage.getWriterSalesSummary(userId);
+    res.json(summary);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'failed to load sales';
+    res.status(500).json({ error: 'Failed to load sales', detail: msg });
+  }
+}
+
 export async function listMyPurchases(req: Request, res: Response) {
   try {
     const userId = getUserId(req);

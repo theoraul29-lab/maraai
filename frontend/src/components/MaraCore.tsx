@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AgentCatalogEntry } from '../types/control';
 import { useMaraCore } from '../hooks/useMaraCore';
+import { copyToClipboard, stripMarkdown } from '../lib/clipboard';
 
 const RISK_ICON: Record<string, string> = {
   READ_ONLY: '◎',
@@ -45,6 +46,15 @@ export function MaraCore({ agents }: { agents: AgentCatalogEntry[] }) {
   const [chatOpen, setChatOpen] = useState(true);
   const [hoveredAgent, setHoveredAgent] = useState<string | null>(null);
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [copiedTs, setCopiedTs] = useState<number | null>(null);
+
+  const handleCopyMessage = useCallback(async (content: string, ts: number) => {
+    const ok = await copyToClipboard(stripMarkdown(content));
+    if (ok) {
+      setCopiedTs(ts);
+      setTimeout(() => setCopiedTs((cur) => (cur === ts ? null : cur)), 2000);
+    }
+  }, []);
 
   const scheduleIdleCollapse = useCallback(() => {
     if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
@@ -177,6 +187,15 @@ export function MaraCore({ agents }: { agents: AgentCatalogEntry[] }) {
               <div className={`mcc-nexus-msg mcc-nexus-msg--${m.role}`} key={m.ts}>
                 <span className="mcc-nexus-msg-role">{m.role === 'user' ? 'TU' : 'MARA'}</span>
                 <p>{m.content}</p>
+                <button
+                  type="button"
+                  className={`mcc-nexus-msg-copy${copiedTs === m.ts ? ' mcc-nexus-msg-copy--done' : ''}`}
+                  onClick={() => handleCopyMessage(m.content, m.ts)}
+                  title={copiedTs === m.ts ? 'Copiat!' : 'Copiază mesajul'}
+                  aria-label="Copiază mesajul"
+                >
+                  {copiedTs === m.ts ? '✓' : '📋'}
+                </button>
               </div>
             ))}
             {sending && <div className="mcc-nexus-msg mcc-nexus-msg--mara mcc-nexus-msg--pending"><span className="mcc-nexus-msg-role">MARA</span><p>…</p></div>}

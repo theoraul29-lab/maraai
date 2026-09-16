@@ -212,6 +212,22 @@ export interface IStorage {
   hasPurchasedWriterPage(userId: string, pageId: number): Promise<boolean>;
   getWriterPurchasesByUser(userId: string): Promise<WriterPurchase[]>;
   getWriterPurchasesForPage(pageId: number): Promise<WriterPurchase[]>;
+  getWriterSalesSummary(authorUserId: string): Promise<{
+    totalSales: number;
+    totalEarnedCents: number;
+    totalSentCents: number;
+    totalOwedCents: number;
+    sales: Array<{
+      purchaseId: number;
+      pageId: number;
+      pageTitle: string;
+      amountCents: number;
+      authorShareCents: number;
+      currency: string;
+      payoutStatus: string;
+      createdAt: Date;
+    }>;
+  }>;
   /** Records the outcome of the automatic post-sale PayPal payout (see server/modules/writers.ts). */
   updateWriterPurchasePayoutStatus(
     purchaseId: number,
@@ -1107,6 +1123,74 @@ export class DatabaseStorage implements IStorage {
       .from(writerPurchases)
       .where(eq(writerPurchases.pageId, pageId))
       .orderBy(desc(writerPurchases.createdAt));
+  }
+
+  /**
+   * "My sales" for Writers Hub, open to any author regardless of plan or
+   * follower count (unlike getCreatorEarnings below, which is gated to
+   * VIP + 1000 followers and — being built around the older manual
+   * creator_payouts request flow — doesn't reflect the automatic per-sale
+   * PayPal payout writer purchases actually use now). Sums directly off
+   * writer_purchases.payoutStatus, the real source of truth for whether
+   * each sale's 90% share has actually gone out.
+   */
+  async getWriterSalesSummary(authorUserId: string): Promise<{
+    totalSales: number;
+    totalEarnedCents: number;
+    totalSentCents: number;
+    totalOwedCents: number;
+    sales: Array<{
+      purchaseId: number;
+      pageId: number;
+      pageTitle: string;
+      amountCents: number;
+      authorShareCents: number;
+      currency: string;
+      payoutStatus: string;
+      createdAt: Date;
+    }>;
+  }> {
+    const rows = await db
+      .select({
+        purchaseId: writerPurchases.id,
+        pageId: writerPurchases.pageId,
+        pageTitle: writerPages.title,
+        amountCents: writerPurchases.amountCents,
+        authorShareCents: writerPurchases.authorShareCents,
+        currency: writerPurchases.currency,
+        payoutStatus: writerPurchases.payoutStatus,
+        createdAt: writerPurchases.createdAt,
+      })
+      .from(writerPurchases)
+      .innerJoin(writerPages, eq(writerPages.id, writerPurchases.pageId))
+      .where(eq(writerPages.userId, authorUserId))
+      .orderBy(desc(writerPurchases.createdAt));
+
+    let totalEarnedCents = 0;
+    let totalSentCents = 0;
+    let totalOwedCents = 0;
+    for (const r of rows) {
+      totalEarnedCents += r.authorShareCents;
+      if (r.payoutStatus === 'sent') totalSentCents += r.authorShareCents;
+      else totalOwedCents += r.authorShareCents;
+    }
+
+    return {
+      totalSales: rows.length,
+      totalEarnedCents,
+      totalSentCents,
+      totalOwedCents,
+      sales: rows.map((r) => ({
+        purchaseId: r.purchaseId,
+        pageId: r.pageId,
+        pageTitle: r.pageTitle ?? `#${r.pageId}`,
+        amountCents: r.amountCents,
+        authorShareCents: r.authorShareCents,
+        currency: r.currency,
+        payoutStatus: r.payoutStatus,
+        createdAt: r.createdAt,
+      })),
+    };
   }
 
   // --- Creator Tools (PR G) -----------------------------------------------

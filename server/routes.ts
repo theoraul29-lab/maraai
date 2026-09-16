@@ -560,6 +560,7 @@ export async function registerRoutes(
   app.get('/api/writers/library', writersModule.listLibrary);
   app.get('/api/writers/mine', requireAuth, writersModule.listMyPages);
   app.get('/api/writers/purchases', requireAuth, writersModule.listMyPurchases);
+  app.get('/api/writers/my-sales', requireAuth, writersModule.getMySales);
   // Registered before the /:idOrSlug and /:id catch-alls below (same segment
   // count — Express tries routes in registration order, so these single-
   // segment paths must come first or getArticle/updateArticle would swallow
