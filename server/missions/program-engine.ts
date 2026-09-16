@@ -73,7 +73,7 @@ export async function enrollUserInProgram(
     habitDescription?: string;
     language?: string;
   } = {},
-): Promise<{ success: boolean; enrollmentId?: string; message?: string }> {
+): Promise<{ success: boolean; enrollmentId?: string; message?: string; requiredProgramSlug?: string }> {
   const program = rawSqlite
     .prepare('SELECT * FROM mission_programs WHERE slug = ? AND is_active = 1')
     .get(programSlug) as any;
@@ -85,6 +85,34 @@ export async function enrollUserInProgram(
   const programId = slugToProgramId(programSlug);
   if (!(await hasPurchasedProgramItem(userId, programId as ProgramId))) {
     return { success: false, message: 'purchase_required' };
+  }
+
+  // Purchase order is free — the pricing page's "pick your own" card lets
+  // someone unlock any of the 4 paid programs whenever they want — but
+  // *starting* one is still sequential. Mara calibrates mission difficulty
+  // against how far into the ~1095-day arc a program sits (see
+  // generateDayMission's tierContext), so dropping straight into e.g. New
+  // Life without ever doing New Skills/New Body would hand someone a
+  // program tuned for a much further-along user.
+  const catalogueIndex = PROGRAM_CATALOGUE.findIndex((p) => p.id === programId);
+  if (catalogueIndex > 0) {
+    const previous = PROGRAM_CATALOGUE[catalogueIndex - 1];
+    const previousSlug = previous.id.replace(/_/g, '-');
+    const previousCompleted = rawSqlite
+      .prepare(
+        `SELECT 1 FROM user_program_enrollments e
+           JOIN mission_programs p ON e.program_id = p.id
+          WHERE e.user_id = ? AND p.slug = ? AND e.status = 'completed'
+          LIMIT 1`,
+      )
+      .get(userId, previousSlug) as unknown;
+    if (!previousCompleted) {
+      return {
+        success: false,
+        message: `Finish ${previous.name} first to unlock ${program.name}.`,
+        requiredProgramSlug: previousSlug,
+      };
+    }
   }
 
   const existing = rawSqlite

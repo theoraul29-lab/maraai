@@ -160,6 +160,18 @@ const TRANSFORMATION_MILESTONES = [
   { days: 1095, label: 'New You',      icon: '✨', color: '#c77dff' },
 ];
 
+// Mirrors server/billing/plans.ts's PROGRAM_CATALOGUE order — buying any of
+// the 4 paid programs is free-order (the pricing page's picker), but
+// starting one still requires finishing the one before it (see
+// program-engine.ts's enrollUserInProgram). Used here to show that lock
+// state proactively instead of only surfacing it after a failed enroll
+// attempt.
+const JOURNEY_SLUG_ORDER = ['new-mindset', 'new-habit', 'new-skills', 'new-body', 'new-life', 'new-you'];
+function getRequiredPreviousSlug(slug: string): string | null {
+  const idx = JOURNEY_SLUG_ORDER.indexOf(slug);
+  return idx > 0 ? JOURNEY_SLUG_ORDER[idx - 1] : null;
+}
+
 function getActiveTier(completed: number) {
   let tier = 0;
   for (let i = 0; i < TRANSFORMATION_MILESTONES.length; i++) {
@@ -1296,24 +1308,40 @@ export default function Missions() {
           <div className="programs-grid">
             {programs
               .filter((p) => !enrollments.some((e) => e.slug === p.slug && e.status === 'active'))
-              .map((program) => (
-                <div key={program.id} className={`program-card ${program.is_featured ? 'program-card--featured' : ''}`}>
-                  {program.is_featured && <div className="program-featured-badge">{t('missions.featuredBadge')}</div>}
-                  <div className="program-card-header">
-                    <h2>{program.name}</h2>
-                    <span className="program-tagline">{program.tagline}</span>
+              .map((program) => {
+                // Buying any of the 4 paid programs is free-order (the
+                // pricing page's picker), but starting one still follows
+                // the journey — Mara's mission difficulty ramps up across
+                // the whole arc, so this mirrors the same check
+                // server-side (program-engine.ts's enrollUserInProgram).
+                const requiredSlug = getRequiredPreviousSlug(program.slug);
+                const requiredProgram = requiredSlug ? programs.find((p) => p.slug === requiredSlug) : null;
+                const isLocked = !!requiredSlug && !enrollments.some((e) => e.slug === requiredSlug && e.status === 'completed');
+                return (
+                  <div key={program.id} className={`program-card ${program.is_featured ? 'program-card--featured' : ''}${isLocked ? ' program-card--locked' : ''}`}>
+                    {program.is_featured && <div className="program-featured-badge">{t('missions.featuredBadge')}</div>}
+                    <div className="program-card-header">
+                      <h2>{program.name}</h2>
+                      <span className="program-tagline">{program.tagline}</span>
+                    </div>
+                    <p className="program-description">{program.description}</p>
+                    <div className="program-meta">
+                      <span>📅 {t('missions.daysLabel', { count: program.duration_days })}</span>
+                      <span>💪 {program.difficulty}</span>
+                      <span>{program.price_cents === 0 ? t('missions.free') : `💰 ${(program.price_cents / 100).toFixed(2)} EUR`}</span>
+                    </div>
+                    <button
+                      className="program-enroll-btn"
+                      disabled={isLocked}
+                      onClick={() => { if (!isAuthenticated) { navigate('/'); return; } if (isLocked) return; setEnrollingSlug(program.slug); }}
+                    >
+                      {isLocked
+                        ? t('missions.lockedUntil', { name: requiredProgram?.name ?? program.name })
+                        : t('missions.startProgramCta', { name: program.name })}
+                    </button>
                   </div>
-                  <p className="program-description">{program.description}</p>
-                  <div className="program-meta">
-                    <span>📅 {t('missions.daysLabel', { count: program.duration_days })}</span>
-                    <span>💪 {program.difficulty}</span>
-                    <span>{program.price_cents === 0 ? t('missions.free') : `💰 ${(program.price_cents / 100).toFixed(2)} EUR`}</span>
-                  </div>
-                  <button className="program-enroll-btn" onClick={() => { if (!isAuthenticated) { navigate('/'); return; } setEnrollingSlug(program.slug); }}>
-                    {t('missions.startProgramCta', { name: program.name })}
-                  </button>
-                </div>
-              ))}
+                );
+              })}
           </div>
 
           {enrollments.filter((e) => e.status === 'completed').length > 0 && (

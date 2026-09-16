@@ -18,6 +18,11 @@ interface ProgramOption {
 // changes if the catalogue itself changes, at which point this file needs
 // updating anyway.
 const PROGRAM_PRICE_CENTS = 700;
+// server/billing/plans.ts's TRANSFORMATION_BOOK.priceCents — the book only
+// unlocks after finishing New You (day 1095), so it's not one of the
+// picker's own checkboxes, but the running-total scale below still shows
+// where it lands: 4 programs (€28) + book (€50) = €78 for the full journey.
+const BOOK_PRICE_CENTS = 5000;
 
 const PAID_PROGRAMS: ProgramOption[] = [
   { id: 'new_skills', name: 'New Skills', icon: '⚡', days: 90 },
@@ -87,6 +92,23 @@ export default function ProgramPicker() {
     <div className="program-picker-card">
       <h3 className="program-picker-title">{t('pricing.pickerTitle')}</h3>
       <p className="program-picker-sub">{t('pricing.pickerSubtitle')}</p>
+
+      <div className="program-picker-scale" aria-hidden="true">
+        {PAID_PROGRAMS.map((_, i) => (
+          <span key={i} className="program-picker-scale-item">
+            <span className="program-picker-scale-arrow">→</span>
+            <span className="program-picker-scale-step">
+              {i + 1} <strong>€{((i + 1) * PROGRAM_PRICE_CENTS / 100).toFixed(0)}</strong>
+            </span>
+          </span>
+        ))}
+        <span className="program-picker-scale-item">
+          <span className="program-picker-scale-arrow">→</span>
+          <span className="program-picker-scale-step program-picker-scale-step--book">
+            {t('pricing.pickerScaleBook')} <strong>€{((PAID_PROGRAMS.length * PROGRAM_PRICE_CENTS + BOOK_PRICE_CENTS) / 100).toFixed(0)}</strong>
+          </span>
+        </span>
+      </div>
 
       <div className="program-picker-grid">
         {PAID_PROGRAMS.map((p) => {

@@ -22,10 +22,56 @@
   font-size: 0.85rem;
   color: rgba(255,255,255,0.5);
   text-align: center;
-  margin: 0 0 24px;
+  margin: 0 0 20px;
   max-width: 560px;
   margin-left: auto;
   margin-right: auto;
+}
+
+/* Running-total scale (1 program → €7, 2 → €14, ... 4 + book → €78) — makes
+   it obvious at a glance that repeated "€7" tags below are each program's
+   own flat price, not a display bug. */
+.program-picker-scale {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 24px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(96,165,250,0.05);
+  border: 1px solid rgba(96,165,250,0.12);
+}
+
+.program-picker-scale-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.program-picker-scale-item:first-child .program-picker-scale-arrow {
+  display: none;
+}
+
+.program-picker-scale-arrow {
+  color: rgba(255,255,255,0.25);
+  font-size: 0.8rem;
+}
+
+.program-picker-scale-step {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.5);
+  white-space: nowrap;
+}
+
+.program-picker-scale-step strong {
+  color: #60a5fa;
+  font-size: 0.85rem;
+}
+
+.program-picker-scale-step--book strong {
+  color: #34d399;
 }
 
 .program-picker-grid {
