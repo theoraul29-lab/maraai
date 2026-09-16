@@ -204,6 +204,13 @@
       "when": 1780000000000,
       "tag": "0028_writer_payouts",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "6",
+      "when": 1780100000000,
+      "tag": "0029_library_books_cache",
+      "breakpoints": true
     }
   ]
 }

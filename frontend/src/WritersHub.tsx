@@ -146,7 +146,7 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
   const { t, i18n } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [view, setView] = useState<'landing' | 'write' | 'library' | 'drafts' | 'read' | 'sales'>('landing');
+  const [view, setView] = useState<'landing' | 'write' | 'library' | 'drafts' | 'read' | 'sales' | 'classics'>('landing');
 
   // Editor state
   const [title, setTitle] = useState('');
@@ -541,6 +541,9 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
         </button>
         <button onClick={() => setView('drafts')} className={`writers-tab ${view === 'drafts' ? 'active' : ''}`}>
           📂 {t('writers.drafts')}
+        </button>
+        <button onClick={() => setView('classics')} className={`writers-tab ${view === 'classics' ? 'active' : ''}`}>
+          🏛️ {t('writers.classicsTab', 'Public Library')}
         </button>
         {user && (
           <button onClick={() => setView('sales')} className={`writers-tab ${view === 'sales' ? 'active' : ''}`}>
@@ -954,6 +957,9 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
           </div>
         )}
 
+        {/* CLASSICS — Public Library (Gutendex / Project Gutenberg) */}
+        {view === 'classics' && <PublicLibraryTab />}
+
         {/* READ */}
         {view === 'read' && readingWork && (
           <div className="writers-reading-mode">
@@ -1026,6 +1032,262 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
           </div>
         )}
       </div>
+    </div>
+  );
+};
+
+interface LibraryBook {
+  id: number;
+  title: string;
+  authors: string[];
+  languages: string[];
+  subjects: string[];
+  coverUrl: string | null;
+  downloadCount: number;
+}
+
+interface LibraryBookContent {
+  id: number;
+  title: string;
+  authors: string[];
+  subjects: string[];
+  coverUrl: string | null;
+  content: string;
+  wordCount: number;
+}
+
+const LIBRARY_LANGS = ['ro', 'en', 'de'] as const;
+// Whole paragraphs only — never split mid-paragraph — grouped up to this
+// target so a page never lands mid-thought as it would with a raw character
+// cut. Roughly a few printed pages per screen.
+const LIBRARY_PAGE_TARGET_WORDS = 2200;
+
+function paginateBookContent(content: string): string[] {
+  const paragraphs = content.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+  const pages: string[] = [];
+  let current: string[] = [];
+  let currentWords = 0;
+  for (const para of paragraphs) {
+    const words = para.split(/\s+/).length;
+    if (currentWords > 0 && currentWords + words > LIBRARY_PAGE_TARGET_WORDS) {
+      pages.push(current.join('\n\n'));
+      current = [];
+      currentWords = 0;
+    }
+    current.push(para);
+    currentWords += words;
+  }
+  if (current.length) pages.push(current.join('\n\n'));
+  return pages.length ? pages : [content];
+}
+
+/**
+ * Free classic books via Gutendex (Project Gutenberg's API). Search/browse
+ * always hits the live API; a book's text is fetched from Gutenberg once
+ * on first read and cached server-side from then on — see
+ * server/modules/library.ts for the full architecture. Kept as its own
+ * component (rather than more state threaded into WritersHub) since it has
+ * no dependency on the editor/drafts/sales state above.
+ */
+const PublicLibraryTab: React.FC = () => {
+  const { t, i18n } = useTranslation();
+  const [query, setQuery] = useState('');
+  const [langFilter, setLangFilter] = useState<'' | typeof LIBRARY_LANGS[number]>('');
+  const [page, setPage] = useState(1);
+  const [results, setResults] = useState<LibraryBook[]>([]);
+  const [count, setCount] = useState(0);
+  const [hasNext, setHasNext] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [openBook, setOpenBook] = useState<LibraryBookContent | null>(null);
+  const [openLoading, setOpenLoading] = useState(false);
+  const [openError, setOpenError] = useState<string | null>(null);
+  const [bookPages, setBookPages] = useState<string[]>([]);
+  const [pageIndex, setPageIndex] = useState(0);
+
+  const runSearch = useCallback(async (q: string, lang: string, p: number) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await axios.get(`${API_URL}/api/library/search`, {
+        params: { q: q || undefined, lang: lang || undefined, page: p },
+      });
+      setResults(Array.isArray(res.data?.books) ? res.data.books : []);
+      setCount(Number(res.data?.count ?? 0));
+      setHasNext(Boolean(res.data?.hasNext));
+    } catch {
+      setResults([]);
+      setError(t('writers.classicsLoadError', 'The public library is temporarily unavailable. Try again shortly.'));
+    } finally {
+      setLoading(false);
+    }
+  }, [t]);
+
+  useEffect(() => { runSearch(query, langFilter, page); }, [langFilter, page]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Initial load only — search-by-query is explicit (submit button/Enter),
+  // so it isn't in the effect above (that would re-fire on every keystroke).
+  useEffect(() => { runSearch('', '', 1); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setPage(1);
+    runSearch(query, langFilter, 1);
+  };
+
+  const openBookReader = async (id: number) => {
+    setOpenLoading(true);
+    setOpenError(null);
+    setOpenBook(null);
+    try {
+      const res = await axios.get(`${API_URL}/api/library/${id}/read`);
+      const data: LibraryBookContent = res.data;
+      setOpenBook(data);
+      setBookPages(paginateBookContent(data.content));
+      setPageIndex(0);
+    } catch {
+      setOpenError(t('writers.classicsOpeningError', "Couldn't open this book. Please try again."));
+    } finally {
+      setOpenLoading(false);
+    }
+  };
+
+  const closeReader = () => {
+    setOpenBook(null);
+    setBookPages([]);
+    setPageIndex(0);
+    setOpenError(null);
+  };
+
+  if (openLoading || openBook || openError) {
+    return (
+      <div className="writers-reading-mode library-reader">
+        <button onClick={closeReader} className="writers-back-btn">
+          ← {t('writers.classicsBack', 'Back to library')}
+        </button>
+        {openLoading && <p className="writers-dim">{t('writers.classicsLoading', 'Searching…')}</p>}
+        {openError && <p className="writers-error">{openError}</p>}
+        {openBook && (
+          <>
+            <div className="writers-reading-header">
+              {openBook.coverUrl && (
+                <div className="writers-reading-cover" style={{ backgroundImage: `url("${openBook.coverUrl}")` }} />
+              )}
+              <h1>{openBook.title}</h1>
+              <p className="writers-reading-author">
+                {openBook.authors.length > 0 && <>{t('writers.classicsBy', 'by')} {openBook.authors.join(', ')} · </>}
+                {openBook.wordCount.toLocaleString(i18n.language)} {t('writers.classicsWords', 'words')}
+              </p>
+            </div>
+            <div className="writers-rich-body library-book-body">
+              {bookPages[pageIndex]?.split(/\n{2,}/).map((para, idx) => (
+                <p key={idx}>{para}</p>
+              ))}
+            </div>
+            {bookPages.length > 1 && (
+              <div className="library-pager">
+                <button
+                  className="writers-button secondary"
+                  disabled={pageIndex === 0}
+                  onClick={() => { setPageIndex((i) => Math.max(0, i - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                >
+                  {t('writers.classicsPrev', '← Previous')}
+                </button>
+                <span className="library-pager-status">
+                  {t('writers.classicsPage', 'Page {{current}} of {{total}}', { current: pageIndex + 1, total: bookPages.length })}
+                </span>
+                <button
+                  className="writers-button"
+                  disabled={pageIndex >= bookPages.length - 1}
+                  onClick={() => { setPageIndex((i) => Math.min(bookPages.length - 1, i + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                >
+                  {t('writers.classicsNext', 'Next →')}
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="writers-classics">
+      <h2 className="writers-section-title">{t('writers.classicsTitle', 'Public Library')}</h2>
+      <p className="writers-dim">{t('writers.classicsSubtitle', "Thousands of free classic books from Project Gutenberg — read them right on the platform.")}</p>
+
+      <form className="library-search-bar" onSubmit={handleSearchSubmit}>
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={t('writers.classicsSearchPlaceholder', 'Search by title or author…')}
+          className="library-search-input"
+        />
+        <button type="submit" className="writers-button">{t('writers.classicsSearchBtn', 'Search')}</button>
+      </form>
+
+      <div className="library-lang-chips">
+        <button
+          type="button"
+          className={`writers-chip ${langFilter === '' ? 'active' : ''}`}
+          onClick={() => { setLangFilter(''); setPage(1); }}
+        >
+          {t('writers.classicsAllLangs', 'All languages')}
+        </button>
+        {LIBRARY_LANGS.map((lang) => (
+          <button
+            key={lang}
+            type="button"
+            className={`writers-chip ${langFilter === lang ? 'active' : ''}`}
+            onClick={() => { setLangFilter(lang); setPage(1); }}
+          >
+            {t(`writers.classicsLang${lang === 'ro' ? 'Ro' : lang === 'en' ? 'En' : 'De'}`)}
+          </button>
+        ))}
+      </div>
+
+      {langFilter === 'ro' && count > 0 && count < 20 && (
+        <p className="writers-dim library-ro-hint">
+          ℹ️ {t('writers.classicsRoHint', 'Only a few Romanian-language titles are available through this source right now — more Romanian books are being added separately.')}
+        </p>
+      )}
+
+      {loading && <p className="writers-dim">{t('writers.classicsLoading', 'Searching…')}</p>}
+      {!loading && error && <p className="writers-error">{error}</p>}
+      {!loading && !error && results.length === 0 && (
+        <p className="writers-dim">{t('writers.classicsEmpty', 'No books found. Try different search terms.')}</p>
+      )}
+
+      {!loading && results.length > 0 && (
+        <>
+          <div className="library-grid">
+            {results.map((book) => (
+              <button key={book.id} type="button" className="library-card" onClick={() => openBookReader(book.id)}>
+                <div className="library-card-cover" style={book.coverUrl ? { backgroundImage: `url("${book.coverUrl}")` } : undefined}>
+                  {!book.coverUrl && <span className="library-card-cover-fallback">📖</span>}
+                </div>
+                <div className="library-card-body">
+                  <span className="library-card-title">{book.title}</span>
+                  {book.authors.length > 0 && <span className="library-card-author">{book.authors.join(', ')}</span>}
+                  <span className="library-card-read">{t('writers.classicsReadBtn', 'Read')} →</span>
+                </div>
+              </button>
+            ))}
+          </div>
+          {(page > 1 || hasNext) && (
+            <div className="library-pager">
+              <button className="writers-button secondary" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
+                {t('writers.classicsPrev', '← Previous')}
+              </button>
+              <span className="library-pager-status">{count.toLocaleString(i18n.language)}</span>
+              <button className="writers-button" disabled={!hasNext} onClick={() => setPage((p) => p + 1)}>
+                {t('writers.classicsNext', 'Next →')}
+              </button>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 };

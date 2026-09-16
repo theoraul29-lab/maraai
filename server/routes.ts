@@ -21,6 +21,7 @@ import * as videoModule from './modules/video.js';
 import * as reelsModule from './modules/reels.js';
 import * as uploadsModule from './modules/uploads.js';
 import * as writersModule from './modules/writers.js';
+import * as libraryModule from './modules/library.js';
 
 import * as creatorsModule from './modules/creators.js';
 import * as chatModule from './modules/chat.js';
@@ -583,6 +584,13 @@ export async function registerRoutes(
   app.delete('/api/writers/comments/:commentId', requireAuth, writersModule.deleteComment);
   app.get('/api/writers/:id/access', writersModule.getAccess);
   app.post('/api/writers/:id/purchase', requireAuth, writersModule.purchaseArticle);
+
+  // --- Public Library (Gutendex / Project Gutenberg classics) --------------
+  // Free, open to everyone (no auth) — search always hits the live Gutendex
+  // API, a book's text is fetched from Gutenberg once and cached locally on
+  // first read. See server/modules/library.ts for the caching architecture.
+  app.get('/api/library/search', libraryModule.searchLibrary);
+  app.get('/api/library/:id/read', libraryModule.readLibraryBook);
 
   // --- Creator Tools (PR G) -------------------------------------------------
   // Aggregated earnings (requires creator.revenue_share feature).
