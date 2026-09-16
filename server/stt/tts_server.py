@@ -165,13 +165,14 @@ async def synthesize(body: dict, authorization: str | None = Header(default=None
 
     # edge-tts talks to Microsoft's own read-aloud websocket endpoint, which
     # occasionally drops a connection with NoAudioReceived under normal use
-    # (confirmed live: happened on ~1 in 8 rapid back-to-back calls during
-    # testing, succeeded immediately on retry) — nothing about our request
-    # is wrong, so one quick retry before surfacing an error is worth it
-    # rather than leaving Mara silent over a transient hiccup.
+    # (confirmed live: happened on rapid back-to-back calls during testing —
+    # including, once, two attempts in a row — but always recovered with a
+    # bit more breathing room) — nothing about our request is wrong, so a
+    # few quick retries with backoff are worth it rather than leaving Mara
+    # silent over a transient upstream hiccup.
     audio = b""
     last_error: Exception | None = None
-    for attempt in range(2):
+    for attempt in range(3):
         try:
             chunks: list[bytes] = []
             communicate = edge_tts.Communicate(text, voice)
@@ -183,8 +184,8 @@ async def synthesize(body: dict, authorization: str | None = Header(default=None
                 break
         except Exception as exc:  # noqa: BLE001 - edge_tts raises its own exception types
             last_error = exc
-        if attempt == 0:
-            await asyncio.sleep(0.5)
+        if attempt < 2:
+            await asyncio.sleep(0.5 * (attempt + 1))
 
     if not audio:
         detail = f"synthesis produced no audio ({last_error})" if last_error else "synthesis produced no audio"
