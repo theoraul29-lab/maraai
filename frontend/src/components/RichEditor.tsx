@@ -105,6 +105,12 @@ export const RichEditor: React.FC<Props> = ({
         // Headings: spec mentions "headings" — we expose H2/H3 in the toolbar
         // but allow all levels so pasted content from Word/Docs survives.
         heading: { levels: [1, 2, 3, 4, 5, 6] },
+        // TipTap v3's StarterKit bundles its own Link extension by default —
+        // confirmed live (console: "Duplicate extension names found:
+        // ['link']") since the explicit Link.configure(...) below also
+        // registers one with our custom options. Disable StarterKit's copy;
+        // ours is the one with the real config (openOnClick, rel, target).
+        link: false,
       }),
       Image.configure({
         inline: false,

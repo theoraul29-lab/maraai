@@ -282,6 +282,11 @@
     "titleRequired": "Title is required.",
     "videoRequired": "Attach a video file or paste a URL."
   },
+  "preview": {
+    "banner": "Preview mode — explore MaraAI for free.",
+    "remaining": "Time left",
+    "cta": "Create free account"
+  },
   "writers": {
     "title": "WRITERS HUB",
     "close": "Close Writers Hub",

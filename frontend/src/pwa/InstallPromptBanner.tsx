@@ -1,6 +1,5 @@
 import { useEffect, useState, type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
-import { subscribePWA, type PWAEvent } from './registerPWA';
 
 /**
  * Chrome + Edge fire `beforeinstallprompt` when the page meets the A2HS
@@ -36,7 +35,6 @@ export function InstallPromptBanner(): ReactElement | null {
   const { t } = useTranslation();
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [showIOSHint, setShowIOSHint] = useState(false);
-  const [updateAvailable, setUpdateAvailable] = useState<null | (() => Promise<void>)>(null);
 
   // Listen for the install prompt event.
   useEffect(() => {
@@ -75,22 +73,6 @@ export function InstallPromptBanner(): ReactElement | null {
     };
   }, []);
 
-  // Listen for SW update events. Workbox only fires `onNeedRefresh` (and
-  // therefore this) when a genuinely new build is waiting — never repeatedly
-  // for the same version — so every occurrence deserves showing, regardless
-  // of whether an earlier, different update was dismissed this session. A
-  // stale bundle silently breaks lazy-loaded route chunks (404s on
-  // navigation) until the user updates, so under-prompting is the worse
-  // failure mode here.
-  useEffect(() => {
-    const unsub = subscribePWA((e: PWAEvent) => {
-      if (e.type === 'update-available') {
-        setUpdateAvailable(() => e.updateNow);
-      }
-    });
-    return unsub;
-  }, []);
-
   const dismiss = () => {
     setInstallEvent(null);
     setShowIOSHint(false);
@@ -109,44 +91,6 @@ export function InstallPromptBanner(): ReactElement | null {
       localStorage.setItem(DISMISS_KEY, String(Date.now()));
     }
   };
-
-  const dismissUpdate = () => {
-    // Local-only: closes the banner for this render, but does not suppress
-    // future update-available events (see the effect above for why).
-    setUpdateAvailable(null);
-  };
-
-  const applyUpdate = async () => {
-    if (!updateAvailable) return;
-    await updateAvailable();
-    // `updateNow` triggers a reload internally, but some browsers race — force
-    // a reload here as a belt-and-braces fallback so the new SW takes over.
-    window.location.reload();
-  };
-
-  if (updateAvailable) {
-    return (
-      <div className="mara-pwa-banner mara-pwa-update" role="status" aria-live="polite">
-        <div className="mara-pwa-text">
-          <strong>{t('pwa.updateTitle')}</strong>
-          <span>{t('pwa.updateBody')}</span>
-        </div>
-        <div className="mara-pwa-actions">
-          <button type="button" className="mara-pwa-primary" onClick={applyUpdate}>
-            {t('pwa.updateCta')}
-          </button>
-          <button
-            type="button"
-            className="mara-pwa-ghost"
-            onClick={dismissUpdate}
-            aria-label={t('pwa.updateDismissAria')}
-          >
-            ✕
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   if (installEvent) {
     return (

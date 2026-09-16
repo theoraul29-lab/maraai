@@ -9,7 +9,7 @@ import {
 } from '../shared/schema.js';
 import { db, rawSqlite } from './db.js';
 import { getAllCircuitStatuses } from './lib/circuit-breaker.js';
-import { cleanupKnowledgeBase, searchKnowledge } from './mara-brain/knowledge-base.js';
+import { cleanupKnowledgeBase, searchKnowledge, storeKnowledge } from './mara-brain/knowledge-base.js';
 import {
   markAlertRead,
   markAllAlertsRead,
@@ -1967,12 +1967,35 @@ export async function registerRoutes(
       // never the public user chat — can reach this path.
       const actor = req.user?.uid ?? 'owner';
       if (await detectCodeWriteIntent(message)) {
-        const outcome = await handleAutonomousCodeRequest(message, actor);
-        return res.json({ reply: outcome.reply, codeAction: outcome.status });
+        // The full plan -> apply -> typecheck/build -> commit -> push chain
+        // can take well over a minute — awaiting it here left the chat
+        // looking unresponsive for that whole time (confirmed: an owner
+        // audit/check request that this detector misclassified as a code
+        // request appeared to just never answer). Acknowledge immediately;
+        // the real work still runs with the same full autonomy as before,
+        // its result lands in the knowledge base (so the next chat message
+        // can reference it) and in Control Center -> Mara Activity.
+        void handleAutonomousCodeRequest(message, actor)
+          .then((outcome) => storeKnowledge(
+            'platform_insight',
+            'Cerere de cod din chat',
+            `Cerere: "${message.slice(0, 300)}". Rezultat: ${outcome.reply}`,
+            'self_reflection',
+            80,
+            { module: 'chat-code-request', autoApply: true, outcome: outcome.status },
+          ))
+          .catch((err) => console.error('[admin/mara/chat] background code request failed:', err));
+        return res.json({
+          reply: 'Am înțeles asta ca o cerere de modificare de cod — lucrez la ea acum și revin cu rezultatul (îl vezi și în Control Center → Mara Activity).',
+          codeAction: 'in_progress',
+        });
       }
 
       // Same autonomy pattern, scoped to a sandboxed Python script instead
       // of a platform code change — see server/services/python-agent.ts.
+      // Kept synchronous (unlike the code-write path above): a script run is
+      // capped at a much shorter timeout (server/services/python-sandbox.ts),
+      // so the wait is short enough that an immediate ack isn't needed here.
       if (await detectPythonExecutionIntent(message)) {
         const outcome = await handlePythonExecutionRequest(message, actor);
         return res.json({ reply: outcome.reply, pythonAction: outcome.status });

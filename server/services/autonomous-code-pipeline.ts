@@ -32,7 +32,14 @@ import {
 } from './control-task-engine.js';
 import { runOneControlTask } from '../bootstrap/control-task-worker.js';
 
-const CODE_INTENT_KEYWORDS = /\b(implement|implementeaz|cod(ul)?|funcț|functi|feature|bug|repar|fix|adaug|schimb|modific|scrie.*cod|platform)/i;
+// Confirmed live: bare "platform" matched ordinary Romanian words like
+// "platformă"/"platformei" in completely unrelated requests (e.g. "fă un
+// audit al platformei hellomara.net"), pre-filtering them into the LLM
+// confirmation step below — and from there into a slow autonomous-pipeline
+// run instead of a normal, immediate chat reply. Removed; the remaining
+// keywords are already specific action verbs that a status/audit/check
+// request wouldn't contain.
+const CODE_INTENT_KEYWORDS = /\b(implement|implementeaz|cod(ul)?|funcț|functi|feature|bug|repar|fix|adaug|schimb|modific|scrie.*cod)/i;
 
 export interface AutoCodeOutcome {
   outcome: 'committed' | 'rejected' | 'failed';
@@ -47,8 +54,11 @@ export async function detectCodeWriteIntent(message: string): Promise<boolean> {
   try {
     const raw = await llmGenerate(
       `Owner message to Mara (Romanian or English): "${message.slice(0, 2000)}"\n\n` +
-      `Is this an explicit instruction for Mara to write, modify, or implement code in the MaraAI platform repository — ` +
-      `not a question, not a status check, not casual conversation? Answer with exactly one word: YES or NO.`,
+      `Is this an explicit instruction for Mara to write, modify, or implement code in the MaraAI platform repository right now? ` +
+      `Answer NO for: a question, a status check, an audit/review/analysis request ("check", "audit", "look at", "verify", "what's wrong with"), ` +
+      `a bug REPORT with no fix requested, or casual conversation — even if it mentions bugs, code, or the platform. ` +
+      `Answer YES only for an explicit instruction to write/change/fix code now (e.g. "fix this", "implement X", "add a button that..."). ` +
+      `Answer with exactly one word: YES or NO.`,
       { source: 'admin.mara_chat.intent', temperature: 0 },
     );
     return /^\s*YES\b/i.test(raw);

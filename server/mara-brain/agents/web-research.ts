@@ -187,7 +187,17 @@ Returnează doar un JSON array de strings: ["topic1", "topic2", ...]`;
       await llmGenerate(prompt, { source: 'agent.web-research.agenda' })
     ).trim();
     const jsonMatch = text.match(/\[[\s\S]*\]/);
-    return jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+    if (!jsonMatch) return [];
+    const parsed: unknown = JSON.parse(jsonMatch[0]);
+    if (!Array.isArray(parsed)) return [];
+    // The prompt asks for a flat array of strings, but nothing enforces
+    // that on the model's output — a smaller/local model occasionally
+    // returns objects (e.g. {"topic": "..."}) instead. Without this filter,
+    // an object silently became the `query` for researchTopic()/
+    // storeKnowledge(), which expect a string, and broke downstream with a
+    // confusing "[object Object]" / SQLite parameter-binding error rather
+    // than a clear one here.
+    return parsed.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
   } catch (err) {
     // Propagate rate-limit errors so the brain cycle skips Phase 2 entirely
     // instead of proceeding with the hardcoded fallback list and burning web

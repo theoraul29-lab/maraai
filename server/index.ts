@@ -50,6 +50,11 @@ app.use(
         ...helmet.contentSecurityPolicy.getDefaultDirectives(),
         'connect-src': ["'self'", 'https://stt.hellomara.net', 'https://tts.hellomara.net'],
         'media-src': ["'self'", 'blob:'],
+        // Helmet's default img-src is 'self' data: — silently blocks any
+        // externally-hosted image. Confirmed live (DevTools CSP violations):
+        // this broke Public Library book covers (gutenberg.org) and, likely
+        // longer-standing, Reels' YouTube thumbnails (img.youtube.com).
+        'img-src': ["'self'", 'data:', 'https://www.gutenberg.org', 'https://img.youtube.com'],
       },
     } : false,
     crossOriginEmbedderPolicy: false,

@@ -13,10 +13,10 @@ import './observability';
 import './pwa/InstallPromptBanner.css';
 import { BrowserRouter } from 'react-router-dom';
 import { InstallPromptBanner } from './pwa/InstallPromptBanner';
-import { registerPWA } from './pwa/registerPWA';
 
-// Service worker — no-op in dev (devOptions.enabled=false in vite.config).
-registerPWA();
+// Service worker registration is now handled by vite-plugin-pwa's own
+// build-injected script (injectRegister: 'script' in vite.config.ts) — no
+// app-code call needed, and no-op in dev either way (devOptions.enabled=false).
 
 // Wait for the active language bundle to load before first render so the
 // user never sees a flash of English when a lazy language (fr, de, …) was

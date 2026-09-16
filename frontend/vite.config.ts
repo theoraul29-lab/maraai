@@ -8,8 +8,20 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'prompt',
-      injectRegister: null, // we register manually so we can surface the update prompt in the UI
+      // 'prompt' + manual registration (the previous setup) required an
+      // app-code `import('virtual:pwa-register')` — CSP's script-src 'self'
+      // correctly rejects that as an unfetchable URL at runtime, so
+      // registration silently never succeeded in production and the update
+      // prompt it was meant to drive never fired for anyone. 'script' makes
+      // vite-plugin-pwa emit a real, same-origin <script> at build time
+      // instead (no virtual-module import from app code at all — passes
+      // CSP, and never touches Vite's dev dependency scanner either, since
+      // devOptions.enabled is false and this only affects the prod build).
+      // 'autoUpdate' means the new SW just takes over on next load — no
+      // click-through prompt to build/maintain, which is fine since the
+      // prompt this replaces never actually worked.
+      registerType: 'autoUpdate',
+      injectRegister: 'script',
       includeAssets: [
         'favicon.ico',
         'offline.html',

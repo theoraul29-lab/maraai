@@ -282,6 +282,11 @@
     "titleRequired": "Title is required.",
     "videoRequired": "Attach a video file or paste a URL."
   },
+  "preview": {
+    "banner": "Mod previzualizare — explorează MaraAI gratuit.",
+    "remaining": "Timp rămas",
+    "cta": "Creează cont gratuit"
+  },
   "writers": {
     "title": "HUB SCRIITORI",
     "close": "Închide Hub Scriitori",
