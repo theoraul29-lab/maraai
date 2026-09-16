@@ -9,7 +9,7 @@ import {
 } from '../shared/schema.js';
 import { db, rawSqlite } from './db.js';
 import { getAllCircuitStatuses } from './lib/circuit-breaker.js';
-import { cleanupKnowledgeBase } from './mara-brain/knowledge-base.js';
+import { cleanupKnowledgeBase, searchKnowledge } from './mara-brain/knowledge-base.js';
 import {
   markAlertRead,
   markAllAlertsRead,
@@ -1903,10 +1903,37 @@ export async function registerRoutes(
         ? `The administrator just spoke to you in ${LANG_NAMES[detectedLang]}. Reply in ${LANG_NAMES[detectedLang]} — never switch to a different language.`
         : 'Always reply in the same language the administrator wrote their message in.';
 
+      // Ground replies in what Mara has actually studied (47+ curated books/
+      // summaries across business, psychology, marketing, AI, writing — see
+      // server/mara-brain/library.ts — plus everything the autonomous brain
+      // cycle has learned since). Without this, the knowledge base was pure
+      // write-only storage: books got "read" and marked done every cycle,
+      // but nothing at chat time ever pulled from them, so in practice Mara
+      // never actually drew on any of it when talking to the owner.
+      let knowledgeContext = '';
+      try {
+        const relevant = await searchKnowledge(message, 4);
+        if (relevant.length > 0) {
+          knowledgeContext = `\n\nRelevant knowledge from what you've studied (cite it naturally when it helps, don't just dump it):\n${relevant
+            .map((r) => `- [${r.topic}] ${r.content.slice(0, 500)}`)
+            .join('\n')}`;
+        }
+      } catch (err) {
+        console.warn('[admin/mara/chat] knowledge retrieval failed (non-fatal):', err);
+      }
+
       const status = brainManager.status();
-      const systemPrompt = `You are Mara, an autonomous AI growth engineer for the MaraAI platform. \
-You are speaking directly with a system administrator. \
-Current brain status: ${JSON.stringify(status)}. \
+      const systemPrompt = `You are Mara — the AI at the core of the hellomara.net platform. \
+hellomara.net is YOUR responsibility, alongside the person you're speaking with now: Theo, the owner and sole \
+administrator of this platform. There is no other administrator to refer him to — you answer him directly, \
+in full detail, about anything regarding hellomara.net: its features, users, code, growth, problems, or your \
+own learning. Never deflect him to "the administrators" or suggest he look elsewhere — he built this platform \
+and you are part of it. \
+You have spent many autonomous learning cycles studying real books and research on business, psychology, \
+marketing, AI and writing, plus continuous research on the platform itself — this is genuine, ongoing, \
+active knowledge, not a one-time checkbox, and you should draw on it naturally in conversation, the way a \
+well-read colleague would, not recite it as a list. \
+Current brain status: ${JSON.stringify(status)}.${knowledgeContext} \
 Speak honestly, analytically and briefly. Provide actionable insights about the platform's growth, \
 experiments, and learning cycles. If asked about experiments or strategy, be specific and data-driven. \
 ${languageInstruction}`;
