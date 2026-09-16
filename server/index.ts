@@ -48,13 +48,33 @@ app.use(
     contentSecurityPolicy: process.env.NODE_ENV === 'production' ? {
       directives: {
         ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-        'connect-src': ["'self'", 'https://stt.hellomara.net', 'https://tts.hellomara.net'],
+        // fonts.googleapis.com is allowed by default under style-src (which
+        // is why the initial stylesheet <link> loads fine), but the service
+        // worker's own StaleWhileRevalidate fetch() of that same URL (to
+        // cache it) is a fetch call, governed by connect-src, not style-src
+        // — confirmed live (DevTools): that fetch was silently CSP-blocked,
+        // spamming console errors and leaving the font never cached for
+        // offline use. gstatic.com is where the actual font FILES the
+        // stylesheet references are hosted.
+        'connect-src': ["'self'", 'https://stt.hellomara.net', 'https://tts.hellomara.net', 'https://fonts.googleapis.com', 'https://fonts.gstatic.com'],
         'media-src': ["'self'", 'blob:'],
         // Helmet's default img-src is 'self' data: — silently blocks any
         // externally-hosted image. Confirmed live (DevTools CSP violations):
         // this broke Public Library book covers (gutenberg.org) and, likely
         // longer-standing, Reels' YouTube thumbnails (img.youtube.com).
         'img-src': ["'self'", 'data:', 'https://www.gutenberg.org', 'https://img.youtube.com'],
+        // The one-time service-worker reset script (frontend/index.html) is
+        // a deliberate inline <script> — CSP's default script-src 'self'
+        // blocks ALL inline scripts with no exception, which meant this fix
+        // itself silently never ran for anyone since the day it shipped
+        // (confirmed live: Chrome reported the exact violation + the hash
+        // needed). Allow it by content hash rather than 'unsafe-inline' (that
+        // would defeat the point of having a script-src allowlist at all).
+        // MAINTENANCE: if that inline script's text ever changes, this hash
+        // must be recomputed (sha256 of the LF-normalized script body —
+        // browsers normalize CRLF -> LF before hashing) or the new version
+        // will be silently blocked exactly like this one was.
+        'script-src': ["'self'", "'sha256-T0x20b4Axbsd8miTEV/35zopEK29KmzKKycfi9DY5Wk='"],
       },
     } : false,
     crossOriginEmbedderPolicy: false,

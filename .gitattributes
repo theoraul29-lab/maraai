@@ -5,3 +5,8 @@
 # Docker image on rebuild.
 *.sh text eol=lf
 Dockerfile* text eol=lf
+# index.html carries an inline <script> allowed via a CSP sha256 hash
+# (server/index.ts) — browsers normalize CRLF -> LF before hashing either
+# way, so this doesn't change the hash, but keeping the source LF avoids the
+# same confusion when recomputing it by hand after a future edit.
+frontend/index.html text eol=lf
