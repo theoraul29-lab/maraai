@@ -506,9 +506,9 @@
 .mcc-nexus-input-row input { flex: 1; min-width: 0; border: 1px solid var(--mcc-border); border-radius: 8px; background: rgba(0, 0, 0, .25); color: var(--mcc-text); padding: 9px 11px; font: inherit; }
 .mcc-nexus-input-row button[type="submit"] { border: 1px solid var(--mcc-border-strong); border-radius: 8px; background: rgba(79, 215, 232, .08); color: var(--mcc-cyan); padding: 9px 14px; cursor: pointer; font: inherit; }
 .mcc-nexus-input-row button:disabled { opacity: .5; cursor: not-allowed; }
-.mcc-nexus-status { font-family: var(--mcc-mono); font-size: 10px; letter-spacing: .05em; text-transform: uppercase; color: var(--mcc-text-faint); text-align: right; flex: none; }
+.mcc-nexus-status { font-family: var(--mcc-mono); font-size: 10px; letter-spacing: .05em; text-transform: uppercase; color: var(--mcc-text-faint); text-align: right; flex: none; margin-left: auto; }
 
-.mcc-nexus-footer-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex: none; }
+.mcc-nexus-footer-row { display: flex; align-items: center; gap: 10px; flex: none; }
 .mcc-voice-picker { display: flex; gap: 4px; }
 .mcc-voice-picker-btn {
   font-family: var(--mcc-mono);
