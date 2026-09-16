@@ -16,6 +16,12 @@ const SUPPORTED_LANGS = new Set(['ro', 'en', 'de']);
 // would otherwise happily cache an unbounded blob into SQLite.
 const MAX_CONTENT_BYTES = 6_000_000;
 const FETCH_TIMEOUT_MS = 20_000;
+// The actual book text (vs. Gutendex's small JSON metadata) is served
+// straight from Gutenberg's own mirrors, which are noticeably slower and
+// more variable — confirmed in production, a request that easily fits
+// FETCH_TIMEOUT_MS for metadata/search timed out twice fetching one book's
+// text. Give that specific request more room.
+const TEXT_FETCH_TIMEOUT_MS = 40_000;
 // Gutendex/Gutenberg 403s requests with no User-Agent (or a generic one) —
 // confirmed in production: identical requests worked from a local machine
 // but were rejected from Railway's outbound IP until this header was added.
@@ -133,7 +139,7 @@ async function fetchAndCacheBook(id: number): Promise<CachedBook> {
   const contentUrl = plainUrl ?? htmlUrl;
   if (!contentUrl) throw new Error('No readable text format is available for this book');
 
-  const textResp = await fetch(contentUrl, { headers: FETCH_HEADERS, signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+  const textResp = await fetch(contentUrl, { headers: FETCH_HEADERS, signal: AbortSignal.timeout(TEXT_FETCH_TIMEOUT_MS) });
   if (!textResp.ok) throw new Error(`Failed to download book text (${textResp.status})`);
   const buf = await textResp.arrayBuffer();
   if (buf.byteLength > MAX_CONTENT_BYTES) throw new Error('This book exceeds the size limit for in-platform reading');
