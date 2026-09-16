@@ -49,6 +49,19 @@ function getUserId(req: Request): string | null {
   return (req as any).user?.uid ?? null;
 }
 
+// Creator status (revenue share, payouts, analytics) requires BOTH a VIP
+// subscription (the `creator.*` feature keys, checked below) AND having
+// actually reached an audience — paying €20/month alone was previously
+// sufficient on its own, with no audience check anywhere, which let anyone
+// request payouts the moment they subscribed. 1000 followers is the
+// platform's real "you're a creator now" threshold.
+const MIN_CREATOR_FOLLOWERS = 1000;
+
+async function isEligibleCreator(userId: string): Promise<boolean> {
+  const followers = await deps.storage.getFollowerCount(userId);
+  return followers >= MIN_CREATOR_FOLLOWERS;
+}
+
 function isAdmin(userId: string | null): boolean {
   if (!userId) return false;
   const adminIds = (process.env.ADMIN_USER_IDS || '')
@@ -77,6 +90,20 @@ function gate(featureKey: FeatureKey, handler: (req: Request, res: Response, use
         error: 'feature_required',
         code: 'feature_required',
         requiredFeature: featureKey,
+      });
+      return;
+    }
+    // VIP unlocks the *capability*; actually using it still requires having
+    // reached a real audience. Checked separately from hasFeature() so the
+    // error response can tell the difference (upgrade to VIP vs grow your
+    // following) instead of a single generic "feature_required".
+    if (featureKey.startsWith('creator.') && !(await isEligibleCreator(userId))) {
+      const followers = await deps.storage.getFollowerCount(userId);
+      res.status(403).json({
+        error: 'creator_followers_required',
+        code: 'creator_followers_required',
+        requiredFollowers: MIN_CREATOR_FOLLOWERS,
+        currentFollowers: followers,
       });
       return;
     }

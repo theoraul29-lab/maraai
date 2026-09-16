@@ -15,7 +15,6 @@ export interface UserProfileData {
   followers: number;
   following: number;
   posts: number;
-  earnings: number;
   isFollowed: boolean;
   isBlockedByMe: boolean;
   isBlockingMe: boolean;
@@ -95,7 +94,6 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
         followers: payload.followerCount,
         following: payload.followingCount,
         posts: payload.postCount,
-        earnings: 0,
         isFollowed: payload.isFollowing,
         isBlockedByMe: payload.isBlockedByMe,
         isBlockingMe: payload.isBlockingMe,
@@ -474,11 +472,6 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
             <div className="stat-icon">🔗</div>
             <div className="stat-value">{profile.following}</div>
             <div className="stat-label">{t('userProfile.following_count')}</div>
-          </div>
-          <div className="stat-card earnings">
-            <div className="stat-icon">💰</div>
-            <div className="stat-value">${profile.earnings.toFixed(0)}</div>
-            <div className="stat-label">{t('userProfile.earnings')}</div>
           </div>
         </div>
 
