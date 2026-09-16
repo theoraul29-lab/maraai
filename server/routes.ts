@@ -1641,6 +1641,13 @@ export async function registerRoutes(
         let meta: Record<string, unknown> = {};
         try { meta = JSON.parse(r.metadata || '{}'); } catch { /* leave empty */ }
         const isAutoApply = meta.autoApply === true;
+        // Confirmed live: some rows have a created_at that doesn't convert
+        // to a valid Date (missing/non-numeric) — new Date(...).toISOString()
+        // throws RangeError on those, which crashed this whole endpoint (500
+        // on every poll, not just the one bad row). One bad row must not
+        // take down the admin's entire activity view.
+        const createdAtDate = new Date(Number(r.created_at) * 1000);
+        const createdAt = Number.isNaN(createdAtDate.getTime()) ? null : createdAtDate.toISOString();
         return {
           id: r.id,
           topic: r.topic,
@@ -1649,7 +1656,7 @@ export async function registerRoutes(
           kind: isAutoApply ? 'auto_apply' : 'insight',
           outcome: isAutoApply && typeof meta.outcome === 'string' ? meta.outcome : null,
           planId: isAutoApply && typeof meta.planId === 'number' ? meta.planId : null,
-          createdAt: new Date(r.created_at * 1000).toISOString(),
+          createdAt,
         };
       });
       res.json({ entries });

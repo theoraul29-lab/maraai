@@ -735,7 +735,7 @@ export default function MaraControlCenter() {
                   ) : (
                     <span className="mcc-activity-outcome mcc-activity-outcome--insight">Insight</span>
                   )}
-                  <time>{new Date(entry.createdAt).toLocaleString()}</time>
+                  <time>{entry.createdAt ? new Date(entry.createdAt).toLocaleString() : '—'}</time>
                 </div>
                 <p>{entry.content}</p>
               </div>

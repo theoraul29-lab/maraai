@@ -238,5 +238,5 @@ export interface MaraActivityEntry {
   kind: 'insight' | 'auto_apply';
   outcome: string | null;
   planId: number | null;
-  createdAt: string;
+  createdAt: string | null;
 }
