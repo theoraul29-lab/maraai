@@ -32,16 +32,24 @@ const app = express();
 // Helmet sets secure HTTP response headers. contentSecurityPolicy is disabled
 // in development because Vite's HMR injects inline scripts that would be blocked
 // by a strict CSP. In production, Helmet's own defaults apply except for
-// connect-src: the Nexus Core voice feature fetches audio-transcription
-// results directly from the owner's laptop (stt.hellomara.net, reachable
-// only via Cloudflare Tunnel + a bearer token) from the browser/Electron
-// renderer, which default-src 'self' would otherwise block.
+// connect-src: the Nexus Core voice feature fetches audio directly from the
+// owner's laptop — both speech-to-text (stt.hellomara.net) and, since this
+// replaced the robotic browser window.speechSynthesis voice, text-to-speech
+// (tts.hellomara.net, server/stt/tts_server.py, edge-tts neural voices) —
+// each reachable only via Cloudflare Tunnel + its own bearer token, from the
+// browser/Electron renderer, which default-src 'self' would otherwise block.
+// media-src explicitly allows blob: so the spoken-reply <audio> element
+// (built from a Blob returned by the tts.hellomara.net fetch above) can
+// actually play — without it, media-src falls back to default-src 'self',
+// which most browsers treat as covering same-origin-created blob: URLs, but
+// this is made explicit rather than relying on that fallback nuance.
 app.use(
   helmet({
     contentSecurityPolicy: process.env.NODE_ENV === 'production' ? {
       directives: {
         ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-        'connect-src': ["'self'", 'https://stt.hellomara.net'],
+        'connect-src': ["'self'", 'https://stt.hellomara.net', 'https://tts.hellomara.net'],
+        'media-src': ["'self'", 'blob:'],
       },
     } : false,
     crossOriginEmbedderPolicy: false,

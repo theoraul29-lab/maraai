@@ -1915,6 +1915,15 @@ experiments, and learning cycles. If asked about experiments or strategy, be spe
     res.json({ configured: true, url: process.env.MARA_STT_URL || 'https://stt.hellomara.net', token });
   });
 
+  // Same pattern as stt-config above, for the local TTS service
+  // (server/stt/tts_server.py, edge-tts neural voices) that replaced the
+  // robotic browser window.speechSynthesis voice in the Control Center.
+  app.get('/api/admin/mara/tts-config', requireAdmin, (_req: any, res: any) => {
+    const token = process.env.MARA_TTS_TOKEN;
+    if (!token) return res.json({ configured: false });
+    res.json({ configured: true, url: process.env.MARA_TTS_URL || 'https://tts.hellomara.net', token });
+  });
+
   // ─── ADMIN DASHBOARD ────────────────────────────────────────────────────────
   // Helpers — each query is wrapped so a missing table returns a safe default.
   const sqlGet = <T>(q: string): T | null => { try { return rawSqlite.prepare(q).get() as T; } catch { return null; } };

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export interface MaraMessage {
   role: 'user' | 'mara';
@@ -22,6 +23,7 @@ type RecognitionConstructor = new () => Recognition;
 type VoiceWindow = Window & { SpeechRecognition?: RecognitionConstructor; webkitSpeechRecognition?: RecognitionConstructor };
 
 type SttConfig = { url: string; token: string };
+type TtsConfig = { url: string; token: string };
 
 function chooseVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
   const preferred = voices.find((voice) => /female|samantha|zira|aria|susan|google us english/i.test(voice.name));
@@ -44,6 +46,17 @@ function chooseVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | nul
  * actually work in the desktop app. It also runs the same way in a normal
  * browser tab, so behavior stays identical everywhere. Web Speech is kept
  * only as a fallback for when the laptop/STT service is unreachable.
+ *
+ * Voice output mirrors the same pattern in reverse: it prefers Mara's own
+ * local TTS service (server/stt/tts_server.py, edge-tts neural voices,
+ * reached the same way — direct Cloudflare Tunnel fetch, bearer token from
+ * an admin-gated config endpoint) over the browser's native
+ * window.speechSynthesis, which is what made Mara sound robotic in the
+ * first place (OS-level SAPI voices, not neural). The local service
+ * auto-selects a native neural voice per language (RO/EN/DE) from the
+ * reply text itself. window.speechSynthesis is kept only as a fallback for
+ * when the laptop/TTS service is unreachable — Mara should never go silent
+ * just because the local service is down.
  */
 export function useMaraCore() {
   const [messages, setMessages] = useState<MaraMessage[]>([]);
@@ -57,7 +70,10 @@ export function useMaraCore() {
   const recognitionRef = useRef<Recognition | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const sttConfigRef = useRef<SttConfig | null>(null);
+  const ttsConfigRef = useRef<TtsConfig | null>(null);
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
   const sendingRef = useRef(false);
+  const { i18n } = useTranslation();
 
   useEffect(() => {
     // First getVoices() call is often [] and just triggers async loading —
@@ -65,16 +81,68 @@ export function useMaraCore() {
     if ('speechSynthesis' in window) window.speechSynthesis.getVoices();
   }, []);
 
-  const speak = useCallback((text: string) => {
+  // Last-resort fallback: the browser's native OS voice (SAPI/etc.) — this
+  // is the robotic voice the local edge-tts service exists to replace. Kept
+  // only for when the laptop/TTS service is unreachable, so Mara never goes
+  // fully silent.
+  const speakWithBrowserVoice = useCallback((text: string) => {
     if (!('speechSynthesis' in window)) return;
     const utterance = new SpeechSynthesisUtterance(text);
     const voice = chooseVoice(window.speechSynthesis.getVoices());
     if (voice) utterance.voice = voice;
     utterance.onstart = () => setSpeaking(true);
     utterance.onend = () => setSpeaking(false);
-    window.speechSynthesis.cancel();
     window.speechSynthesis.speak(utterance);
   }, []);
+
+  const speak = useCallback((text: string) => {
+    // Stop whatever's currently playing (either path) before starting the
+    // next reply — mirrors the old unconditional speechSynthesis.cancel().
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current = null;
+    }
+
+    const ttsConfig = ttsConfigRef.current;
+    if (!ttsConfig) {
+      speakWithBrowserVoice(text);
+      return;
+    }
+
+    void (async () => {
+      try {
+        // credentials must be explicit 'omit' — same cross-origin reasoning
+        // as the STT fetch below (frontend/src/csrf.ts's global fetch
+        // wrapper defaults every POST to credentials:'include', which this
+        // different origin's CORS response doesn't allow).
+        const res = await fetch(`${ttsConfig.url}/synthesize`, {
+          method: 'POST',
+          credentials: 'omit',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ttsConfig.token}` },
+          body: JSON.stringify({ text, lang: i18n.language }),
+        });
+        if (!res.ok) throw new Error(`tts ${res.status}`);
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        currentAudioRef.current = audio;
+        audio.onplay = () => setSpeaking(true);
+        const cleanup = () => {
+          setSpeaking(false);
+          URL.revokeObjectURL(url);
+          if (currentAudioRef.current === audio) currentAudioRef.current = null;
+        };
+        audio.onended = cleanup;
+        audio.onerror = cleanup;
+        await audio.play();
+      } catch {
+        // Local TTS unreachable or the request/playback failed — fall back
+        // to the browser voice rather than leaving Mara silent.
+        speakWithBrowserVoice(text);
+      }
+    })();
+  }, [i18n.language, speakWithBrowserVoice]);
 
   const sendMessage = useCallback(async (text: string) => {
     const trimmed = text.trim();
@@ -121,6 +189,24 @@ export function useMaraCore() {
         setVoiceSupported(true);
       } catch {
         // Local STT unreachable (laptop off, tunnel down) — Web Speech fallback below still applies.
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Same idea as the STT config fetch above, for the local TTS service —
+  // fetched once from an admin-session-gated endpoint so the bearer token
+  // never ends up as a literal in the shipped frontend bundle.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/admin/mara/tts-config', { credentials: 'include' });
+        const data = await res.json() as { configured?: boolean; url?: string; token?: string };
+        if (cancelled || !data.configured || !data.url || !data.token) return;
+        ttsConfigRef.current = { url: data.url, token: data.token };
+      } catch {
+        // Local TTS unreachable (laptop off, tunnel down) — browser voice fallback in speak() still applies.
       }
     })();
     return () => { cancelled = true; };
