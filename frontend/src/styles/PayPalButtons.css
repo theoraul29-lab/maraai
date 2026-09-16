@@ -1,0 +1,42 @@
+/*
+ * Shared styling for every PayPal SDK button in the app
+ * (PayPalProgramButton, PayPalMultiProgramButton, PayPalArticleButton).
+ *
+ * Previously these classes only existed in Missions.css, so any button
+ * rendered on a page that doesn't load that stylesheet (confirmed: the
+ * Pricing page's ProgramPicker, and now Writers Hub) fell back to bare
+ * browser defaults — imported directly by each button component instead,
+ * so the styling travels with the component regardless of which page uses
+ * it, rather than depending on the right page-level CSS happening to
+ * define the same class names.
+ */
+.paypal-btn-wrap { min-width: 200px; }
+.paypal-btn-loading {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.4);
+  text-align: center;
+  padding: 8px 0;
+}
+.paypal-btn-error {
+  font-size: 0.78rem;
+  color: #f87171;
+  margin: 4px 0 0;
+}
+.paypal-fallback-btn {
+  background: #0070ba;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.2s;
+}
+.paypal-fallback-btn:hover:not(:disabled) { background: #005a9e; }
+.paypal-fallback-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+@media (max-width: 480px) {
+  .paypal-btn-wrap, .paypal-fallback-btn { width: 100%; }
+}

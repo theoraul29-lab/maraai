@@ -560,6 +560,15 @@ export async function registerRoutes(
   app.get('/api/writers/library', writersModule.listLibrary);
   app.get('/api/writers/mine', requireAuth, writersModule.listMyPages);
   app.get('/api/writers/purchases', requireAuth, writersModule.listMyPurchases);
+  // Registered before the /:idOrSlug and /:id catch-alls below (same segment
+  // count — Express tries routes in registration order, so these single-
+  // segment paths must come first or getArticle/updateArticle would swallow
+  // them as an article id/slug lookup).
+  app.get('/api/writers/payout-email', requireAuth, writersModule.getPayoutEmail);
+  app.patch('/api/writers/payout-email', requireAuth, writersModule.setPayoutEmail);
+  // PayPal return_url for a captured article/book purchase — see
+  // purchaseArticle/captureArticlePurchase in server/modules/writers.ts.
+  app.get('/api/writers/purchase/capture', writersModule.captureArticlePurchase);
   app.post('/api/writers', requireAuth, writersModule.publishArticle);
   app.post('/api/writers/publish', requireAuth, writersModule.publishArticle);
   app.get('/api/writers/:idOrSlug', writersModule.getArticle);

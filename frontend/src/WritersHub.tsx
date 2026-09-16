@@ -15,12 +15,14 @@
  *  - Drafts-urile locale sunt păstrate — HTML în loc de plaintext.
  */
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import DOMPurify from 'dompurify';
 import { useAuth } from './contexts/AuthContext';
 import { RichEditor, sanitizeRichHtml } from './components/RichEditor';
 import ShareButton from './components/ShareButton';
+import PayPalArticleButton from './components/PayPalArticleButton';
 import './styles/WritersHub.css';
 
 const API_URL = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:5000');
@@ -125,6 +127,7 @@ function buildExcerpt(html: string, max = 240): string {
 export const WritersHub: React.FC<Props> = ({ onClose }) => {
   const { user } = useAuth();
   const { t, i18n } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [view, setView] = useState<'landing' | 'write' | 'library' | 'drafts' | 'read'>('landing');
 
@@ -161,6 +164,8 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
   const [readingWork, setReadingWork] = useState<ApiArticle | null>(null);
   const [readingBody, setReadingBody] = useState<string>('');
   const [readingError, setReadingError] = useState<string | null>(null);
+  const [readingNeedsPurchase, setReadingNeedsPurchase] = useState(false);
+  const [purchaseNotice, setPurchaseNotice] = useState<string | null>(null);
 
   // Library search
   const [searchQuery, setSearchQuery] = useState('');
@@ -200,6 +205,42 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
   }, []);
 
   useEffect(() => { fetchLibrary(); }, [fetchLibrary]);
+
+  // Lands here after a real PayPal checkout (server/modules/writers.ts's
+  // captureArticlePurchase redirects to /writers-hub?payment=...&article=id)
+  // — the actual purchase + payout already happened server-side by this
+  // point, this just reflects the outcome in the UI and opens the article.
+  useEffect(() => {
+    const payment = searchParams.get('payment');
+    if (!payment) return;
+    const articleIdRaw = searchParams.get('article');
+    const next = new URLSearchParams(searchParams);
+    next.delete('payment');
+    next.delete('article');
+    setSearchParams(next, { replace: true });
+
+    if (payment === 'success') {
+      setPurchaseNotice(t('writers.purchaseSuccess', 'Purchase complete — enjoy!'));
+      const articleId = articleIdRaw ? Number.parseInt(articleIdRaw, 10) : NaN;
+      if (Number.isFinite(articleId)) {
+        axios.get(`${API_URL}/api/writers/${articleId}`, { withCredentials: true })
+          .then((res) => {
+            const article: ApiArticle = res.data?.article ?? res.data;
+            if (article) void openReading(article);
+          })
+          .catch(() => {});
+      }
+    } else {
+      setPurchaseNotice(t('writers.purchaseFailed', 'Payment did not complete. Try again.'));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!purchaseNotice) return;
+    const tmo = setTimeout(() => setPurchaseNotice(null), 4000);
+    return () => clearTimeout(tmo);
+  }, [purchaseNotice]);
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -318,6 +359,7 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
     setReadingWork(work);
     setReadingBody('');
     setReadingError(null);
+    setReadingNeedsPurchase(false);
     setView('read');
     try {
       const res = await axios.get(`${API_URL}/api/writers/${work.id}`, { withCredentials: true });
@@ -330,16 +372,22 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
     } catch (err) {
       const status = axios.isAxiosError(err) ? err.response?.status : 0;
       const reason = axios.isAxiosError(err) ? err.response?.data?.reason : undefined;
-      if (status === 403 && reason === 'vip_required') {
-        setReadingError(t('writers.errorVipRequired', 'VIP subscription required to read this article'));
-      } else if (status === 403 && reason === 'purchase_required') {
+      if (status === 403 && reason === 'purchase_required') {
         setReadingError(t('writers.errorPurchaseRequired', 'Purchase required to read this article'));
+        setReadingNeedsPurchase(true);
       } else if (status === 404) {
         setReadingError(t('writers.errorNotFound', 'Article not found'));
       } else {
         setReadingError(t('writers.errorGeneric', 'Could not load article'));
       }
     }
+  };
+
+  // Re-fetches after a successful purchase so the reader sees the real
+  // content immediately instead of needing a manual reload.
+  const handlePurchaseSuccess = async () => {
+    setPurchaseNotice(t('writers.purchaseSuccess', 'Purchase complete — enjoy!'));
+    if (readingWork) await openReading(readingWork);
   };
 
   const shareToYou = async (work: ApiArticle) => {
@@ -440,6 +488,7 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
   return (
     <div className="writers-container">
       {shareToast && <div className="writers-toast">{shareToast}</div>}
+      {purchaseNotice && <div className="writers-toast">{purchaseNotice}</div>}
 
       <div className="writers-header">
         <h1 className="writers-title">{t('writers.title')}</h1>
@@ -559,7 +608,6 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
                   className="writers-select"
                 >
                   <option value="public">{t('writers.visibility.public')}</option>
-                  <option value="vip">{t('writers.visibility.vip')}</option>
                   <option value="paid">{t('writers.visibility.paid')}</option>
                 </select>
               </label>
@@ -570,6 +618,7 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
                   <input
                     type="number"
                     min={0.5}
+                    max={500}
                     step={0.5}
                     value={priceEuros}
                     onChange={(e) => setPriceEuros(Number(e.target.value) || 0.5)}
@@ -578,6 +627,10 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
                 </label>
               )}
             </div>
+
+            {visibility === 'paid' && (
+              <PayoutEmailField />
+            )}
 
             <div className="writers-cover-uploader">
               {coverUrl && (
@@ -831,7 +884,17 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
             </div>
 
             {readingError ? (
-              <div className="writers-error">{readingError}</div>
+              <div className="writers-paywall">
+                <p className="writers-error">{readingError}</p>
+                {readingNeedsPurchase && (
+                  <PayPalArticleButton
+                    articleId={readingWork.id}
+                    priceCents={readingWork.priceCents ?? 0}
+                    onSuccess={handlePurchaseSuccess}
+                    onError={(msg) => setPurchaseNotice(msg)}
+                  />
+                )}
+              </div>
             ) : (
               <div
                 className="writers-rich-body"
@@ -870,6 +933,82 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
           </div>
         )}
       </div>
+    </div>
+  );
+};
+
+/**
+ * Where a writer sets the PayPal address their 90% share gets sent to —
+ * shown inline in the composer once "paid" visibility is picked. One-time
+ * setup, reused for every future sale (server/modules/writers.ts's
+ * captureArticlePurchase reads it at payout time, not at publish time, so
+ * saving it here doesn't require republishing anything already live).
+ */
+const PayoutEmailField: React.FC = () => {
+  const { t } = useTranslation();
+  const [email, setEmail] = useState('');
+  const [saved, setSaved] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    axios.get(`${API_URL}/api/writers/payout-email`, { withCredentials: true })
+      .then((res) => {
+        if (cancelled) return;
+        const value: string | null = res.data?.paypalPayoutEmail ?? null;
+        setSaved(value);
+        setEmail(value ?? '');
+      })
+      .catch(() => { /* leave the field empty — not fatal, they can still type one in */ })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await axios.patch(`${API_URL}/api/writers/payout-email`, { email }, { withCredentials: true });
+      setSaved(res.data?.paypalPayoutEmail ?? email);
+    } catch {
+      setError(t('writers.payoutEmailError', 'Could not save PayPal email — check it looks right and try again.'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) return null;
+
+  return (
+    <div className="writers-payout-field">
+      <span className="writers-payout-label">
+        💸 {t('writers.payoutEmailLabel', 'PayPal email for payouts — you keep 90% of every sale, sent automatically')}
+      </span>
+      <div className="writers-payout-row">
+        <input
+          type="email"
+          placeholder="you@example.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="writers-input"
+        />
+        <button
+          type="button"
+          className="writers-btn-secondary"
+          onClick={handleSave}
+          disabled={saving || !email.trim() || email === saved}
+        >
+          {saving ? t('writers.saving', 'Saving…') : t('writers.savePayoutEmail', 'Save')}
+        </button>
+      </div>
+      {saved ? (
+        <p className="writers-payout-saved">✓ {t('writers.payoutEmailSaved', 'Payouts go to {{email}}', { email: saved })}</p>
+      ) : (
+        <p className="writers-payout-warning">⚠️ {t('writers.payoutEmailMissing', "Set this before anyone buys your paid content, or your share can't be sent yet.")}</p>
+      )}
+      {error && <p className="writers-error">{error}</p>}
     </div>
   );
 };

@@ -1356,33 +1356,8 @@
   background: rgba(34,197,94,0.15);
   color: #4ade80;
 }
-/* PayPal button wrapper */
-.paypal-btn-wrap { min-width: 200px; }
-.paypal-btn-loading {
-  font-size: 0.8rem;
-  color: rgba(255,255,255,0.4);
-  text-align: center;
-  padding: 8px 0;
-}
-.paypal-btn-error {
-  font-size: 0.78rem;
-  color: #f87171;
-  margin: 4px 0 0;
-}
-.paypal-fallback-btn {
-  background: #0070ba;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 10px 16px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.2s;
-}
-.paypal-fallback-btn:hover:not(:disabled) { background: #005a9e; }
-.paypal-fallback-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+/* PayPal button styling moved to styles/PayPalButtons.css, imported
+   directly by each PayPal button component — see that file for why. */
 /* Payment notice banner */
 .payment-notice {
   border-radius: 12px;
@@ -1398,5 +1373,4 @@
 @media (max-width: 600px) {
   .billing-program-card { flex-wrap: wrap; gap: 12px; }
   .billing-program-action { width: 100%; }
-  .paypal-btn-wrap, .paypal-fallback-btn { width: 100%; }
 }

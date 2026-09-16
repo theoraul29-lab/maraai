@@ -40,6 +40,10 @@ import {
 } from '../billing/features.js';
 import { CREATOR_REVENUE_SHARE } from '../billing/plans.js';
 import { sanitizeArticleHtml, stripHtml } from '../lib/sanitize-content.js';
+import { db } from '../db.js';
+import { users } from '../../shared/models/auth.js';
+import { eq } from 'drizzle-orm';
+import { createPayPalOrder, capturePayPalOrder, sendPayPalPayout, isPayPalConfigured } from '../billing/paypal.js';
 
 let deps: {
   storage: IStorage;
@@ -283,7 +287,10 @@ export async function publishArticle(req: Request, res: Response) {
         // processor would reject anyway.
         return res.status(400).json({ error: 'priceCents must be >= 50 for paid articles' });
       }
-      priceCents = Math.min(raw, 100_00); // hard cap 100 EUR per article
+      // Hard cap 500 EUR — high enough for a real book (raised from 100 EUR
+      // now that Writers Hub covers book-length paid works, not just
+      // articles), still bounded against absurd/fat-finger prices.
+      priceCents = Math.min(raw, 500_00);
     }
 
     const penName = String(body.penName ?? '').trim().slice(0, 60) || 'Anonymous';
@@ -369,10 +376,10 @@ export async function updateArticle(req: Request, res: Response) {
       patch.visibility = vis;
     }
     if (typeof body.priceCents === 'number' && Number.isFinite(body.priceCents)) {
-      // Same floor as publish: 0.50 EUR minimum, 100 EUR cap. Preventing 0
-      // here is critical — a 0-cent paid article would paywall the content
+      // Same floor/cap as publish: 0.50 EUR minimum, 500 EUR cap. Preventing
+      // 0 here is critical — a 0-cent paid article would paywall the content
       // while letting anyone "purchase" it for free and unlock full access.
-      patch.priceCents = Math.min(Math.max(body.priceCents, 50), 100_00);
+      patch.priceCents = Math.min(Math.max(body.priceCents, 50), 500_00);
     }
     if (typeof body.published === 'boolean') {
       patch.published = body.published;
@@ -570,6 +577,13 @@ export async function getAccess(req: Request, res: Response) {
   }
 }
 
+/**
+ * POST /api/writers/:id/purchase — starts a real PayPal checkout for a paid
+ * article/book (mirrors server/billing/programs-api.ts's program-purchase
+ * flow: create an order here, capture it in captureArticlePurchase below).
+ * The purchase row + automatic 90/10 payout only ever get written from a
+ * real, PayPal-confirmed capture — never from this endpoint directly.
+ */
 export async function purchaseArticle(req: Request, res: Response) {
   try {
     const userId = getUserId(req);
@@ -595,64 +609,143 @@ export async function purchaseArticle(req: Request, res: Response) {
     const already = await deps.storage.hasPurchasedWriterPage(userId, id);
     if (already) return res.status(200).json({ purchased: true, alreadyOwned: true });
 
-    // Purchase recording is gated behind TWO separate flags to avoid any
-    // possibility of a user unlocking paid content without a real charge:
-    //
-    //   - PAYMENTS_ENABLED=true       → user has configured Stripe/PayPal
-    //     keys and a real webhook. In this case /purchase is a no-op here;
-    //     the purchase row is written by the provider webhook handler
-    //     (shipping in the Stripe/PayPal PR) *after* the charge clears.
-    //     We return 501 from this endpoint to make it very obvious the
-    //     charge path has not run yet.
-    //
-    //   - PAYMENTS_TEST_MODE=true     → explicit CI / local-dev override.
-    //     When this is set, the endpoint will directly record a purchase
-    //     row with the 70/30 split so we can smoke-test the paywall flow
-    //     without a real provider. NEVER set this in production.
-    //
-    // If neither flag is set, 501 as before.
-    const enabled = (process.env.PAYMENTS_ENABLED || '').toLowerCase() === 'true';
-    const testMode = (process.env.PAYMENTS_TEST_MODE || '').toLowerCase() === 'true';
-
-    if (!enabled && !testMode) {
-      return res.status(501).json({
-        error: 'Payments not enabled yet',
-        hint: 'Set PAYMENTS_ENABLED=true and configure Stripe/PayPal keys.',
-      });
-    }
-
-    if (enabled && !testMode) {
-      // Real payments live — the purchase row is written by the provider
-      // webhook, NOT by this endpoint. Returning 501 here prevents the
-      // "set the flag and unlock every paid article" foot-gun.
-      return res.status(501).json({
-        error: 'Direct purchase recording disabled under PAYMENTS_ENABLED',
-        hint: 'Complete checkout via Stripe/PayPal — the purchase row is written by the webhook after the charge clears.',
-      });
-    }
-
-    // PAYMENTS_TEST_MODE=true path: record directly with the 70/30 split.
-    // This is the only path in PR E that writes a purchase row and is
-    // explicitly documented as dev/CI-only.
     const amountCents = page.priceCents ?? 0;
-    const authorShare = Math.floor(amountCents * CREATOR_REVENUE_SHARE);
-    const platformShare = amountCents - authorShare;
+    if (amountCents <= 0) {
+      return res.status(400).json({ error: 'invalid_price' });
+    }
 
-    const purchase = await deps.storage.createWriterPurchase({
-      pageId: id,
+    if ((process.env.PAYMENTS_ENABLED || '').toLowerCase() !== 'true') {
+      return res.status(503).json({
+        error: 'payments_disabled',
+        message: 'Payments are not yet enabled on this deployment.',
+      });
+    }
+    if (!isPayPalConfigured()) {
+      return res.status(503).json({
+        error: 'paypal_not_configured',
+        message: 'Set PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET to enable purchases.',
+      });
+    }
+
+    const userRow = await db.select({ email: users.email }).from(users).where(eq(users.id, userId)).limit(1);
+    const { orderId, approvalUrl } = await createPayPalOrder({
       userId,
-      amountCents,
-      currency: page.currency,
-      provider: String(req.body?.provider ?? 'stub'),
-      providerRef: String(req.body?.providerRef ?? '') || null,
-      authorShareCents: authorShare,
-      platformShareCents: platformShare,
+      userEmail: userRow[0]?.email ?? null,
+      items: [{ id: `writer-article-${page.id}`, name: page.title, priceCents: amountCents }],
     });
 
-    res.status(201).json({ purchased: true, purchase, testMode: true });
+    res.json({ orderId, approvalUrl, provider: 'paypal' });
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'failed to purchase';
     res.status(500).json({ error: 'Failed to purchase', detail: msg });
+  }
+}
+
+/**
+ * GET /api/writers/purchase/capture — PayPal return_url after approval.
+ * token = the PayPal order id. On a confirmed capture: writes the
+ * writer_purchases row with the 90/10 split, then immediately fires the
+ * author's automatic payout — no admin step, no accumulating balance to
+ * request later. A failed *payout* (bad/unset PayPal email, PayPal outage)
+ * never undoes the purchase: the buyer already paid, so the sale stays
+ * valid and the payout status is just recorded as owed/failed for
+ * follow-up, exactly like any other real payment provider's edge case.
+ */
+export async function captureArticlePurchase(req: Request, res: Response) {
+  const orderId = typeof req.query.token === 'string' ? req.query.token : null;
+  if (!orderId) return res.redirect('/writers-hub?payment=invalid');
+  try {
+    const result = await capturePayPalOrder(orderId);
+    if (result.status !== 'COMPLETED' || !result.customId) {
+      return res.redirect('/writers-hub?payment=failed');
+    }
+    const [buyerId, itemId] = result.customId.split(':');
+    const match = itemId?.match(/^writer-article-(\d+)$/);
+    if (!buyerId || !match) return res.redirect('/writers-hub?payment=failed');
+
+    const pageId = Number.parseInt(match[1], 10);
+    const page = await deps.storage.getWriterPageById(pageId);
+    if (!page) return res.redirect('/writers-hub?payment=failed');
+
+    if (await deps.storage.hasPurchasedWriterPage(buyerId, pageId)) {
+      return res.redirect(`/writers-hub?payment=success&article=${pageId}`);
+    }
+
+    const amountCents = page.priceCents ?? 0;
+    const authorShareCents = Math.floor(amountCents * CREATOR_REVENUE_SHARE);
+    const platformShareCents = amountCents - authorShareCents;
+
+    const purchase = await deps.storage.createWriterPurchase({
+      pageId,
+      userId: buyerId,
+      amountCents,
+      currency: page.currency,
+      provider: 'paypal',
+      providerRef: orderId,
+      authorShareCents,
+      platformShareCents,
+    });
+
+    const author = await deps.storage.getUserById(page.userId);
+    if (!author?.paypalPayoutEmail) {
+      await deps.storage.updateWriterPurchasePayoutStatus(purchase.id, 'no_payout_email', null);
+      console.warn(`[writers] purchase ${purchase.id} completed but author ${page.userId} has no PayPal payout email set — payout owed, not sent.`);
+    } else {
+      const payout = await sendPayPalPayout({
+        recipientEmail: author.paypalPayoutEmail,
+        amountCents: authorShareCents,
+        currency: page.currency,
+        note: `Mara Writers Hub — "${page.title}"`,
+        senderItemId: `writer-payout-${purchase.id}`,
+      });
+      if (payout.ok) {
+        await deps.storage.updateWriterPurchasePayoutStatus(purchase.id, 'sent', payout.payoutBatchId);
+      } else {
+        console.error(`[writers] automatic payout failed for purchase ${purchase.id}:`, payout.error);
+        await deps.storage.updateWriterPurchasePayoutStatus(purchase.id, 'failed', null);
+      }
+    }
+
+    return res.redirect(`/writers-hub?payment=success&article=${pageId}`);
+  } catch (err) {
+    console.error('[writers] purchase capture failed:', err);
+    return res.redirect('/writers-hub?payment=failed');
+  }
+}
+
+/**
+ * PATCH /api/writers/payout-email — where a writer sets the PayPal address
+ * their 90% share gets sent to. One-time setup, reused for every future
+ * sale; changing it takes effect on the next completed sale.
+ */
+export async function setPayoutEmail(req: Request, res: Response) {
+  try {
+    const userId = getUserId(req);
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const email = String(req.body?.email ?? '').trim();
+    // Deliberately simple check — PayPal itself validates the address for
+    // real at payout time; this just catches obvious typos early.
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
+      return res.status(400).json({ error: 'invalid_email' });
+    }
+    const updated = await deps.storage.updateUserProfile(userId, { paypalPayoutEmail: email });
+    if (!updated) return res.status(404).json({ error: 'not_found' });
+    res.json({ paypalPayoutEmail: updated.paypalPayoutEmail });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'failed to save payout email';
+    res.status(500).json({ error: 'Failed to save payout email', detail: msg });
+  }
+}
+
+export async function getPayoutEmail(req: Request, res: Response) {
+  try {
+    const userId = getUserId(req);
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+    const user = await deps.storage.getUserById(userId);
+    res.json({ paypalPayoutEmail: user?.paypalPayoutEmail ?? null });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'failed to load payout email';
+    res.status(500).json({ error: 'Failed to load payout email', detail: msg });
   }
 }
 

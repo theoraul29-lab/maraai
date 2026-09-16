@@ -28,6 +28,10 @@ export const users = sqliteTable('users', {
   coverImageUrl: text('cover_image_url'),
   location: text('location'),
   website: text('website'),
+  // Where a Writers Hub sale's 90% author share gets paid out to — set once
+  // by the writer, reused for every future sale (see migrations/
+  // 0028_writer_payouts.sql, server/billing/paypal.ts's sendPayPalPayout).
+  paypalPayoutEmail: text('paypal_payout_email'),
   tier: text('tier').default('free').notNull(),
   trialStartTime: integer('trial_start_time'),
   trialEndsAt: integer('trial_ends_at'),

@@ -248,7 +248,7 @@ export const writerComments = pgTable('writer_comments', {
     .notNull(),
 });
 
-// === WRITER PURCHASES (70/30 revenue share per paid article) ===
+// === WRITER PURCHASES (90/10 revenue share per paid article/book) ===
 export const writerPurchases = pgTable('writer_purchases', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   pageId: integer('page_id').notNull(),
@@ -259,6 +259,14 @@ export const writerPurchases = pgTable('writer_purchases', {
   providerRef: text('provider_ref'),
   authorShareCents: integer('author_share_cents').notNull(),
   platformShareCents: integer('platform_share_cents').notNull(),
+  // Automatic payout of authorShareCents to the author's paypalPayoutEmail,
+  // fired right after this purchase completes (see server/modules/
+  // writers.ts's captureArticlePurchase) — no manual admin approval step.
+  // 'pending' until the payout attempt runs, then 'sent' | 'failed' |
+  // 'no_payout_email' (author hasn't set one yet — money stays owed, not
+  // lost; see payout_ref for the PayPal payout item id once sent).
+  payoutStatus: text('payout_status').default('pending').notNull(),
+  payoutRef: text('payout_ref'),
   createdAt: integer('created_at', { mode: 'timestamp' })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),

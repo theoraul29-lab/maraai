@@ -25,21 +25,31 @@ export interface PlanDefinition {
 
 // Programs are accessible to all users — the daily progression mechanic
 // (1 mission/day) is the natural pacing, not a paywall.
+//
+// Writers Hub is fully open too: writing, publishing (including setting a
+// price and selling) never required VIP as a deliberate choice — anyone
+// with an account can write, publish, and sell if they choose to.
+// writers.read_vip/writers.publish_vip are kept only so existing articles
+// published under the old VIP-exclusive-readership tier keep working
+// (nobody is newly offered that visibility — see WritersHub.tsx's
+// composer, which only presents public/paid now); they're just no longer
+// gated behind a paid plan.
 const FREE_FEATURES = [
   'chat.basic',
   'reels.watch',
   'writers.read_public',
+  'writers.read_vip',
+  'writers.publish_public',
+  'writers.publish_vip',
+  'writers.publish_paid',
   'programs.all',
 ] as const;
 
-// VIP unlocks all creation, monetization, and premium AI features.
+// VIP unlocks unlimited/premium AI and reels creation. Writers Hub access
+// (above) is the same for every plan.
 const VIP_FEATURES = [
   ...FREE_FEATURES,
   'chat.unlimited',
-  'writers.publish_public',
-  'writers.read_vip',
-  'writers.publish_vip',
-  'writers.publish_paid',
   'chat.custom_personality',
   'reels.upload',
   'reels.hd',
@@ -73,8 +83,13 @@ export const PLAN_CATALOGUE: readonly PlanDefinition[] = [
   },
 ] as const;
 
-/** Creator revenue share (creator keeps 70%, platform keeps 30%). */
-export const CREATOR_REVENUE_SHARE = 0.7;
+/**
+ * Writers Hub revenue share: the author keeps 90%, the platform keeps 10%.
+ * Only server/modules/writers.ts actually applies this today — it's not a
+ * platform-wide creator constant despite the generic name (reels
+ * monetization doesn't read it; see the module comment there).
+ */
+export const CREATOR_REVENUE_SHARE = 0.9;
 
 // ─── Program catalogue ────────────────────────────────────────────────────────
 

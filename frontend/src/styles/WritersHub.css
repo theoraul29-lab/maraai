@@ -1038,3 +1038,55 @@
   z-index: 10;
   border-radius: 0 2px 2px 0;
 }
+
+/* ===== PAID CONTENT: BUY BUTTON + PAYOUT SETTINGS ===== */
+.writers-paywall {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 24px;
+  background: rgba(139, 92, 246, 0.06);
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  border-radius: 12px;
+}
+
+.writers-payout-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  margin: -4px 0 4px;
+  background: rgba(139, 92, 246, 0.06);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: 10px;
+}
+
+.writers-payout-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e4d9ff;
+}
+
+.writers-payout-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.writers-payout-row .writers-input {
+  flex: 1;
+  min-width: 200px;
+}
+
+.writers-payout-saved {
+  font-size: 12.5px;
+  color: #6ee7a8;
+  margin: 0;
+}
+
+.writers-payout-warning {
+  font-size: 12.5px;
+  color: #fbbf24;
+  margin: 0;
+}

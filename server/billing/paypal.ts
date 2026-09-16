@@ -461,6 +461,64 @@ export async function capturePayPalOrder(
   return { status: json.status, customId };
 }
 
+/**
+ * Sends a single automatic payout via PayPal's Payouts API — the "90% to
+ * the author, right after the sale, no manual approval" path for Writers
+ * Hub (see server/modules/writers.ts's capturePurchase). Distinct from the
+ * one-time Orders API above: this *sends* money out rather than collecting
+ * it, to an email address rather than through a checkout flow.
+ *
+ * Never throws on a PayPal-side failure (bad/unconfirmed email, insufficient
+ * platform balance, etc.) — returns a tagged result instead, because a
+ * failed payout must never be treated the same as a failed sale: the buyer
+ * already paid successfully, so the purchase stays valid regardless: the
+ * caller records payout_status='failed' and the author is still owed the
+ * money (recoverable later), rather than the purchase itself unwinding.
+ */
+export async function sendPayPalPayout(params: {
+  recipientEmail: string;
+  amountCents: number;
+  currency: string;
+  note: string;
+  senderItemId: string;
+}): Promise<{ ok: true; payoutBatchId: string; payoutItemId: string | null } | { ok: false; error: string }> {
+  const amountStr = (params.amountCents / 100).toFixed(2);
+  try {
+    const res = await paypalFetch('/v1/payments/payouts', {
+      method: 'POST',
+      idempotencyKey: `paypal:payout:${params.senderItemId}`,
+      body: JSON.stringify({
+        sender_batch_header: {
+          sender_batch_id: params.senderItemId,
+          email_subject: 'You have a payout from Mara!',
+          email_message: 'Your share of a Writers Hub sale just landed in your PayPal account.',
+        },
+        items: [
+          {
+            recipient_type: 'EMAIL',
+            amount: { value: amountStr, currency: params.currency },
+            receiver: params.recipientEmail,
+            note: params.note,
+            sender_item_id: params.senderItemId,
+          },
+        ],
+      }),
+    });
+    if (!res.ok) {
+      return { ok: false, error: `PayPal payouts ${res.status}: ${await res.text()}` };
+    }
+    const json = (await res.json()) as {
+      batch_header?: { payout_batch_id?: string };
+      items?: Array<{ payout_item_id?: string }>;
+    };
+    const payoutBatchId = json.batch_header?.payout_batch_id;
+    if (!payoutBatchId) return { ok: false, error: 'PayPal payouts response missing payout_batch_id' };
+    return { ok: true, payoutBatchId, payoutItemId: json.items?.[0]?.payout_item_id ?? null };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
 export async function handlePayPalEvent(event: PayPalEvent): Promise<void> {
   if (!event.resource) return;
   const binding = parseCustomId(event.resource);

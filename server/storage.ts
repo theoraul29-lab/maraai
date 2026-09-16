@@ -212,6 +212,12 @@ export interface IStorage {
   hasPurchasedWriterPage(userId: string, pageId: number): Promise<boolean>;
   getWriterPurchasesByUser(userId: string): Promise<WriterPurchase[]>;
   getWriterPurchasesForPage(pageId: number): Promise<WriterPurchase[]>;
+  /** Records the outcome of the automatic post-sale PayPal payout (see server/modules/writers.ts). */
+  updateWriterPurchasePayoutStatus(
+    purchaseId: number,
+    status: 'sent' | 'failed' | 'no_payout_email',
+    payoutRef: string | null,
+  ): Promise<void>;
 
   // Creator Tools (PR G)
   /**
@@ -335,6 +341,7 @@ export interface IStorage {
       coverImageUrl?: string | null;
       location?: string | null;
       website?: string | null;
+      paypalPayoutEmail?: string | null;
     },
   ): Promise<User | null>;
 
@@ -1056,6 +1063,17 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
+  async updateWriterPurchasePayoutStatus(
+    purchaseId: number,
+    status: 'sent' | 'failed' | 'no_payout_email',
+    payoutRef: string | null,
+  ): Promise<void> {
+    await db
+      .update(writerPurchases)
+      .set({ payoutStatus: status, payoutRef })
+      .where(eq(writerPurchases.id, purchaseId));
+  }
+
   async hasPurchasedWriterPage(
     userId: string,
     pageId: number,
@@ -1718,6 +1736,7 @@ export class DatabaseStorage implements IStorage {
       coverImageUrl?: string | null;
       location?: string | null;
       website?: string | null;
+      paypalPayoutEmail?: string | null;
     },
   ): Promise<User | null> {
     const [updated] = await db

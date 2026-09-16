@@ -7,15 +7,21 @@ const API = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http:/
 const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID as string | undefined;
 
 interface Props {
-  programId: string;
-  programName: string;
+  articleId: number;
   priceCents: number;
-  onSuccess: (programId: string) => void;
+  onSuccess: () => void;
   onError?: (msg: string) => void;
   disabled?: boolean;
 }
 
-export default function PayPalProgramButton({ programId, programName: _programName, priceCents, onSuccess, onError, disabled }: Props) {
+/**
+ * Buys a single paid Writers Hub article/book. Same structure as
+ * PayPalProgramButton/PayPalMultiProgramButton (SDK-rendered button with a
+ * plain-redirect fallback) — posts to /api/writers/:id/purchase and lets
+ * PayPal redirect through /api/writers/purchase/capture, which is where the
+ * 90/10 split + automatic payout to the author actually happen.
+ */
+export default function PayPalArticleButton({ articleId, priceCents, onSuccess, onError, disabled }: Props) {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<'idle' | 'rendering' | 'ready' | 'paying' | 'error'>('idle');
@@ -33,16 +39,10 @@ export default function PayPalProgramButton({ programId, programName: _programNa
 
       createOrder: async () => {
         setStatus('paying');
-        // The global fetch wrapper in src/csrf.ts attaches the session-backed
-        // X-CSRF-Token (fetched from /api/auth/csrf) to every mutating request
-        // and retries once on rotation. Setting the header here — especially
-        // from a non-existent `csrf_token` cookie — would shadow that and send
-        // an empty token, so we leave it to the wrapper.
-        const res = await fetch(`${API}/api/billing/program/purchase`, {
+        const res = await fetch(`${API}/api/writers/${articleId}/purchase`, {
           method: 'POST',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ item: programId }),
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({ error: 'unknown' }));
@@ -53,13 +53,12 @@ export default function PayPalProgramButton({ programId, programName: _programNa
       },
 
       onApprove: async (data) => {
-        const res = await fetch(`${API}/api/billing/program/capture?token=${data.orderID}`, {
+        const res = await fetch(`${API}/api/writers/purchase/capture?token=${data.orderID}`, {
           credentials: 'include',
           redirect: 'manual',
         });
-        // Backend redirects — treat any 2xx or 3xx as success
         if (res.ok || res.status === 0 || res.type === 'opaqueredirect') {
-          onSuccess(programId);
+          onSuccess();
         } else {
           const msg = 'Capturare eșuată. Contactează suportul.';
           setErrMsg(msg);
@@ -82,15 +81,9 @@ export default function PayPalProgramButton({ programId, programName: _programNa
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sdkState]);
 
-  // Fallback: SDK not loaded → plain redirect button
   if (!PAYPAL_CLIENT_ID || sdkState === 'error') {
     return (
-      <FallbackButton
-        programId={programId}
-        priceCents={priceCents}
-        disabled={disabled}
-        onError={onError}
-      />
+      <FallbackButton articleId={articleId} priceCents={priceCents} disabled={disabled} onError={onError} />
     );
   }
 
@@ -104,25 +97,23 @@ export default function PayPalProgramButton({ programId, programName: _programNa
       )}
       <div
         ref={containerRef}
-        id={`paypal-btn-${programId}`}
+        id={`paypal-btn-article-${articleId}`}
         style={{ opacity: disabled ? 0.5 : 1, pointerEvents: disabled ? 'none' : 'auto' }}
       />
     </div>
   );
 }
 
-function FallbackButton({ programId, priceCents, disabled, onError }: Omit<Props, 'programName' | 'onSuccess'>) {
+function FallbackButton({ articleId, priceCents, disabled, onError }: Omit<Props, 'onSuccess'>) {
   const [loading, setLoading] = useState(false);
 
   const handleClick = async () => {
     setLoading(true);
     try {
-      // CSRF header is attached by the global fetch wrapper (src/csrf.ts).
-      const res = await fetch(`${API}/api/billing/program/purchase`, {
+      const res = await fetch(`${API}/api/writers/${articleId}/purchase`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ item: programId }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const { approvalUrl } = await res.json() as { approvalUrl: string };
