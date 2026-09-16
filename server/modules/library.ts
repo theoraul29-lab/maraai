@@ -92,6 +92,21 @@ export async function searchLibrary(req: any, res: any) {
   }
 }
 
+/**
+ * Gutendex's default ordering (no search/lang filter beyond languages) is by
+ * download_count descending — i.e. "popular first" — so page 1 IS the
+ * popular-books list. Used by the pre-cache job (server/mara-brain/
+ * library-precache.ts) to warm the cache before anyone asks for these books.
+ */
+export async function listPopularBookIds(lang: string, limit: number): Promise<number[]> {
+  const params = new URLSearchParams();
+  if (lang) params.set('languages', lang);
+  const resp = await fetch(`${GUTENDEX_BASE}?${params.toString()}`, { headers: FETCH_HEADERS, signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+  if (!resp.ok) throw new Error(`Gutendex returned ${resp.status}`);
+  const data = await resp.json() as { results: GutendexBook[] };
+  return data.results.slice(0, limit).map((b) => b.id);
+}
+
 function rowToCachedBook(row: Record<string, unknown>): CachedBook {
   return {
     id: Number(row.id),
@@ -107,7 +122,7 @@ function rowToCachedBook(row: Record<string, unknown>): CachedBook {
   };
 }
 
-function getCachedBook(id: number): CachedBook | null {
+export function getCachedBook(id: number): CachedBook | null {
   const row = rawSqlite.prepare('SELECT * FROM library_books_cache WHERE id = ?').get(id) as Record<string, unknown> | undefined;
   return row ? rowToCachedBook(row) : null;
 }
@@ -129,7 +144,7 @@ function stripHtmlToText(html: string): string {
   return text.replace(/\n{3,}/g, '\n\n').replace(/[ \t]{2,}/g, ' ').trim();
 }
 
-async function fetchAndCacheBook(id: number): Promise<CachedBook> {
+export async function fetchAndCacheBook(id: number): Promise<CachedBook> {
   const metaResp = await fetch(`${GUTENDEX_BASE}${id}/`, { headers: FETCH_HEADERS, signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
   if (!metaResp.ok) throw new Error(metaResp.status === 404 ? 'Book not found' : `Gutendex returned ${metaResp.status}`);
   const meta = await metaResp.json() as GutendexBook;
@@ -186,6 +201,21 @@ export async function readLibraryBook(req: any, res: any) {
       book = await fetchAndCacheBook(id);
       cached = false;
     }
+
+    // Reading itself needs no account (open to everyone) — but if the
+    // request IS authenticated and this book is in the user's library,
+    // hand back where they left off so the reader can jump straight there.
+    const userId = (req as any).user?.uid ?? null;
+    let resumePage: number | null = null;
+    let savedByUser = false;
+    if (userId) {
+      const saved = rawSqlite.prepare('SELECT last_page FROM user_library_books WHERE user_id = ? AND book_id = ?').get(userId, id) as { last_page: number } | undefined;
+      if (saved) {
+        savedByUser = true;
+        resumePage = saved.last_page;
+      }
+    }
+
     res.json({
       id: book.id,
       title: book.title,
@@ -196,10 +226,115 @@ export async function readLibraryBook(req: any, res: any) {
       content: book.content,
       wordCount: book.wordCount,
       servedFromCache: cached,
+      savedByUser,
+      resumePage,
     });
   } catch (err) {
     console.error(`[library] read failed for book ${id}:`, err);
     const message = err instanceof Error ? err.message : 'Failed to load this book';
     res.status(502).json({ error: message });
+  }
+}
+
+interface SavedLibraryRow {
+  book_id: number;
+  book_title: string;
+  book_authors: string;
+  book_cover_url: string | null;
+  last_page: number;
+  total_pages: number;
+  added_at: number;
+  updated_at: number;
+}
+
+/** "Add to My Library" — a bookmark that also starts reading-position tracking for this book. */
+export async function saveBookToLibrary(req: any, res: any) {
+  const userId = (req as any).user?.uid ?? null;
+  if (!userId) return res.status(401).json({ error: 'Sign in to save books to your library' });
+  const id = Number.parseInt(String(req.params.id), 10);
+  if (!Number.isFinite(id) || id <= 0) return res.status(400).json({ error: 'Invalid book id' });
+  const title = typeof req.body?.title === 'string' ? req.body.title.trim().slice(0, 500) : '';
+  if (!title) return res.status(400).json({ error: 'title is required' });
+  const authors = Array.isArray(req.body?.authors)
+    ? req.body.authors.filter((a: unknown): a is string => typeof a === 'string').slice(0, 20)
+    : [];
+  const coverUrl = typeof req.body?.coverUrl === 'string' ? req.body.coverUrl.slice(0, 1000) : null;
+
+  try {
+    rawSqlite.prepare(`
+      INSERT INTO user_library_books (user_id, book_id, book_title, book_authors, book_cover_url, added_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, unixepoch(), unixepoch())
+      ON CONFLICT(user_id, book_id) DO UPDATE SET
+        book_title = excluded.book_title, book_authors = excluded.book_authors, book_cover_url = excluded.book_cover_url
+    `).run(userId, id, title, JSON.stringify(authors), coverUrl);
+    res.json({ saved: true });
+  } catch (err) {
+    console.error('[library] save failed:', err);
+    res.status(500).json({ error: 'Failed to save this book' });
+  }
+}
+
+export async function removeBookFromLibrary(req: any, res: any) {
+  const userId = (req as any).user?.uid ?? null;
+  if (!userId) return res.status(401).json({ error: 'Sign in required' });
+  const id = Number.parseInt(String(req.params.id), 10);
+  if (!Number.isFinite(id) || id <= 0) return res.status(400).json({ error: 'Invalid book id' });
+  try {
+    rawSqlite.prepare('DELETE FROM user_library_books WHERE user_id = ? AND book_id = ?').run(userId, id);
+    res.json({ saved: false });
+  } catch (err) {
+    console.error('[library] remove failed:', err);
+    res.status(500).json({ error: 'Failed to remove this book' });
+  }
+}
+
+export async function listMyLibraryBooks(req: any, res: any) {
+  const userId = (req as any).user?.uid ?? null;
+  if (!userId) return res.status(401).json({ error: 'Sign in required' });
+  try {
+    const rows = rawSqlite
+      .prepare(`
+        SELECT book_id, book_title, book_authors, book_cover_url, last_page, total_pages, added_at, updated_at
+        FROM user_library_books WHERE user_id = ? ORDER BY updated_at DESC LIMIT 200
+      `)
+      .all(userId) as SavedLibraryRow[];
+    res.json({
+      books: rows.map((r) => ({
+        id: r.book_id,
+        title: r.book_title,
+        authors: (() => { try { return JSON.parse(r.book_authors || '[]'); } catch { return []; } })(),
+        coverUrl: r.book_cover_url,
+        lastPage: r.last_page,
+        totalPages: r.total_pages,
+        addedAt: new Date(r.added_at * 1000).toISOString(),
+        updatedAt: new Date(r.updated_at * 1000).toISOString(),
+      })),
+    });
+  } catch (err) {
+    console.error('[library] list mine failed:', err);
+    res.status(500).json({ error: 'Failed to load your library' });
+  }
+}
+
+/** Called as the reader turns pages — debounced client-side, silently a no-op if the book isn't saved. */
+export async function updateReadingProgress(req: any, res: any) {
+  const userId = (req as any).user?.uid ?? null;
+  if (!userId) return res.status(401).json({ error: 'Sign in required' });
+  const id = Number.parseInt(String(req.params.id), 10);
+  if (!Number.isFinite(id) || id <= 0) return res.status(400).json({ error: 'Invalid book id' });
+  const page = Number.parseInt(String(req.body?.page), 10);
+  if (!Number.isFinite(page) || page < 0) return res.status(400).json({ error: 'page must be a non-negative integer' });
+  const totalPagesRaw = Number.parseInt(String(req.body?.totalPages), 10);
+  const totalPages = Number.isFinite(totalPagesRaw) && totalPagesRaw >= 0 ? totalPagesRaw : 0;
+
+  try {
+    const result = rawSqlite
+      .prepare('UPDATE user_library_books SET last_page = ?, total_pages = ?, updated_at = unixepoch() WHERE user_id = ? AND book_id = ?')
+      .run(page, totalPages, userId, id);
+    if (result.changes === 0) return res.status(404).json({ error: 'Book is not in your library' });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[library] progress update failed:', err);
+    res.status(500).json({ error: 'Failed to save reading progress' });
   }
 }

@@ -23,6 +23,7 @@ import { useAuth } from './contexts/AuthContext';
 import { RichEditor, sanitizeRichHtml } from './components/RichEditor';
 import ShareButton from './components/ShareButton';
 import PayPalArticleButton from './components/PayPalArticleButton';
+import { copyToClipboard } from './lib/clipboard';
 import './styles/WritersHub.css';
 
 const API_URL = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:5000');
@@ -1054,6 +1055,19 @@ interface LibraryBookContent {
   coverUrl: string | null;
   content: string;
   wordCount: number;
+  savedByUser: boolean;
+  resumePage: number | null;
+}
+
+interface MyLibraryBook {
+  id: number;
+  title: string;
+  authors: string[];
+  coverUrl: string | null;
+  lastPage: number;
+  totalPages: number;
+  addedAt: string;
+  updatedAt: string;
 }
 
 const LIBRARY_LANGS = ['ro', 'en', 'de'] as const;
@@ -1061,6 +1075,13 @@ const LIBRARY_LANGS = ['ro', 'en', 'de'] as const;
 // target so a page never lands mid-thought as it would with a raw character
 // cut. Roughly a few printed pages per screen.
 const LIBRARY_PAGE_TARGET_WORDS = 2200;
+// The backend's own text-download timeout is 40s (Gutenberg's mirrors are
+// slow) — this must exceed that, or the frontend gives up and shows an
+// error while the backend is still legitimately working. Without ANY
+// timeout here (the original bug), a stalled connection left the reader
+// spinning forever with no way out except leaving the page.
+const LIBRARY_READ_TIMEOUT_MS = 45_000;
+const LIBRARY_SEARCH_TIMEOUT_MS = 15_000;
 
 function paginateBookContent(content: string): string[] {
   const paragraphs = content.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
@@ -1090,6 +1111,7 @@ function paginateBookContent(content: string): string[] {
  * no dependency on the editor/drafts/sales state above.
  */
 const PublicLibraryTab: React.FC = () => {
+  const { user } = useAuth();
   const { t, i18n } = useTranslation();
   const [query, setQuery] = useState('');
   const [langFilter, setLangFilter] = useState<'' | typeof LIBRARY_LANGS[number]>('');
@@ -1102,9 +1124,36 @@ const PublicLibraryTab: React.FC = () => {
 
   const [openBook, setOpenBook] = useState<LibraryBookContent | null>(null);
   const [openLoading, setOpenLoading] = useState(false);
+  const [openSlow, setOpenSlow] = useState(false);
   const [openError, setOpenError] = useState<string | null>(null);
+  const [openingId, setOpeningId] = useState<number | null>(null);
   const [bookPages, setBookPages] = useState<string[]>([]);
   const [pageIndex, setPageIndex] = useState(0);
+  const [pageTurning, setPageTurning] = useState(false);
+  const [copyDone, setCopyDone] = useState(false);
+  const [savingBook, setSavingBook] = useState(false);
+
+  const [myLibrary, setMyLibrary] = useState<MyLibraryBook[]>([]);
+  const [myLibraryLoading, setMyLibraryLoading] = useState(false);
+  const [showMyLibrary, setShowMyLibrary] = useState(false);
+
+  const fetchMyLibrary = useCallback(async () => {
+    if (!user) { setMyLibrary([]); return; }
+    setMyLibraryLoading(true);
+    try {
+      const res = await axios.get(`${API_URL}/api/library/mine`, { withCredentials: true, timeout: LIBRARY_SEARCH_TIMEOUT_MS });
+      setMyLibrary(Array.isArray(res.data?.books) ? res.data.books : []);
+    } catch {
+      // Silent — the "continue reading" strip and My Library tab just stay empty; not worth an error banner on the main view.
+    } finally {
+      setMyLibraryLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => { fetchMyLibrary(); }, [fetchMyLibrary]);
+
+  const savedIds = useMemo(() => new Set(myLibrary.map((b) => b.id)), [myLibrary]);
+  const continueBook = myLibrary.length > 0 ? myLibrary[0] : null; // server orders by updated_at desc — most recently read first
 
   const runSearch = useCallback(async (q: string, lang: string, p: number) => {
     setLoading(true);
@@ -1112,6 +1161,7 @@ const PublicLibraryTab: React.FC = () => {
     try {
       const res = await axios.get(`${API_URL}/api/library/search`, {
         params: { q: q || undefined, lang: lang || undefined, page: p },
+        timeout: LIBRARY_SEARCH_TIMEOUT_MS,
       });
       setResults(Array.isArray(res.data?.books) ? res.data.books : []);
       setCount(Number(res.data?.count ?? 0));
@@ -1136,18 +1186,28 @@ const PublicLibraryTab: React.FC = () => {
   };
 
   const openBookReader = async (id: number) => {
+    setShowMyLibrary(false);
+    setOpeningId(id);
     setOpenLoading(true);
+    setOpenSlow(false);
     setOpenError(null);
     setOpenBook(null);
+    // Most books open instantly (already cached) — this only shows once the
+    // wait has gone on long enough to plausibly be a first-time download,
+    // so it doesn't flash on every normal open.
+    const slowTimer = window.setTimeout(() => setOpenSlow(true), 3000);
     try {
-      const res = await axios.get(`${API_URL}/api/library/${id}/read`);
+      const res = await axios.get(`${API_URL}/api/library/${id}/read`, { withCredentials: true, timeout: LIBRARY_READ_TIMEOUT_MS });
       const data: LibraryBookContent = res.data;
+      const pages = paginateBookContent(data.content);
       setOpenBook(data);
-      setBookPages(paginateBookContent(data.content));
-      setPageIndex(0);
+      setBookPages(pages);
+      const resumeIndex = data.resumePage != null ? Math.min(Math.max(data.resumePage, 0), pages.length - 1) : 0;
+      setPageIndex(resumeIndex);
     } catch {
       setOpenError(t('writers.classicsOpeningError', "Couldn't open this book. Please try again."));
     } finally {
+      window.clearTimeout(slowTimer);
       setOpenLoading(false);
     }
   };
@@ -1157,7 +1217,98 @@ const PublicLibraryTab: React.FC = () => {
     setBookPages([]);
     setPageIndex(0);
     setOpenError(null);
+    setOpeningId(null);
+    fetchMyLibrary(); // reading position may have changed
   };
+
+  // Debounced auto-save of reading position — only for books already saved
+  // to "My Library" (that's what turns a page-turn into a bookmark).
+  const progressTimer = useRef<number | null>(null);
+  useEffect(() => {
+    if (!openBook?.savedByUser || bookPages.length === 0) return;
+    if (progressTimer.current) window.clearTimeout(progressTimer.current);
+    progressTimer.current = window.setTimeout(() => {
+      axios.patch(
+        `${API_URL}/api/library/${openBook.id}/progress`,
+        { page: pageIndex, totalPages: bookPages.length },
+        { withCredentials: true, timeout: LIBRARY_SEARCH_TIMEOUT_MS },
+      ).catch(() => { /* best-effort — a missed save just means resume isn't perfectly up to date */ });
+    }, 800);
+    return () => { if (progressTimer.current) window.clearTimeout(progressTimer.current); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageIndex, openBook?.id, openBook?.savedByUser, bookPages.length]);
+
+  const goToPage = (next: number) => {
+    setPageIndex(next);
+    setPageTurning(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.setTimeout(() => setPageTurning(false), 250);
+  };
+
+  // Keyboard paging — arrow keys, only while the reader is open.
+  useEffect(() => {
+    if (!openBook) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.key === 'ArrowRight') goToPage(Math.min(bookPages.length - 1, pageIndex + 1));
+      else if (e.key === 'ArrowLeft') goToPage(Math.max(0, pageIndex - 1));
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openBook, pageIndex, bookPages.length]);
+
+  const handleSaveToggle = async () => {
+    if (!openBook || !user) return;
+    setSavingBook(true);
+    try {
+      if (openBook.savedByUser) {
+        await axios.delete(`${API_URL}/api/library/${openBook.id}/save`, { withCredentials: true });
+        setOpenBook({ ...openBook, savedByUser: false });
+      } else {
+        await axios.post(
+          `${API_URL}/api/library/${openBook.id}/save`,
+          { title: openBook.title, authors: openBook.authors, coverUrl: openBook.coverUrl },
+          { withCredentials: true },
+        );
+        setOpenBook({ ...openBook, savedByUser: true });
+      }
+      fetchMyLibrary();
+    } catch {
+      // silent — the button just doesn't flip; not worth interrupting reading over
+    } finally {
+      setSavingBook(false);
+    }
+  };
+
+  const handleQuickSave = async (e: React.MouseEvent | React.KeyboardEvent, book: LibraryBook) => {
+    e.stopPropagation();
+    if (!user) return;
+    try {
+      if (savedIds.has(book.id)) {
+        await axios.delete(`${API_URL}/api/library/${book.id}/save`, { withCredentials: true });
+      } else {
+        await axios.post(
+          `${API_URL}/api/library/${book.id}/save`,
+          { title: book.title, authors: book.authors, coverUrl: book.coverUrl },
+          { withCredentials: true },
+        );
+      }
+      fetchMyLibrary();
+    } catch {
+      // silent
+    }
+  };
+
+  const handleCopyPage = async () => {
+    const text = bookPages[pageIndex];
+    if (!text) return;
+    await copyToClipboard(text);
+    setCopyDone(true);
+    window.setTimeout(() => setCopyDone(false), 2000);
+  };
+
+  const openFromMyLibrary = (id: number) => openBookReader(id);
 
   if (openLoading || openBook || openError) {
     return (
@@ -1165,8 +1316,26 @@ const PublicLibraryTab: React.FC = () => {
         <button onClick={closeReader} className="writers-back-btn">
           ← {t('writers.classicsBack', 'Back to library')}
         </button>
-        {openLoading && <p className="writers-dim">{t('writers.classicsLoading', 'Searching…')}</p>}
-        {openError && <p className="writers-error">{openError}</p>}
+        {openLoading && (
+          <div className="library-open-loading">
+            <p className="writers-dim">{t('writers.classicsLoading', 'Searching…')}</p>
+            {openSlow && (
+              <p className="writers-dim library-open-slow-hint">
+                {t('writers.classicsFirstDownload', "Downloading this book for the first time — this can take up to 30 seconds. It will open instantly for everyone after this.")}
+              </p>
+            )}
+          </div>
+        )}
+        {openError && (
+          <div className="library-open-error">
+            <p className="writers-error">{openError}</p>
+            {openingId != null && (
+              <button className="writers-button" onClick={() => openBookReader(openingId)}>
+                {t('writers.classicsRetry', 'Try again')}
+              </button>
+            )}
+          </div>
+        )}
         {openBook && (
           <>
             <div className="writers-reading-header">
@@ -1178,18 +1347,46 @@ const PublicLibraryTab: React.FC = () => {
                 {openBook.authors.length > 0 && <>{t('writers.classicsBy', 'by')} {openBook.authors.join(', ')} · </>}
                 {openBook.wordCount.toLocaleString(i18n.language)} {t('writers.classicsWords', 'words')}
               </p>
+              {user && (
+                <button
+                  type="button"
+                  className={`library-save-btn ${openBook.savedByUser ? 'library-save-btn--active' : ''}`}
+                  onClick={handleSaveToggle}
+                  disabled={savingBook}
+                >
+                  {openBook.savedByUser ? `🔖 ${t('writers.classicsSaved', 'In your library')}` : `+ ${t('writers.classicsSave', 'Add to My Library')}`}
+                </button>
+              )}
             </div>
-            <div className="writers-rich-body library-book-body">
-              {bookPages[pageIndex]?.split(/\n{2,}/).map((para, idx) => (
-                <p key={idx}>{para}</p>
-              ))}
+
+            <div className={`library-page-card ${pageTurning ? 'library-page-card--turning' : ''}`}>
+              <div className="writers-rich-body library-book-body">
+                {bookPages[pageIndex]?.split(/\n{2,}/).map((para, idx) => (
+                  <p key={idx}>{para}</p>
+                ))}
+              </div>
+              <div className="library-page-number">{pageIndex + 1}</div>
             </div>
+
+            <div className="library-page-actions">
+              <button type="button" className="library-copy-btn" onClick={handleCopyPage}>
+                {copyDone ? `✓ ${t('writers.classicsCopied', 'Copied')}` : `⧉ ${t('writers.classicsCopyPage', 'Copy page')}`}
+              </button>
+              <ShareButton
+                sourceModule="article"
+                sourceId={openBook.id}
+                title={openBook.title}
+                caption={`${openBook.title} — ${t('writers.classicsPage', 'Page {{current}} of {{total}}', { current: pageIndex + 1, total: bookPages.length })}`}
+                compact
+              />
+            </div>
+
             {bookPages.length > 1 && (
               <div className="library-pager">
                 <button
                   className="writers-button secondary"
                   disabled={pageIndex === 0}
-                  onClick={() => { setPageIndex((i) => Math.max(0, i - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  onClick={() => goToPage(Math.max(0, pageIndex - 1))}
                 >
                   {t('writers.classicsPrev', '← Previous')}
                 </button>
@@ -1199,7 +1396,7 @@ const PublicLibraryTab: React.FC = () => {
                 <button
                   className="writers-button"
                   disabled={pageIndex >= bookPages.length - 1}
-                  onClick={() => { setPageIndex((i) => Math.min(bookPages.length - 1, i + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  onClick={() => goToPage(Math.min(bookPages.length - 1, pageIndex + 1))}
                 >
                   {t('writers.classicsNext', 'Next →')}
                 </button>
@@ -1211,10 +1408,83 @@ const PublicLibraryTab: React.FC = () => {
     );
   }
 
+  if (showMyLibrary) {
+    return (
+      <div className="writers-classics">
+        <button onClick={() => setShowMyLibrary(false)} className="writers-back-btn">
+          ← {t('writers.classicsBack', 'Back to library')}
+        </button>
+        <h2 className="writers-section-title">{t('writers.classicsMyLibrary', 'My Library')}</h2>
+        {myLibraryLoading && <p className="writers-dim">{t('common.loading')}</p>}
+        {!myLibraryLoading && myLibrary.length === 0 && (
+          <p className="writers-dim">{t('writers.classicsMyLibraryEmpty', "You haven't saved any books yet — open one and add it to your library.")}</p>
+        )}
+        {!myLibraryLoading && myLibrary.length > 0 && (
+          <div className="library-grid">
+            {myLibrary.map((book) => {
+              const pct = book.totalPages > 0 ? Math.min(100, Math.round(((book.lastPage + 1) / book.totalPages) * 100)) : 0;
+              return (
+                <div key={book.id} role="button" tabIndex={0} className="library-card"
+                  onClick={() => openFromMyLibrary(book.id)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openFromMyLibrary(book.id); } }}
+                >
+                  <div className="library-card-cover" style={book.coverUrl ? { backgroundImage: `url("${book.coverUrl}")` } : undefined}>
+                    {!book.coverUrl && <span className="library-card-cover-fallback">📖</span>}
+                  </div>
+                  <div className="library-card-body">
+                    <span className="library-card-title">{book.title}</span>
+                    {book.authors.length > 0 && <span className="library-card-author">{book.authors.join(', ')}</span>}
+                    {book.totalPages > 0 ? (
+                      <div className="library-progress">
+                        <div className="library-progress-bar"><div className="library-progress-fill" style={{ width: `${pct}%` }} /></div>
+                        <span className="library-progress-label">{t('writers.classicsProgress', '{{pct}}% read', { pct })}</span>
+                      </div>
+                    ) : (
+                      <span className="library-card-read">{t('writers.classicsReadBtn', 'Read')} →</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="writers-classics">
       <h2 className="writers-section-title">{t('writers.classicsTitle', 'Public Library')}</h2>
       <p className="writers-dim">{t('writers.classicsSubtitle', "Thousands of free classic books from Project Gutenberg — read them right on the platform.")}</p>
+
+      {user && (
+        <div className="library-toolbar">
+          <button type="button" className="writers-chip" onClick={() => setShowMyLibrary(true)}>
+            📚 {t('writers.classicsMyLibrary', 'My Library')}{myLibrary.length > 0 ? ` (${myLibrary.length})` : ''}
+          </button>
+        </div>
+      )}
+
+      {continueBook && (
+        <div role="button" tabIndex={0} className="library-continue-card"
+          onClick={() => openFromMyLibrary(continueBook.id)}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openFromMyLibrary(continueBook.id); } }}
+        >
+          <div className="library-continue-cover" style={continueBook.coverUrl ? { backgroundImage: `url("${continueBook.coverUrl}")` } : undefined}>
+            {!continueBook.coverUrl && <span className="library-card-cover-fallback">📖</span>}
+          </div>
+          <div className="library-continue-body">
+            <span className="library-continue-label">{t('writers.classicsContinue', 'Continue reading')}</span>
+            <span className="library-continue-title">{continueBook.title}</span>
+            {continueBook.totalPages > 0 && (
+              <span className="library-continue-progress">
+                {t('writers.classicsPage', 'Page {{current}} of {{total}}', { current: continueBook.lastPage + 1, total: continueBook.totalPages })}
+              </span>
+            )}
+          </div>
+          <span className="library-continue-arrow">→</span>
+        </div>
+      )}
 
       <form className="library-search-bar" onSubmit={handleSearchSubmit}>
         <input
@@ -1263,16 +1533,30 @@ const PublicLibraryTab: React.FC = () => {
         <>
           <div className="library-grid">
             {results.map((book) => (
-              <button key={book.id} type="button" className="library-card" onClick={() => openBookReader(book.id)}>
+              <div key={book.id} role="button" tabIndex={0} className="library-card"
+                onClick={() => openBookReader(book.id)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openBookReader(book.id); } }}
+              >
                 <div className="library-card-cover" style={book.coverUrl ? { backgroundImage: `url("${book.coverUrl}")` } : undefined}>
                   {!book.coverUrl && <span className="library-card-cover-fallback">📖</span>}
+                  {user && (
+                    <button
+                      type="button"
+                      className={`library-card-save ${savedIds.has(book.id) ? 'library-card-save--active' : ''}`}
+                      onClick={(e) => handleQuickSave(e, book)}
+                      aria-label={savedIds.has(book.id) ? t('writers.classicsSaved', 'In your library') : t('writers.classicsSave', 'Add to My Library')}
+                      title={savedIds.has(book.id) ? t('writers.classicsSaved', 'In your library') : t('writers.classicsSave', 'Add to My Library')}
+                    >
+                      {savedIds.has(book.id) ? '🔖' : '➕'}
+                    </button>
+                  )}
                 </div>
                 <div className="library-card-body">
                   <span className="library-card-title">{book.title}</span>
                   {book.authors.length > 0 && <span className="library-card-author">{book.authors.join(', ')}</span>}
                   <span className="library-card-read">{t('writers.classicsReadBtn', 'Read')} →</span>
                 </div>
-              </button>
+              </div>
             ))}
           </div>
           {(page > 1 || hasNext) && (

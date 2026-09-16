@@ -592,7 +592,11 @@ export async function registerRoutes(
   // API, a book's text is fetched from Gutenberg once and cached locally on
   // first read. See server/modules/library.ts for the caching architecture.
   app.get('/api/library/search', libraryModule.searchLibrary);
+  app.get('/api/library/mine', requireAuth, libraryModule.listMyLibraryBooks);
   app.get('/api/library/:id/read', libraryModule.readLibraryBook);
+  app.post('/api/library/:id/save', requireAuth, libraryModule.saveBookToLibrary);
+  app.delete('/api/library/:id/save', requireAuth, libraryModule.removeBookFromLibrary);
+  app.patch('/api/library/:id/progress', requireAuth, libraryModule.updateReadingProgress);
 
   // --- Creator Tools (PR G) -------------------------------------------------
   // Aggregated earnings (requires creator.revenue_share feature).
