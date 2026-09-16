@@ -86,6 +86,12 @@ export function hasPurchasedBook(userId: string): boolean {
  * (user_id, program_id) WHERE status='completed' is the hard backstop —
  * this check just avoids a pointless duplicate-key error in the common case
  * of the PayPal return_url and a webhook both landing here).
+ *
+ * Matches the pending row on (paypal_order_id, program_id) rather than
+ * paypal_order_id alone — a "pick your own programs" purchase creates one
+ * pending row per selected item sharing a single PayPal order id (one
+ * checkout, several items), so matching on the order id alone would only
+ * ever complete the first of them and silently leave the rest pending.
  */
 export function markPurchaseCompleted(params: {
   userId: string;
@@ -96,8 +102,8 @@ export function markPurchaseCompleted(params: {
   if (hasCompletedPurchase(params.userId, params.item)) return;
 
   const pending = rawSqlite
-    .prepare(`SELECT id FROM program_purchases WHERE paypal_order_id = ? LIMIT 1`)
-    .get(params.paypalOrderId) as { id: string } | undefined;
+    .prepare(`SELECT id FROM program_purchases WHERE paypal_order_id = ? AND program_id = ? LIMIT 1`)
+    .get(params.paypalOrderId, params.item) as { id: string } | undefined;
 
   if (pending) {
     rawSqlite

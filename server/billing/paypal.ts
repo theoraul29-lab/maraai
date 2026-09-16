@@ -392,21 +392,25 @@ function parseCustomId(resource: PayPalSubscriptionResource): { userId: string; 
 export async function createPayPalOrder(params: {
   userId: string;
   userEmail: string | null;
-  programId: string;
-  programName: string;
-  amountCents: number;
+  items: Array<{ id: string; name: string; priceCents: number }>;
 }): Promise<{ orderId: string; approvalUrl: string }> {
   const origin = getOrigin();
-  const amountStr = (params.amountCents / 100).toFixed(2);
+  const totalCents = params.items.reduce((sum, item) => sum + item.priceCents, 0);
+  const amountStr = (totalCents / 100).toFixed(2);
+  const ids = params.items.map((item) => item.id).join(',');
   const idemBucket = Math.floor(Date.now() / 60_000);
-  const idempotencyKey = `paypal:order:${params.userId}:${params.programId}:${idemBucket}`;
+  const idempotencyKey = `paypal:order:${params.userId}:${ids}:${idemBucket}`;
+  // custom_id and description are both capped at 127 chars by PayPal's API —
+  // comfortably fits the id list (at most the 4 paid programs today) but
+  // the description is truncated defensively in case that ever grows.
+  const description = `Mara — ${params.items.map((item) => item.name).join(', ')}`.slice(0, 127);
 
   const body = {
     intent: 'CAPTURE',
     purchase_units: [
       {
-        custom_id: `${params.userId}:${params.programId}`,
-        description: `Mara — ${params.programName}`,
+        custom_id: `${params.userId}:${ids}`,
+        description,
         amount: { currency_code: 'EUR', value: amountStr },
       },
     ],

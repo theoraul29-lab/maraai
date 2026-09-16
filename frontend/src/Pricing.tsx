@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from './contexts/AuthContext';
 import { AuthModal } from './components/AuthModal';
+import ProgramPicker from './components/ProgramPicker';
 import './styles/Pricing.css';
 
 export default function Pricing() {
@@ -107,13 +108,9 @@ export default function Pricing() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, pendingTier]);
 
-  const PROGRAMS = [
-    { icon: '🧠', name: 'New Mindset',  days: 1,    desc: t('pricing.mindsetDesc') },
-    { icon: '🔁', name: 'New Habit',    days: 21,   desc: t('pricing.habitDesc') },
-    { icon: '⚡', name: 'New Skills',   days: 90,   desc: t('pricing.skillsDesc') },
-    { icon: '💪', name: 'New Body',     days: 180,  desc: t('pricing.bodyDesc') },
-    { icon: '🌅', name: 'New Life',     days: 365,  desc: t('pricing.lifeDesc') },
-    { icon: '✨', name: 'New You',      days: 1095, desc: t('pricing.youDesc') },
+  const FREE_PROGRAMS = [
+    { icon: '🧠', name: 'New Mindset', days: 1,  desc: t('pricing.mindsetDesc') },
+    { icon: '🔁', name: 'New Habit',   days: 21, desc: t('pricing.habitDesc') },
   ];
 
   return (
@@ -172,20 +169,26 @@ export default function Pricing() {
         <p className="pricing-section-sub">{t('pricing.programsSubtitle')}</p>
       </div>
 
-      <div className="pricing-programs-grid">
-        {PROGRAMS.map((p) => (
-          <div key={p.name} className="pricing-program-item">
-            <span className="pricing-program-icon">{p.icon}</span>
-            <div>
-              <div className="pricing-program-name">{p.name}</div>
-              <div className="pricing-program-days">
-                {p.days} {p.days === 1 ? t('pricing.day') : t('pricing.days')}
+      <div className="pricing-platform">
+        <div className="pricing-platform-grid">
+          {FREE_PROGRAMS.map((p) => (
+            <div key={p.name} className="pricing-platform-card">
+              <span className="pricing-platform-icon">{p.icon}</span>
+              <div className="pricing-platform-body">
+                <div className="pricing-platform-name">
+                  {p.name}
+                  <span className="pricing-platform-badge pricing-platform-badge--free">{t('pricing.freeBadge')}</span>
+                </div>
+                <p className="pricing-platform-desc">
+                  {p.days} {p.days === 1 ? t('pricing.day') : t('pricing.days')} · {p.desc}
+                </p>
               </div>
-              <div className="pricing-program-desc">{p.desc}</div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
+
+      <ProgramPicker />
 
       <div className="pricing-faq">
         <h2>{t('pricing.faqTitle')}</h2>
