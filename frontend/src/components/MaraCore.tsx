@@ -35,6 +35,7 @@ export function MaraCore({ agents }: { agents: AgentCatalogEntry[] }) {
   const {
     messages, sending, listening, transcribing, speaking,
     voiceSupported, recognitionBlocked, statusNote, sendMessage, toggleListening,
+    ttsSupported, voiceStyle, setVoiceStyle,
   } = useMaraCore();
   const inputRef = useRef<HTMLInputElement>(null);
   const logRef = useRef<HTMLDivElement>(null);
@@ -186,8 +187,28 @@ export function MaraCore({ agents }: { agents: AgentCatalogEntry[] }) {
             />
             <button type="submit" disabled={sending}>Trimite</button>
           </form>
-          <div className="mcc-nexus-status">
-            {transcribing ? 'Mara transcrie…' : speaking ? 'Mara vorbește…' : listening ? 'Ascult…' : recognitionBlocked ? 'Ascultare indisponibilă aici' : 'Idle'}
+          <div className="mcc-nexus-footer-row">
+            {ttsSupported && (
+              <div className="mcc-voice-picker" title="Vocea Marei">
+                <button
+                  type="button"
+                  className={`mcc-voice-picker-btn${voiceStyle === 'male' ? ' mcc-voice-picker-btn--active' : ''}`}
+                  onClick={() => setVoiceStyle('male')}
+                >
+                  Masculină
+                </button>
+                <button
+                  type="button"
+                  className={`mcc-voice-picker-btn${voiceStyle === 'female' ? ' mcc-voice-picker-btn--active' : ''}`}
+                  onClick={() => setVoiceStyle('female')}
+                >
+                  Feminină
+                </button>
+              </div>
+            )}
+            <div className="mcc-nexus-status">
+              {transcribing ? 'Mara transcrie…' : speaking ? 'Mara vorbește…' : listening ? 'Ascult…' : recognitionBlocked ? 'Ascultare indisponibilă aici' : 'Idle'}
+            </div>
           </div>
         </div>
       </div>

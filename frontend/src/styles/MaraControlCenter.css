@@ -508,6 +508,23 @@
 .mcc-nexus-input-row button:disabled { opacity: .5; cursor: not-allowed; }
 .mcc-nexus-status { font-family: var(--mcc-mono); font-size: 10px; letter-spacing: .05em; text-transform: uppercase; color: var(--mcc-text-faint); text-align: right; flex: none; }
 
+.mcc-nexus-footer-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex: none; }
+.mcc-voice-picker { display: flex; gap: 4px; }
+.mcc-voice-picker-btn {
+  font-family: var(--mcc-mono);
+  font-size: 9px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  border: 1px solid var(--mcc-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--mcc-text-faint);
+  padding: 4px 8px;
+  cursor: pointer;
+}
+.mcc-voice-picker-btn:hover { color: var(--mcc-text-dim); border-color: var(--mcc-border-strong); }
+.mcc-voice-picker-btn--active { color: var(--mcc-cyan); border-color: rgba(79, 215, 232, .4); background: rgba(79, 215, 232, .08); }
+
 /* The fixed single-viewport frame is a desktop command-center layout. Below
    ~900px there isn't room for it — fall back to a normal scrolling page. */
 @media (max-width: 900px) {

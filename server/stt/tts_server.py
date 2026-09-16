@@ -13,9 +13,11 @@ robotic and was the whole reason for this module: Mara's Control Center
 needed a warm, natural, "JARVIS"-style voice instead. This service wraps
 edge-tts (MIT-licensed, calls Microsoft Edge's free neural voice
 synthesis endpoint — no API key, no per-character billing) and exposes
-one endpoint that takes text (+ optional language hint) and returns
-ready-to-play MP3 bytes synthesized with a native neural voice for the
-detected/requested language.
+an endpoint that takes text (+ optional language hint and male/female
+voice-style choice) and returns ready-to-play MP3 bytes synthesized with
+a native neural voice for the detected/requested language, plus a
+/voices catalogue endpoint the Control Center's voice picker reads to
+know what's available.
 
 Run with: whisper-env\\Scripts\\python.exe server\\stt\\tts_server.py
 """
@@ -42,17 +44,33 @@ if not TOKEN or len(TOKEN) < 32:
     print("[tts] MARA_TTS_TOKEN is missing or too short — refusing to start.", file=sys.stderr)
     sys.exit(1)
 
-# Language -> native neural voice. Picked for a warm, deep, "JARVIS"-fit
-# delivery over a chipper/cheerful one (edge-tts's own voice list tags
-# each voice's style — these three all read as warm/confident rather than
-# upbeat-assistant). Easy for a human to swap later: just change the
-# voice name and restart the service, no other code changes needed.
-LANG_VOICE_MAP: dict[str, str] = {
-    "ro": "ro-RO-EmilNeural",   # warm male RO voice (alt: ro-RO-AlinaNeural, female)
-    "en": "en-US-AndrewNeural",  # "Warm, Confident, Authentic" per edge-tts's own tagging
-    "de": "de-DE-ConradNeural",  # warm male DE voice (alt: de-DE-KillianNeural)
+# Language -> {male, female} native neural voice. Picked for a warm delivery
+# over a chipper/cheerful/news-anchor one — edge-tts's own catalogue tags
+# each voice's style, used as the selection signal for both sets (same bar
+# applied to the male voices originally):
+#   ro male:   ro-RO-EmilNeural   — "Friendly, Positive"; only male RO option
+#   ro female: ro-RO-AlinaNeural  — "Friendly, Positive"; only female RO option
+#              (edge-tts's RO catalogue is just these two — no further choice)
+#   en male:   en-US-AndrewNeural — "Warm, Confident, Authentic, Honest"
+#   en female: en-US-JennyNeural  — "Friendly, Considerate, Comfort" — chosen
+#              over en-US-AriaNeural ("Positive, Confident", a news-anchor
+#              read) and the *Neural "Cheerful"-tagged voices (AnaNeural is
+#              cartoon-cute, EmmaNeural leans upbeat) precisely because
+#              "Comfort" is the closest tag to the warm/JARVIS bar; Ava
+#              ("Expressive, Caring, Pleasant, Friendly") was the runner-up
+#   de male:   de-DE-ConradNeural — "Friendly, Positive"
+#   de female: de-DE-KatjaNeural  — "Friendly, Positive"; the long-established
+#              default DE neural voice, natural and even-toned
+# Easy for a human to swap later: just change the voice name and restart
+# the service, no other code changes needed.
+LANG_VOICE_MAP: dict[str, dict[str, str]] = {
+    "ro": {"male": "ro-RO-EmilNeural", "female": "ro-RO-AlinaNeural"},
+    "en": {"male": "en-US-AndrewNeural", "female": "en-US-JennyNeural"},
+    "de": {"male": "de-DE-ConradNeural", "female": "de-DE-KatjaNeural"},
 }
 DEFAULT_LANG = "en"
+DEFAULT_STYLE = "male"
+VOICE_STYLES = ("male", "female")
 
 app = FastAPI()
 
@@ -143,6 +161,16 @@ def health():
     return {"status": "ok", "voices": LANG_VOICE_MAP}
 
 
+# Unauthenticated on purpose, same as /health: it's just a static catalogue
+# of voice names, nothing sensitive — and the frontend voice picker needs to
+# read it before it necessarily has anywhere to send a token from (it's
+# fetched alongside the tts-config bootstrap in useMaraCore.ts). Single
+# source of truth for the frontend picker, so the two never drift apart.
+@app.get("/voices")
+def voices():
+    return {"languages": LANG_VOICE_MAP, "styles": list(VOICE_STYLES), "defaultStyle": DEFAULT_STYLE}
+
+
 @app.post("/synthesize")
 async def synthesize(body: dict, authorization: str | None = Header(default=None)):
     check_auth(authorization)
@@ -160,8 +188,11 @@ async def synthesize(body: dict, authorization: str | None = Header(default=None
     if explicit_voice and isinstance(explicit_voice, str):
         voice = explicit_voice
     else:
+        style = body.get("voiceStyle") if isinstance(body.get("voiceStyle"), str) else None
+        if style not in VOICE_STYLES:
+            style = DEFAULT_STYLE  # unset or invalid — keep pre-picker callers behaving exactly as before
         lang = detect_lang(text, body.get("lang") if isinstance(body.get("lang"), str) else None)
-        voice = LANG_VOICE_MAP.get(lang, LANG_VOICE_MAP[DEFAULT_LANG])
+        voice = LANG_VOICE_MAP.get(lang, LANG_VOICE_MAP[DEFAULT_LANG])[style]
 
     # edge-tts talks to Microsoft's own read-aloud websocket endpoint, which
     # occasionally drops a connection with NoAudioReceived under normal use

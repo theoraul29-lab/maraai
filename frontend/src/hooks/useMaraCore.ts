@@ -24,6 +24,17 @@ type VoiceWindow = Window & { SpeechRecognition?: RecognitionConstructor; webkit
 
 type SttConfig = { url: string; token: string };
 type TtsConfig = { url: string; token: string };
+export type VoiceStyle = 'male' | 'female';
+
+const VOICE_STYLE_STORAGE_KEY = 'mara_voice_style';
+
+function loadStoredVoiceStyle(): VoiceStyle {
+  try {
+    return localStorage.getItem(VOICE_STYLE_STORAGE_KEY) === 'female' ? 'female' : 'male';
+  } catch {
+    return 'male'; // storage quota / privacy mode — fall back to the service's own default
+  }
+}
 
 function chooseVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
   const preferred = voices.find((voice) => /female|samantha|zira|aria|susan|google us english/i.test(voice.name));
@@ -57,6 +68,12 @@ function chooseVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | nul
  * reply text itself. window.speechSynthesis is kept only as a fallback for
  * when the laptop/TTS service is unreachable — Mara should never go silent
  * just because the local service is down.
+ *
+ * `voiceStyle` ('male' | 'female') picks which of the two native voices the
+ * TTS service offers per language (see LANG_VOICE_MAP in tts_server.py).
+ * It's a single-admin desktop preference, so it's persisted in
+ * localStorage rather than synced server-side, and exposed here so
+ * MaraCore.tsx can render a picker.
  */
 export function useMaraCore() {
   const [messages, setMessages] = useState<MaraMessage[]>([]);
@@ -65,6 +82,8 @@ export function useMaraCore() {
   const [transcribing, setTranscribing] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [voiceSupported, setVoiceSupported] = useState(false);
+  const [ttsSupported, setTtsSupported] = useState(false);
+  const [voiceStyle, setVoiceStyleState] = useState<VoiceStyle>(loadStoredVoiceStyle);
   const [recognitionBlocked, setRecognitionBlocked] = useState(false);
   const [statusNote, setStatusNote] = useState<string | null>(null);
   const recognitionRef = useRef<Recognition | null>(null);
@@ -74,6 +93,19 @@ export function useMaraCore() {
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
   const sendingRef = useRef(false);
   const { i18n } = useTranslation();
+
+  // Single-admin desktop preference — persisted locally rather than synced
+  // server-side (mirrors how the rest of the app treats this kind of local
+  // UI choice). Read once at mount via loadStoredVoiceStyle's useState
+  // initializer above; every change is written straight back out here.
+  const setVoiceStyle = useCallback((style: VoiceStyle) => {
+    setVoiceStyleState(style);
+    try {
+      localStorage.setItem(VOICE_STYLE_STORAGE_KEY, style);
+    } catch {
+      // Storage quota / privacy mode — the in-memory choice for this session still applies.
+    }
+  }, []);
 
   useEffect(() => {
     // First getVoices() call is often [] and just triggers async loading —
@@ -120,7 +152,7 @@ export function useMaraCore() {
           method: 'POST',
           credentials: 'omit',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ttsConfig.token}` },
-          body: JSON.stringify({ text, lang: i18n.language }),
+          body: JSON.stringify({ text, lang: i18n.language, voiceStyle }),
         });
         if (!res.ok) throw new Error(`tts ${res.status}`);
         const blob = await res.blob();
@@ -142,7 +174,7 @@ export function useMaraCore() {
         speakWithBrowserVoice(text);
       }
     })();
-  }, [i18n.language, speakWithBrowserVoice]);
+  }, [i18n.language, voiceStyle, speakWithBrowserVoice]);
 
   const sendMessage = useCallback(async (text: string) => {
     const trimmed = text.trim();
@@ -205,6 +237,7 @@ export function useMaraCore() {
         const data = await res.json() as { configured?: boolean; url?: string; token?: string };
         if (cancelled || !data.configured || !data.url || !data.token) return;
         ttsConfigRef.current = { url: data.url, token: data.token };
+        setTtsSupported(true);
       } catch {
         // Local TTS unreachable (laptop off, tunnel down) — browser voice fallback in speak() still applies.
       }
@@ -316,5 +349,9 @@ export function useMaraCore() {
     }
   }, [listening, startLocalListening]);
 
-  return { messages, sending, listening, transcribing, speaking, voiceSupported, recognitionBlocked, statusNote, sendMessage, toggleListening };
+  return {
+    messages, sending, listening, transcribing, speaking, voiceSupported, recognitionBlocked, statusNote,
+    sendMessage, toggleListening,
+    ttsSupported, voiceStyle, setVoiceStyle,
+  };
 }
