@@ -19,6 +19,7 @@ import type {
   ToolCatalogEntry,
   IntegrationStatus,
   ControlAuditAction,
+  MaraActivityEntry,
   WorkerStatus,
   CodeAgentPlan,
   TaskSnapshot,
@@ -67,6 +68,7 @@ export default function MaraControlCenter() {
   const [tools, setTools] = useState<ToolCatalogEntry[]>([]);
   const [integrations, setIntegrations] = useState<IntegrationStatus[]>([]);
   const [auditActions, setAuditActions] = useState<ControlAuditAction[]>([]);
+  const [activityFeed, setActivityFeed] = useState<MaraActivityEntry[]>([]);
   const [worker, setWorker] = useState<WorkerStatus | null>(null);
   const [codePlans, setCodePlans] = useState<CodeAgentPlan[]>([]);
   const [modules, setModules] = useState<HelloMaraModuleEntry[]>([]);
@@ -98,6 +100,7 @@ export default function MaraControlCenter() {
         ['tools', getJson<{ tools: ToolCatalogEntry[] }>('/api/control/tools')],
         ['integrations', getJson<{ integrations: IntegrationStatus[] }>('/api/control/integrations')],
         ['audit', getJson<{ actions: ControlAuditAction[] }>('/api/control/audit/actions')],
+        ['activity', getJson<{ entries: MaraActivityEntry[] }>('/api/control/mara/activity?limit=50')],
         ['worker', getJson<WorkerStatus>('/api/control/worker/status')],
         ['codePlans', getJson<{ plans: CodeAgentPlan[] }>('/api/control/code-agent/plans')],
         ['modules', getJson<{ modules: HelloMaraModuleEntry[] }>('/api/control/modules')],
@@ -119,6 +122,7 @@ export default function MaraControlCenter() {
         tools: { tools: ToolCatalogEntry[] };
         integrations: { integrations: IntegrationStatus[] };
         audit: { actions: ControlAuditAction[] };
+        activity: { entries: MaraActivityEntry[] };
         worker: WorkerStatus;
         codePlans: { plans: CodeAgentPlan[] };
         modules: { modules: HelloMaraModuleEntry[] };
@@ -137,6 +141,7 @@ export default function MaraControlCenter() {
       if (values.tools) setTools(values.tools.tools);
       if (values.integrations) setIntegrations(values.integrations.integrations);
       if (values.audit) setAuditActions(values.audit.actions);
+      if (values.activity) setActivityFeed(values.activity.entries);
       if (values.worker) setWorker(values.worker);
       if (values.codePlans) setCodePlans(values.codePlans.plans);
       if (values.modules) {
@@ -361,7 +366,7 @@ export default function MaraControlCenter() {
     }
   }
 
-  type View = 'command' | 'modules' | 'agents' | 'repository' | 'tasks' | 'approvals' | 'audit' | 'security' | 'integrations' | 'github' | 'railway' | 'tools' | 'telemetry';
+  type View = 'command' | 'modules' | 'agents' | 'repository' | 'tasks' | 'approvals' | 'audit' | 'activity' | 'security' | 'integrations' | 'github' | 'railway' | 'tools' | 'telemetry';
   const [activeView, setActiveView] = useState<View>('command');
 
   // The page itself never scrolls in the desktop shell — only the active
@@ -421,6 +426,7 @@ export default function MaraControlCenter() {
           {navItem('Tasks', 'tasks')}
           {navItem('Approvals', 'approvals')}
           {navItem('Audit & Logs', 'audit')}
+          {navItem('Mara Activity', 'activity')}
           {navItem('Security', 'security')}
           {navItem('Integrations', 'integrations')}
           {navItem('Tools', 'tools')}
@@ -707,6 +713,34 @@ export default function MaraControlCenter() {
               </div>
             ))}
             {!logs?.activity.length && <p className="mcc-muted">No activity for this admin yet.</p>}
+          </section>
+        </div>}
+
+        {activeView === 'activity' && <div className="mcc-view">
+          <section className="mcc-panel mcc-panel--wide mcc-panel--scroll">
+            <div className="mcc-panel-heading"><h2>What Mara has done on her own</h2><span>Writers Hub &amp; Missions — proposals, and what happened to them</span></div>
+            {activityFeed.map((entry) => (
+              <div className="mcc-activity-entry" key={entry.id}>
+                <div className="mcc-activity-entry-head">
+                  {entry.module && <span className="mcc-activity-module">{entry.module}</span>}
+                  {entry.kind === 'auto_apply' ? (
+                    <span className={`mcc-activity-outcome mcc-activity-outcome--${entry.outcome ?? 'unknown'}`}>
+                      {entry.outcome === 'committed' ? '✓ Shipped to production'
+                        : entry.outcome === 'held_for_review' ? '⏸ Held — touches payment code'
+                        : entry.outcome === 'no_changes' ? '— No safe change found'
+                        : entry.outcome === 'rejected' ? '⚠ Validation gate failed'
+                        : entry.outcome === 'failed' ? '⚠ Error'
+                        : entry.outcome ?? 'Autonomous attempt'}
+                    </span>
+                  ) : (
+                    <span className="mcc-activity-outcome mcc-activity-outcome--insight">Insight</span>
+                  )}
+                  <time>{new Date(entry.createdAt).toLocaleString()}</time>
+                </div>
+                <p>{entry.content}</p>
+              </div>
+            ))}
+            {!activityFeed.length && <p className="mcc-muted">No autonomous activity recorded yet — this fills in as brain cycles run.</p>}
           </section>
         </div>}
 

@@ -11,4 +11,4 @@ set -e
 mkdir -p /data
 chown -R nodejs:nodejs /data 2>/dev/null || true
 
-exec su-exec nodejs:nodejs "$@"
+exec gosu nodejs:nodejs "$@"

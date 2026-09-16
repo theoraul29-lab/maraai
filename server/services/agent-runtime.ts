@@ -5,7 +5,7 @@ import { requiredRiskForTool } from './tool-runtime.js';
 
 const agentTools: Record<string, readonly string[]> = {
   'code-explorer': ['repository.overview', 'repository.git_status', 'repository.search', 'repository.preview'],
-  'testing-agent': ['project.typecheck', 'server.build', 'frontend.typecheck', 'frontend.build'],
+  'testing-agent': ['project.typecheck', 'server.build', 'frontend.typecheck', 'frontend.build', 'python.execute'],
   'code-agent': ['code-agent.plan'],
 };
 

@@ -3,12 +3,13 @@
 
 import { llmGenerate, isLLMConfigured, LLMRateLimitedError } from '../llm.js';
 import { storage } from '../storage.js';
-import { db, rawSqlite } from '../db.js';
+import { db, rawSqlite, isVecExtensionAvailable } from '../db.js';
 import { brainSqlite } from './sandbox.js';
 import { maraKnowledgeBase } from '../../shared/schema.js';
 import { sql, inArray, eq, like, desc } from 'drizzle-orm';
 import { flagConflictsForKnowledge } from './conflict-detector.js';
 import { getBrainRunContext } from './run-context.js';
+import { getEmbedding, vecToBuffer } from './embeddings.js';
 
 export type KnowledgeCategory =
   | 'user_pattern'
@@ -76,7 +77,7 @@ export async function storeKnowledge(
     context.recordWrite('knowledge_insert');
     return id;
   }
-  return db.transaction((tx) => {
+  const resultId = db.transaction((tx) => {
     // Pull candidate duplicates by topic (mirrors storage.getKnowledgeByTopic
     // which fans out to a LIKE search, ordered by confidence).
     const existing = tx
@@ -146,10 +147,46 @@ export async function storeKnowledge(
     }
     return newId;
   });
+
+  // Fire-and-forget: embeddings need a network round-trip to Ollama, which
+  // can't happen inside the (synchronous) transaction above. Not awaited —
+  // storeKnowledge is called very frequently through a brain cycle, and a
+  // knowledge row is immediately usable via keyword search either way; the
+  // semantic index just catches up a few hundred ms later. Never throws.
+  void updateKnowledgeEmbedding(resultId, `${topic}\n${content}`);
+
+  return resultId;
+}
+
+/** Best-effort — failures (Ollama down, extension unavailable, etc.) just mean this row stays keyword-only searchable. */
+async function updateKnowledgeEmbedding(id: number, text: string): Promise<void> {
+  if (!isVecExtensionAvailable()) return;
+  if (getBrainRunContext()?.dryRun) return; // dry-run DB is opened read-only
+  try {
+    const vec = await getEmbedding(text);
+    if (!vec) return;
+    const buf = vecToBuffer(vec);
+    const rowId = BigInt(id);
+    // DELETE-then-INSERT rather than an UPSERT — vec0 virtual tables don't
+    // reliably support ON CONFLICT, but both DELETE and INSERT are part of
+    // the base virtual-table interface every vec0 table implements.
+    rawSqlite.prepare('DELETE FROM mara_knowledge_vec WHERE rowid = ?').run(rowId);
+    rawSqlite.prepare('INSERT INTO mara_knowledge_vec(rowid, embedding) VALUES (?, ?)').run(rowId, buf);
+  } catch (err) {
+    console.warn(`[KnowledgeBase] embedding update failed for id=${id}:`, err);
+  }
 }
 
 /**
- * Search the knowledge base for relevant information
+ * Search the knowledge base for relevant information.
+ *
+ * Hybrid: combines keyword matching (the original behaviour — exact-term
+ * hits, e.g. a proper noun or identifier, that a semantic match could miss)
+ * with vector similarity via sqlite-vec (finds conceptually related rows
+ * that share no literal words — "reduce churn" ~ "retenție mai bună"). A
+ * row found by both methods ranks highest. If the vec extension or Ollama
+ * embeddings are unavailable, this degrades to the original keyword-only
+ * behaviour with no functional change.
  */
 export async function searchKnowledge(query: string, limit = 10): Promise<KnowledgeSearchResult[]> {
   const allKnowledge = await storage.getKnowledgeByTopic(query);
@@ -160,16 +197,63 @@ export async function searchKnowledge(query: string, limit = 10): Promise<Knowle
     ).map((entry) => ({ ...entry, metadata: JSON.stringify(entry.metadata), accessCount: 0, createdAt: new Date(), updatedAt: new Date() })) as unknown as typeof allKnowledge);
   }
 
-  // Score by relevance
-  return allKnowledge
-    .map((k) => ({
+  // Keyword scores, keyed by id — the base signal, always available.
+  const scored = new Map<number, KnowledgeSearchResult>();
+  for (const k of allKnowledge) {
+    scored.set(k.id, {
       id: k.id,
       topic: k.topic,
       content: k.content,
       category: k.category,
       confidence: k.confidence,
       relevanceScore: computeRelevance(query, k.topic, k.content),
-    }))
+    });
+  }
+
+  // Semantic candidates (skipped entirely in dry-run — no network calls from
+  // a read-only sandboxed run — and whenever the extension/embedding call
+  // isn't available; both are silent, expected fallbacks, not errors).
+  if (!context?.dryRun && isVecExtensionAvailable()) {
+    try {
+      const queryVec = await getEmbedding(query);
+      if (queryVec) {
+        const buf = vecToBuffer(queryVec);
+        const semanticRows = rawSqlite
+          .prepare('SELECT rowid AS id, distance FROM mara_knowledge_vec WHERE embedding MATCH ? AND k = ? ORDER BY distance')
+          .all(buf, Math.max(limit * 3, 15)) as Array<{ id: number; distance: number }>;
+
+        const missingIds = semanticRows.map((r) => r.id).filter((id) => !scored.has(id));
+        const fetched = missingIds.length > 0 ? await storage.getKnowledgeByIds(missingIds) : [];
+        const fetchedById = new Map(fetched.map((k) => [k.id, k]));
+
+        for (const { id, distance } of semanticRows) {
+          // Cosine distance in [0, 2] (0 = identical meaning) — rescaled to
+          // roughly the same magnitude as computeRelevance's keyword score
+          // (small integers) so neither signal silently dominates.
+          const semanticScore = Math.max(0, 2 - distance) * 10;
+          const existing = scored.get(id);
+          if (existing) {
+            existing.relevanceScore += semanticScore;
+            continue;
+          }
+          const row = fetchedById.get(id);
+          if (!row) continue; // stale vec entry for a deleted knowledge row
+          scored.set(id, {
+            id: row.id,
+            topic: row.topic,
+            content: row.content,
+            category: row.category,
+            confidence: row.confidence,
+            relevanceScore: semanticScore,
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('[KnowledgeBase] semantic search failed, using keyword results only:', err);
+    }
+  }
+
+  return Array.from(scored.values())
     .sort((a, b) => b.relevanceScore - a.relevanceScore)
     .slice(0, limit);
 }

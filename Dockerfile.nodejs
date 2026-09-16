@@ -1,6 +1,13 @@
 # Multi-stage build for Node.js application
 # Stage 1: Build
-FROM node:20-alpine AS builder
+#
+# Debian slim (glibc), not Alpine (musl) — sqlite-vec's prebuilt native
+# extension (and other native deps we may add later) only ships glibc
+# Linux binaries; musl loads them as garbage or segfaults. better-sqlite3
+# itself works fine on either, so switching costs nothing there. Builder and
+# runtime both use the same base so a native addon built/copied in one
+# stage is guaranteed ABI-compatible in the other.
+FROM node:20-bookworm-slim AS builder
 
 WORKDIR /app
 
@@ -23,13 +30,19 @@ RUN npm run build
 RUN npm prune --omit=dev
 
 # Stage 2: Runtime
-FROM node:20-alpine
+FROM node:20-bookworm-slim
 
 WORKDIR /app
 
-# Install dumb-init for signal handling and su-exec for dropping privileges
-# at runtime (after fixing volume permissions).
-RUN apk add --no-cache dumb-init su-exec
+# dumb-init: signal handling. gosu: dropping privileges at runtime (Debian's
+# equivalent of Alpine's su-exec — same purpose, same call site below).
+# python3: Mara's sandboxed script-execution tool (server/services/
+# python-sandbox.ts) and the code-agent's syntax-check gate for .py changes.
+# No pip packages installed — scripts run stdlib-only, deliberately, to keep
+# the sandbox's dependency surface at zero.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends dumb-init gosu python3 \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy from builder
 COPY --from=builder /app/package*.json ./
@@ -42,8 +55,8 @@ COPY --from=builder /app/migrations ./migrations
 # Create nodejs user and give it /app ownership. /data is handled at entrypoint
 # time because Railway mounts volumes as root at container start, which would
 # mask any build-time chown.
-RUN addgroup -g 1001 -S nodejs \
-    && adduser -S nodejs -u 1001 \
+RUN groupadd -g 1001 nodejs \
+    && useradd -u 1001 -g nodejs -M -s /usr/sbin/nologin nodejs \
     && mkdir -p /data \
     && chown -R nodejs:nodejs /app /data
 

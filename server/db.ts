@@ -1,6 +1,7 @@
 // SQLite database — matches the schema defined in shared/schema.ts (drizzle-orm/sqlite-core).
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import Database from 'better-sqlite3';
+import { load as loadSqliteVec } from 'sqlite-vec';
 import * as schema from '../shared/schema.js';
 import path from 'path';
 import fs from 'fs';
@@ -61,6 +62,23 @@ if (!brainDryRun) sqlite.pragma('busy_timeout = 5000');
 // WAL; only OS-level crashes between checkpoints can lose the last txn.
 if (!brainDryRun) sqlite.pragma('synchronous = NORMAL');
 
+// Vector search extension for semantic knowledge search (server/mara-brain/
+// knowledge-base.ts). Loaded on the connection itself, so it must happen
+// before anything below queries a `vec0` virtual table. Never fatal: if the
+// platform-specific binary is missing or fails to load, semantic search
+// degrades to the existing keyword search — nothing else in the app depends
+// on this extension being present.
+let vecExtensionAvailable = false;
+try {
+  loadSqliteVec(sqlite);
+  vecExtensionAvailable = true;
+} catch (err) {
+  console.warn('[db] sqlite-vec extension failed to load — semantic knowledge search disabled, falling back to keyword search:', err);
+}
+export function isVecExtensionAvailable(): boolean {
+  return vecExtensionAvailable;
+}
+
 // ── Schema source of truth ───────────────────────────────────────────────
 // The schema is owned in exactly two layers, each with a single home:
 //   1. Drizzle migrations (migrations/*.sql, applied in server/index.ts) own
@@ -90,6 +108,26 @@ sqlite.exec(`
     created_at INTEGER DEFAULT (unixepoch()),
     updated_at INTEGER DEFAULT (unixepoch())
   );
+`);
+
+// Separate DDL step (and try/catch): a vec0 virtual table is a different
+// object kind from the regular tables above — if the extension failed to
+// load, CREATE VIRTUAL TABLE ... USING vec0(...) would throw and (being
+// inside one exec() call) take the unrelated tables after it down with it.
+if (vecExtensionAvailable) {
+  try {
+    sqlite.exec(`
+      CREATE VIRTUAL TABLE IF NOT EXISTS mara_knowledge_vec USING vec0(
+        embedding float[1024] distance_metric=cosine
+      );
+    `);
+  } catch (err) {
+    console.warn('[db] failed to create mara_knowledge_vec virtual table — semantic search disabled:', err);
+    vecExtensionAvailable = false;
+  }
+}
+
+sqlite.exec(`
   CREATE TABLE IF NOT EXISTS mara_search_history (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     query TEXT NOT NULL,

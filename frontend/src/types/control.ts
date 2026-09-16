@@ -229,3 +229,14 @@ export interface ControlAuditAction {
   actor: string | null;
   created_at: number;
 }
+
+export interface MaraActivityEntry {
+  id: number;
+  topic: string;
+  content: string;
+  module: string | null;
+  kind: 'insight' | 'auto_apply';
+  outcome: string | null;
+  planId: number | null;
+  createdAt: string;
+}

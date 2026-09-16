@@ -2111,6 +2111,15 @@ export class DatabaseStorage implements IStorage {
       .limit(20);
   }
 
+  /** Batch fetch by id — used by searchKnowledge's semantic (vector) candidate path. */
+  async getKnowledgeByIds(ids: number[]): Promise<KnowledgeEntry[]> {
+    if (ids.length === 0) return [];
+    return await db
+      .select()
+      .from(maraKnowledgeBase)
+      .where(inArray(maraKnowledgeBase.id, ids));
+  }
+
   async getAllKnowledge(limit = 100): Promise<KnowledgeEntry[]> {
     return await db
       .select()

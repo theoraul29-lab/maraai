@@ -4,6 +4,7 @@ import { startSecurityCleanup } from '../security/cleanup.js';
 import { scheduleDbBackup } from '../services/dbBackup.js';
 import { startControlTaskWorker } from './control-task-worker.js';
 import { startWriterPayoutRetryChecker } from '../billing/writer-payout-retry.js';
+import { backfillKnowledgeEmbeddings } from '../mara-brain/embeddings-backfill.js';
 
 export function startBackgroundJobs(): void {
   scheduleDbBackup();
@@ -26,4 +27,8 @@ export function startBackgroundJobs(): void {
   startPaymentActivationChecker();
   startSecurityCleanup();
   startWriterPayoutRetryChecker();
+
+  // Fire-and-forget: paces itself in the background (see the module doc
+  // comment), no-ops once every row already has an embedding.
+  void backfillKnowledgeEmbeddings();
 }

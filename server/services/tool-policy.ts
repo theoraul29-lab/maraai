@@ -17,6 +17,11 @@ const TOOL_RISKS: Record<string, TaskRisk> = {
   'frontend.typecheck': 'LOW_RISK',
   'frontend.build': 'LOW_RISK',
   'code-agent.plan': 'LOW_RISK',
+  // Sandboxed (scratch dir, no secrets in env, no pip packages, timeout +
+  // output caps) and never touches the repo/git — same risk class as the
+  // fixed typecheck/build commands above, just running owner/Mara-authored
+  // script content instead of a predetermined toolchain command.
+  'python.execute': 'LOW_RISK',
   'repository.apply_changes': 'HIGH_RISK',
   'git.create_branch': 'HIGH_RISK',
   'git.stage_proposal': 'HIGH_RISK',

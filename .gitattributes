@@ -1,0 +1,7 @@
+# Force LF for files that run inside the Linux container — a CRLF shebang
+# line ("#!/bin/sh\r") fails to resolve on Linux, breaking the entrypoint
+# with a confusing "No such file or directory". Found when scripts/
+# docker-entrypoint.sh picked up CRLF from a Windows edit and broke the
+# Docker image on rebuild.
+*.sh text eol=lf
+Dockerfile* text eol=lf

@@ -571,3 +571,16 @@
 }
 @media (max-width: 980px) { .mcc-grid { grid-template-columns: repeat(2, 1fr); } .mcc-lower-grid { grid-template-columns: 1fr; } .mcc-module-file-grid { grid-template-columns: 1fr; } }
 @media (max-width: 560px) { .mcc-header { display: block; } .mcc-status { margin-top: 12px; } .mcc-grid { grid-template-columns: 1fr; } .mcc-links { grid-template-columns: 1fr; } .mcc-topology { max-width: 280px; } }
+
+/* Mara Activity — "what has Mara done on her own" timeline */
+.mcc-activity-entry { padding: 14px 0; border-top: 1px solid var(--mcc-border); }
+.mcc-activity-entry:first-child { border-top: none; }
+.mcc-activity-entry-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 6px; }
+.mcc-activity-entry-head time { margin-left: auto; color: var(--mcc-text-faint); font: .68rem var(--mcc-mono); }
+.mcc-activity-module { text-transform: uppercase; letter-spacing: .08em; font: 600 .68rem var(--mcc-mono); color: var(--mcc-cyan); border: 1px solid var(--mcc-border-strong); border-radius: 999px; padding: 2px 9px; }
+.mcc-activity-outcome { font: 600 .72rem var(--mcc-mono); }
+.mcc-activity-outcome--committed { color: #4fe88a; }
+.mcc-activity-outcome--held_for_review { color: #e8c14f; }
+.mcc-activity-outcome--rejected, .mcc-activity-outcome--failed { color: var(--mcc-red); }
+.mcc-activity-outcome--no_changes, .mcc-activity-outcome--insight { color: var(--mcc-text-faint); }
+.mcc-activity-entry p { margin: 0; color: var(--mcc-text-dim); font-size: .85rem; line-height: 1.5; }

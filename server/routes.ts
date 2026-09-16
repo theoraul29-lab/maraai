@@ -87,6 +87,8 @@ import { readSecuritySnapshot } from './services/security-status.js';
 import { setAnthropicApiKeyOverride } from './lib/anthropic-key-store.js';
 import { approveCodeAgentPlan, createCodeAgentRequestWithTask, getCodeAgentPlan, listCodeAgentPlans, rejectCodeAgentPlan } from './services/code-agent.js';
 import { detectCodeWriteIntent, handleAutonomousCodeRequest } from './services/autonomous-code-pipeline.js';
+import { detectPythonExecutionIntent, handlePythonExecutionRequest } from './services/python-agent.js';
+import { runPythonScript } from './services/python-sandbox.js';
 import { isHelloMaraModuleId, readHelloMaraModule, readHelloMaraModules } from './services/hellomara-module-registry.js';
 import { readGitHubStatus } from './services/github/operations.js';
 import { readRailwayStatus } from './services/railway/operations.js';
@@ -1404,6 +1406,25 @@ export async function registerRoutes(
     }
   });
 
+  // Direct, synchronous entry point for the Python sandbox (server/services/
+  // python-sandbox.ts) — runs immediately and returns the result, rather
+  // than queuing for the background control-task worker. Same handler and
+  // risk class (LOW_RISK, no approval needed) as the chat-triggered path in
+  // python-agent.ts; this one takes owner-authored code directly instead of
+  // having the LLM write it from a description.
+  app.post('/api/control/python/execute', requireAdmin, async (req: any, res: any) => {
+    try {
+      const code = typeof req.body?.code === 'string' ? req.body.code : '';
+      if (!code.trim()) return res.status(400).json({ error: 'code is required' });
+      const timeoutMs = typeof req.body?.timeoutMs === 'number' ? req.body.timeoutMs : undefined;
+      const result = await runPythonScript(code, { timeoutMs });
+      recordControlAdminAction('python.execute', 0, req.user?.uid ?? null, { ok: result.ok, timedOut: result.timedOut });
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to run script' });
+    }
+  });
+
   app.get('/api/control/code-agent/plans/:id', requireAdmin, (req: any, res: any) => {
     const plan = getCodeAgentPlan(Number.parseInt(String(req.params.id), 10));
     if (!plan) return res.status(404).json({ error: 'Code Agent plan not found' });
@@ -1595,6 +1616,43 @@ export async function registerRoutes(
   app.get('/api/control/audit/actions', requireAdmin, (_req: any, res: any) => {
     try { res.json({ actions: listControlAdminActions() }); }
     catch { res.status(500).json({ error: 'Failed to read control audit actions' }); }
+  });
+
+  // "What has Mara decided on her own" feed — reads the same knowledge-base
+  // rows module-analyzers.ts already writes (the per-cycle insight paragraph,
+  // and the auto-apply outcome for Writers Hub/Missions), just surfaced as a
+  // human-readable timeline instead of requiring an admin to ask in chat.
+  app.get('/api/control/mara/activity', requireAdmin, (req: any, res: any) => {
+    try {
+      const rawLimit = Number.parseInt(String(req.query.limit ?? '50'), 10);
+      const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(rawLimit, 1), 200) : 50;
+      const rows = rawSqlite
+        .prepare(`
+          SELECT id, topic, content, metadata, created_at FROM mara_knowledge_base
+          WHERE category = 'platform_insight' AND source = 'self_reflection'
+          ORDER BY created_at DESC LIMIT ?
+        `)
+        .all(limit) as Array<{ id: number; topic: string; content: string; metadata: string; created_at: number }>;
+      const entries = rows.map((r) => {
+        let meta: Record<string, unknown> = {};
+        try { meta = JSON.parse(r.metadata || '{}'); } catch { /* leave empty */ }
+        const isAutoApply = meta.autoApply === true;
+        return {
+          id: r.id,
+          topic: r.topic,
+          content: r.content,
+          module: typeof meta.module === 'string' ? meta.module : null,
+          kind: isAutoApply ? 'auto_apply' : 'insight',
+          outcome: isAutoApply && typeof meta.outcome === 'string' ? meta.outcome : null,
+          planId: isAutoApply && typeof meta.planId === 'number' ? meta.planId : null,
+          createdAt: new Date(r.created_at * 1000).toISOString(),
+        };
+      });
+      res.json({ entries });
+    } catch (error) {
+      console.error('[control] activity feed failed:', error);
+      res.status(500).json({ error: 'Failed to read Mara activity feed' });
+    }
   });
 
 
@@ -1907,6 +1965,13 @@ export async function registerRoutes(
       if (await detectCodeWriteIntent(message)) {
         const outcome = await handleAutonomousCodeRequest(message, actor);
         return res.json({ reply: outcome.reply, codeAction: outcome.status });
+      }
+
+      // Same autonomy pattern, scoped to a sandboxed Python script instead
+      // of a platform code change — see server/services/python-agent.ts.
+      if (await detectPythonExecutionIntent(message)) {
+        const outcome = await handlePythonExecutionRequest(message, actor);
+        return res.json({ reply: outcome.reply, pythonAction: outcome.status });
       }
 
       // The Control Center's voice loop sends the language Whisper detected
