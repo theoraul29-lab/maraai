@@ -26,15 +26,18 @@ const CHAT_IDLE_COLLAPSE_MS = 6000;
  * as the old standalone Agents topology panel, now the focal point instead
  * of one tile among several), and her chat + voice directly underneath.
  *
- * The center orb is a dedicated voice-to-voice control (click to speak,
- * click again to send what was heard — Mara answers back out loud). The
- * chat log below is for typed text only and retracts itself when idle so
- * it doesn't compete with the orb for attention.
+ * The center orb is a dedicated voice-to-voice control: one click starts a
+ * hands-free conversation — Mara auto-detects when the admin stops talking
+ * (voice-activity detection, no second click needed), replies out loud, and
+ * automatically starts listening again for the next turn, back and forth,
+ * until the admin clicks again to end it. The chat log below is for typed
+ * text only and retracts itself when idle so it doesn't compete with the
+ * orb for attention.
  */
 export function MaraCore({ agents }: { agents: AgentCatalogEntry[] }) {
   const {
     messages, sending, listening, transcribing, speaking,
-    voiceSupported, recognitionBlocked, statusNote, sendMessage, toggleListening,
+    voiceSupported, recognitionBlocked, statusNote, sendMessage, toggleConversation, conversationActive,
     ttsSupported, voiceStyle, setVoiceStyle,
   } = useMaraCore();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -91,11 +94,15 @@ export function MaraCore({ agents }: { agents: AgentCatalogEntry[] }) {
   const orbState = transcribing ? 'transcribing' : listening ? 'listening' : speaking ? 'speaking' : 'idle';
   const orbLabel = !voiceSupported
     ? 'Recunoașterea vocală nu e disponibilă'
-    : transcribing
-      ? 'Mara transcrie ce ai spus…'
-      : listening
-        ? 'Ascult — apasă din nou ca să opresc'
-        : 'Apasă și vorbește cu Mara';
+    : conversationActive
+      ? (transcribing
+          ? 'Mara transcrie ce ai spus…'
+          : listening
+            ? 'Te ascult — vorbește liber, mă opresc singură'
+            : speaking
+              ? 'Mara vorbește — apasă ca să o oprești'
+              : 'Conversație activă — apasă ca să închei')
+      : 'Apasă și vorbește cu Mara — conversație continuă, fără alte clickuri';
 
   return (
     <div className="mcc-nexus">
@@ -112,9 +119,9 @@ export function MaraCore({ agents }: { agents: AgentCatalogEntry[] }) {
 
         <button
           type="button"
-          className={`mcc-nexus-core-node${orbState !== 'idle' ? ` mcc-nexus-core-node--${orbState}` : ''}`}
+          className={`mcc-nexus-core-node${orbState !== 'idle' ? ` mcc-nexus-core-node--${orbState}` : conversationActive ? ' mcc-nexus-core-node--conversation' : ''}`}
           style={{ left: `${cx}%`, top: `${cy}%` }}
-          onClick={toggleListening}
+          onClick={toggleConversation}
           disabled={!voiceSupported || transcribing}
           title={orbLabel}
         >
@@ -207,7 +214,17 @@ export function MaraCore({ agents }: { agents: AgentCatalogEntry[] }) {
               </div>
             )}
             <div className="mcc-nexus-status">
-              {transcribing ? 'Mara transcrie…' : speaking ? 'Mara vorbește…' : listening ? 'Ascult…' : recognitionBlocked ? 'Ascultare indisponibilă aici' : 'Idle'}
+              {transcribing
+                ? 'Mara transcrie…'
+                : speaking
+                  ? 'Mara vorbește…'
+                  : listening
+                    ? 'Ascult…'
+                    : conversationActive
+                      ? 'Conversație activă…'
+                      : recognitionBlocked
+                        ? 'Ascultare indisponibilă aici'
+                        : 'Idle'}
             </div>
           </div>
         </div>

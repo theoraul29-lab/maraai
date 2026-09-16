@@ -446,6 +446,14 @@
   border-color: #e6be50;
   animation: mcc-nexus-pulse .9s ease-in-out infinite;
 }
+/* Conversation is engaged but nothing is happening this instant (the brief
+   gap between Mara finishing a reply and the mic actually starting to
+   record again) — a steady glow, distinct from the animated per-turn
+   states above, so the orb never looks fully idle while a conversation is
+   still live. */
+.mcc-nexus-core-node--conversation {
+  box-shadow: 0 0 0 1px rgba(79, 215, 232, .3), 0 0 40px rgba(79, 215, 232, .3);
+}
 @keyframes mcc-nexus-pulse { 0%, 100% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.06); } }
 
 /* ---------- Custom agent hover tooltip (replaces the native title attribute) ---------- */

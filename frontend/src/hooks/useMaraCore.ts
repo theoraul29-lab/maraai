@@ -86,6 +86,11 @@ export function useMaraCore() {
   const [voiceStyle, setVoiceStyleState] = useState<VoiceStyle>(loadStoredVoiceStyle);
   const [recognitionBlocked, setRecognitionBlocked] = useState(false);
   const [statusNote, setStatusNote] = useState<string | null>(null);
+  // Whether the hands-free conversation loop is engaged — spans multiple
+  // listen -> transcribe -> reply -> speak cycles started by one click, as
+  // opposed to `listening`, which is only true for the current instant of
+  // active recording. See toggleConversation below.
+  const [conversationActive, setConversationActiveState] = useState(false);
   const recognitionRef = useRef<Recognition | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const sttConfigRef = useRef<SttConfig | null>(null);
@@ -93,6 +98,28 @@ export function useMaraCore() {
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
   const sendingRef = useRef(false);
   const { i18n } = useTranslation();
+
+  // Mirrors `conversationActive` synchronously for use inside async
+  // callbacks (VAD ticks, recognition events, the post-speak continuation
+  // in sendMessage) that would otherwise close over a stale state value.
+  const conversationModeRef = useRef(false);
+  const setConversationMode = useCallback((active: boolean) => {
+    conversationModeRef.current = active;
+    setConversationActiveState(active);
+  }, []);
+  // Lets a "hang up" click force-resolve the Promise a pending speak() call
+  // is awaiting, so the conversation loop's `await speak(reply)` doesn't
+  // hang forever when playback is stopped manually (pause()/cancel() don't
+  // reliably fire 'ended'/'onend' across browsers).
+  const speakResolveRef = useRef<(() => void) | null>(null);
+  // Forward reference to startListeningAny (defined further down, after
+  // startLocalListening) — sendMessage needs to call it once a voice-turn
+  // reply finishes speaking, without depending on definition order.
+  const startListeningAnyRef = useRef<() => void>(() => {});
+  // Set by the VAD/no-speech-timeout path in startLocalListening so its
+  // onstop handler knows to skip transcription for a turn where nothing
+  // was actually said.
+  const noSpeechDetectedRef = useRef(false);
 
   // Single-admin desktop preference — persisted locally rather than synced
   // server-side (mirrors how the rest of the app treats this kind of local
@@ -116,18 +143,31 @@ export function useMaraCore() {
   // Last-resort fallback: the browser's native OS voice (SAPI/etc.) — this
   // is the robotic voice the local edge-tts service exists to replace. Kept
   // only for when the laptop/TTS service is unreachable, so Mara never goes
-  // fully silent.
-  const speakWithBrowserVoice = useCallback((text: string) => {
-    if (!('speechSynthesis' in window)) return;
-    const utterance = new SpeechSynthesisUtterance(text);
-    const voice = chooseVoice(window.speechSynthesis.getVoices());
-    if (voice) utterance.voice = voice;
-    utterance.onstart = () => setSpeaking(true);
-    utterance.onend = () => setSpeaking(false);
-    window.speechSynthesis.speak(utterance);
+  // fully silent. Returns a Promise that resolves once speech finishes, so
+  // the conversation loop (see toggleConversation) knows when it's safe to
+  // start listening again.
+  const speakWithBrowserVoice = useCallback((text: string): Promise<void> => {
+    if (!('speechSynthesis' in window)) return Promise.resolve();
+    return new Promise<void>((resolve) => {
+      const utterance = new SpeechSynthesisUtterance(text);
+      const voice = chooseVoice(window.speechSynthesis.getVoices());
+      if (voice) utterance.voice = voice;
+      utterance.onstart = () => setSpeaking(true);
+      const finish = () => {
+        setSpeaking(false);
+        if (speakResolveRef.current === resolve) speakResolveRef.current = null;
+        resolve();
+      };
+      speakResolveRef.current = resolve;
+      utterance.onend = finish;
+      utterance.onerror = finish;
+      window.speechSynthesis.speak(utterance);
+    });
   }, []);
 
-  const speak = useCallback((text: string) => {
+  // Returns a Promise that resolves once Mara has finished speaking (via
+  // either path) — never rejects, so it's always safe to `await`.
+  const speak = useCallback((text: string): Promise<void> => {
     // Stop whatever's currently playing (either path) before starting the
     // next reply — mirrors the old unconditional speechSynthesis.cancel().
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
@@ -138,11 +178,10 @@ export function useMaraCore() {
 
     const ttsConfig = ttsConfigRef.current;
     if (!ttsConfig) {
-      speakWithBrowserVoice(text);
-      return;
+      return speakWithBrowserVoice(text);
     }
 
-    void (async () => {
+    return (async () => {
       try {
         // credentials must be explicit 'omit' — same cross-origin reasoning
         // as the STT fetch below (frontend/src/csrf.ts's global fetch
@@ -160,28 +199,34 @@ export function useMaraCore() {
         const audio = new Audio(url);
         currentAudioRef.current = audio;
         audio.onplay = () => setSpeaking(true);
-        const cleanup = () => {
-          setSpeaking(false);
-          URL.revokeObjectURL(url);
-          if (currentAudioRef.current === audio) currentAudioRef.current = null;
-        };
-        audio.onended = cleanup;
-        audio.onerror = cleanup;
-        await audio.play();
+        await new Promise<void>((resolve) => {
+          const cleanup = () => {
+            setSpeaking(false);
+            URL.revokeObjectURL(url);
+            if (currentAudioRef.current === audio) currentAudioRef.current = null;
+            if (speakResolveRef.current === resolve) speakResolveRef.current = null;
+            resolve();
+          };
+          speakResolveRef.current = resolve;
+          audio.onended = cleanup;
+          audio.onerror = cleanup;
+          audio.play().catch(cleanup);
+        });
       } catch {
         // Local TTS unreachable or the request/playback failed — fall back
         // to the browser voice rather than leaving Mara silent.
-        speakWithBrowserVoice(text);
+        await speakWithBrowserVoice(text);
       }
     })();
   }, [i18n.language, voiceStyle, speakWithBrowserVoice]);
 
-  const sendMessage = useCallback(async (text: string) => {
+  const sendMessage = useCallback(async (text: string, opts?: { voiceTurn?: boolean }) => {
     const trimmed = text.trim();
     if (!trimmed || sendingRef.current) return;
     sendingRef.current = true;
     setSending(true);
     setMessages((prev) => [...prev, { role: 'user', content: trimmed, ts: Date.now() }]);
+    let reply: string;
     try {
       const response = await fetch('/api/admin/mara/chat', {
         method: 'POST',
@@ -190,14 +235,23 @@ export function useMaraCore() {
         body: JSON.stringify({ message: trimmed }),
       });
       const data = await response.json() as { reply?: string };
-      const reply = data.reply ?? 'Mara nu a răspuns.';
-      setMessages((prev) => [...prev, { role: 'mara', content: reply, ts: Date.now() }]);
-      speak(reply);
+      reply = data.reply ?? 'Mara nu a răspuns.';
     } catch {
-      setMessages((prev) => [...prev, { role: 'mara', content: 'Conexiunea cu Mara a eșuat — încearcă din nou.', ts: Date.now() }]);
-    } finally {
-      sendingRef.current = false;
-      setSending(false);
+      reply = 'Conexiunea cu Mara a eșuat — încearcă din nou.';
+    }
+    setMessages((prev) => [...prev, { role: 'mara', content: reply, ts: Date.now() }]);
+    sendingRef.current = false;
+    setSending(false);
+
+    if (opts?.voiceTurn) {
+      // Voice-initiated turn in an active conversation: wait for Mara to
+      // actually finish speaking before opening the mic again — otherwise
+      // the mic would pick up her own reply. Typed chat below skips this
+      // (fire-and-forget) since there's no next listening turn to gate.
+      await speak(reply);
+      if (conversationModeRef.current) startListeningAnyRef.current();
+    } else {
+      void speak(reply);
     }
   }, [speak]);
 
@@ -258,13 +312,21 @@ export function useMaraCore() {
     recognition.continuous = false;
     recognition.onresult = (event) => {
       const transcript = event.results[0]?.[0]?.transcript?.trim() ?? '';
-      if (transcript) void sendMessageRef.current(transcript);
+      if (transcript) void sendMessageRef.current(transcript, { voiceTurn: true });
     };
     recognition.onerror = (event) => {
       setListening(false);
       if (event?.error === 'network' && !sttConfigRef.current) {
         setRecognitionBlocked(true);
         setStatusNote('Ascultarea nu e disponibilă acum — serviciul vocal local al Marei nu răspunde.');
+      }
+      // Web Speech's own "you didn't say anything" signal — without this,
+      // a conversation would get stuck showing itself as active with
+      // nothing left to drive it forward (no transcript means sendMessage,
+      // and so the next listen, never fires).
+      if (event?.error === 'no-speech' && conversationModeRef.current) {
+        setConversationMode(false);
+        setStatusNote('Nu am detectat nimic — apasă din nou ca să vorbești.');
       }
     };
     recognition.onend = () => setListening(false);
@@ -297,16 +359,28 @@ export function useMaraCore() {
       const data = await res.json() as { text?: string };
       const text = (data.text ?? '').trim();
       if (text) {
-        void sendMessageRef.current(text);
+        void sendMessageRef.current(text, { voiceTurn: true });
       } else {
         setStatusNote('Nu am înțeles nimic — încearcă din nou, mai aproape de microfon.');
+        if (conversationModeRef.current) setConversationMode(false);
       }
     } catch {
       setStatusNote('Transcrierea vocală a eșuat — serviciul local nu a răspuns.');
+      if (conversationModeRef.current) setConversationMode(false);
     } finally {
       setTranscribing(false);
     }
-  }, []);
+  }, [setConversationMode]);
+
+  // Voice-activity detection tuning for the auto-stop-on-silence below.
+  // RMS is computed on a -1..1 normalized signal, so background noise
+  // typically sits under ~0.02 and actual speech well above it — 0.035
+  // leaves margin either way without being so low that quiet rooms falsely
+  // trigger "speech detected".
+  const VAD_VOICE_RMS_THRESHOLD = 0.035;
+  const VAD_SILENCE_STOP_MS = 1200; // pause length that means "done talking"
+  const VAD_NO_SPEECH_TIMEOUT_MS = 7000; // nothing said at all — give up this turn
+  const VAD_MAX_RECORDING_MS = 25000; // hard safety cap regardless of VAD
 
   const startLocalListening = useCallback(async () => {
     try {
@@ -314,9 +388,70 @@ export function useMaraCore() {
       const recorder = new MediaRecorder(stream);
       const chunks: BlobPart[] = [];
       recorder.ondataavailable = (event) => { if (event.data.size > 0) chunks.push(event.data); };
+
+      // Auto-stop the recording once the user pauses, instead of requiring
+      // a second click — this is what makes the conversation loop feel
+      // hands-free. A basic RMS-amplitude check over the raw mic signal is
+      // enough here (no need for a real VAD model): we only need to know
+      // "is anyone talking right now", not transcribe anything ourselves.
+      let stopVad = () => {};
+      try {
+        const AudioCtx = window.AudioContext;
+        const audioCtx = new AudioCtx();
+        const source = audioCtx.createMediaStreamSource(stream);
+        const analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 2048;
+        source.connect(analyser);
+        const vadBuffer = new Uint8Array(analyser.fftSize);
+        const startedAt = Date.now();
+        let lastVoiceAt = 0;
+        let hasSpoken = false;
+
+        const vadTimer = setInterval(() => {
+          analyser.getByteTimeDomainData(vadBuffer);
+          let sumSquares = 0;
+          for (let i = 0; i < vadBuffer.length; i++) {
+            const normalized = (vadBuffer[i] - 128) / 128;
+            sumSquares += normalized * normalized;
+          }
+          const rms = Math.sqrt(sumSquares / vadBuffer.length);
+          const now = Date.now();
+          if (rms > VAD_VOICE_RMS_THRESHOLD) {
+            hasSpoken = true;
+            lastVoiceAt = now;
+          }
+          const elapsed = now - startedAt;
+          if (hasSpoken && now - lastVoiceAt > VAD_SILENCE_STOP_MS) {
+            if (recorder.state === 'recording') recorder.stop();
+          } else if (!hasSpoken && elapsed > VAD_NO_SPEECH_TIMEOUT_MS) {
+            noSpeechDetectedRef.current = true;
+            if (recorder.state === 'recording') recorder.stop();
+          } else if (elapsed > VAD_MAX_RECORDING_MS) {
+            if (recorder.state === 'recording') recorder.stop();
+          }
+        }, 150);
+
+        stopVad = () => {
+          clearInterval(vadTimer);
+          void audioCtx.close().catch(() => {});
+        };
+      } catch {
+        // AudioContext unavailable for some reason — recording still works,
+        // it just won't auto-stop on silence (the manual "that's it, send
+        // it" click in toggleConversation still covers this case).
+      }
+
       recorder.onstop = () => {
+        stopVad();
         stream.getTracks().forEach((track) => track.stop());
         setListening(false);
+        const noSpeech = noSpeechDetectedRef.current;
+        noSpeechDetectedRef.current = false;
+        if (noSpeech) {
+          setStatusNote('Nu am detectat nimic — apasă din nou ca să vorbești.');
+          if (conversationModeRef.current) setConversationMode(false);
+          return;
+        }
         const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
         if (blob.size > 0) void transcribeWithLocalStt(blob);
       };
@@ -327,31 +462,72 @@ export function useMaraCore() {
     } catch {
       setStatusNote('Microfonul nu e accesibil — verifică permisiunile aplicației.');
     }
-  }, [transcribeWithLocalStt]);
+  }, [transcribeWithLocalStt, setConversationMode]);
 
-  const toggleListening = useCallback(() => {
+  // Starts one listening turn via whichever backend is active — shared by
+  // the initial click in toggleConversation and by sendMessage's
+  // post-speak continuation of an active conversation.
+  const startListeningAny = useCallback(() => {
     if (sttConfigRef.current) {
-      if (listening) {
-        mediaRecorderRef.current?.stop();
-      } else {
-        void startLocalListening();
-      }
+      void startLocalListening();
       return;
     }
     if (!recognitionRef.current) return;
-    if (listening) {
-      recognitionRef.current.stop();
-    } else {
-      setRecognitionBlocked(false);
-      setStatusNote(null);
-      setListening(true);
-      recognitionRef.current.start();
+    setRecognitionBlocked(false);
+    setStatusNote(null);
+    setListening(true);
+    recognitionRef.current.start();
+  }, [startLocalListening]);
+
+  useEffect(() => { startListeningAnyRef.current = startListeningAny; }, [startListeningAny]);
+
+  // The orb's single click target. A click's meaning depends on what's
+  // happening right now, mirroring a real conversation:
+  //  - idle, no conversation yet -> start one (begin listening).
+  //  - mid-recording -> "that's it, send it" (same effect VAD firing on
+  //    its own has — finishes the turn normally, doesn't abort it).
+  //  - Mara mid-reply -> stop her and end the conversation (a "hang up").
+  //  - the brief gap between turns -> end the conversation.
+  // This is what removes the old "click to start, click again to stop,
+  // click again to reply" friction — after the first click a full
+  // back-and-forth runs on its own via VAD + the sendMessage/speak chain
+  // above, until the user explicitly ends it.
+  const toggleConversation = useCallback(() => {
+    if (!conversationModeRef.current) {
+      setConversationMode(true);
+      startListeningAny();
+      return;
     }
-  }, [listening, startLocalListening]);
+
+    if (listening) {
+      if (sttConfigRef.current) {
+        mediaRecorderRef.current?.stop();
+      } else {
+        recognitionRef.current?.stop();
+      }
+      return;
+    }
+
+    if (speaking) {
+      if (currentAudioRef.current) {
+        currentAudioRef.current.pause();
+        currentAudioRef.current = null;
+      }
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      setSpeaking(false);
+      // pause()/cancel() don't reliably fire 'ended'/onend across browsers
+      // — force-resolve so a pending `await speak(...)` in sendMessage
+      // doesn't hang.
+      speakResolveRef.current?.();
+      speakResolveRef.current = null;
+    }
+
+    setConversationMode(false);
+  }, [listening, speaking, startListeningAny, setConversationMode]);
 
   return {
     messages, sending, listening, transcribing, speaking, voiceSupported, recognitionBlocked, statusNote,
-    sendMessage, toggleListening,
+    sendMessage, toggleConversation, conversationActive,
     ttsSupported, voiceStyle, setVoiceStyle,
   };
 }
