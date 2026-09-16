@@ -325,13 +325,20 @@ export async function registerRoutes(
   app.post('/api/admin/orders/:id/reject', requireAdmin, adminOrdersModule.rejectOrder);
 
   // ─── Flag public: frontend verifică dacă sistemul de plăți e activ ─────────
+  // FORCE_PAYMENTS_INACTIVE is an explicit operator kill-switch that wins
+  // over PAYMENT_SYSTEM_ACTIVE regardless of how the latter got set (the
+  // launch-date auto-activation checker in launch-countdown.ts included) —
+  // see the comment there for why the two are no longer the same decision.
+  const paymentsActive = () =>
+    process.env.FORCE_PAYMENTS_INACTIVE !== 'true' && process.env.PAYMENT_SYSTEM_ACTIVE === 'true';
+
   app.get('/api/config/features', (_req: any, res: any) => {
-    res.json({ paymentsActive: process.env.PAYMENT_SYSTEM_ACTIVE === 'true' });
+    res.json({ paymentsActive: paymentsActive() });
   });
 
   // ─── Middleware: blochează /api/premium/* când plățile sunt inactive ────────
   const requirePaymentsActive = (_req: any, res: any, next: any) => {
-    if (process.env.PAYMENT_SYSTEM_ACTIVE !== 'true') {
+    if (!paymentsActive()) {
       return res.status(503).json({
         error: 'payments_inactive',
         message: 'VIP se activează în curând după lansarea oficială.',

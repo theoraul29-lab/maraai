@@ -141,6 +141,17 @@ function countActiveUsers(): number {
  * Odată activat, intervalul se oprește (nu mai e nevoie să verifice).
  */
 export function startPaymentActivationChecker(): void {
+  // Operator override — stops the launch-date auto-activation below even
+  // though LAUNCH_DATE has already passed. Needed because the real launch
+  // (this hardcoded date) and "payments should actually go live" are two
+  // different decisions in practice: the site went live at this URL before
+  // the payment integration (Stripe/PayPal/Missions billing) was ready to
+  // be turned on for real users. Without this, every deploy re-triggers
+  // real, non-sandbox charges the moment the process boots.
+  if (process.env.FORCE_PAYMENTS_INACTIVE === 'true') {
+    console.log('[payments] FORCE_PAYMENTS_INACTIVE=true — auto-activation checker not starting');
+    return;
+  }
   if (process.env.PAYMENT_SYSTEM_ACTIVE === 'true') {
     console.log('[payments] sistem deja activ — checker nu pornește');
     return;
@@ -151,6 +162,10 @@ export function startPaymentActivationChecker(): void {
   let interval: ReturnType<typeof setInterval> | null = null;
 
   const check = () => {
+    if (process.env.FORCE_PAYMENTS_INACTIVE === 'true') {
+      if (interval) clearInterval(interval);
+      return;
+    }
     if (process.env.PAYMENT_SYSTEM_ACTIVE === 'true') return;
 
     const launched = isLaunched();
