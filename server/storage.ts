@@ -183,6 +183,15 @@ export interface IStorage {
     search?: string;
   }): Promise<WriterPage[]>;
   getWriterPageById(id: number): Promise<WriterPage | null>;
+  getWritersHubPlatformStats(): Promise<{
+    totalSales: number;
+    totalRevenueCents: number;
+    totalSentToAuthorsCents: number;
+    totalOwedToAuthorsCents: number;
+    sellingAuthorCount: number;
+    payoutEmailSetCount: number;
+    paidArticlesNeverSold: number;
+  }>;
   getWriterPageBySlug(slug: string): Promise<WriterPage | null>;
   updateWriterPage(
     id: number,
@@ -890,6 +899,68 @@ export class DatabaseStorage implements IStorage {
       .from(writerPages)
       .where(eq(writerPages.id, id));
     return page || null;
+  }
+
+  /**
+   * Platform-wide Writers Hub monetization metrics — for Mara's writers
+   * module analyzer (server/mara-brain/agents/module-analyzers.ts), which
+   * previously had zero visibility into sales/payouts (it only counted
+   * pages by visibility). Kept as one method here rather than composed from
+   * getWriterSalesSummary (per-author) since this needs platform totals.
+   */
+  async getWritersHubPlatformStats(): Promise<{
+    totalSales: number;
+    totalRevenueCents: number;
+    totalSentToAuthorsCents: number;
+    totalOwedToAuthorsCents: number;
+    sellingAuthorCount: number;
+    payoutEmailSetCount: number;
+    paidArticlesNeverSold: number;
+  }> {
+    const purchaseRows = await db
+      .select({
+        pageId: writerPurchases.pageId,
+        userId: writerPages.userId,
+        amountCents: writerPurchases.amountCents,
+        authorShareCents: writerPurchases.authorShareCents,
+        payoutStatus: writerPurchases.payoutStatus,
+      })
+      .from(writerPurchases)
+      .innerJoin(writerPages, eq(writerPages.id, writerPurchases.pageId));
+
+    let totalRevenueCents = 0;
+    let totalSentToAuthorsCents = 0;
+    let totalOwedToAuthorsCents = 0;
+    const sellingAuthors = new Set<string>();
+    const soldPageIds = new Set<number>();
+    for (const r of purchaseRows) {
+      totalRevenueCents += r.amountCents;
+      if (r.payoutStatus === 'sent') totalSentToAuthorsCents += r.authorShareCents;
+      else totalOwedToAuthorsCents += r.authorShareCents;
+      sellingAuthors.add(r.userId);
+      soldPageIds.add(r.pageId);
+    }
+
+    const paidPages = await db
+      .select({ id: writerPages.id })
+      .from(writerPages)
+      .where(and(eq(writerPages.published, 1), eq(writerPages.visibility, 'paid')));
+    const paidArticlesNeverSold = paidPages.filter((p) => !soldPageIds.has(p.id)).length;
+
+    const usersWithPayoutEmail = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(sql`${users.paypalPayoutEmail} IS NOT NULL AND ${users.paypalPayoutEmail} != ''`);
+
+    return {
+      totalSales: purchaseRows.length,
+      totalRevenueCents,
+      totalSentToAuthorsCents,
+      totalOwedToAuthorsCents,
+      sellingAuthorCount: sellingAuthors.size,
+      payoutEmailSetCount: usersWithPayoutEmail.length,
+      paidArticlesNeverSold,
+    };
   }
 
   async getWriterLibrary(options?: {

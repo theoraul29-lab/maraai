@@ -14,8 +14,9 @@
 import { llmGenerate, isLLMConfigured, LLMRateLimitedError } from '../../llm.js';
 import { storage } from '../../storage.js';
 import { storeKnowledge } from '../knowledge-base.js';
+import { rawSqlite } from '../../db.js';
 
-export type ModuleKey = 'you' | 'reels' | 'growth' | 'writers' | 'creators' | 'vip';
+export type ModuleKey = 'you' | 'reels' | 'growth' | 'writers' | 'creators' | 'vip' | 'missions';
 
 export interface ModuleAnalysisResult {
   module: ModuleKey;
@@ -235,20 +236,99 @@ async function analyzeGrowth(): Promise<ModuleAnalysisResult> {
 async function analyzeWriters(): Promise<ModuleAnalysisResult> {
   const pages = await storage.getPublishedWriterPages();
   const pub = pages.filter((p) => (p as { visibility?: string }).visibility === 'public').length;
-  const vip = pages.filter((p) => (p as { visibility?: string }).visibility === 'vip').length;
   const paid = pages.filter((p) => (p as { visibility?: string }).visibility === 'paid').length;
   const authors = new Set(pages.map((p) => p.userId)).size;
+  const stats = await storage.getWritersHubPlatformStats();
 
+  // Writing/publishing/selling are all open to every account now — no VIP
+  // gate anywhere in Writers Hub — and every paid sale pays the author 90%
+  // automatically via PayPal right after checkout, no manual payout request.
   const metrics = [
-    `- Total published pages: ${pages.length}`,
+    `- Total published pages: ${pages.length} (public: ${pub}, paid: ${paid})`,
     `- Unique authors: ${authors}`,
-    `- Visibility split — public: ${pub}, vip: ${vip}, paid: ${paid}`,
+    `- Writing/publishing/selling: open to every account, no VIP gate`,
+    `- Total sales (all-time): ${stats.totalSales}`,
+    `- Total revenue: €${(stats.totalRevenueCents / 100).toFixed(2)}`,
+    `- Sent to authors (90% share, automatic PayPal payout): €${(stats.totalSentToAuthorsCents / 100).toFixed(2)}`,
+    `- Owed but not yet sent (payout failed or author hasn't set a PayPal email): €${(stats.totalOwedToAuthorsCents / 100).toFixed(2)}`,
+    `- Authors who've made at least 1 sale: ${stats.sellingAuthorCount}`,
+    `- Authors who've set a PayPal payout email: ${stats.payoutEmailSetCount}`,
+    `- Paid articles with zero sales: ${stats.paidArticlesNeverSold}`,
   ].join('\n');
 
   return runAnalyzer(
     'writers',
     metrics,
-    'Focus on: topic gaps (what readers search but nobody writes), author retention (one-and-done authors), conversion of public readers into VIP/paid readers, featured-page surfacing. Propose concrete topic recommendations or UX nudges.',
+    'Focus on: (1) authors who publish paid content but never set a PayPal payout email — their earnings are stuck; propose a concrete UX nudge to close this. (2) paid articles with zero sales — pricing, discoverability, or topic-fit problem? (3) topic gaps (what readers search but nobody writes). (4) author retention (one-and-done authors). (5) surfacing high-earning authors/articles to inspire more selling. Propose concrete, numbered levers, not generic advice.',
+  );
+}
+
+// ============================================================================
+// Missions (the transformation-programs journey — New Mindset → New You)
+// ============================================================================
+// Was listed in this file's own header comment as one of the analyzed
+// modules but never actually implemented — confirmed by grep before writing
+// this, ModuleKey/runAllModuleAnalyzers simply didn't include it. Arguably
+// the platform's core product had zero autonomous growth analysis.
+async function analyzeMissions(): Promise<ModuleAnalysisResult> {
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const now = Date.now();
+
+  const statusCounts = rawSqlite
+    .prepare(`SELECT status, COUNT(*) AS c FROM user_program_enrollments GROUP BY status`)
+    .all() as Array<{ status: string; c: number }>;
+  const activeCount = statusCounts.find((r) => r.status === 'active')?.c ?? 0;
+  const completedCount = statusCounts.find((r) => r.status === 'completed')?.c ?? 0;
+  const totalEnrollments = statusCounts.reduce((sum, r) => sum + r.c, 0);
+  const completionRate = totalEnrollments ? ((completedCount / totalEnrollments) * 100).toFixed(1) : '0.0';
+
+  const perProgram = rawSqlite
+    .prepare(
+      `SELECT p.slug, p.name, COUNT(*) AS active_count
+         FROM user_program_enrollments e
+         JOIN mission_programs p ON e.program_id = p.id
+        WHERE e.status = 'active'
+        GROUP BY p.slug, p.name
+        ORDER BY p.sort_order ASC`,
+    )
+    .all() as Array<{ slug: string; name: string; active_count: number }>;
+
+  // Streak health: 0-streak active enrollments are the clearest at-risk
+  // signal (someone who was doing daily missions and just... stopped).
+  const zeroStreakActive = (
+    rawSqlite.prepare(`SELECT COUNT(*) AS c FROM user_program_enrollments WHERE status='active' AND streak = 0`).get() as { c: number }
+  ).c;
+
+  // Stale = no activity in 3+ days but still marked active — different
+  // signal from a fresh 0-streak enrollment (just started, hasn't lapsed).
+  const staleCutoff = Math.floor((now - 3 * DAY_MS) / 1000);
+  const staleActive = (
+    rawSqlite
+      .prepare(`SELECT COUNT(*) AS c FROM user_program_enrollments WHERE status='active' AND (last_activity_at IS NULL OR last_activity_at < ?)`)
+      .get(staleCutoff) as { c: number }
+  ).c;
+
+  let purchaseStats = { totalPurchases: 0, totalRevenueCents: 0 };
+  try {
+    const row = rawSqlite
+      .prepare(`SELECT COUNT(*) AS c, COALESCE(SUM(amount_cents), 0) AS revenue FROM program_purchases WHERE status = 'completed'`)
+      .get() as { c: number; revenue: number };
+    purchaseStats = { totalPurchases: row.c, totalRevenueCents: row.revenue };
+  } catch { /* table may not exist in all envs */ }
+
+  const metrics = [
+    `- Total enrollments (all-time): ${totalEnrollments} — active: ${activeCount}, completed: ${completedCount}`,
+    `- Completion rate: ${completionRate}%`,
+    `- Per-program active enrollments: ${perProgram.map((p) => `${p.name}=${p.active_count}`).join(', ') || 'none'}`,
+    `- Active enrollments with a 0-day streak right now: ${zeroStreakActive}`,
+    `- Active enrollments with no activity in 3+ days (stale, at risk of silent churn): ${staleActive}`,
+    `- Program purchases (New Skills/Body/Life/You unlocks, €7 each, or the €28 bundle): ${purchaseStats.totalPurchases} completed, €${(purchaseStats.totalRevenueCents / 100).toFixed(2)} revenue`,
+  ].join('\n');
+
+  return runAnalyzer(
+    'missions',
+    metrics,
+    'Focus on: (1) the stale/at-risk active enrollments — what would win someone back after 3+ days of silence (a nudge, a notification, an easier re-entry mission)? (2) which program in the sequence loses the most people, and why that stage specifically. (3) whether the free New Mindset -> New Habit on-ramp is actually converting people into a paid program (New Skills+), and if not, what to change. (4) completion rate trends — is the 5-steps-per-day format helping or hurting. Propose concrete, numbered levers with specific thresholds, not generic advice — remember missions are meant to last the real ~1000+ day arc, so any proposal must respect that pacing, not shortcut it.',
   );
 }
 
@@ -311,6 +391,7 @@ export async function runAllModuleAnalyzers(): Promise<ModuleAnalysisResult[]> {
     { key: 'you', fn: analyzeYou },
     { key: 'reels', fn: analyzeReels },
     { key: 'growth', fn: analyzeGrowth },
+    { key: 'missions', fn: analyzeMissions },
     { key: 'writers', fn: analyzeWriters },
     { key: 'creators', fn: analyzeCreators },
     { key: 'vip', fn: analyzeVIP },
