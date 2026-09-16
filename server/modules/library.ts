@@ -161,7 +161,10 @@ export async function fetchAndCacheBook(id: number): Promise<CachedBook> {
 
   let content = Buffer.from(buf).toString('utf8');
   if (!plainUrl) content = stripHtmlToText(content);
-  content = content.trim();
+  // Gutenberg's plain-text editions use Windows line endings (\r\n\r\n
+  // between paragraphs) — normalize once here so every consumer (the
+  // reader's client-side pagination in particular) can rely on plain \n\n.
+  content = content.replace(/\r\n/g, '\n').trim();
   if (!content) throw new Error('Downloaded book text was empty');
 
   const wordCount = content.split(/\s+/).filter(Boolean).length;

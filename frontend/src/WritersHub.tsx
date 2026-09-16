@@ -1084,7 +1084,12 @@ const LIBRARY_READ_TIMEOUT_MS = 45_000;
 const LIBRARY_SEARCH_TIMEOUT_MS = 15_000;
 
 function paginateBookContent(content: string): string[] {
-  const paragraphs = content.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+  // Confirmed against a real Gutenberg file: paragraph breaks are "\r\n\r\n"
+  // (Windows line endings), not "\n\n" — the two \n in "\r\n\r\n" aren't
+  // adjacent, so /\n{2,}/ never matched at all and the entire book became
+  // one giant "paragraph" (and therefore one page). Normalize first.
+  const normalized = content.replace(/\r\n/g, '\n');
+  const paragraphs = normalized.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
   const pages: string[] = [];
   let current: string[] = [];
   let currentWords = 0;
