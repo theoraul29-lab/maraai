@@ -106,7 +106,12 @@ async function searchPeople(q: string, limit: number): Promise<SearchResult[]> {
       id: r.id,
       title: display,
       snippet: makeSnippet(r.bio ?? '', q),
-      href: `/you/${r.id}`,
+      // Matches server/share/routes.ts's internalShareUrl('profile', ...) —
+      // both now point at the same /you?u=<id> pattern that frontend/src/
+      // you.tsx reads. Previously this was /you/<id>, a path that was never
+      // registered as a route in App.tsx, so every "people" search result
+      // 404'd on click.
+      href: `/you?u=${r.id}`,
       thumbnail: r.profileImageUrl ?? null,
       score: (hit(r.displayName) ? 2 : 1) * 100,
     };

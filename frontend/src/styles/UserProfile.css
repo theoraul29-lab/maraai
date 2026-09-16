@@ -282,6 +282,33 @@
   min-width: auto;
 }
 
+.action-btn.block-btn {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: none;
+}
+
+.action-btn.block-btn:hover {
+  background: rgba(255, 51, 51, 0.15);
+  color: #FF3333;
+  border-color: rgba(255, 51, 51, 0.4);
+  transform: translateY(-2px);
+  box-shadow: none;
+}
+
+.action-btn.block-btn.blocked {
+  background: rgba(255, 51, 51, 0.15);
+  color: #FF3333;
+  border-color: #FF3333;
+}
+
+.profile-blocked-notice {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+  font-style: italic;
+}
+
 /* Bio Section */
 .profile-bio {
   margin: 0 0 12px 0;

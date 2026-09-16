@@ -15,6 +15,13 @@ interface ConsentState {
   notificationsEnabled: boolean;
 }
 
+interface BlockedUser {
+  id: string;
+  displayName: string | null;
+  firstName: string | null;
+  profileImageUrl: string | null;
+}
+
 interface SettingsModalProps {
   onClose: () => void;
 }
@@ -35,6 +42,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  const [blockedUsers, setBlockedUsers] = useState<BlockedUser[] | null>(null);
+  const [unblockingId, setUnblockingId] = useState<string | null>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -46,6 +55,27 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
       .catch(() => {})
       .finally(() => setLoadingConsent(false));
   }, []);
+
+  useEffect(() => {
+    fetch('/api/profile/blocked', { credentials: 'include' })
+      .then(r => r.json())
+      .then(data => setBlockedUsers(Array.isArray(data.items) ? data.items : []))
+      .catch(() => setBlockedUsers([]));
+  }, []);
+
+  const handleUnblock = async (id: string) => {
+    setUnblockingId(id);
+    try {
+      const res = await fetch(`/api/profile/${id}/block`, { method: 'DELETE', credentials: 'include' });
+      if (res.ok) {
+        setBlockedUsers(list => (list ? list.filter(u => u.id !== id) : list));
+      }
+    } catch {
+      // non-fatal — the row simply stays until retried
+    } finally {
+      setUnblockingId(null);
+    }
+  };
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -216,6 +246,38 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                 <button className="settings-btn-danger" onClick={handleLogout}>
                   {t('settings.logout')}
                 </button>
+
+                <div className="settings-divider" />
+
+                <h3 className="settings-section-title">{t('settings.blockedUsersTitle')}</h3>
+                <p className="settings-danger-desc">{t('settings.blockedUsersDesc')}</p>
+                {blockedUsers === null ? (
+                  <div className="settings-loading">{t('common.loading')}</div>
+                ) : blockedUsers.length === 0 ? (
+                  <div className="settings-blocked-empty">{t('settings.blockedUsersEmpty')}</div>
+                ) : (
+                  <ul className="settings-blocked-list">
+                    {blockedUsers.map(u => (
+                      <li key={u.id} className="settings-blocked-row">
+                        <div className="settings-blocked-avatar">
+                          {u.profileImageUrl ? (
+                            <img src={u.profileImageUrl} alt="" />
+                          ) : (
+                            (u.displayName || u.firstName || '?')[0]?.toUpperCase()
+                          )}
+                        </div>
+                        <span className="settings-blocked-name">{u.displayName || u.firstName || t('you.unknownUser')}</span>
+                        <button
+                          className="settings-btn-ghost"
+                          onClick={() => handleUnblock(u.id)}
+                          disabled={unblockingId === u.id}
+                        >
+                          {t('settings.unblockBtn')}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
 
                 <div className="settings-divider" />
 

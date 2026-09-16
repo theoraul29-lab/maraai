@@ -193,6 +193,11 @@ function App() {
   const location = useLocation();
   const isHomePage = location.pathname === '/';
   const isControlCenterRoute = location.pathname === '/control-center';
+  // /you is being redesigned as pure user-to-user messaging (add friend,
+  // block, P2P file/photo sharing) — the floating global assistant doesn't
+  // belong on that page anymore, same reasoning as excluding it from Control
+  // Center above.
+  const isYouRoute = location.pathname === '/you';
   const isFullscreenPanel = ['/creator-panel', '/writers-hub', '/control-center'].includes(location.pathname);
 
   return (
@@ -234,7 +239,7 @@ function App() {
             </Suspense>
           </ErrorBoundary>
           {/* Mara Chat Widget - appears on all pages */}
-          {!isControlCenterRoute && <ErrorBoundary level="component">
+          {!isControlCenterRoute && !isYouRoute && <ErrorBoundary level="component">
             <MaraChatWidget />
           </ErrorBoundary>}
           {/* P2P background compute badge — visible only when actively contributing */}

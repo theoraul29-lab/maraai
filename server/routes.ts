@@ -411,6 +411,7 @@ export async function registerRoutes(
   // it literally instead of treating "me" as a user id.
   app.get('/api/profile/me', requireAuth, profileModule.getMe);
   app.patch('/api/profile/me', requireAuth, profileModule.updateMe);
+  app.get('/api/profile/blocked', requireAuth, profileModule.listBlockedUsers);
   app.get('/api/profile/:id', profileModule.getProfile);
   app.get('/api/profile/:id/videos', profileModule.getProfileVideos);
   app.get('/api/profile/:id/followers', profileModule.listFollowers);
@@ -431,6 +432,8 @@ export async function registerRoutes(
     profileModule.deleteProfilePost,
   );
   app.post('/api/profile/:id/follow', requireAuth, profileModule.followUser);
+  app.post('/api/profile/:id/block', requireAuth, profileModule.blockUser);
+  app.delete('/api/profile/:id/block', requireAuth, profileModule.unblockUser);
   app.delete('/api/profile/me', requireRealUser, profileModule.deleteAccount);
 
   // Admin endpoints (require admin)

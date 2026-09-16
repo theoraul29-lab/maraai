@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -94,6 +95,7 @@ interface YouProfileProps {
 const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
   const { user, refreshUser } = useAuth();
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const [profile, setProfile] = useState<ProfilePayload | null>(null);
   const [posts, setPosts] = useState<UserPost[]>([]);
@@ -975,14 +977,20 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
           <div className="you-fb-friends-list">
             {(friendsSubTab === 'followers' ? followers : following).map(u => (
               <div key={u.id} className="you-fb-friend-card">
-                {u.profileImageUrl ? (
-                  <img className="you-fb-friend-avatar" src={u.profileImageUrl} alt={u.displayName || u.firstName || ''} />
-                ) : (
-                  <div className="you-fb-friend-avatar you-fb-avatar-fallback">
-                    {(u.displayName || u.firstName || '?').charAt(0).toUpperCase()}
-                  </div>
-                )}
-                <span className="you-fb-friend-name">{u.displayName || u.firstName || t('you.unknownUser', 'User')}</span>
+                <button
+                  type="button"
+                  className="you-fb-friend-link"
+                  onClick={() => navigate(`/you?u=${u.id}`)}
+                >
+                  {u.profileImageUrl ? (
+                    <img className="you-fb-friend-avatar" src={u.profileImageUrl} alt={u.displayName || u.firstName || ''} />
+                  ) : (
+                    <div className="you-fb-friend-avatar you-fb-avatar-fallback">
+                      {(u.displayName || u.firstName || '?').charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <span className="you-fb-friend-name">{u.displayName || u.firstName || t('you.unknownUser', 'User')}</span>
+                </button>
                 {!profile?.isSelf && u.id !== profile?.user.id && (
                   <button
                     className={`you-fb-btn ${followingIds.has(u.id) ? 'you-fb-btn-ghost' : 'you-fb-btn-primary'}`}

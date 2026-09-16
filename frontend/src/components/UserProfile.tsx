@@ -17,6 +17,8 @@ export interface UserProfileData {
   posts: number;
   earnings: number;
   isFollowed: boolean;
+  isBlockedByMe: boolean;
+  isBlockingMe: boolean;
   isSelf: boolean;
   joinDate: number;
   website?: string;
@@ -71,6 +73,8 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
         followerCount: number;
         followingCount: number;
         isFollowing: boolean;
+        isBlockedByMe: boolean;
+        isBlockingMe: boolean;
         isSelf: boolean;
       };
       const u = payload.user;
@@ -93,6 +97,8 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
         posts: payload.postCount,
         earnings: 0,
         isFollowed: payload.isFollowing,
+        isBlockedByMe: payload.isBlockedByMe,
+        isBlockingMe: payload.isBlockingMe,
         isSelf: payload.isSelf,
         joinDate: joinDateMs,
         website: u.website ?? undefined,
@@ -135,6 +141,28 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
       }
     } catch (error) {
       console.error('Error following user:', error);
+    }
+  };
+
+  const handleBlock = async () => {
+    if (!profile) return;
+    const nowBlocked = !profile.isBlockedByMe;
+    if (nowBlocked && !window.confirm(t('userProfile.confirmBlock', { name: profile.name }))) return;
+    try {
+      const response = await fetch(`/api/profile/${profile.id}/block`, {
+        method: nowBlocked ? 'POST' : 'DELETE',
+        credentials: 'include',
+      });
+      if (response.ok) {
+        setIsFollowing(nowBlocked ? false : isFollowing);
+        setProfile({
+          ...profile,
+          isBlockedByMe: nowBlocked,
+          isFollowed: nowBlocked ? false : profile.isFollowed,
+        });
+      }
+    } catch (error) {
+      console.error('Error blocking user:', error);
     }
   };
 
@@ -322,20 +350,34 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
 
             <div className="profile-actions">
               {!profile.isSelf ? (
-                <>
-                  <button
-                    className={`action-btn follow-btn ${isFollowing ? 'following' : ''}`}
-                    onClick={handleFollow}
-                  >
-                    {isFollowing ? t('userProfile.following') : t('userProfile.follow')}
-                  </button>
-                  <button
-                    className="action-btn message-btn"
-                    onClick={() => navigate(`/you?tab=messages&startWith=${profile.id}&startWithName=${encodeURIComponent(profile.name)}`)}
-                  >
-                    {t('userProfile.message')}
-                  </button>
-                </>
+                profile.isBlockingMe ? (
+                  <span className="profile-blocked-notice">{t('userProfile.unavailable')}</span>
+                ) : (
+                  <>
+                    {!profile.isBlockedByMe && (
+                      <>
+                        <button
+                          className={`action-btn follow-btn ${isFollowing ? 'following' : ''}`}
+                          onClick={handleFollow}
+                        >
+                          {isFollowing ? t('userProfile.following') : t('userProfile.follow')}
+                        </button>
+                        <button
+                          className="action-btn message-btn"
+                          onClick={() => navigate(`/you?tab=messages&startWith=${profile.id}&startWithName=${encodeURIComponent(profile.name)}`)}
+                        >
+                          {t('userProfile.message')}
+                        </button>
+                      </>
+                    )}
+                    <button
+                      className={`action-btn block-btn ${profile.isBlockedByMe ? 'blocked' : ''}`}
+                      onClick={handleBlock}
+                    >
+                      {profile.isBlockedByMe ? t('userProfile.unblock') : t('userProfile.block')}
+                    </button>
+                  </>
+                )
               ) : (
                 <button
                   className="action-btn edit-btn"

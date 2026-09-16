@@ -6,6 +6,7 @@ import {
   chatMessages,
   likes,
   followers,
+  userBlocks,
   userPreferences,
   premiumOrders,
   creatorPosts,
@@ -119,6 +120,14 @@ export interface IStorage {
   getFollowerCount(userId: string): Promise<number>;
   getFollowingCount(userId: string): Promise<number>;
   isFollowing(followerId: string, followingId: string): Promise<boolean>;
+
+  blockUser(blockerId: string, blockedId: string): Promise<void>;
+  unblockUser(blockerId: string, blockedId: string): Promise<void>;
+  isBlocked(userAId: string, userBId: string): Promise<boolean>;
+  hasBlocked(blockerId: string, blockedId: string): Promise<boolean>;
+  listBlockedUsers(blockerId: string): Promise<
+    Array<{ id: string; displayName: string | null; firstName: string | null; profileImageUrl: string | null }>
+  >;
 
   // FB-style user posts (Phase 2 P0 — You)
   createUserPost(input: InsertUserPost): Promise<UserPost>;
@@ -390,6 +399,7 @@ export interface IStorage {
 
   // --- Direct Messaging ----------------------------------------------------
   getOrCreateConversation(userAId: string, userBId: string): Promise<{ id: number; userAId: string; userBId: string }>;
+  getConversationById(convId: number): Promise<{ id: number; userAId: string; userBId: string } | null>;
   listUserConversations(userId: string): Promise<Array<{
     id: number;
     otherId: string;
@@ -549,6 +559,73 @@ export class DatabaseStorage implements IStorage {
         ),
       );
     return result.length > 0;
+  }
+
+  async blockUser(blockerId: string, blockedId: string): Promise<void> {
+    const existing = await db
+      .select()
+      .from(userBlocks)
+      .where(and(eq(userBlocks.blockerId, blockerId), eq(userBlocks.blockedId, blockedId)));
+    if (existing.length > 0) return;
+    await db.insert(userBlocks).values({ blockerId, blockedId });
+    // Blocking severs any existing follow relationship in both directions —
+    // a blocked user shouldn't stay in either party's follower/following list.
+    await db
+      .delete(followers)
+      .where(
+        or(
+          and(eq(followers.followerId, blockerId), eq(followers.followingId, blockedId)),
+          and(eq(followers.followerId, blockedId), eq(followers.followingId, blockerId)),
+        ),
+      );
+  }
+
+  async unblockUser(blockerId: string, blockedId: string): Promise<void> {
+    await db
+      .delete(userBlocks)
+      .where(and(eq(userBlocks.blockerId, blockerId), eq(userBlocks.blockedId, blockedId)));
+  }
+
+  async isBlocked(userAId: string, userBId: string): Promise<boolean> {
+    const result = await db
+      .select()
+      .from(userBlocks)
+      .where(
+        or(
+          and(eq(userBlocks.blockerId, userAId), eq(userBlocks.blockedId, userBId)),
+          and(eq(userBlocks.blockerId, userBId), eq(userBlocks.blockedId, userAId)),
+        ),
+      );
+    return result.length > 0;
+  }
+
+  async hasBlocked(blockerId: string, blockedId: string): Promise<boolean> {
+    const result = await db
+      .select()
+      .from(userBlocks)
+      .where(and(eq(userBlocks.blockerId, blockerId), eq(userBlocks.blockedId, blockedId)));
+    return result.length > 0;
+  }
+
+  async listBlockedUsers(blockerId: string): Promise<
+    Array<{ id: string; displayName: string | null; firstName: string | null; profileImageUrl: string | null }>
+  > {
+    const rows = await db
+      .select({ blockedId: userBlocks.blockedId })
+      .from(userBlocks)
+      .where(eq(userBlocks.blockerId, blockerId));
+    if (rows.length === 0) return [];
+    const results = await Promise.all(
+      rows.map(async (r) => {
+        const [u] = await db
+          .select({ id: users.id, displayName: users.displayName, firstName: users.firstName, profileImageUrl: users.profileImageUrl })
+          .from(users)
+          .where(eq(users.id, r.blockedId))
+          .limit(1);
+        return u ?? { id: r.blockedId, displayName: null, firstName: null, profileImageUrl: null };
+      }),
+    );
+    return results;
   }
 
   async getUserPreferences(
@@ -2230,6 +2307,15 @@ export class DatabaseStorage implements IStorage {
       .values({ userAId: a, userBId: b })
       .returning();
     return { id: inserted.id, userAId: inserted.userAId, userBId: inserted.userBId };
+  }
+
+  async getConversationById(convId: number): Promise<{ id: number; userAId: string; userBId: string } | null> {
+    const [conv] = await db
+      .select()
+      .from(conversations)
+      .where(eq(conversations.id, convId))
+      .limit(1);
+    return conv ? { id: conv.id, userAId: conv.userAId, userBId: conv.userBId } : null;
   }
 
   async listUserConversations(userId: string): Promise<Array<{

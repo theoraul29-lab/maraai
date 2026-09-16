@@ -117,8 +117,14 @@ export async function getProfile(req: Request, res: Response) {
 
     const viewerId = currentUserId(req);
     let isFollowing = false;
+    let isBlockedByMe = false;
+    let isBlockingMe = false;
     if (viewerId && viewerId !== profileId) {
-      isFollowing = await deps.storage.isFollowing(viewerId, profileId);
+      [isFollowing, isBlockedByMe, isBlockingMe] = await Promise.all([
+        deps.storage.isFollowing(viewerId, profileId),
+        deps.storage.hasBlocked(viewerId, profileId),
+        deps.storage.hasBlocked(profileId, viewerId),
+      ]);
     }
 
     res.json({
@@ -128,6 +134,8 @@ export async function getProfile(req: Request, res: Response) {
       followerCount,
       followingCount,
       isFollowing,
+      isBlockedByMe,
+      isBlockingMe,
       isSelf: viewerId === profileId,
     });
   } catch (error) {
@@ -165,6 +173,10 @@ export async function followUser(req: Request, res: Response) {
       res.status(404).json({ error: 'not_found', code: 'not_found' });
       return;
     }
+    if (await deps.storage.isBlocked(followerId, followingId)) {
+      res.status(403).json({ error: 'blocked', code: 'blocked' });
+      return;
+    }
     const result = await deps.storage.followUser(followerId, followingId);
     // Fire-and-forget notification. Must never break the follow op.
     void notifyFollow(followerId, followingId);
@@ -172,6 +184,61 @@ export async function followUser(req: Request, res: Response) {
   } catch (error) {
     console.error('[profile] followUser failed:', error);
     res.status(500).json({ error: 'follow_failed', code: 'follow_failed' });
+  }
+}
+
+export async function blockUser(req: Request, res: Response) {
+  try {
+    const blockerId = currentUserId(req);
+    if (!blockerId) {
+      res.status(401).json({ error: 'unauthenticated', code: 'unauthenticated' });
+      return;
+    }
+    const blockedId = req.params.id;
+    if (blockerId === blockedId) {
+      res.status(400).json({ error: 'cannot_block_self', code: 'cannot_block_self' });
+      return;
+    }
+    const target = await deps.storage.getUserById(blockedId);
+    if (!target) {
+      res.status(404).json({ error: 'not_found', code: 'not_found' });
+      return;
+    }
+    await deps.storage.blockUser(blockerId, blockedId);
+    res.json({ blocked: true });
+  } catch (error) {
+    console.error('[profile] blockUser failed:', error);
+    res.status(500).json({ error: 'block_failed', code: 'block_failed' });
+  }
+}
+
+export async function unblockUser(req: Request, res: Response) {
+  try {
+    const blockerId = currentUserId(req);
+    if (!blockerId) {
+      res.status(401).json({ error: 'unauthenticated', code: 'unauthenticated' });
+      return;
+    }
+    await deps.storage.unblockUser(blockerId, req.params.id);
+    res.json({ blocked: false });
+  } catch (error) {
+    console.error('[profile] unblockUser failed:', error);
+    res.status(500).json({ error: 'unblock_failed', code: 'unblock_failed' });
+  }
+}
+
+export async function listBlockedUsers(req: Request, res: Response) {
+  try {
+    const userId = currentUserId(req);
+    if (!userId) {
+      res.status(401).json({ error: 'unauthenticated', code: 'unauthenticated' });
+      return;
+    }
+    const items = await deps.storage.listBlockedUsers(userId);
+    res.json({ items });
+  } catch (error) {
+    console.error('[profile] listBlockedUsers failed:', error);
+    res.status(500).json({ error: 'list_blocked_failed', code: 'list_blocked_failed' });
   }
 }
 

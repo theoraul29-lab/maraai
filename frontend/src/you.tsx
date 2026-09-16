@@ -4,6 +4,7 @@ import axios from 'axios';
 import { useAuth } from './contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import YouProfile from './components/YouProfile';
+import UserProfile from './components/UserProfile';
 import MessengerPanel from './components/MessengerPanel';
 import './styles/YouProfile.css';
 import './styles/You.css';
@@ -21,6 +22,20 @@ const You: React.FC = () => {
   const tabParam = searchParams.get('tab') as YouTab | null;
   const activeTab: YouTab = tabParam === 'messages' ? 'messages' : 'profile';
   const startWith = searchParams.get('startWith') || undefined;
+
+  // Viewing someone else's profile — the share link this whole app already
+  // generates for "profile" shares is `/you?u=<id>` (server/share/routes.ts),
+  // but until now nothing here ever read `u`, so opening a shared profile
+  // link silently showed your own profile instead. components/UserProfile.tsx
+  // (the real other-person view: follow, message, their posts) was fully
+  // built and wired to the backend, just never mounted anywhere.
+  const viewUserId = searchParams.get('u') || undefined;
+  const viewingOther = !!viewUserId && viewUserId !== user?.id;
+  const closeOtherProfile = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('u');
+    setSearchParams(next);
+  };
 
   const refreshUnread = () => {
     axios
@@ -76,6 +91,9 @@ const You: React.FC = () => {
       <div className="you-content">
         {activeTab === 'profile' && (
           <YouProfile userName={user?.name || 'User'} />
+        )}
+        {viewingOther && (
+          <UserProfile userId={viewUserId!} onClose={closeOtherProfile} />
         )}
         {activeTab === 'messages' && (
           <div className="you-messenger-wrap">

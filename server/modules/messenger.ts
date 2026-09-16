@@ -25,6 +25,10 @@ export async function getOrCreateConv(req: Request, res: Response) {
       res.status(400).json({ error: 'cannot_message_self' });
       return;
     }
+    if (await storage.isBlocked(userId, recipientId)) {
+      res.status(403).json({ error: 'blocked' });
+      return;
+    }
     const conv = await storage.getOrCreateConversation(userId, recipientId);
     res.json(conv);
   } catch (err) {
@@ -92,6 +96,16 @@ export async function sendMessage(req: Request, res: Response) {
     const trimmed = content.trim();
     if (trimmed.length === 0 || trimmed.length > 5000) {
       res.status(400).json({ error: 'invalid_content' });
+      return;
+    }
+    const conv = await storage.getConversationById(convId);
+    if (!conv || (conv.userAId !== userId && conv.userBId !== userId)) {
+      res.status(404).json({ error: 'conv_not_found' });
+      return;
+    }
+    const otherId = conv.userAId === userId ? conv.userBId : conv.userAId;
+    if (await storage.isBlocked(userId, otherId)) {
+      res.status(403).json({ error: 'blocked' });
       return;
     }
     const msg = await storage.sendDirectMessage(convId, userId, trimmed);

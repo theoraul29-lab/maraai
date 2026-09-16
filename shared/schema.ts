@@ -70,6 +70,16 @@ export const followers = pgTable('followers', {
     .notNull(),
 });
 
+// === USER BLOCKS === (see migrations/0027_user_blocks.sql)
+export const userBlocks = pgTable('user_blocks', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  blockerId: text('blocker_id').notNull(),
+  blockedId: text('blocked_id').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .default(sql`CURRENT_TIMESTAMP`)
+    .notNull(),
+});
+
 // === SAVED VIDEOS (bookmarks) ===
 export const savedVideos = pgTable('saved_videos', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -675,6 +685,7 @@ export type ChatMessage = typeof chatMessages.$inferSelect;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 export type Like = typeof likes.$inferSelect;
 export type Follower = typeof followers.$inferSelect;
+export type UserBlock = typeof userBlocks.$inferSelect;
 export type UserPreference = typeof userPreferences.$inferSelect;
 export type PremiumOrder = typeof premiumOrders.$inferSelect;
 export type InsertPremiumOrder = z.infer<typeof insertPremiumOrderSchema>;
