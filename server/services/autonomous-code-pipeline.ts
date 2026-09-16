@@ -20,6 +20,7 @@ import {
   createCodeAgentRequestWithTask,
   getCodeAgentPlan,
   planCodeAgentRequest,
+  type CodeAgentModuleContext,
   type CodeAgentPlanRow,
 } from './code-agent.js';
 import {
@@ -152,6 +153,73 @@ function buildCommitMessage(plan: CodeAgentPlanRow, planId: number): string {
     ? plan.analysis.summary.trim().split('\n')[0].slice(0, 100)
     : `Autonomous change from Code Agent plan #${planId}`;
   return `${summary}\n\nCo-Authored-By: Mara <mara@hellomara.net>`;
+}
+
+// Files/content that must never be auto-committed by Mara's own module
+// analyzers, even though writers/missions autonomy is fully approved — money
+// movement (PayPal orders, payouts, the 90/10 split) stays a human click.
+// This is narrower than the owner-instructed chat path (handleAutonomousCodeRequest
+// above), which the owner explicitly exempted from any approval click at all;
+// self-generated proposals get this one extra guard since nobody reviewed the
+// idea itself before it reached the planner.
+const PAYMENT_SENSITIVE_PATH_PREFIXES = ['server/billing/'];
+const PAYMENT_SENSITIVE_KEYWORDS = [
+  'pricecents', 'amountcents', 'authorsharecents', 'platformsharecents',
+  'paypalpayoutemail', 'sendpaypalpayout', 'createpaypalorder', 'capturepaypalorder',
+  'creator_revenue_share', 'payments_enabled', 'payment_system_active',
+  'payout_status', 'payoutstatus', 'paypal',
+];
+
+function isPaymentSensitiveChange(change: Record<string, unknown>): boolean {
+  const changePath = String(change.path ?? '').toLowerCase();
+  if (PAYMENT_SENSITIVE_PATH_PREFIXES.some((prefix) => changePath.startsWith(prefix))) return true;
+  const content = String(change.content ?? '').toLowerCase();
+  return PAYMENT_SENSITIVE_KEYWORDS.some((keyword) => content.includes(keyword));
+}
+
+export interface ModuleProposalOutcome {
+  outcome: 'committed' | 'held_for_review' | 'no_changes' | 'rejected' | 'failed';
+  detail: string;
+  commitMessage?: string;
+  filesChanged?: string[];
+  planId?: number;
+}
+
+/**
+ * Same plan -> apply -> validate -> commit -> push chain as
+ * handleAutonomousCodeRequest, but for proposals Mara generates herself (the
+ * per-module growth analyzers), not a direct owner instruction. Plans that
+ * touch payment/payout code are held back for a manual click instead of
+ * being committed — see the guard above.
+ */
+export async function autoApplyModuleProposal(
+  description: string,
+  moduleContext: CodeAgentModuleContext | null,
+  actor: string,
+): Promise<ModuleProposalOutcome> {
+  const { request } = createCodeAgentRequestWithTask(description, 'medium', actor, moduleContext ?? undefined);
+  try {
+    const plan = await planCodeAgentRequest(request.id);
+    if (!plan.changes.length) {
+      return {
+        outcome: 'no_changes',
+        detail: typeof plan.analysis.summary === 'string' && plan.analysis.summary ? plan.analysis.summary : 'Nu am identificat o modificare de cod sigură de propus.',
+        planId: plan.id,
+      };
+    }
+    if (plan.changes.some(isPaymentSensitiveChange)) {
+      return {
+        outcome: 'held_for_review',
+        detail: `Planul #${plan.id} atinge cod de plăți/venituri — lăsat pentru revizuire manuală în Control Center, nu aplicat automat.`,
+        planId: plan.id,
+      };
+    }
+    const result = await autoApplyCodeAgentPlan(plan.id, actor);
+    return { ...result, planId: plan.id };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { outcome: 'failed', detail: message };
+  }
 }
 
 export async function handleAutonomousCodeRequest(description: string, actor: string): Promise<{ reply: string; status: string }> {

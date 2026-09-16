@@ -5,8 +5,14 @@
 // insights + concrete growth proposals, and stores the proposals in
 // `maraPlatformInsights` (status='proposed') for admin approval.
 //
-// Analyzers NEVER apply changes autonomously — they only propose. The admin
-// dashboard surfaces proposals for review.
+// Analyzers only propose, EXCEPT Writers Hub and Missions: for these two
+// (the modules the owner explicitly approved for full autonomy), the
+// top-priority proposal per cycle also gets attempted through the real
+// plan -> apply -> validate -> commit -> push pipeline, capped to one
+// attempt per module per 6h and never for anything touching payment/payout
+// code — see AUTO_APPLY_REGISTRY_ID and maybeAutoApplyTopProposal below.
+// Every other module (You/Reels/Growth/Creators/VIP) stays propose-only;
+// the admin dashboard surfaces those proposals for manual review as before.
 //
 // Each analyzer costs at most 1 LLM call. The learning rate limiter gates
 // all calls against the daily cap.
@@ -15,6 +21,8 @@ import { llmGenerate, isLLMConfigured, LLMRateLimitedError } from '../../llm.js'
 import { storage } from '../../storage.js';
 import { storeKnowledge } from '../knowledge-base.js';
 import { rawSqlite } from '../../db.js';
+import { autoApplyModuleProposal } from '../../services/autonomous-code-pipeline.js';
+import { readHelloMaraModule } from '../../services/hellomara-module-registry.js';
 
 export type ModuleKey = 'you' | 'reels' | 'growth' | 'writers' | 'creators' | 'vip' | 'missions';
 
@@ -57,10 +65,80 @@ function isValidProposal(p: unknown): p is ProposalShape {
   );
 }
 
+// Writers Hub and Missions are the two modules the owner explicitly approved
+// for full autonomy ("aplice singura si sa mi dea rezultatul") — every other
+// analyzer stays propose-only, same as before. Maps to the module registry
+// id used by the Code Agent planner for file-scoped context.
+const AUTO_APPLY_REGISTRY_ID: Partial<Record<ModuleKey, string>> = {
+  writers: 'writers-hub',
+  missions: 'missions',
+};
+
+// Brain cycles run far more often than a codebase should be redeploying
+// itself — without a cooldown, an LLM that always finds "something
+// actionable" would trigger a fresh commit/Railway deploy nearly every
+// cycle. One autonomous attempt per module per window is enough to make
+// real, visible progress without turning production into a churn machine.
+const AUTO_APPLY_COOLDOWN_MS = 6 * 60 * 60 * 1000; // 6h
+
+const PRIORITY_ORDER: Record<ProposalShape['priority'], number> = { P0: 0, P1: 1, P2: 2, P3: 3 };
+
+async function maybeAutoApplyTopProposal(
+  module: ModuleKey,
+  candidates: Array<{ proposal: ProposalShape; insightId: number }>,
+): Promise<void> {
+  const registryId = AUTO_APPLY_REGISTRY_ID[module];
+  if (!registryId || candidates.length === 0) return;
+
+  const actor = `mara-analyzer:${module}`;
+  try {
+    const cutoffSec = Math.floor((Date.now() - AUTO_APPLY_COOLDOWN_MS) / 1000);
+    const recent = rawSqlite
+      .prepare(`SELECT COUNT(*) AS c FROM mara_code_agent_requests WHERE created_by = ? AND created_at > ?`)
+      .get(actor, cutoffSec) as { c: number };
+    if (recent.c > 0) return; // still cooling down since the last autonomous attempt for this module
+  } catch (err) {
+    console.error(`[ModuleAnalyzer:${module}] auto-apply cooldown check failed:`, err);
+    return;
+  }
+
+  const top = [...candidates].sort((a, b) => PRIORITY_ORDER[a.proposal.priority] - PRIORITY_ORDER[b.proposal.priority])[0];
+  const entry = await readHelloMaraModule(registryId).catch(() => null);
+  const moduleContext = entry
+    ? {
+        moduleId: entry.id, moduleName: entry.displayName, frontendFiles: entry.frontendFiles, backendFiles: entry.backendFiles,
+        databaseDependencies: entry.databaseDependencies, apiEndpoints: entry.apiEndpoints, sharedDependencies: entry.sharedDependencies, sharedWarnings: entry.sharedWarnings,
+      }
+    : null;
+  const description = `[Autonomous growth proposal — ${module} module, priority ${top.proposal.priority}]\n${top.proposal.title}\n\n${top.proposal.description}\n\nImplement this concretely and minimally in the MaraAI codebase, scoped to the ${module} module. Keep the change small and safe.`;
+
+  let result;
+  try {
+    result = await autoApplyModuleProposal(description, moduleContext, actor);
+  } catch (err) {
+    console.error(`[ModuleAnalyzer:${module}] auto-apply failed:`, err);
+    return;
+  }
+
+  if (result.outcome === 'committed') {
+    try { await storage.updatePlatformInsightStatus(top.insightId, 'completed'); } catch { /* dashboard will just show it as still proposed */ }
+  }
+
+  const summary = result.outcome === 'committed'
+    ? `Mara a implementat singură și a trimis în producție: "${top.proposal.title}". ${result.detail}`
+    : `Mara a încercat să implementeze autonom "${top.proposal.title}", dar nu a ajuns în producție (${result.outcome}). ${result.detail}`;
+  try {
+    await storeKnowledge('platform_insight', `Încercare de cod autonomă — ${module}`, summary, 'self_reflection', 80, { module, autoApply: true, outcome: result.outcome, planId: result.planId });
+  } catch (err) {
+    console.error(`[ModuleAnalyzer:${module}] failed to record auto-apply outcome:`, err);
+  }
+}
+
 async function runAnalyzer(
   module: ModuleKey,
   metricsBlock: string,
   focusPrompt: string,
+  options?: { autoApply?: boolean },
 ): Promise<ModuleAnalysisResult> {
   if (!isLLMConfigured()) {
     return { module, proposalsCreated: 0, insightsStored: 0, skipped: true, reason: 'LLM not configured' };
@@ -110,11 +188,12 @@ Return STRICT JSON:
   }
 
   let proposalsCreated = 0;
+  const storedProposals: Array<{ proposal: ProposalShape; insightId: number }> = [];
   if (Array.isArray(parsed.proposals)) {
     for (const p of parsed.proposals) {
       if (!isValidProposal(p)) continue;
       try {
-        await storage.createPlatformInsight({
+        const insight = await storage.createPlatformInsight({
           module,
           insightType: p.insightType || 'improvement',
           title: p.title.slice(0, 200),
@@ -124,9 +203,18 @@ Return STRICT JSON:
           source: 'self_analysis',
         });
         proposalsCreated += 1;
+        storedProposals.push({ proposal: p, insightId: insight.id });
       } catch (err) {
         console.error(`[ModuleAnalyzer:${module}] Failed to store proposal:`, err);
       }
+    }
+  }
+
+  if (options?.autoApply && storedProposals.length > 0) {
+    try {
+      await maybeAutoApplyTopProposal(module, storedProposals);
+    } catch (err) {
+      console.error(`[ModuleAnalyzer:${module}] auto-apply step failed:`, err);
     }
   }
 
@@ -260,6 +348,7 @@ async function analyzeWriters(): Promise<ModuleAnalysisResult> {
     'writers',
     metrics,
     'Focus on: (1) authors who publish paid content but never set a PayPal payout email — their earnings are stuck; propose a concrete UX nudge to close this. (2) paid articles with zero sales — pricing, discoverability, or topic-fit problem? (3) topic gaps (what readers search but nobody writes). (4) author retention (one-and-done authors). (5) surfacing high-earning authors/articles to inspire more selling. Propose concrete, numbered levers, not generic advice.',
+    { autoApply: true },
   );
 }
 
@@ -329,6 +418,7 @@ async function analyzeMissions(): Promise<ModuleAnalysisResult> {
     'missions',
     metrics,
     'Focus on: (1) the stale/at-risk active enrollments — what would win someone back after 3+ days of silence (a nudge, a notification, an easier re-entry mission)? (2) which program in the sequence loses the most people, and why that stage specifically. (3) whether the free New Mindset -> New Habit on-ramp is actually converting people into a paid program (New Skills+), and if not, what to change. (4) completion rate trends — is the 5-steps-per-day format helping or hurting. Propose concrete, numbered levers with specific thresholds, not generic advice — remember missions are meant to last the real ~1000+ day arc, so any proposal must respect that pacing, not shortcut it.',
+    { autoApply: true },
   );
 }
 
