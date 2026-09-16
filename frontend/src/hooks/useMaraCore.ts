@@ -166,8 +166,12 @@ export function useMaraCore() {
   }, []);
 
   // Returns a Promise that resolves once Mara has finished speaking (via
-  // either path) — never rejects, so it's always safe to `await`.
-  const speak = useCallback((text: string): Promise<void> => {
+  // either path) — never rejects, so it's always safe to `await`. `lang`
+  // overrides the admin's UI locale when the caller already knows the real
+  // spoken/reply language (a voice turn's STT detection) — the UI locale is
+  // just a guess otherwise, and a wrong guess is exactly what let Romanian
+  // replies get read with the wrong voice.
+  const speak = useCallback((text: string, lang?: string): Promise<void> => {
     // Stop whatever's currently playing (either path) before starting the
     // next reply — mirrors the old unconditional speechSynthesis.cancel().
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
@@ -191,7 +195,7 @@ export function useMaraCore() {
           method: 'POST',
           credentials: 'omit',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ttsConfig.token}` },
-          body: JSON.stringify({ text, lang: i18n.language, voiceStyle }),
+          body: JSON.stringify({ text, lang: lang || i18n.language, voiceStyle }),
         });
         if (!res.ok) throw new Error(`tts ${res.status}`);
         const blob = await res.blob();
@@ -220,7 +224,7 @@ export function useMaraCore() {
     })();
   }, [i18n.language, voiceStyle, speakWithBrowserVoice]);
 
-  const sendMessage = useCallback(async (text: string, opts?: { voiceTurn?: boolean }) => {
+  const sendMessage = useCallback(async (text: string, opts?: { voiceTurn?: boolean; lang?: string }) => {
     const trimmed = text.trim();
     if (!trimmed || sendingRef.current) return;
     sendingRef.current = true;
@@ -232,7 +236,10 @@ export function useMaraCore() {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: trimmed }),
+        // `lang` is the language Whisper detected for this turn's audio (see
+        // transcribeWithLocalStt) — lets the backend instruct the model to
+        // reply in that exact language instead of guessing from the text.
+        body: JSON.stringify({ message: trimmed, lang: opts?.lang }),
       });
       const data = await response.json() as { reply?: string };
       reply = data.reply ?? 'Mara nu a răspuns.';
@@ -248,7 +255,7 @@ export function useMaraCore() {
       // actually finish speaking before opening the mic again — otherwise
       // the mic would pick up her own reply. Typed chat below skips this
       // (fire-and-forget) since there's no next listening turn to gate.
-      await speak(reply);
+      await speak(reply, opts.lang);
       if (conversationModeRef.current) startListeningAnyRef.current();
     } else {
       void speak(reply);
@@ -356,10 +363,13 @@ export function useMaraCore() {
         body: form,
       });
       if (!res.ok) throw new Error(`stt ${res.status}`);
-      const data = await res.json() as { text?: string };
+      const data = await res.json() as { text?: string; language?: string };
       const text = (data.text ?? '').trim();
       if (text) {
-        void sendMessageRef.current(text, { voiceTurn: true });
+        // stt_server.py now restricts its own language detection to ro/en/de
+        // before transcribing, so `language` here is reliable enough to
+        // drive both the chat reply's language and the TTS voice pick.
+        void sendMessageRef.current(text, { voiceTurn: true, lang: data.language });
       } else {
         setStatusNote('Nu am înțeles nimic — încearcă din nou, mai aproape de microfon.');
         if (conversationModeRef.current) setConversationMode(false);

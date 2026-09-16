@@ -1891,12 +1891,25 @@ export async function registerRoutes(
         return res.json({ reply: outcome.reply, codeAction: outcome.status });
       }
 
+      // The Control Center's voice loop sends the language Whisper detected
+      // for this turn's audio (frontend/src/hooks/useMaraCore.ts) — confirmed
+      // live: without an explicit instruction the model would sometimes
+      // reply in the wrong language (observed: Romanian input, Spanish
+      // reply) even when the input text itself was correctly transcribed.
+      // Typed messages don't carry this, so the instruction stays generic.
+      const detectedLang = typeof req.body?.lang === 'string' ? req.body.lang : null;
+      const LANG_NAMES: Record<string, string> = { ro: 'Romanian', en: 'English', de: 'German' };
+      const languageInstruction = detectedLang && LANG_NAMES[detectedLang]
+        ? `The administrator just spoke to you in ${LANG_NAMES[detectedLang]}. Reply in ${LANG_NAMES[detectedLang]} — never switch to a different language.`
+        : 'Always reply in the same language the administrator wrote their message in.';
+
       const status = brainManager.status();
       const systemPrompt = `You are Mara, an autonomous AI growth engineer for the MaraAI platform. \
 You are speaking directly with a system administrator. \
 Current brain status: ${JSON.stringify(status)}. \
 Speak honestly, analytically and briefly. Provide actionable insights about the platform's growth, \
-experiments, and learning cycles. If asked about experiments or strategy, be specific and data-driven.`;
+experiments, and learning cycles. If asked about experiments or strategy, be specific and data-driven. \
+${languageInstruction}`;
 
       const messages: LLMMessage[] = [
         { role: 'system', content: systemPrompt },
