@@ -12,7 +12,14 @@
  */
 import { getCachedBook, fetchAndCacheBook, listPopularBookIds } from './library.js';
 
-const FETCH_DELAY_MS = 2_000; // spaced out — this shares Gutenberg with real reader traffic
+// Confirmed in production: at a 2s pace, real users' /api/library/search
+// calls started timing out WHILE this job ran — either Railway's shared
+// outbound connection pool or Gutendex's own per-IP throttling was getting
+// saturated by the precache job's own volume. Precaching is a nice-to-have;
+// it must never degrade a live request, so this is deliberately gentle —
+// smaller batches, well spaced. Coverage still reaches the full popular
+// list within a few days since already-cached books are skipped on rerun.
+const FETCH_DELAY_MS = 6_000;
 const RERUN_INTERVAL_MS = 24 * 60 * 60 * 1000; // popularity shifts slowly; once a day is plenty
 // Gutendex occasionally times out on a cold/first request (seen repeatedly
 // building this feature) — a short retry here means a bad first attempt
@@ -22,10 +29,10 @@ const FAILURE_RETRY_MS = 10 * 60 * 1000;
 /** Each language's list is fetched independently — one timing out shouldn't take the others down with it. */
 async function fetchPopularIdsResilient(): Promise<number[]> {
   const results = await Promise.allSettled([
-    listPopularBookIds('', 40),
+    listPopularBookIds('', 25),
     listPopularBookIds('ro', 10), // effectively "all of them" — Gutendex has only a handful
-    listPopularBookIds('en', 20),
-    listPopularBookIds('de', 20),
+    listPopularBookIds('en', 12),
+    listPopularBookIds('de', 12),
   ]);
   const failed = results.filter((r) => r.status === 'rejected').length;
   if (failed > 0) console.warn(`[library-precache] ${failed}/${results.length} popular-list fetches failed this run`);
