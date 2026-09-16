@@ -16,6 +16,10 @@ const SUPPORTED_LANGS = new Set(['ro', 'en', 'de']);
 // would otherwise happily cache an unbounded blob into SQLite.
 const MAX_CONTENT_BYTES = 6_000_000;
 const FETCH_TIMEOUT_MS = 20_000;
+// Gutendex/Gutenberg 403s requests with no User-Agent (or a generic one) —
+// confirmed in production: identical requests worked from a local machine
+// but were rejected from Railway's outbound IP until this header was added.
+const FETCH_HEADERS = { 'User-Agent': 'MaraAI-PublicLibrary/1.0 (+https://hellomara.net; contact: info@hellomara.net)' };
 
 interface GutendexPerson { name: string; birth_year: number | null; death_year: number | null }
 interface GutendexBook {
@@ -66,7 +70,7 @@ export async function searchLibrary(req: any, res: any) {
   params.set('page', String(page));
 
   try {
-    const resp = await fetch(`${GUTENDEX_BASE}?${params.toString()}`, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+    const resp = await fetch(`${GUTENDEX_BASE}?${params.toString()}`, { headers: FETCH_HEADERS, signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
     if (!resp.ok) throw new Error(`Gutendex returned ${resp.status}`);
     const data = await resp.json() as { count: number; next: string | null; previous: string | null; results: GutendexBook[] };
     res.json({
@@ -120,7 +124,7 @@ function stripHtmlToText(html: string): string {
 }
 
 async function fetchAndCacheBook(id: number): Promise<CachedBook> {
-  const metaResp = await fetch(`${GUTENDEX_BASE}${id}/`, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+  const metaResp = await fetch(`${GUTENDEX_BASE}${id}/`, { headers: FETCH_HEADERS, signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
   if (!metaResp.ok) throw new Error(metaResp.status === 404 ? 'Book not found' : `Gutendex returned ${metaResp.status}`);
   const meta = await metaResp.json() as GutendexBook;
 
@@ -129,7 +133,7 @@ async function fetchAndCacheBook(id: number): Promise<CachedBook> {
   const contentUrl = plainUrl ?? htmlUrl;
   if (!contentUrl) throw new Error('No readable text format is available for this book');
 
-  const textResp = await fetch(contentUrl, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+  const textResp = await fetch(contentUrl, { headers: FETCH_HEADERS, signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
   if (!textResp.ok) throw new Error(`Failed to download book text (${textResp.status})`);
   const buf = await textResp.arrayBuffer();
   if (buf.byteLength > MAX_CONTENT_BYTES) throw new Error('This book exceeds the size limit for in-platform reading');
