@@ -1410,10 +1410,14 @@
   border-bottom-color: #a855f7;
 }
 @media (max-width: 480px) {
+  /* Used to hide .you-fb-tab-label entirely at this width — the one place
+     in the mobile audit where content disappeared instead of compressing.
+     .you-fb-tabs already scrolls horizontally (overflow-x:auto above), so
+     there's no need to drop the text — just make room for the same
+     swipeable-pill pattern the rest of this bar already uses. */
   .you-fb-tabs { margin: 12px 8px 0; gap: 0; }
-  .you-fb-tab { padding: 10px 12px; font-size: 13px; }
-  .you-fb-tab-label { display: none; }
-  .you-fb-tab-icon svg { width: 18px; height: 18px; }
+  .you-fb-tab { padding: 10px 10px; font-size: 12px; gap: 4px; }
+  .you-fb-tab-icon svg { width: 16px; height: 16px; }
 }
 
 .you-fb-timeline {

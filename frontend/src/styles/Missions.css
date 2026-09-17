@@ -1396,3 +1396,29 @@
   .billing-program-card { flex-wrap: wrap; gap: 12px; }
   .billing-program-action { width: 100%; }
 }
+
+/* ── Safe area (notch / home-indicator) ─────────────────────
+   The one module the mobile audit found with no env(safe-area-inset-*)
+   handling at all — every other module already does this. Same pattern
+   as Creator.css/WritersHub.css: header gets top/left/right, the
+   scrollable areas get bottom, each guarded by @supports so browsers
+   without notch support fall back to the plain padding already set
+   above. */
+@supports (padding: max(0px)) {
+  .missions-header-v4 {
+    padding-top: max(10px, env(safe-area-inset-top));
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
+  .missions-panel-right,
+  .programs-root,
+  .journal-root,
+  .book-root,
+  .leaderboard-root,
+  .community-root {
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+  .missions-panel-left {
+    padding-left: max(16px, env(safe-area-inset-left));
+  }
+}
