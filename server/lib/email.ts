@@ -90,7 +90,7 @@ export async function sendWelcomeEmail(email: string, firstName?: string): Promi
             </div>
             <div style="display:flex;align-items:flex-start;gap:12px">
               <span style="background:rgba(168,85,247,0.3);color:#c084fc;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.8rem;flex-shrink:0;line-height:28px;text-align:center">3</span>
-              <div><p style="color:rgba(255,255,255,0.85);font-size:0.88rem;font-weight:600;margin:0 0 2px">Crește alături de comunitate</p><p style="color:rgba(255,255,255,0.45);font-size:0.8rem;margin:0">Reels, Writers Hub, Creator Studio — totul într-un singur loc.</p></div>
+              <div><p style="color:rgba(255,255,255,0.85);font-size:0.88rem;font-weight:600;margin:0 0 2px">Crește alături de comunitate</p><p style="color:rgba(255,255,255,0.45);font-size:0.8rem;margin:0">Sparks, Writers Hub, Creator Studio — totul într-un singur loc.</p></div>
             </div>
           </div>
           <!-- CTA -->

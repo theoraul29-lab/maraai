@@ -23,7 +23,7 @@ export async function learnFromLLM(topic: string, context?: string): Promise<Lea
 
   const prompt = `Tu ești un profesor expert. Eu sunt Mara, un AI care învață continuu pentru a îmbunătăți platforma MaraAI.
 
-Platforma MaraAI are aceste module: Creator Studio (video content), WritersHub (scriere creativă), Reels (video scurt), VIP (servicii premium), Chat AI companion.
+Platforma MaraAI are aceste module: Missions (misiuni de creștere personală), WritersHub (scriere creativă), Sparks (video scurt legat de misiuni și articole), You (profil social), Creator Studio (monetizare și analytics), VIP (servicii premium), Chat AI companion.
 
 ${context ? `Context adițional: ${context}\n` : ''}
 

@@ -2,6 +2,7 @@ import { seedPlans } from '../billing/seed.js';
 import { seedDefaultObjective } from '../mara-core/objective.js';
 import { seedMissions, seedMissionTranslations } from '../missions/seed.js';
 import { warmTranslationCache } from '../missions/engine.js';
+import { seedSparksRebrandKnowledge } from './knowledge-seed.js';
 
 export async function runBootstrapSeeders(): Promise<void> {
   try {
@@ -34,4 +35,6 @@ export async function runBootstrapSeeders(): Promise<void> {
   } catch (err) {
     console.error('[mara-core] objective seed failed (continuing):', err);
   }
+
+  await seedSparksRebrandKnowledge();
 }

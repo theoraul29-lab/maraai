@@ -397,7 +397,7 @@ Utilizatorul pune CEVA în produs — date, content, conexiuni, reputație, abil
 - FOLLOWERS: lista de oameni urmăriți și care urmăresc utilizatorul
 - REPUTATION: review-uri, badge-uri, vechime, vouching
 - SKILLS: cursuri completate, abilități unlock-uite
-APLICAȚIE MARAAI: Fiecare modul trebuie să aibă o "investiție" clară. Trading = portfolio tracker + trade journal. Writers = drafts salvate + cititori câștigați. Reels = followers și remix-uri.
+APLICAȚIE MARAAI: Fiecare modul trebuie să aibă o "investiție" clară. Trading = portfolio tracker + trade journal. Writers = drafts salvate + cititori câștigați. Sparks = followers și traseul de creștere legat de misiuni și articole.
 
 ETHICS / ANTI-MANIPULATION TEST
 Eyal propune 2 întrebări înainte de a construi un hook:
@@ -1534,7 +1534,7 @@ APLICAȚIE: MaraAI celebrează longevitatea: badge-uri pentru 1 an pe platformă
 
 6. FERESTRELE ȘI UȘILE
 "Window" = procesul vizibil. "Door" = invitație la conexiune mai profundă.
-APLICAȚIE: Reels și postările = windows. DM-urile, comunitatea, programele = doors. Mara ghidează creatorii spre ambele.`,
+APLICAȚIE: Sparks și postările = windows. DM-urile, comunitatea, programele = doors. Mara ghidează creatorii spre ambele.`,
     },
     {
       id: 'creator-jab-jab-right-hook-vaynerchuk',
@@ -2040,7 +2040,7 @@ PENTRU MARAAI: Onboardingul trebuie să ajute utilizatorul să-și redefinească
 Formula: "After/Before [HABIT EXISTENT], I will [NEW HABIT]."
 Aplicare MaraAI:
 - "After I check my morning coffee (deschid telefonul), I will open MaraAI and do my daily mission."
-- "After I post on Instagram, I will post the same content adapted on MaraAI Reels."
+- "After I post on Instagram, I will post the same content adapted on MaraAI Sparks."
 - "Before I start trading, I will do the 2-minute Mara grounding check."
 
 3. ENVIRONMENT DESIGN AVANSAT
@@ -2310,7 +2310,7 @@ async function markBookAsRead(book: LibraryBook): Promise<void> {
   );
 }
 
-const MARAAI_MODULES = ['Missions', 'Creator Studio', 'WritersHub', 'Reels', 'VIP', 'AI Chat (Mara)'] as const;
+const MARAAI_MODULES = ['Missions', 'Creator Studio', 'WritersHub', 'Sparks', 'You', 'VIP', 'AI Chat (Mara)'] as const;
 
 /**
  * Etapa 3 Task 6 — after reading a book, run a SECOND extraction pass that

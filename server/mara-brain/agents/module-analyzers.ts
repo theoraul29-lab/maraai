@@ -1,6 +1,6 @@
 // Per-module autonomous growth analyzers.
 //
-// Each analyzer focuses on ONE module (You / Reels / Missions / Writers /
+// Each analyzer focuses on ONE module (You / Sparks / Missions / Writers /
 // Creators / VIP), gathers module-specific metrics, asks Claude for targeted
 // insights + concrete growth proposals, and stores the proposals in
 // `maraPlatformInsights` (status='proposed') for admin approval.
@@ -11,7 +11,7 @@
 // plan -> apply -> validate -> commit -> push pipeline, capped to one
 // attempt per module per 6h and never for anything touching payment/payout
 // code — see AUTO_APPLY_REGISTRY_ID and maybeAutoApplyTopProposal below.
-// Every other module (You/Reels/Growth/Creators/VIP) stays propose-only;
+// Every other module (You/Sparks/Growth/Creators/VIP) stays propose-only;
 // the admin dashboard surfaces those proposals for manual review as before.
 //
 // Each analyzer costs at most 1 LLM call. The learning rate limiter gates
@@ -266,23 +266,30 @@ async function analyzeYou(): Promise<ModuleAnalysisResult> {
 }
 
 // ============================================================================
-// Reels (short video feed)
+// Sparks (short video feed — renamed from "Reels"; connected to Missions,
+// Writers Hub and You, plus optional external YouTube/TikTok links)
 // ============================================================================
+// `videos.type` values a real Spark can have today — native uploads default
+// to 'creator' (see uploadReel()), plus the three cross-module origins added
+// this session. Neither 'reel' nor 'reels' has ever actually been written by
+// any insert path — the old filter here always matched nothing real.
+const SPARK_VIDEO_TYPES = new Set(['creator', 'mission-spark', 'writers-trailer', 'external-link']);
+
 async function analyzeReels(): Promise<ModuleAnalysisResult> {
   const videos = await storage.getVideos();
-  const reels = videos.filter((v) => v.type === 'reel' || v.type === 'reels');
-  const totalLikes = reels.reduce((sum, v) => sum + (v.likes || 0), 0);
-  const totalViews = reels.reduce((sum, v) => sum + (v.views || 0), 0);
-  const totalShares = reels.reduce((sum, v) => sum + (v.shares || 0), 0);
-  const avgLikes = reels.length ? (totalLikes / reels.length).toFixed(2) : '0';
-  const avgViews = reels.length ? (totalViews / reels.length).toFixed(2) : '0';
-  const pending = reels.filter((v) => v.moderationStatus === 'pending').length;
+  const sparks = videos.filter((v) => SPARK_VIDEO_TYPES.has(v.type));
+  const totalLikes = sparks.reduce((sum, v) => sum + (v.likes || 0), 0);
+  const totalViews = sparks.reduce((sum, v) => sum + (v.views || 0), 0);
+  const totalShares = sparks.reduce((sum, v) => sum + (v.shares || 0), 0);
+  const avgLikes = sparks.length ? (totalLikes / sparks.length).toFixed(2) : '0';
+  const avgViews = sparks.length ? (totalViews / sparks.length).toFixed(2) : '0';
+  const pending = sparks.filter((v) => v.moderationStatus === 'pending').length;
 
   const metrics = [
-    `- Total reels: ${reels.length}`,
+    `- Total Sparks: ${sparks.length}`,
     `- Total likes / views / shares: ${totalLikes} / ${totalViews} / ${totalShares}`,
-    `- Avg likes per reel: ${avgLikes}`,
-    `- Avg views per reel: ${avgViews}`,
+    `- Avg likes per Spark: ${avgLikes}`,
+    `- Avg views per Spark: ${avgViews}`,
     `- Pending moderation: ${pending}`,
     `- Current ranking formula: likes×3 + views + shares×5 (time-decayed)`,
   ].join('\n');
@@ -290,7 +297,7 @@ async function analyzeReels(): Promise<ModuleAnalysisResult> {
   return runAnalyzer(
     'reels',
     metrics,
-    'Focus on: ranking formula weights, completion-rate signals (currently missing), session length per user, cold-start for brand-new reels. Propose concrete formula adjustments with specific weights.',
+    'Focus on: ranking formula weights, completion-rate signals (currently missing), session length per user, cold-start for brand-new Sparks. Propose concrete formula adjustments with specific weights.',
   );
 }
 
@@ -301,13 +308,13 @@ async function analyzeGrowth(): Promise<ModuleAnalysisResult> {
   const users = await storage.getAllUsers();
   const allVideos = await storage.getVideos();
   const creatorVideos = allVideos.filter((v) => v.type === 'creator');
-  const reels = allVideos.filter((v) => v.type === 'reel' || v.type === 'reels');
+  const sparks = allVideos.filter((v) => SPARK_VIDEO_TYPES.has(v.type));
 
   const metrics = [
     `- Total registered users: ${users.length}`,
-    `- Users with content (creators + reels): ${new Set([...creatorVideos, ...reels].map((v) => v.creatorId).filter(Boolean)).size}`,
+    `- Users with content (creators + Sparks): ${new Set([...creatorVideos, ...sparks].map((v) => v.creatorId).filter(Boolean)).size}`,
     `- Total creator videos: ${creatorVideos.length}`,
-    `- Total reels: ${reels.length}`,
+    `- Total Sparks: ${sparks.length}`,
     `- Activation rate (user created ≥1 piece of content): ${users.length ? ((new Set([...allVideos].map((v) => v.creatorId).filter(Boolean)).size / users.length) * 100).toFixed(1) : '0.0'}%`,
   ].join('\n');
 

@@ -110,7 +110,7 @@ const ICONS: Record<OrbId, ReactNode> = {
 
 const ITEMS: OrbItem[] = [
   { id: 'you', label: 'You', to: '/you', icon: ICONS.you },
-  { id: 'reels', label: 'Reels', to: '/reels', icon: ICONS.reels },
+  { id: 'reels', label: 'Sparks', to: '/reels', icon: ICONS.reels },
   { id: 'missions', label: 'Missions', to: '/missions', icon: ICONS.missions },
   { id: 'programs', label: 'Programs', to: '/pricing', icon: ICONS.programs },
   { id: 'writers', label: 'Writers', to: '/writers-hub', icon: ICONS.writers },

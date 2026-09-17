@@ -50,21 +50,37 @@ const MODULE_DEFINITIONS: readonly ModuleDefinition[] = [
     frontendFiles: ['frontend/src/Missions.tsx', 'frontend/src/styles/Missions.css', 'frontend/src/components/MissionShareCard.tsx', 'frontend/src/components/MissionShareCard.css'],
     backendFiles: ['server/missions/routes.ts', 'server/missions/engine.ts', 'server/missions/program-engine.ts', 'server/missions/seed.ts', 'server/missions/content.ts', 'server/missions/content-translations.ts'],
     databaseDependencies: ['missions', 'user_missions', 'mission_events', 'mission_shares', 'mission_programs', 'user_program_enrollments', 'mission_proofs', 'mission_generation_queue', 'mission_feedback', 'user_xp', 'user_personality', 'user_preferences'],
-    apiEndpoints: ['/api/missions', '/api/missions/daily', '/api/missions/suggest', '/api/missions/generate', '/api/missions/:id/start', '/api/missions/:id/proof', '/api/missions/share', '/api/missions/community', '/api/missions/stats', '/api/missions/leaderboard', '/api/missions/feedback', '/api/programs', '/api/programs/:slug', '/api/programs/:slug/enroll'],
+    apiEndpoints: ['/api/missions', '/api/missions/daily', '/api/missions/suggest', '/api/missions/generate', '/api/missions/:id/start', '/api/missions/:id/proof', '/api/missions/share', '/api/missions/:userMissionId/share-as-spark', '/api/missions/community', '/api/missions/stats', '/api/missions/leaderboard', '/api/missions/feedback', '/api/programs', '/api/programs/:slug', '/api/programs/:slug/enroll'],
     sharedDependencies: ['server/ai.ts', 'server/llm.ts', 'server/auth.ts', 'server/rate-limit.ts', 'shared/schema.ts', 'shared/models/maraai-platform.ts'],
     aiIntegrations: ['missionGeneration', 'server/missions/engine.ts', 'server/maraai/p2p-tasks.ts'],
     assets: [],
     tests: [],
   },
   {
+    // Renamed Reels -> Sparks on the product side (short-video feed
+    // reframed around the platform's own growth journey rather than
+    // competing head-on with TikTok/Instagram — connected to Missions,
+    // Writers Hub and You, plus optional YouTube/TikTok link posting via
+    // oEmbed). `id` stays 'reels' — it's an internal key referenced by
+    // routes/tasks/module context, not user- or Mara-facing text, and
+    // renaming it would be a breaking change for no visible benefit.
     id: 'reels',
-    displayName: 'Reels',
-    icon: '🎬',
+    displayName: 'Sparks',
+    icon: '✨',
     routes: ['/reels'],
-    frontendFiles: ['frontend/src/reels.tsx', 'frontend/src/styles/Reels.css', 'frontend/src/components/ReelsComponent.tsx'],
+    frontendFiles: [
+      'frontend/src/reels.tsx',
+      'frontend/src/styles/Reels.css',
+      'frontend/src/components/ReelsComponent.tsx',
+      'frontend/src/components/TikTokFeed.tsx',
+    ],
     backendFiles: ['server/modules/reels.ts', 'server/modules/video.ts', 'server/modules/uploads.ts'],
     databaseDependencies: ['videos', 'saved_videos', 'video_comments', 'likes', 'collection_videos', 'user_posts'],
-    apiEndpoints: ['/api/mara-feed', '/api/reels/feed', '/api/videos/:id/like', '/api/videos/:id/view', '/api/videos/:id/save', '/api/videos/saved', '/api/videos/:id/share', '/api/videos/:id/comments', '/api/videos/comments/:commentId'],
+    apiEndpoints: [
+      '/api/mara-feed', '/api/reels/feed', '/api/reels/upload', '/api/reels/link',
+      '/api/videos/:id/like', '/api/videos/:id/view', '/api/videos/:id/save', '/api/videos/saved',
+      '/api/videos/:id/share', '/api/videos/:id/comments', '/api/videos/comments/:commentId',
+    ],
     sharedDependencies: ['server/ai.ts', 'server/llm.ts', 'server/auth.ts', 'server/rate-limit.ts', 'shared/schema.ts', 'data/videos'],
     aiIntegrations: ['contentProcessing', 'server/ai.ts'],
     assets: ['data/videos'],
@@ -88,8 +104,19 @@ const MODULE_DEFINITIONS: readonly ModuleDefinition[] = [
     id: 'you',
     displayName: 'You',
     icon: '👤',
-    routes: ['/you'],
-    frontendFiles: ['frontend/src/you.tsx', 'frontend/src/components/YouProfile.tsx', 'frontend/src/styles/You.css', 'frontend/src/styles/YouProfile.css'],
+    // /profile/:id is a real route now (Creator Growth Path source
+    // attribution) — UserProfile used to only open as a modal from inside
+    // You itself, with no URL of its own, so a tap on a creator's name from
+    // Sparks or Writers Hub had nowhere to go.
+    routes: ['/you', '/profile/:id'],
+    frontendFiles: [
+      'frontend/src/you.tsx',
+      'frontend/src/components/YouProfile.tsx',
+      'frontend/src/components/UserProfile.tsx',
+      'frontend/src/styles/You.css',
+      'frontend/src/styles/YouProfile.css',
+      'frontend/src/styles/UserProfile.css',
+    ],
     backendFiles: ['server/modules/profile.ts', 'server/modules/userPrefs.ts', 'server/modules/auth-api.ts', 'server/modules/notifications.ts', 'server/modules/messenger.ts'],
     databaseDependencies: ['users', 'user_posts', 'user_preferences', 'direct_messages', 'notifications', 'push_subscriptions', 'likes'],
     apiEndpoints: ['/api/profile/me', '/api/profile/:id', '/api/profile/:id/videos', '/api/profile/:id/followers', '/api/profile/:id/following', '/api/profile/:id/activity', '/api/profile/:id/badges', '/api/profile/:id/posts', '/api/profile/posts', '/api/profile/:id/follow', '/api/user/theme', '/api/user/onboarding-status'],
@@ -106,7 +133,7 @@ const MODULE_DEFINITIONS: readonly ModuleDefinition[] = [
     frontendFiles: ['frontend/src/creator.tsx', 'frontend/src/styles/Creator.css'],
     backendFiles: ['server/modules/creators.ts', 'server/modules/video.ts', 'server/modules/uploads.ts', 'server/billing/features.ts'],
     databaseDependencies: ['creator_posts', 'creator_payouts', 'writer_purchases', 'videos', 'users', 'user_posts'],
-    apiEndpoints: ['/api/creator/earnings', '/api/creator/earnings/history', '/api/creator/dashboard-analytics', '/api/creator/payouts', '/api/admin/creator/payouts', '/api/creator/post-status', '/api/creator/my-videos', '/api/creator/post-reel', '/api/creator/analytics', '/api/creator/videos/:id', '/api/creator/creator-xp', '/api/creator/share-to-you', '/api/creator/my-comments'],
+    apiEndpoints: ['/api/creator/earnings', '/api/creator/earnings/history', '/api/creator/dashboard-analytics', '/api/creator/payouts', '/api/admin/creator/payouts', '/api/creator/post-status', '/api/creator/my-videos', '/api/creator/post-reel', '/api/creator/analytics', '/api/creator/videos/:id', '/api/creator/creator-xp', '/api/creator/share-to-you', '/api/creator/my-comments', '/api/creator/growth-path'],
     sharedDependencies: ['server/auth.ts', 'server/rate-limit.ts', 'server/billing/features.ts', 'shared/schema.ts'],
     aiIntegrations: ['server/ai.ts', 'server/mara-brain/agents/growth-engineer.ts'],
     assets: ['data/videos', 'data/images'],
@@ -150,6 +177,34 @@ function moduleFromTask(task: UnifiedTask): string | null {
   return typeof moduleId === 'string' ? moduleId : null;
 }
 
+// A module's health grid must reflect that module's own health, not Mara's
+// unrelated background brain activity. Two bugs fixed here:
+//
+// 1. The fallback substring match (`task.title.includes(displayName)`) used
+//    to run against EVERY task regardless of source. Only 'control' tasks
+//    ever carry an explicit moduleId (see createCodeAgentRequestWithTask);
+//    'learning' / 'growth_experiment' / 'p2p' tasks are whole-platform brain
+//    cycles with no module of their own, so this matched them by accident —
+//    a FAILED learning-cycle task (e.g. an LLM JSON-parsing hiccup, a real
+//    bug fixed elsewhere this session) could mark a totally unrelated
+//    module's `tasks` dimension 'error'. Now the fallback only considers
+//    'control' tasks, same as the tasks that can actually carry a moduleId.
+// 2. Plain `.includes()` on 'You' (the module with the shortest, most
+//    common-word displayName) matched almost any task title containing the
+//    word "you" ("notify you", "help you grow", …). Switched to a
+//    word-boundary regex so only the whole word matches.
+function taskBelongsToModule(task: UnifiedTask, definition: ModuleDefinition): boolean {
+  if (moduleFromTask(task) === definition.id) return true;
+  if (task.source !== 'control') return false;
+  const nameWords = definition.displayName.toLowerCase().split(/\s+/).filter(Boolean);
+  const pattern = new RegExp(`\\b${nameWords.map(escapeRegExp).join('\\s+')}\\b`, 'i');
+  return pattern.test(task.title);
+}
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function sharedWarnings(definition: ModuleDefinition, allDefinitions: readonly ModuleDefinition[]) {
   const warnings = new Map<string, string[]>();
   const files = [...new Set([...definition.frontendFiles, ...definition.backendFiles, ...definition.sharedDependencies])];
@@ -184,7 +239,7 @@ export async function readHelloMaraModules(): Promise<{ modules: HelloMaraModule
     const assets = existing(definition.assets);
     const missingFiles = [...missing(definition.frontendFiles), ...missing(definition.backendFiles), ...missing(definition.sharedDependencies)];
     const missingTables = definition.databaseDependencies.filter((table) => !tableExists(table));
-    const moduleTasks = tasksSnapshot.tasks.filter((task) => moduleFromTask(task) === definition.id || task.title.toLowerCase().includes(definition.displayName.toLowerCase()));
+    const moduleTasks = tasksSnapshot.tasks.filter((task) => taskBelongsToModule(task, definition));
     const activeTasks = moduleTasks.filter((task) => ['QUEUED', 'PLANNING', 'RUNNING', 'WAITING_APPROVAL'].includes(task.status));
     const recentChanges = [...definition.frontendFiles, ...definition.backendFiles, ...definition.sharedDependencies].filter((file) => changedFiles.has(file));
     const errors = moduleTasks.filter((task) => task.status === 'FAILED').map((task) => task.title).slice(0, 20);

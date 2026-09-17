@@ -311,7 +311,7 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
         title: uploadTitle, url: uploadUrl, description: uploadDesc,
         tags: uploadTags.split(',').map(t => t.trim()).filter(Boolean),
       }, { withCredentials: true });
-      showSuccess('Reel published! +50 XP');
+      showSuccess('Spark published! +50 XP');
       setUploadTitle(''); setUploadDesc(''); setUploadUrl(''); setUploadTags('');
       if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl);
       setVideoFile(null); setVideoPreviewUrl('');
@@ -319,7 +319,7 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
       fetchAll();
       setActiveTab('dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to publish reel.');
+      setError(err.response?.data?.message || 'Failed to publish Spark.');
     } finally { setUploading(false); }
   };
 
@@ -362,7 +362,7 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
       } else if (shareToYou) {
         const xpRes = await axios.post(`${API_URL}/api/creator/share-to-you`, {
           content: createType === 'reel'
-            ? `🎬 Reel nou: ${createTitle}${createContent ? ' — ' + createContent : ''}`
+            ? `🎬 Spark nou: ${createTitle}${createContent ? ' — ' + createContent : ''}`
             : `🖼️ ${createTitle || 'Post nou'}${createContent ? ': ' + createContent : ''}`,
           sourceKind: createType === 'reel' ? 'reel' : null,
           sourceId: videoId,
@@ -792,7 +792,7 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
                   className={`creator-type-btn${createType === type ? ' active' : ''}`}
                   onClick={() => setCreateType(type)}
                 >
-                  {type === 'reel' ? '🎬 Reel' : type === 'photo' ? '🖼️ Photo' : '📝 Article'}
+                  {type === 'reel' ? '🎬 Spark' : type === 'photo' ? '🖼️ Photo' : '📝 Article'}
                 </button>
               ))}
             </div>
