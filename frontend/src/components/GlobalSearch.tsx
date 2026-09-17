@@ -32,6 +32,17 @@ const KIND_ICON: Record<Kind, string> = {
   lessons: '📈',
 };
 
+// No real i18n backing exists for search.kind.* / search.placeholder (the
+// keys were never added to the locale files), so t() was always falling
+// through to these defaults — for 'reels' that meant the raw internal kind
+// string ("reels"), the one stale label left showing after the rebrand.
+const KIND_LABEL_FALLBACK: Record<Kind, string> = {
+  people: 'People',
+  reels: 'Sparks',
+  articles: 'Articles',
+  lessons: 'Lessons',
+};
+
 export const GlobalSearch: React.FC = () => {
   const { t } = useTranslation();
   const [q, setQ] = useState('');
@@ -117,7 +128,7 @@ export const GlobalSearch: React.FC = () => {
       <input
         type="search"
         className="global-search-input"
-        placeholder={t('search.placeholder', 'Search people, reels, articles…') as string}
+        placeholder={t('search.placeholder', 'Search people, Sparks, articles…') as string}
         value={q}
         onChange={(e) => {
           setQ(e.target.value);
@@ -155,7 +166,7 @@ export const GlobalSearch: React.FC = () => {
                 <span className="global-search-title">{r.title}</span>
                 {r.snippet && <span className="global-search-snippet">{r.snippet}</span>}
               </span>
-              <span className="global-search-kind">{t(KIND_LABEL_KEY[r.kind], r.kind)}</span>
+              <span className="global-search-kind">{t(KIND_LABEL_KEY[r.kind], KIND_LABEL_FALLBACK[r.kind])}</span>
             </button>
           ))}
         </div>
