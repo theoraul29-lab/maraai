@@ -5,6 +5,7 @@ import { useAuth } from './contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import YouProfile from './components/YouProfile';
 import MessengerPanel from './components/MessengerPanel';
+import OrbNavStrip from './components/OrbNavStrip';
 import './styles/YouProfile.css';
 import './styles/You.css';
 
@@ -72,8 +73,8 @@ const You: React.FC = () => {
   const initialUserName = searchParams.get('startWithName') || startWith || '';
 
   return (
-    <div className="you-page">
-      <div className="you-tabs">
+    <div className="you-page orbit-ambient" data-module="you">
+      <div className="you-tabs orbit-header">
         <button
           className={`you-tab${activeTab === 'profile' ? ' active' : ''}`}
           onClick={() => switchTab('profile')}
@@ -88,6 +89,8 @@ const You: React.FC = () => {
           {unreadCount > 0 && <span className="you-tab-badge">{unreadCount}</span>}
         </button>
       </div>
+
+      <OrbNavStrip current="you" />
 
       <div className="you-content">
         {activeTab === 'profile' && !viewingOther && (
