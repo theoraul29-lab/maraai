@@ -200,7 +200,13 @@ export function MobileOrbHome({ items = ITEMS }: MobileOrbHomeProps) {
       const y = slotOffset * SPACING_PX;
       const scale = clamp(1 - 0.18 * dist, 0.55, 1);
       const opacity = clamp(1 - 0.27 * dist, 0.04, 1);
-      const blurPx = clamp(dist * 0.6, 0, 6);
+      // blur() was being computed and applied on every one of the 8
+      // off-centre slots, every frame, during any motion — real GPU cost
+      // for a mobile device, reported as a "trembling" feel. Past dist=2.5
+      // opacity is already down to ~0.19 and falling, so skipping the
+      // filter there (rather than shrinking it) is visually unnoticeable
+      // but removes that cost for roughly half the rendered slots.
+      const blurPx = dist < 2.5 ? clamp(dist * 0.6, 0, 6) : 0;
       el.style.transform = `translate3d(-50%, calc(-50% + ${y.toFixed(2)}px), 0) scale(${scale.toFixed(3)})`;
       el.style.opacity = String(opacity);
       el.style.filter = blurPx > 0.05 ? `blur(${blurPx.toFixed(2)}px)` : 'none';
@@ -238,6 +244,19 @@ export function MobileOrbHome({ items = ITEMS }: MobileOrbHomeProps) {
       const last = lastFrameRef.current;
       const dt = last == null ? 16 : Math.min(now - last, 50);
       lastFrameRef.current = now;
+
+      // While actively dragging, offsetRef is driven directly by pointer
+      // position (see onPointerMove) — this loop's only job during a drag
+      // is to paint that position at the display's own refresh rate,
+      // instead of onPointerMove painting on every raw touch/pointer
+      // event, which can fire faster than the screen actually repaints and
+      // reads as jitter on some devices. No offset math here; that stays
+      // entirely in onPointerMove for a drag in progress.
+      if (dragRef.current) {
+        applyTransforms();
+        rafRef.current = requestAnimationFrame(tickPhysics);
+        return;
+      }
 
       const snap = snapRef.current;
       if (snap) {
@@ -310,8 +329,12 @@ export function MobileOrbHome({ items = ITEMS }: MobileOrbHomeProps) {
         moved: false,
       };
       velocityRef.current = 0;
+      // Start the paint loop now — tickPhysics's dragRef.current branch
+      // takes over painting at the display's own rate for the rest of
+      // this drag (see onPointerMove).
+      ensureRunning();
     },
-    [stopRaf],
+    [ensureRunning, stopRaf],
   );
 
   const onPointerMove = useCallback(
@@ -331,9 +354,10 @@ export function MobileOrbHome({ items = ITEMS }: MobileOrbHomeProps) {
       while (drag.samples.length > 2 && drag.samples[0].t < horizon) {
         drag.samples.shift();
       }
-      applyTransforms();
+      // Painting happens in tickPhysics's RAF loop now, not here — see the
+      // comment on ensureRunning() in onPointerDown.
     },
-    [applyTransforms],
+    [],
   );
 
   const finishDrag = useCallback(
@@ -362,27 +386,23 @@ export function MobileOrbHome({ items = ITEMS }: MobileOrbHomeProps) {
         if (slot != null) {
           const itemIndex = mod(Math.round(offsetRef.current) + slot);
           const item = items[itemIndex];
-          // For non-centre taps, just snap the tapped orb to centre. For
-          // centre taps, navigate. This matches the user expectation of
-          // a slot-machine selector.
-          if (slot === 0) {
-            startSnap(Math.round(offsetRef.current));
-            ensureRunning();
-            // brief tap feedback
-            const el = slotRefs.current[VISIBLE_SLOTS]; // centre slot index
-            if (el) {
-              el.classList.add('mara-orb--tap');
-              setTimeout(() => el?.classList.remove('mara-orb--tap'), 180);
-            }
-            if (item.to === '/pricing' && isProgramsLocked()) {
-                setShowProgramsLock(true);
-                setTimeout(() => setShowProgramsLock(false), 3500);
-              } else {
-                window.setTimeout(() => navigate(item.to), 160);
-              }
+          // Any tapped orb navigates now, not just the centred one —
+          // previously an off-centre tap only recentred it, requiring a
+          // second tap to actually go anywhere, reported as unintuitive.
+          // Still snaps the tapped orb to centre first for a clear visual
+          // confirmation of what was picked, then navigates.
+          startSnap(Math.round(offsetRef.current) + slot);
+          ensureRunning();
+          const el = slotRefs.current[VISIBLE_SLOTS + slot];
+          if (el) {
+            el.classList.add('mara-orb--tap');
+            setTimeout(() => el?.classList.remove('mara-orb--tap'), 180);
+          }
+          if (item.to === '/pricing' && isProgramsLocked()) {
+            setShowProgramsLock(true);
+            setTimeout(() => setShowProgramsLock(false), 3500);
           } else {
-            startSnap(Math.round(offsetRef.current) + slot);
-            ensureRunning();
+            window.setTimeout(() => navigate(item.to), 160);
           }
           return;
         }
