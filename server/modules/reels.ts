@@ -159,6 +159,115 @@ export async function uploadReel(req: Request, res: Response) {
   }
 }
 
+// --- External link Sparks (Phase 4) -----------------------------------------
+//
+// Legitimate oEmbed-based linking, never downloading/rehosting: the bytes
+// stay on the source platform's own servers, we only store the link plus
+// whatever metadata their public oEmbed endpoint returns, and render their
+// own sanctioned embed widget client-side. User-facing copy for this feature
+// must stay fully generic (product decision) — never name the platforms in
+// our own labels/errors; only their own embedded player, outside our
+// control, shows its native branding.
+
+const OEMBED_FETCH_TIMEOUT_MS = 5000;
+
+const YOUTUBE_HOSTS = new Set(['youtube.com', 'www.youtube.com', 'm.youtube.com', 'youtu.be']);
+const TIKTOK_HOSTS = new Set(['tiktok.com', 'www.tiktok.com', 'm.tiktok.com', 'vm.tiktok.com', 'vt.tiktok.com']);
+
+function extractYouTubeId(u: URL): string | null {
+  if (u.hostname === 'youtu.be') {
+    const id = u.pathname.slice(1);
+    return /^[\w-]{11}$/.test(id) ? id : null;
+  }
+  if (u.pathname === '/watch') {
+    const id = u.searchParams.get('v');
+    return id && /^[\w-]{11}$/.test(id) ? id : null;
+  }
+  const shortsMatch = u.pathname.match(/^\/shorts\/([\w-]{11})/);
+  if (shortsMatch) return shortsMatch[1];
+  return null;
+}
+
+export async function postExternalLink(req: Request, res: Response) {
+  try {
+    const userId: string | undefined = (req as any).user?.uid;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const rawUrl = String(req.body?.url ?? '').trim();
+    let parsed: URL;
+    try {
+      parsed = new URL(rawUrl);
+    } catch {
+      return res.status(400).json({ error: 'That link is not valid.' });
+    }
+    if (parsed.protocol !== 'https:') {
+      return res.status(400).json({ error: 'That link is not supported.' });
+    }
+
+    const description = (req.body?.description as string | undefined)?.trim().slice(0, 1000) || '';
+
+    if (YOUTUBE_HOSTS.has(parsed.hostname)) {
+      const videoId = extractYouTubeId(parsed);
+      if (!videoId) return res.status(400).json({ error: 'That link is not supported.' });
+      const created = await deps.storage.createVideo({
+        title: ((req.body?.title as string | undefined)?.trim() || 'Spark').slice(0, 200),
+        description,
+        type: 'external-link',
+        url: `https://www.youtube.com/watch?v=${videoId}`,
+        creatorId: userId,
+        fileKey: null,
+        mimeType: null,
+        thumbnailUrl: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+        durationSec: null,
+        moderationStatus: 'approved',
+        sourceKind: null,
+        sourceId: null,
+        externalPlatform: 'youtube',
+      } as any);
+      return res.status(201).json({ video: created });
+    }
+
+    if (TIKTOK_HOSTS.has(parsed.hostname)) {
+      let oembed: { title?: string; embed_product_id?: string; author_name?: string } | null = null;
+      try {
+        const resp = await fetch(`https://www.tiktok.com/oembed?url=${encodeURIComponent(rawUrl)}`, {
+          signal: AbortSignal.timeout(OEMBED_FETCH_TIMEOUT_MS),
+        });
+        if (resp.ok) oembed = await resp.json();
+      } catch {
+        // oembed stays null — handled below as an unresolvable link.
+      }
+      if (!oembed || !oembed.embed_product_id) {
+        return res.status(400).json({ error: "That link couldn't be resolved." });
+      }
+      const created = await deps.storage.createVideo({
+        title: ((req.body?.title as string | undefined)?.trim() || oembed.title || 'Spark').slice(0, 200),
+        description,
+        type: 'external-link',
+        url: rawUrl,
+        creatorId: userId,
+        fileKey: null,
+        mimeType: null,
+        // No thumbnail hotlinked here on purpose: the source platform's own
+        // embed script renders its own preview inside its own iframe, so we
+        // never need to allow-list its CDN host under img-src.
+        thumbnailUrl: null,
+        durationSec: null,
+        moderationStatus: 'approved',
+        sourceKind: null,
+        sourceId: null,
+        externalPlatform: 'tiktok',
+      } as any);
+      return res.status(201).json({ video: created });
+    }
+
+    res.status(400).json({ error: 'That link is not supported yet.' });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'failed to add link';
+    res.status(500).json({ error: 'Failed to add link', detail: msg });
+  }
+}
+
 export async function getReelsFeed(req: Request, res: Response) {
   try {
     const limit = Number.parseInt(String(req.query.limit ?? '20'), 10) || 20;

@@ -127,6 +127,7 @@ import {
   videoViewRateLimit,
   createPostRateLimit,
   createCommentRateLimit,
+  externalLinkRateLimit,
 } from './rate-limit.js';
 import { requireAdmin as requireAdminMiddleware } from './middleware/requireAdmin.js';
 import { isUserAdmin } from './lib/admin-check.js';
@@ -524,6 +525,7 @@ export async function registerRoutes(
     },
     reelsModule.uploadReel,
   );
+  app.post('/api/reels/link', requireAuth, externalLinkRateLimit, reelsModule.postExternalLink);
   // --- Generic image upload (avatar, cover, post image, writers cover) ----
   // Auth-required, multipart/form-data field name `image`. Returns a public
   // URL the caller can store in any *ImageUrl column via the existing

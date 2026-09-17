@@ -41,6 +41,14 @@ export const videos = pgTable('videos', {
   // not necessarily numeric.
   sourceKind: text('source_kind'),
   sourceId: text('source_id'),
+  // Sparks Phase 4: a Spark whose `type` is 'external-link' points at a
+  // video hosted on another platform rather than our own uploaded bytes —
+  // `url` holds the original external link, never a downloaded/rehosted
+  // copy. `externalPlatform` is 'youtube' | 'tiktok' (internal-only value;
+  // no platform name is ever surfaced in our own UI copy, per product
+  // decision — only the source platform's own embedded player, which we
+  // don't control, shows its native branding).
+  externalPlatform: text('external_platform'),
   createdAt: integer('created_at', { mode: 'timestamp' })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),

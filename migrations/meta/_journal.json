@@ -225,6 +225,13 @@
       "when": 1780300000000,
       "tag": "0031_videos_source_link",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "6",
+      "when": 1780400000000,
+      "tag": "0032_videos_external_platform",
+      "breakpoints": true
     }
   ]
 }

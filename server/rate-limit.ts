@@ -351,6 +351,16 @@ export const missionWriteRateLimit = createUserRateLimit({
   windowMs: ONE_HOUR,
 });
 
+// Sparks external-link posting (Phase 4): each request makes a server-side
+// call out to the source platform's oEmbed endpoint, so this is throttled
+// separately from the file-upload path to bound how often we can be used
+// as a proxy to hammer a third party.
+export const externalLinkRateLimit = createUserRateLimit({
+  name: 'reels:external-link',
+  max: envInt('RL_EXTERNAL_LINK_MAX', 15),
+  windowMs: ONE_HOUR,
+});
+
 // --- Public read endpoints (community, leaderboard) -------------------------
 // Unauthenticated IP-based limit to prevent scraping.
 export const publicReadRateLimit = createIPRateLimit({

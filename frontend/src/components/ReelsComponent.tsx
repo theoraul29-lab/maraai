@@ -32,6 +32,7 @@ interface Reel {
   description: string;
   createdAt: string;
   topic?: string;
+  externalPlatform?: string | null;
 }
 
 interface CreatorStats {
@@ -110,6 +111,7 @@ const ReelsComponent: React.FC = () => {
         description: v.description || '',
         createdAt: v.createdAt || new Date().toISOString(),
         topic: v.topic,
+        externalPlatform: v.externalPlatform || null,
       }));
 
       if (reset) {
@@ -195,11 +197,13 @@ const ReelsComponent: React.FC = () => {
       setError(t('reels.titleUrlRequired'));
       return;
     }
-    // Two valid paths: (a) attach a real video file → multipart upload
+    // Three valid paths: (a) attach a real video file → multipart upload
     // through /api/reels/upload, the backend writes bytes to the video
-    // volume and returns a record we treat the same as the YouTube/external
-    // case; (b) paste an external URL (YouTube etc.) → fall back to the
-    // legacy /api/creator/post-reel endpoint.
+    // volume; (b) paste a link the source platform's own oEmbed contract
+    // recognizes (Sparks Phase 4) → /api/reels/link, which validates it and
+    // stores the link only, never the bytes; (c) any other pasted URL (a
+    // direct .mp4 link, etc.) → fall back to the legacy
+    // /api/creator/post-reel endpoint, preserving what already worked there.
     if (!videoFile && !newReel.url.trim()) {
       setError(t('reels.titleUrlRequired'));
       return;
@@ -218,12 +222,21 @@ const ReelsComponent: React.FC = () => {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
       } else {
-        await axios.post(`${API_URL}/api/creator/post-reel`, {
-          title: newReel.title,
-          url: newReel.url,
-          description: newReel.description,
-          tags: newReel.tags.split(',').map(t => t.trim()).filter(Boolean),
-        });
+        try {
+          await axios.post(`${API_URL}/api/reels/link`, {
+            title: newReel.title,
+            url: newReel.url,
+            description: newReel.description,
+          }, { withCredentials: true });
+        } catch (linkErr) {
+          if (!axios.isAxiosError(linkErr) || linkErr.response?.status !== 400) throw linkErr;
+          await axios.post(`${API_URL}/api/creator/post-reel`, {
+            title: newReel.title,
+            url: newReel.url,
+            description: newReel.description,
+            tags: newReel.tags.split(',').map(t => t.trim()).filter(Boolean),
+          });
+        }
       }
       setNewReel({ title: '', description: '', music: '', tags: '', url: '' });
       if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl);

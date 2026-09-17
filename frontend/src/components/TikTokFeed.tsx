@@ -17,6 +17,7 @@ export interface TikTokReel {
   description: string;
   tags: string[];
   duration: string;
+  externalPlatform?: string | null;
 }
 
 interface Props {
@@ -60,6 +61,64 @@ function postYouTubeCommand(
     // ignore — player not ready yet
   }
 }
+
+// Renders an externally-hosted Spark via the source platform's own
+// sanctioned oEmbed widget (blockquote + their embed.js), never a
+// downloaded/rehosted copy. embed.js scans the document for unconverted
+// `.tiktok-embed` blockquotes and swaps in its own iframe whenever it runs —
+// re-appending a fresh <script> on each mount (instead of loading it once
+// globally) is what makes that rescan happen for tiles that mount after the
+// first one, since a virtualized feed keeps mounting new cards. The browser
+// caches the script fetch itself, so this is cheap after the first load.
+// If nothing converts the blockquote within a few seconds (slow network, ad
+// blocker, embed.js API drift) fall back to a plain outbound link rather
+// than leaving a dead tile.
+const ExternalEmbed: React.FC<{ url: string; title: string }> = ({ url, title }) => {
+  const { t } = useTranslation();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [rendered, setRendered] = useState(false);
+
+  useEffect(() => {
+    setRendered(false);
+    const script = document.createElement('script');
+    script.src = 'https://www.tiktok.com/embed.js';
+    script.async = true;
+    document.body.appendChild(script);
+
+    const check = setInterval(() => {
+      if (containerRef.current?.querySelector('iframe')) {
+        setRendered(true);
+        clearInterval(check);
+      }
+    }, 400);
+    const giveUp = setTimeout(() => clearInterval(check), 6000);
+
+    return () => {
+      clearInterval(check);
+      clearTimeout(giveUp);
+      script.remove();
+    };
+  }, [url]);
+
+  return (
+    <div className="tiktok-external-embed" ref={containerRef}>
+      <blockquote className="tiktok-embed" cite={url} data-embed-from="mara-sparks">
+        <a href={url} target="_blank" rel="noopener noreferrer" />
+      </blockquote>
+      {!rendered && (
+        <a
+          className="tiktok-external-fallback"
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {t('reels.openLink', 'Open')} — {title}
+        </a>
+      )}
+    </div>
+  );
+};
 
 const TikTokFeed: React.FC<Props> = ({
   reels,
@@ -201,10 +260,11 @@ const ReelCard: React.FC<ReelCardProps> = ({
   const [doubleTapHeart, setDoubleTapHeart] = useState(false);
   const lastTapRef = useRef<number>(0);
 
-  const youTubeId = (reel.url.includes('youtube') || reel.url.includes('youtu.be'))
+  const isExternalTikTok = reel.externalPlatform === 'tiktok';
+  const youTubeId = !isExternalTikTok && (reel.url.includes('youtube') || reel.url.includes('youtu.be'))
     ? extractYouTubeId(reel.url)
     : '';
-  const isNativeVideo = !youTubeId && reel.url !== '#';
+  const isNativeVideo = !youTubeId && !isExternalTikTok && reel.url !== '#';
 
   // Stable iframe src — only depends on youTubeId, so the iframe never
   // reloads when the `muted` or `isActive` props change. Playback and
@@ -303,7 +363,8 @@ const ReelCard: React.FC<ReelCardProps> = ({
             preload="metadata"
           />
         )}
-        {!youTubeId && !isNativeVideo && (
+        {isExternalTikTok && <ExternalEmbed url={reel.url} title={reel.title} />}
+        {!youTubeId && !isNativeVideo && !isExternalTikTok && (
           <div className="tiktok-reel-placeholder">🎬</div>
         )}
 

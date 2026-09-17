@@ -56,7 +56,13 @@ app.use(
         // spamming console errors and leaving the font never cached for
         // offline use. gstatic.com is where the actual font FILES the
         // stylesheet references are hosted.
-        'connect-src': ["'self'", 'https://stt.hellomara.net', 'https://tts.hellomara.net', 'https://fonts.googleapis.com', 'https://fonts.gstatic.com'],
+        // tiktok.com added defensively for Sparks Phase 4: their embed.js may
+        // fetch its own oEmbed data from the top-level page before swapping
+        // in the iframe (unconfirmed — TikTok doesn't document embed.js
+        // internals). Cheap to allow, and the failure mode without it is a
+        // silent CSP block identical to the SW-reset-script incident, so this
+        // errs toward allowing rather than debugging that again blind.
+        'connect-src': ["'self'", 'https://stt.hellomara.net', 'https://tts.hellomara.net', 'https://fonts.googleapis.com', 'https://fonts.gstatic.com', 'https://www.tiktok.com'],
         'media-src': ["'self'", 'blob:'],
         // Helmet's default img-src is 'self' data: — silently blocks any
         // externally-hosted image. Confirmed live (DevTools CSP violations):
@@ -74,7 +80,16 @@ app.use(
         // must be recomputed (sha256 of the LF-normalized script body —
         // browsers normalize CRLF -> LF before hashing) or the new version
         // will be silently blocked exactly like this one was.
-        'script-src': ["'self'", "'sha256-T0x20b4Axbsd8miTEV/35zopEK29KmzKKycfi9DY5Wk='"],
+        // Sparks Phase 4 (external-link Sparks) adds tiktok.com here: TikTok's
+        // own oEmbed contract is a <blockquote> + their embed.js script, which
+        // TikTok then swaps for an iframe itself — so we need to allow their
+        // script to load at all (script-src) and allow the iframe it creates
+        // (frame-src, below). YouTube needs neither: it's rendered as a plain
+        // <iframe src="https://www.youtube.com/embed/...">  we build ourselves.
+        'script-src': ["'self'", "'sha256-T0x20b4Axbsd8miTEV/35zopEK29KmzKKycfi9DY5Wk='", 'https://www.tiktok.com'],
+        // frame-src has no Helmet default (CSP falls back to default-src
+        // 'self', which would silently block both embeds without this).
+        'frame-src': ["'self'", 'https://www.youtube.com', 'https://www.tiktok.com'],
       },
     } : false,
     crossOriginEmbedderPolicy: false,
