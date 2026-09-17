@@ -66,8 +66,13 @@ RUN groupadd -g 1001 nodejs \
 COPY scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Health check (Railway injects PORT)
-HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+# Health check (Railway injects PORT). start-period gives the boot sequence
+# (migrations, seeding, knowledge-base writes — all synchronous, all before
+# the server starts listening) room to finish before a slow check counts
+# against --retries; a real incident (2026-09-17) showed a healthy-looking
+# boot lose the race against Railway's own 30s healthcheckTimeout
+# (railway.json — raised alongside this), so this is widened to match.
+HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
   CMD node -e "const p=process.env.PORT||5000;require('http').get('http://localhost:'+p+'/api/health',(r)=>{if(r.statusCode!==200)throw new Error(r.statusCode)})"
 
 # Expose port
