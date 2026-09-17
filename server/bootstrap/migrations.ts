@@ -91,6 +91,9 @@ export function runMigrations() {
     ["tier", "text NOT NULL DEFAULT 'free'"],
     ['trial_start_time', 'integer'],
     ['trial_ends_at', 'integer'],
+    // Migration 0034_pending_deletion — self-heal for DBs whose journal
+    // didn't pick it up, same reasoning as the columns above.
+    ['pending_deletion_at', 'integer'],
   ]);
 
   ensureColumns('user_preferences', [

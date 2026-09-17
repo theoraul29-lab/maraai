@@ -69,6 +69,11 @@ interface AuthUserPayload {
   bio?: string | null;
   preferredLanguage?: string | null;
   isAdmin?: boolean;
+  /** Whether this account has local email/password credentials (vs. OAuth-only). */
+  hasPassword?: boolean;
+  /** Set once, on the login response, when this login cancelled a pending
+   * account-deletion schedule (see deleteAccount in profile.ts). */
+  reactivated?: boolean;
 }
 
 function isAdminUser(id: string, email: string | null | undefined): boolean {
@@ -117,6 +122,15 @@ async function findCredentialsByEmail(email: string) {
     .where(eq(localAuthCredentials.email, email))
     .limit(1);
   return rows[0] ?? null;
+}
+
+async function hasLocalCredentials(userId: string): Promise<boolean> {
+  const rows = await db
+    .select({ userId: localAuthCredentials.userId })
+    .from(localAuthCredentials)
+    .where(eq(localAuthCredentials.userId, userId))
+    .limit(1);
+  return rows.length > 0;
 }
 
 /**
@@ -189,7 +203,11 @@ export type AuthErrorCode =
   | 'user_missing'
   | 'logout_failed'
   | 'oauth_unsupported'
-  | 'oauth_not_enabled';
+  | 'oauth_not_enabled'
+  | 'change_password_body_invalid'
+  | 'no_local_password'
+  | 'current_password_invalid'
+  | 'change_password_failed';
 
 function authError(res: Response, status: number, code: AuthErrorCode, message: string, extra?: Record<string, unknown>) {
   return res.status(status).json({ code, message, ...extra });
@@ -282,7 +300,7 @@ async function signupHandler(req: Request, res: Response) {
   void publishEvent(BRAIN_EVENT_TOPIC, { reason: 'signup_spike', userId: user.id }, { userId: user.id }).catch(() => {});
   // Brand-new user has no language preference yet; return null so the
   // client falls back to localStorage / browser-detected language.
-  return res.status(201).json(toPayload({ ...user, preferredLanguage: null }));
+  return res.status(201).json({ ...toPayload({ ...user, preferredLanguage: null }), hasPassword: true });
 }
 
 async function loginHandler(req: Request, res: Response) {
@@ -324,8 +342,25 @@ async function loginHandler(req: Request, res: Response) {
     console.error('[auth] session.regenerate failed after login:', err);
     return authError(res, 500, 'session_create_failed', 'Failed to create session. Please try again.');
   }
+
+  // Logging back in during the 7-day grace period cancels a scheduled
+  // account deletion (see deleteAccount in profile.ts / sweepPendingAccountDeletions).
+  let reactivated = false;
+  if (user[0].pendingDeletionAt) {
+    try {
+      await db.update(users).set({ pendingDeletionAt: null }).where(eq(users.id, user[0].id));
+      reactivated = true;
+    } catch (err) {
+      console.error('[auth] failed to clear pendingDeletionAt on login:', err);
+    }
+  }
+
   const language = await fetchUserLanguage(user[0].id);
-  return res.status(200).json(toPayload({ ...user[0], preferredLanguage: language }));
+  return res.status(200).json({
+    ...toPayload({ ...user[0], preferredLanguage: language }),
+    hasPassword: true,
+    ...(reactivated ? { reactivated: true } : {}),
+  });
 }
 
 async function logoutHandler(req: Request, res: Response) {
@@ -373,9 +408,14 @@ async function meHandler(req: Request, res: Response) {
     return res.status(200).json({ user: null, anonymousId: uid });
   }
 
-  const language = await fetchUserLanguage(row[0].id);
+  const [language, hasPassword] = await Promise.all([
+    fetchUserLanguage(row[0].id),
+    hasLocalCredentials(row[0].id),
+  ]);
   console.log('[auth] me done', { ms: Date.now() - t0, userId: row[0].id });
-  return res.status(200).json({ user: toPayload({ ...row[0], preferredLanguage: language }) });
+  return res.status(200).json({
+    user: { ...toPayload({ ...row[0], preferredLanguage: language }), hasPassword },
+  });
 }
 
 async function oauthHandler(req: Request, res: Response) {
@@ -385,6 +425,57 @@ async function oauthHandler(req: Request, res: Response) {
   }
   // Real OAuth wiring (Google/Facebook app + callback) tracked separately.
   return authError(res, 501, 'oauth_not_enabled', `OAuth (${provider}) not yet enabled. Use email + password for now.`, { provider });
+}
+
+const changePasswordBodySchema = z.object({
+  currentPassword: passwordSchema,
+  newPassword: passwordSchema,
+});
+
+/**
+ * POST /api/auth/change-password
+ * Requires the current password (rejects OAuth-only accounts, which have
+ * no local password to check against). Session is left intact — this runs
+ * from an already-authenticated context, unlike the reset-token flow below
+ * which destroys the session since it's meant for an untrusted context.
+ */
+async function changePasswordHandler(req: Request, res: Response) {
+  const userId = (req as any).user?.uid as string | undefined;
+  if (!userId) {
+    return authError(res, 401, 'user_missing', 'Unauthorized — login required.');
+  }
+  const parsed = changePasswordBodySchema.safeParse(req.body);
+  if (!parsed.success) {
+    return flashBadRequest(res, 'change_password_body_invalid', 'Current and new password (min 6 chars) are required.');
+  }
+  const { currentPassword, newPassword } = parsed.data;
+
+  const creds = await db
+    .select()
+    .from(localAuthCredentials)
+    .where(eq(localAuthCredentials.userId, userId))
+    .limit(1);
+  if (!creds[0]) {
+    return authError(res, 400, 'no_local_password', 'This account signs in via Google/Facebook and has no password to change.');
+  }
+
+  const ok = await bcrypt.compare(currentPassword, creds[0].passwordHash);
+  if (!ok) {
+    return authError(res, 401, 'current_password_invalid', 'Current password is incorrect.');
+  }
+
+  try {
+    const newHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+    await db
+      .update(localAuthCredentials)
+      .set({ passwordHash: newHash })
+      .where(eq(localAuthCredentials.userId, userId));
+  } catch (err) {
+    console.error('[auth] change-password update failed:', err);
+    return authError(res, 500, 'change_password_failed', 'Could not update password. Please try again.');
+  }
+
+  return res.status(200).json({ ok: true });
 }
 
 const requestResetSchema = z.object({ email: emailSchema });
@@ -522,3 +613,4 @@ export const login = wrapAsync('login', loginHandler);
 export const logout = wrapAsync('logout', logoutHandler);
 export const me = wrapAsync('me', meHandler);
 export const oauth = wrapAsync('oauth', oauthHandler);
+export const changePassword = wrapAsync('change-password', changePasswordHandler);

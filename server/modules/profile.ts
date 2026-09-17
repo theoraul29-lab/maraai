@@ -1,7 +1,16 @@
 import type { Request, Response } from 'express';
 import type { IStorage } from '../storage.js';
+import bcrypt from 'bcryptjs';
+import { eq, and, isNotNull, lte } from 'drizzle-orm';
 import { notifyFollow } from '../notifications/producer.js';
-import { rawSqlite } from '../db.js';
+import { db, rawSqlite } from '../db.js';
+import { users, localAuthCredentials } from '../../shared/schema.js';
+
+// 7-day recovery window: a scheduled deletion is only carried out by
+// sweepPendingAccountDeletions() once pending_deletion_at is in the past.
+// Logging back in before then (loginHandler in auth-api.ts) clears the
+// column and the account is untouched.
+const DELETION_GRACE_PERIOD_MS = 7 * 24 * 60 * 60 * 1000;
 
 let deps: { storage: IStorage };
 
@@ -718,7 +727,146 @@ export async function deletePostComment(req: Request, res: Response) {
   }
 }
 
-// GDPR: delete all data for the authenticated user and log them out.
+// GDPR: permanently wipe every table with rows scoped to `userId`, then the
+// `users` row itself. Called only by sweepPendingAccountDeletions() once a
+// scheduled deletion's grace period has elapsed — never directly from the
+// request handler, so a user can still cancel by logging back in.
+export function hardDeleteAccountData(userId: string): void {
+  // Delete in dependency order (children first, then parents).
+  // Every entry is wrapped in try/catch inside the loop so a missing table
+  // never aborts the transaction.
+  const tables: [string, string][] = [
+    // --- leaf nodes (reference content) ---
+    ['post_likes',                 'user_id'],
+    ['post_comments',              'user_id'],
+    ['video_comments',             'user_id'],
+    ['writer_comments',            'user_id'],
+    ['comments',                   'user_id'],
+    ['likes',                      'user_id'],
+    ['saved_videos',               'user_id'],
+    ['collections',                'user_id'],
+    ['mission_proofs',             'user_id'],
+    ['mission_feedback',           'user_id'],
+    ['mission_generation_queue',   'user_id'],
+    ['journal_entries',            'user_id'],
+    ['user_books',                 'user_id'],
+    ['content_shares',             'user_id'],
+    ['user_toxicity_state',        'user_id'],
+    ['referral_codes',             'user_id'],
+    ['referrals',                  'referrer_id'],
+    ['referrals',                  'referred_user_id'],
+    ['program_purchases',          'user_id'],
+    ['user_program_enrollments',   'user_id'],
+    // --- notifications / push ---
+    ['notifications',              'user_id'],
+    ['push_subscriptions',         'user_id'],
+    // --- feedback / support ---
+    ['user_feedback',              'user_id'],
+    // --- missions / XP ---
+    ['mission_shares',             'user_id'],
+    ['mission_events',             'user_id'],
+    ['user_missions',              'user_id'],
+    ['user_xp',                    'user_id'],
+    ['user_personality',           'user_id'],
+    // --- preferences / history ---
+    ['user_preferences',           'user_id'],
+    ['mara_search_history',        'user_id'],
+    // --- chat ---
+    ['chat_messages',              'user_id'],
+    ['direct_messages',            'sender_id'],
+    // --- creator / writer content ---
+    ['creator_payouts',            'creator_id'],
+    ['creator_posts',              'creator_id'],
+    ['writer_purchases',           'user_id'],
+    ['writer_pages',               'user_id'],  // column is user_id, not author_id
+    ['premium_orders',             'user_id'],
+    ['user_posts',                 'user_id'],
+    ['videos',                     'creator_id'],
+    // --- social / billing / privacy (previously missing — orphaned rows
+    // survived account deletion until this fix) ---
+    ['user_blocks',                'blocker_id'],
+    ['user_blocks',                'blocked_id'],
+    ['subscriptions',              'user_id'],
+    ['consent_records',            'user_id'],
+    ['p2p_nodes',                  'user_id'],
+    ['activity_log',               'user_id'],
+    ['ai_route_log',               'user_id'],
+    ['user_credits',               'user_id'],
+    ['credit_transactions',        'user_id'],
+  ];
+
+  rawSqlite.transaction(() => {
+    // Wrap every delete so a missing table never aborts the transaction.
+    const safeRun = (sql: string, ...args: string[]) => {
+      try { rawSqlite.prepare(sql).run(...args); }
+      catch { /* table may not exist in this environment */ }
+    };
+
+    // conversations really uses user_a_id/user_b_id (see migrations/
+    // 0015_direct_messages.sql) — the previous user1_id/user2_id query
+    // never matched a real column, so it silently no-opped and left
+    // conversation rows referencing deleted users behind.
+    safeRun(`DELETE FROM conversations WHERE user_a_id = ? OR user_b_id = ?`, userId, userId);
+    // followers really uses follower_id/following_id — same bug as above
+    // (the old query said `followed_id`, which doesn't exist).
+    safeRun(`DELETE FROM followers WHERE follower_id = ? OR following_id = ?`, userId, userId);
+
+    // collection_videos has no user_id column of its own (only
+    // collection_id/video_id) — it must be cleared via the owning
+    // collections row, and BEFORE those rows are deleted below.
+    safeRun(
+      `DELETE FROM collection_videos WHERE collection_id IN (SELECT id FROM collections WHERE user_id = ?)`,
+      userId,
+    );
+    // Same shape for program_day_missions, which is only reachable via
+    // the owning enrollment (no direct user_id column), and must run
+    // before user_program_enrollments rows are deleted below.
+    safeRun(
+      `DELETE FROM program_day_missions WHERE enrollment_id IN (SELECT id FROM user_program_enrollments WHERE user_id = ?)`,
+      userId,
+    );
+
+    for (const [table, col] of tables) {
+      safeRun(`DELETE FROM "${table}" WHERE "${col}" = ?`, userId);
+    }
+
+    // User row last — all references have been cleaned up above.
+    safeRun(`DELETE FROM users WHERE id = ?`, userId);
+  })();
+}
+
+/**
+ * Runs on a timer (see server/bootstrap/jobs.ts) to actually carry out
+ * deletions scheduled by deleteAccount() below, once their 7-day grace
+ * period has elapsed. Logging back in before then cancels the schedule
+ * (loginHandler in auth-api.ts clears pending_deletion_at), so anything
+ * this function finds is genuinely past its recovery window.
+ */
+export async function sweepPendingAccountDeletions(): Promise<void> {
+  try {
+    const due = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(and(isNotNull(users.pendingDeletionAt), lte(users.pendingDeletionAt, new Date())));
+    for (const { id } of due) {
+      try {
+        hardDeleteAccountData(id);
+        console.log(`[account-deletion] hard-deleted user ${id} after grace period`);
+      } catch (err) {
+        console.error(`[account-deletion] failed to hard-delete user ${id}:`, err);
+      }
+    }
+  } catch (err) {
+    console.error('[account-deletion] sweep failed:', err);
+  }
+}
+
+// GDPR: schedule the authenticated user's account for deletion and log them
+// out immediately. The account (and all its data) is only actually wiped
+// after DELETION_GRACE_PERIOD_MS by sweepPendingAccountDeletions() — logging
+// back in any time before then cancels the schedule and the account is
+// untouched. Requires the current password for accounts that have one
+// (local email/password auth); OAuth-only accounts have nothing to check.
 export async function deleteAccount(req: Request, res: Response) {
   const userId = currentUserId(req);
   if (!userId) {
@@ -726,86 +874,37 @@ export async function deleteAccount(req: Request, res: Response) {
     return;
   }
   try {
-    // Delete in dependency order (children first, then parents).
-    // Every entry is wrapped in try/catch inside the loop so a missing table
-    // never aborts the transaction.
-    const tables: [string, string][] = [
-      // --- leaf nodes (reference content) ---
-      ['post_likes',                 'user_id'],
-      ['post_comments',              'user_id'],
-      ['video_comments',             'user_id'],
-      ['writer_comments',            'user_id'],
-      ['comments',                   'user_id'],
-      ['likes',                      'user_id'],
-      ['saved_videos',               'user_id'],
-      ['collection_videos',          'user_id'],
-      ['collections',                'user_id'],
-      ['mission_proofs',             'user_id'],
-      ['mission_feedback',           'user_id'],
-      ['mission_generation_queue',   'user_id'],
-      ['journal_entries',            'user_id'],
-      ['user_books',                 'user_id'],
-      ['content_shares',             'user_id'],
-      ['user_toxicity_state',        'user_id'],
-      ['referral_codes',             'user_id'],
-      ['referrals',                  'referrer_id'],
-      ['referrals',                  'referred_user_id'],
-      ['program_purchases',          'user_id'],
-      ['user_program_enrollments',   'user_id'],
-      // --- notifications / push ---
-      ['notifications',              'user_id'],
-      ['push_subscriptions',         'user_id'],
-      // --- feedback / support ---
-      ['user_feedback',              'user_id'],
-      // --- missions / XP ---
-      ['mission_shares',             'user_id'],
-      ['mission_events',             'user_id'],
-      ['user_missions',              'user_id'],
-      ['user_xp',                    'user_id'],
-      ['user_personality',           'user_id'],
-      // --- preferences / history ---
-      ['user_preferences',           'user_id'],
-      ['mara_search_history',        'user_id'],
-      // --- chat ---
-      ['chat_messages',              'user_id'],
-      ['direct_messages',            'sender_id'],
-      // --- creator / writer content ---
-      ['creator_payouts',            'creator_id'],
-      ['creator_posts',              'creator_id'],
-      ['writer_purchases',           'user_id'],
-      ['writer_pages',               'user_id'],  // column is user_id, not author_id
-      ['premium_orders',             'user_id'],
-      ['user_posts',                 'user_id'],
-      ['videos',                     'creator_id'],
-    ];
+    const creds = await db
+      .select({ passwordHash: localAuthCredentials.passwordHash })
+      .from(localAuthCredentials)
+      .where(eq(localAuthCredentials.userId, userId))
+      .limit(1);
 
-    rawSqlite.transaction(() => {
-      // Wrap every delete so a missing table never aborts the transaction.
-      const safeRun = (sql: string, ...args: string[]) => {
-        try { rawSqlite.prepare(sql).run(...args); }
-        catch { /* table may not exist in this environment */ }
-      };
-
-      safeRun(`DELETE FROM conversations WHERE user1_id = ? OR user2_id = ?`, userId, userId);
-      safeRun(`DELETE FROM followers WHERE follower_id = ? OR followed_id = ?`, userId, userId);
-
-      for (const [table, col] of tables) {
-        safeRun(`DELETE FROM "${table}" WHERE "${col}" = ?`, userId);
+    if (creds[0]) {
+      const password = typeof req.body?.password === 'string' ? req.body.password : '';
+      if (!password) {
+        res.status(400).json({ error: 'password_required', message: 'Enter your password to confirm account deletion.' });
+        return;
       }
+      const ok = await bcrypt.compare(password, creds[0].passwordHash);
+      if (!ok) {
+        res.status(401).json({ error: 'invalid_password', message: 'Incorrect password.' });
+        return;
+      }
+    }
 
-      // User row last — all references have been cleaned up above.
-      safeRun(`DELETE FROM users WHERE id = ?`, userId);
-    })();
+    const scheduledFor = new Date(Date.now() + DELETION_GRACE_PERIOD_MS);
+    await db.update(users).set({ pendingDeletionAt: scheduledFor }).where(eq(users.id, userId));
 
     // Destroy session
     const session = (req as unknown as { session?: { destroy?: (cb: () => void) => void } }).session;
     if (session?.destroy) {
-      session.destroy(() => res.json({ ok: true }));
+      session.destroy(() => res.json({ ok: true, scheduledFor: scheduledFor.getTime() }));
     } else {
-      res.json({ ok: true });
+      res.json({ ok: true, scheduledFor: scheduledFor.getTime() });
     }
   } catch (error) {
     console.error('[profile] deleteAccount failed:', error);
-    res.status(500).json({ error: 'delete_failed' });
+    res.status(500).json({ error: 'delete_failed', message: 'Could not schedule account deletion. Please try again.' });
   }
 }

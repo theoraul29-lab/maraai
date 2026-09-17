@@ -24,6 +24,8 @@ export interface User {
   preferredLanguage?: string | null;
   /** True when ADMIN_EMAILS or ADMIN_USER_IDS env var matches this user. */
   isAdmin?: boolean;
+  /** True when this account has local email/password credentials (vs. OAuth-only) — gates the password field in Settings' delete-account flow. */
+  hasPassword?: boolean;
 }
 
 /**
@@ -70,6 +72,9 @@ interface AuthContextType {
   /** Last OAuth error code pulled from the `?oauth_error=` query param. */
   oauthError: string | null;
   clearOAuthError: () => void;
+  /** True right after a login that cancelled a pending account-deletion schedule (see deleteAccount in profile.ts). */
+  reactivatedNotice: boolean;
+  clearReactivatedNotice: () => void;
   login: (email: string, password: string) => Promise<void>;
   signup: (
     email: string,
@@ -97,6 +102,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(true);
   const [oauthError, setOAuthError] = useState<string | null>(null);
   const clearOAuthError = () => setOAuthError(null);
+  const [reactivatedNotice, setReactivatedNotice] = useState(false);
+  const clearReactivatedNotice = () => setReactivatedNotice(false);
 
   // Mount: restore from localStorage, consume any ?oauth/?oauth_error query
   // params, then refresh against the server session.
@@ -202,6 +209,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       localStorage.setItem('user', JSON.stringify(newUser));
       setUser(newUser);
       setIsAuthenticated(true);
+      if (userData.reactivated) setReactivatedNotice(true);
       // Server rotates the session id on login (`setSessionUser`), so
       // the cached anonymous-session CSRF token is now stale.
       clearCsrfToken();
@@ -394,6 +402,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         userTier,
         oauthError,
         clearOAuthError,
+        reactivatedNotice,
+        clearReactivatedNotice,
         login,
         signup,
         loginWithOAuth,

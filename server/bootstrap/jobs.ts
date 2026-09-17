@@ -6,6 +6,7 @@ import { startControlTaskWorker } from './control-task-worker.js';
 import { startWriterPayoutRetryChecker } from '../billing/writer-payout-retry.js';
 import { backfillKnowledgeEmbeddings } from '../mara-brain/embeddings-backfill.js';
 import { startLibraryPrecache } from '../modules/library-precache.js';
+import { sweepPendingAccountDeletions } from '../modules/profile.js';
 
 export function startBackgroundJobs(): void {
   scheduleDbBackup();
@@ -24,6 +25,12 @@ export function startBackgroundJobs(): void {
 
   purgeOldMessages();
   setInterval(purgeOldMessages, 24 * 60 * 60 * 1000);
+
+  // Hard-deletes any account whose 7-day grace period (set by
+  // DELETE /api/profile/me) has elapsed. Hourly is plenty of precision for
+  // a 7-day window and cheap since it's a no-op scan when nothing is due.
+  void sweepPendingAccountDeletions();
+  setInterval(() => { void sweepPendingAccountDeletions(); }, 60 * 60 * 1000);
 
   startPaymentActivationChecker();
   startSecurityCleanup();

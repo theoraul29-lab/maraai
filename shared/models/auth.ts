@@ -35,6 +35,11 @@ export const users = sqliteTable('users', {
   tier: text('tier').default('free').notNull(),
   trialStartTime: integer('trial_start_time'),
   trialEndsAt: integer('trial_ends_at'),
+  // Set by DELETE /api/profile/me (server/modules/profile.ts) to schedule a
+  // GDPR account deletion 7 days out. Logging back in before then clears it
+  // (server/modules/auth-api.ts's loginHandler); sweepPendingAccountDeletions()
+  // hard-deletes any account still past this timestamp.
+  pendingDeletionAt: integer('pending_deletion_at', { mode: 'timestamp' }),
   createdAt: integer('created_at', { mode: 'timestamp' }).default(
     sql`CURRENT_TIMESTAMP`,
   ),

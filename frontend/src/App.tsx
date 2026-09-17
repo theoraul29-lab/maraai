@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Route, Routes, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { PreviewBanner } from './components/PreviewBanner';
+import { ReactivationBanner } from './components/ReactivationBanner';
 import { usePreviewStatus } from './hooks/usePreviewStatus';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import './App.css';
@@ -229,6 +230,7 @@ function App() {
           {!isHomePage && !isFullscreenPanel && <Nav />}
           {!isHomePage && !isFullscreenPanel && <MobileBottomNav />}
           <OnboardingGuard />
+          <ReactivationBanner />
           <ErrorBoundary level="section">
             <Suspense fallback={null}>
               <Routes>

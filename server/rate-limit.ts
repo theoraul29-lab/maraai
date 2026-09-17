@@ -284,6 +284,23 @@ export const messengerSendRateLimit = createUserRateLimit({
   windowMs: ONE_MIN,
 });
 
+// change-password and delete-account both require an authenticated session
+// already, so per-user (not per-IP) buckets are the right fit — and
+// createUserRateLimit limits every HTTP verb, which createIPRateLimit
+// deliberately does not (it only limits POST, so it would silently never
+// throttle the DELETE /api/profile/me route).
+export const changePasswordRateLimit = createUserRateLimit({
+  name: 'auth:change-password',
+  max: envInt('AUTH_RL_CHANGE_PW_MAX', 5),
+  windowMs: FIFTEEN_MIN,
+});
+
+export const deleteAccountRateLimit = createUserRateLimit({
+  name: 'profile:delete-account',
+  max: envInt('AUTH_RL_DELETE_ACCOUNT_MAX', 5),
+  windowMs: FIFTEEN_MIN,
+});
+
 export const uploadImageRateLimit = createUserRateLimit({
   name: 'uploads:image',
   max: envInt('RL_UPLOAD_IMAGE_MAX', 20),

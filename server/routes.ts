@@ -128,6 +128,8 @@ import {
   createPostRateLimit,
   createCommentRateLimit,
   externalLinkRateLimit,
+  changePasswordRateLimit,
+  deleteAccountRateLimit,
 } from './rate-limit.js';
 import { requireAdmin as requireAdminMiddleware } from './middleware/requireAdmin.js';
 import { isUserAdmin } from './lib/admin-check.js';
@@ -143,6 +145,7 @@ import {
   me as authMe,
   requestReset as authRequestReset,
   confirmReset as authConfirmReset,
+  changePassword as authChangePassword,
 } from './modules/auth-api.js';
 import { registerLaunchCountdown } from './modules/launch-countdown.js';
 import { registerMissionRoutes } from './missions/routes.js';
@@ -411,6 +414,10 @@ export async function registerRoutes(
   // when that UI lands. 3/IP/15min on each leg.
   app.post('/api/auth/request-reset', requireHttps, requestResetRateLimit, authRequestReset);
   app.post('/api/auth/confirm-reset', requireHttps, confirmResetRateLimit, authConfirmReset);
+  // Change password from an already-authenticated session (Settings ->
+  // Account). requireRealUser (not just requireAuth) since anonymous
+  // sessions have no password to change.
+  app.post('/api/auth/change-password', requireHttps, requireRealUser, changePasswordRateLimit, authChangePassword);
 
   // Mara AI chat / OTP / brain endpoints. Imported but never wired in
   // the previous PR which is why /api/auth/otp/* and /api/chat were
@@ -445,7 +452,7 @@ export async function registerRoutes(
   app.post('/api/profile/:id/follow', requireAuth, profileModule.followUser);
   app.post('/api/profile/:id/block', requireAuth, profileModule.blockUser);
   app.delete('/api/profile/:id/block', requireAuth, profileModule.unblockUser);
-  app.delete('/api/profile/me', requireRealUser, profileModule.deleteAccount);
+  app.delete('/api/profile/me', requireRealUser, deleteAccountRateLimit, profileModule.deleteAccount);
 
   // Admin endpoints (require admin)
   app.get('/api/admin/stats', requireAdmin, adminModule.getStats);

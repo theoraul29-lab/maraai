@@ -42,6 +42,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteScheduledFor, setDeleteScheduledFor] = useState<number | null>(null);
   const [blockedUsers, setBlockedUsers] = useState<BlockedUser[] | null>(null);
   const [unblockingId, setUnblockingId] = useState<string | null>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -148,11 +150,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
       const res = await fetch('/api/profile/me', {
         method: 'DELETE',
         credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: deletePassword }),
       });
-      if (!res.ok) throw new Error();
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setDeleteError(d.message || t('settings.deleteError'));
+        return;
+      }
+      // Account is scheduled for deletion, not wiped immediately — the user
+      // still has a 7-day window to cancel by logging back in. Clear local
+      // session state now (server already destroyed the session) but show
+      // the grace-period message instead of redirecting straight away.
       await logout();
-      onClose();
-      window.location.href = '/';
+      setDeleteScheduledFor(d.scheduledFor ?? Date.now());
     } catch {
       setDeleteError(t('settings.deleteError'));
     } finally {
@@ -282,34 +293,56 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                 <div className="settings-divider" />
 
                 <h3 className="settings-section-title">{t('settings.dangerZone')}</h3>
-                <p className="settings-danger-desc">
-                  {t('settings.deleteAccountWarningSafe')}
-                </p>
-                {deleteError && <div className="settings-error">{deleteError}</div>}
-                {deleteConfirm ? (
-                  <div className="settings-delete-confirm">
-                    <p className="settings-delete-warn">{t('settings.deleteConfirmQuestion')}</p>
-                    <div className="settings-delete-actions">
-                      <button
-                        className="settings-btn-danger"
-                        onClick={handleDeleteAccount}
-                        disabled={deleting}
-                      >
-                        {deleting ? t('settings.deleting') : t('settings.deleteConfirmBtn')}
-                      </button>
-                      <button
-                        className="settings-btn-ghost"
-                        onClick={() => { setDeleteConfirm(false); setDeleteError(''); }}
-                        disabled={deleting}
-                      >
-                        {t('settings.cancelBtn')}
-                      </button>
-                    </div>
+                {deleteScheduledFor ? (
+                  <div className="settings-success">
+                    {t('settings.deleteScheduled', {
+                      date: new Date(deleteScheduledFor).toLocaleDateString(),
+                    })}
                   </div>
                 ) : (
-                  <button className="settings-btn-delete" onClick={handleDeleteAccount}>
-                    {t('settings.deleteAccountBtn')}
-                  </button>
+                  <>
+                    <p className="settings-danger-desc">
+                      {t('settings.deleteAccountWarningSafe')}
+                    </p>
+                    {deleteError && <div className="settings-error">{deleteError}</div>}
+                    {deleteConfirm ? (
+                      <div className="settings-delete-confirm">
+                        <p className="settings-delete-warn">{t('settings.deleteConfirmQuestion')}</p>
+                        {user?.hasPassword !== false && (
+                          <label className="settings-label">
+                            {t('settings.deletePasswordLabel')}
+                            <input
+                              type="password"
+                              value={deletePassword}
+                              onChange={e => setDeletePassword(e.target.value)}
+                              className="settings-input"
+                              autoFocus
+                            />
+                          </label>
+                        )}
+                        <div className="settings-delete-actions">
+                          <button
+                            className="settings-btn-danger"
+                            onClick={handleDeleteAccount}
+                            disabled={deleting}
+                          >
+                            {deleting ? t('settings.deleting') : t('settings.deleteConfirmBtn')}
+                          </button>
+                          <button
+                            className="settings-btn-ghost"
+                            onClick={() => { setDeleteConfirm(false); setDeleteError(''); setDeletePassword(''); }}
+                            disabled={deleting}
+                          >
+                            {t('settings.cancelBtn')}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button className="settings-btn-delete" onClick={handleDeleteAccount}>
+                        {t('settings.deleteAccountBtn')}
+                      </button>
+                    )}
+                  </>
                 )}
 
                 <Link to="/privacy" className="settings-privacy-link" onClick={onClose}>
