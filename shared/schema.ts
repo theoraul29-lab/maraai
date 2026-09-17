@@ -80,6 +80,13 @@ export const followers = pgTable('followers', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   followerId: text('follower_id').notNull(),
   followingId: text('following_id').notNull(),
+  // Creator Growth Path (Creator Panel P1): which surface the follower
+  // discovered this creator from, so a creator can see where their growth
+  // is actually coming from. Allowed `sourceKind` values so far: 'spark' |
+  // 'writers' | null (null covers follows from the You profile page itself,
+  // search, etc. — anywhere we don't yet thread a referring surface through).
+  sourceKind: text('source_kind'),
+  sourceId: text('source_id'),
   createdAt: integer('created_at', { mode: 'timestamp' })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),

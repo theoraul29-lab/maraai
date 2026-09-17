@@ -631,6 +631,7 @@ export async function registerRoutes(
   app.get('/api/creator/creator-xp', requireAuth, creatorsModule.getCreatorXP);
   app.post('/api/creator/share-to-you', requireAuth, creatorsModule.shareToYou);
   app.get('/api/creator/my-comments', requireAuth, creatorsModule.getMyComments);
+  app.get('/api/creator/growth-path', requireAuth, creatorsModule.getGrowthPath);
 
   // Chat endpoints (require auth)
   app.get(api.chat.list.path, requireAuth, chatModule.getChatHistory);

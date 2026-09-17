@@ -177,7 +177,17 @@ export async function followUser(req: Request, res: Response) {
       res.status(403).json({ error: 'blocked', code: 'blocked' });
       return;
     }
-    const result = await deps.storage.followUser(followerId, followingId);
+    // Creator Growth Path: optionally attribute this follow to the surface
+    // it came from, so the person being followed can see where their growth
+    // is actually coming from. Allow-listed — anything else is dropped
+    // rather than stored as free-form data.
+    const rawSourceKind = (req.body as any)?.sourceKind;
+    const sourceKind = ['spark', 'writers'].includes(rawSourceKind) ? rawSourceKind : null;
+    const rawSourceId = (req.body as any)?.sourceId;
+    const sourceId = sourceKind && (typeof rawSourceId === 'string' || typeof rawSourceId === 'number')
+      ? String(rawSourceId)
+      : null;
+    const result = await deps.storage.followUser(followerId, followingId, sourceKind, sourceId);
     // Fire-and-forget notification. Must never break the follow op.
     void notifyFollow(followerId, followingId);
     res.json(result);

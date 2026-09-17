@@ -32,7 +32,7 @@
 import type { Request, Response } from 'express';
 import type { IStorage } from '../storage.js';
 import { hasFeature, type FeatureKey } from '../billing/features.js';
-import { getUserXP, addXP } from '../missions/engine.js';
+import { getUserXP, addXP, suggestMission } from '../missions/engine.js';
 import { rawSqlite } from '../db.js';
 
 let deps: {
@@ -310,6 +310,76 @@ export const adminUpdatePayout = requireAdmin(async (req, res) => {
 export const getCreatorXP = requireAuth(async (_req, res, userId) => {
   const xp = getUserXP(userId);
   res.json(xp);
+});
+
+// --- Creator Growth Path -----------------------------------------------------
+//
+// Deliberately NOT behind the `gate('creator.*', …)` wrapper: that wrapper
+// also enforces MIN_CREATOR_FOLLOWERS, which would hide this from exactly
+// the people it's meant to help — everyone still on their way to 1000
+// followers. requireAuth only.
+//
+// `followers.created_at` is SQLite's CURRENT_TIMESTAMP default, which stores
+// an ISO-8601-ish text string ("YYYY-MM-DD HH:MM:SS"), not a unix epoch —
+// same quirk already documented on storage.ts's getReelsFeed. String
+// comparison against datetime('now', …) still sorts correctly for that
+// format, so no numeric coercion is needed here.
+const GROWTH_MILESTONES = [100, 250, 500, 1000] as const;
+
+export const getGrowthPath = requireAuth(async (_req, res, userId) => {
+  const followerCount = (rawSqlite.prepare(
+    'SELECT COUNT(*) as cnt FROM followers WHERE following_id = ?',
+  ).get(userId) as { cnt: number }).cnt;
+
+  const last7d = (rawSqlite.prepare(
+    "SELECT COUNT(*) as cnt FROM followers WHERE following_id = ? AND created_at >= datetime('now', '-7 days')",
+  ).get(userId) as { cnt: number }).cnt;
+  const prior7d = (rawSqlite.prepare(
+    "SELECT COUNT(*) as cnt FROM followers WHERE following_id = ? AND created_at >= datetime('now', '-14 days') AND created_at < datetime('now', '-7 days')",
+  ).get(userId) as { cnt: number }).cnt;
+
+  const bySourceRows = rawSqlite.prepare(
+    'SELECT source_kind as sourceKind, COUNT(*) as cnt FROM followers WHERE following_id = ? GROUP BY source_kind',
+  ).all(userId) as { sourceKind: string | null; cnt: number }[];
+  const bySource = { spark: 0, writers: 0, other: 0 };
+  for (const row of bySourceRows) {
+    if (row.sourceKind === 'spark') bySource.spark = row.cnt;
+    else if (row.sourceKind === 'writers') bySource.writers = row.cnt;
+    else bySource.other += row.cnt;
+  }
+
+  const milestones = GROWTH_MILESTONES.map((threshold) => ({
+    threshold,
+    reached: followerCount >= threshold,
+  }));
+  const nextMilestone = GROWTH_MILESTONES.find((m) => followerCount < m) ?? null;
+  const prevFloor = [0, ...GROWTH_MILESTONES].filter((m) => m <= followerCount).pop() ?? 0;
+  const progressToNext = nextMilestone
+    ? (followerCount - prevFloor) / (nextMilestone - prevFloor)
+    : 1;
+
+  // A single consistency nudge, not a "grow your audience" trick — Missions
+  // are a personal-growth system (discipline/creativity/self/…), not a
+  // marketing playbook, so we frame this as "keep going," reusing the same
+  // recommendation logic already used elsewhere for mission suggestions.
+  let suggestedMission: { id: string; title: string; pillar: string } | null = null;
+  try {
+    const m = suggestMission(userId);
+    if (m) suggestedMission = { id: m.id, title: m.title, pillar: m.pillar };
+  } catch {
+    // Non-critical — the panel just omits the suggestion.
+  }
+
+  res.json({
+    followers: followerCount,
+    isCreator: followerCount >= MIN_CREATOR_FOLLOWERS,
+    milestones,
+    nextMilestone,
+    progressToNext,
+    velocity: { last7d, prior7d },
+    bySource,
+    suggestedMission,
+  });
 });
 
 export const shareToYou = requireAuth(async (req, res, userId) => {

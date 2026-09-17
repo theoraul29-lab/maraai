@@ -38,6 +38,16 @@ interface Comment {
   userName: string | null; userAvatar: string | null;
 }
 interface XPData { xp: number; level: number; streak: number; }
+interface GrowthPath {
+  followers: number;
+  isCreator: boolean;
+  milestones: { threshold: number; reached: boolean }[];
+  nextMilestone: number | null;
+  progressToNext: number;
+  velocity: { last7d: number; prior7d: number };
+  bySource: { spark: number; writers: number; other: number };
+  suggestedMission: { id: string; title: string; pillar: string } | null;
+}
 interface ProfileData {
   displayName: string; bio: string; location: string; website: string;
 }
@@ -118,6 +128,7 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
   const [articles, setArticles] = useState<Article[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
   const [creatorXP, setCreatorXP] = useState<XPData>({ xp: 0, level: 1, streak: 0 });
+  const [growthPath, setGrowthPath] = useState<GrowthPath | null>(null);
   const [profile, setProfile] = useState<ProfileData>({ displayName: '', bio: '', location: '', website: '' });
   const [postStatus, setPostStatus] = useState({ canPost: true, postsToday: 0, maxDaily: 5 });
   const [loading, setLoading] = useState(true);
@@ -200,12 +211,13 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
     setLoading(true);
     setError('');
     try {
-      const [analyticsRes, videosRes, statusRes, xpRes, profileRes] = await Promise.all([
+      const [analyticsRes, videosRes, statusRes, xpRes, profileRes, growthRes] = await Promise.all([
         axios.get(`${API_URL}/api/creator/analytics`, { withCredentials: true }).catch(() => ({ data: null })),
         axios.get(`${API_URL}/api/creator/my-videos`, { withCredentials: true }).catch(() => ({ data: [] })),
         axios.get(`${API_URL}/api/creator/post-status`, { withCredentials: true }).catch(() => ({ data: { canPost: true, postsToday: 0, maxDaily: 5 } })),
         axios.get(`${API_URL}/api/creator/creator-xp`, { withCredentials: true }).catch(() => ({ data: { xp: 0, level: 1, streak: 0 } })),
         axios.get(`${API_URL}/api/profile/me`, { withCredentials: true }).catch(() => ({ data: null })),
+        axios.get(`${API_URL}/api/creator/growth-path`, { withCredentials: true }).catch(() => ({ data: null })),
       ]);
       if (analyticsRes.data) {
         setAnalytics({
@@ -222,6 +234,7 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
       setVideos(Array.isArray(videosRes.data) ? videosRes.data : []);
       if (statusRes.data) setPostStatus(statusRes.data);
       if (xpRes.data) setCreatorXP(xpRes.data);
+      if (growthRes.data) setGrowthPath(growthRes.data);
       if (profileRes.data?.user) {
         const u = profileRes.data.user;
         setProfile({
@@ -666,6 +679,73 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
                 <div className="creator-xp-bar-fill" style={{ width: `${(creatorXP.xp % 1000) / 10}%` }} />
               </div>
             </div>
+
+            {growthPath && (
+              <div className="creator-growth-path">
+                <h3 className="creator-section-title">{t('creatorExtra.growthPathTitle', 'Growth path')}</h3>
+
+                <div className="growth-milestones">
+                  {growthPath.milestones.map((m) => (
+                    <div key={m.threshold} className={`growth-milestone${m.reached ? ' reached' : ''}`}>
+                      <div className="growth-milestone-dot" />
+                      <span>{formatNum(m.threshold)}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="creator-xp-bar-track">
+                  <div className="creator-xp-bar-fill" style={{ width: `${Math.round(growthPath.progressToNext * 100)}%` }} />
+                </div>
+                <div className="growth-path-sub">
+                  {growthPath.isCreator
+                    ? t('creatorExtra.growthPathReached', 'You’ve reached creator status.')
+                    : t('creatorExtra.growthPathToNext', {
+                        count: (growthPath.nextMilestone ?? 0) - growthPath.followers,
+                        next: growthPath.nextMilestone,
+                        defaultValue: '{{count}} more followers to {{next}}',
+                      })}
+                </div>
+
+                <div className="growth-velocity">
+                  {growthPath.velocity.last7d > growthPath.velocity.prior7d && (
+                    <span className="growth-velocity-up">
+                      {t('creatorExtra.growthVelocityUp', { count: growthPath.velocity.last7d, defaultValue: '↑ {{count}} this week' })}
+                    </span>
+                  )}
+                  {growthPath.velocity.last7d < growthPath.velocity.prior7d && (
+                    <span className="growth-velocity-down">
+                      {t('creatorExtra.growthVelocityDown', { count: growthPath.velocity.last7d, defaultValue: '↓ {{count}} this week' })}
+                    </span>
+                  )}
+                  {growthPath.velocity.last7d === growthPath.velocity.prior7d && (
+                    <span className="growth-velocity-flat">
+                      {t('creatorExtra.growthVelocityFlat', { count: growthPath.velocity.last7d, defaultValue: '→ {{count}} this week' })}
+                    </span>
+                  )}
+                </div>
+
+                {(growthPath.bySource.spark > 0 || growthPath.bySource.writers > 0) ? (
+                  <div className="growth-by-source">
+                    {growthPath.bySource.spark > 0 && (
+                      <span>{t('creatorExtra.growthFromSpark', { count: growthPath.bySource.spark, defaultValue: '{{count}} from Sparks' })}</span>
+                    )}
+                    {growthPath.bySource.writers > 0 && (
+                      <span>{t('creatorExtra.growthFromWriters', { count: growthPath.bySource.writers, defaultValue: '{{count}} from Writers Hub' })}</span>
+                    )}
+                  </div>
+                ) : (
+                  <div className="growth-by-source growth-by-source-note">
+                    {t('creatorExtra.growthSourceComingSoon', 'We’ll start showing where your followers come from soon.')}
+                  </div>
+                )}
+
+                {growthPath.suggestedMission && (
+                  <a href="/missions" className="growth-suggested-mission">
+                    <span>{t('creatorExtra.growthSuggestedMission', 'Keep your streak going:')}</span>
+                    <strong>{growthPath.suggestedMission.title}</strong>
+                  </a>
+                )}
+              </div>
+            )}
 
             <div className="creator-actions-grid">
               {([

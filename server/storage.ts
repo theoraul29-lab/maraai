@@ -116,6 +116,8 @@ export interface IStorage {
   followUser(
     followerId: string,
     followingId: string,
+    sourceKind?: string | null,
+    sourceId?: string | null,
   ): Promise<{ following: boolean }>;
   getFollowerCount(userId: string): Promise<number>;
   getFollowingCount(userId: string): Promise<number>;
@@ -537,6 +539,8 @@ export class DatabaseStorage implements IStorage {
   async followUser(
     followerId: string,
     followingId: string,
+    sourceKind?: string | null,
+    sourceId?: string | null,
   ): Promise<{ following: boolean }> {
     const existing = await db
       .select()
@@ -559,7 +563,12 @@ export class DatabaseStorage implements IStorage {
         );
       return { following: false };
     } else {
-      await db.insert(followers).values({ followerId, followingId });
+      await db.insert(followers).values({
+        followerId,
+        followingId,
+        sourceKind: sourceKind ?? null,
+        sourceId: sourceId ?? null,
+      });
       return { following: true };
     }
   }
