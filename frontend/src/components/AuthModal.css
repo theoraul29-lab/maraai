@@ -334,10 +334,20 @@
 
 /* Responsive */
 @media (max-width: 480px) {
+  /* Phase 3 of the mobile overhaul: sign-in/sign-up is a real flow you
+     type into, not a quick confirmation — goes full-screen on phones
+     instead of staying a centered floating card, matching how the Sparks
+     reel-detail popup and (just fixed alongside this) Settings already do. */
+  .auth-modal-overlay { padding: 0; }
   .auth-modal {
-    margin: 16px;
+    margin: 0;
     padding: 24px;
+    width: 100vw;
     max-width: none;
+    height: 100vh;
+    max-height: none;
+    border-radius: 0;
+    overflow-y: auto;
   }
 
   .auth-modal-header h2 {
@@ -362,6 +372,16 @@
   .auth-help-mara-text {
     font-size: 12.5px;
     line-height: 1.5;
+  }
+}
+@supports (padding: max(0px)) {
+  @media (max-width: 480px) {
+    .auth-modal {
+      padding-top: max(24px, env(safe-area-inset-top));
+      padding-bottom: max(24px, env(safe-area-inset-bottom));
+      padding-left: max(24px, env(safe-area-inset-left));
+      padding-right: max(24px, env(safe-area-inset-right));
+    }
   }
 }
 

@@ -367,7 +367,19 @@ html[data-theme="light"] .settings-header { border-bottom-color: rgba(0,0,0,0.08
 
 /* ── Mobile ───────────────────────────────────────────────────── */
 @media (max-width: 540px) {
-  .settings-modal { max-height: 95vh; border-radius: 12px; }
+  /* Phase 3 of the mobile overhaul: Settings is a real, multi-section
+     screen you spend time in, not a quick confirmation — the audit's
+     recommendation was that this class of modal should go full-screen on
+     phones instead of staying a centered floating card, matching how the
+     Sparks reel-detail popup already correctly behaves. */
+  .settings-overlay { padding: 0; align-items: stretch; }
+  .settings-modal {
+    width: 100vw;
+    max-width: none;
+    height: 100vh;
+    max-height: none;
+    border-radius: 0;
+  }
   .settings-body { flex-direction: column; }
   .settings-nav {
     flex-direction: row;
@@ -380,6 +392,20 @@ html[data-theme="light"] .settings-header { border-bottom-color: rgba(0,0,0,0.08
   }
   .settings-nav-btn { white-space: nowrap; flex-shrink: 0; font-size: 12px; padding: 7px 10px; }
   .settings-content { padding: 14px; }
+}
+@supports (padding: max(0px)) {
+  @media (max-width: 540px) {
+    .settings-header {
+      padding-top: max(16px, env(safe-area-inset-top));
+      padding-left: max(20px, env(safe-area-inset-left));
+      padding-right: max(20px, env(safe-area-inset-right));
+    }
+    .settings-content {
+      padding-bottom: max(14px, env(safe-area-inset-bottom));
+      padding-left: max(14px, env(safe-area-inset-left));
+      padding-right: max(14px, env(safe-area-inset-right));
+    }
+  }
 }
 
 /* ── GDPR / Delete account ──────────────────────────────────── */
