@@ -427,8 +427,11 @@ export default function Missions() {
   });
   const [reflectionText, setReflectionText] = useState('');
   const [completionResult, setCompletionResult] = useState<{
-    maraFeedback: string; message: string; leveledUp: boolean;
+    maraFeedback: string; message: string; leveledUp: boolean; userMissionId?: string | null;
   } | null>(null);
+  const [sparkShared, setSparkShared] = useState(false);
+  const [sparkSharing, setSparkSharing] = useState(false);
+  const [sparkError, setSparkError] = useState<string | null>(null);
   const [onboardingAnswers, setOnboardingAnswers] = useState({
     whatYouLove: '', wantToChange: '', currentHobbies: '', dreamLife: '', biggestFear: '',
   });
@@ -445,6 +448,25 @@ export default function Missions() {
       setTimeout(() => setCopiedKey((cur) => (cur === key ? null : cur)), 2000);
     }
   }, []);
+
+  // Distinct from ShareButton above (which only records a share event +
+  // XP) — this actually posts the proof photo/video to the public Sparks
+  // feed, with Mara's own feedback from this completion attached. Only
+  // offered when the proof had a photo/video (see the disabled check at the
+  // call site) — a text-only proof has nothing visual to post.
+  const handleShareAsSpark = useCallback(async () => {
+    if (!completionResult?.userMissionId || sparkSharing) return;
+    setSparkSharing(true);
+    setSparkError(null);
+    try {
+      await apiFetchJson(`/api/missions/${completionResult.userMissionId}/share-as-spark`, { method: 'POST' });
+      setSparkShared(true);
+    } catch {
+      setSparkError(t('missions.sparkShareError', "Couldn't share as a Spark — try again."));
+    } finally {
+      setSparkSharing(false);
+    }
+  }, [completionResult, sparkSharing, t]);
 
   const [programs, setPrograms] = useState<Program[]>([]);
   const [billingPrograms, setBillingPrograms] = useState<Array<{
@@ -660,13 +682,15 @@ export default function Missions() {
     setChatPhase('reviewing');
     try {
       const result = await apiFetchJson<{
-        success: boolean; maraFeedback: string; message: string; leveledUp: boolean;
+        success: boolean; maraFeedback: string; message: string; leveledUp: boolean; userMissionId?: string | null;
       }>(`/api/missions/${activeMission.id}/proof`, {
         method: 'POST',
         body: JSON.stringify({ text: proofText, reflectionAnswer: reflectionText || undefined, lang: i18n.language }),
       });
       if (result.success) {
         setCompletionResult(result);
+        setSparkShared(false);
+        setSparkError(null);
         setChatPhase('done');
         setProofText('');
         setReflectionText('');
@@ -1058,6 +1082,24 @@ export default function Missions() {
                         compact={false}
                       />
                     )}
+                    {/* The backend is the source of truth on whether this
+                        proof had a photo/video (this text-based submission
+                        form doesn't track that client-side) — a text-only
+                        proof gets a clear error from handleShareAsSpark
+                        rather than a silently-hidden or dead button. */}
+                    {completionResult.userMissionId && (
+                      <button
+                        type="button"
+                        className="mara-cta-btn mara-cta-btn--secondary"
+                        onClick={handleShareAsSpark}
+                        disabled={sparkSharing || sparkShared}
+                      >
+                        {sparkShared ? `✓ ${t('missions.sparkShared', 'Shared as Spark')}`
+                          : sparkSharing ? t('missions.sparkSharing', 'Sharing...')
+                          : `✨ ${t('missions.shareAsSpark', 'Share as Spark')}`}
+                      </button>
+                    )}
+                    {sparkError && <p className="missions-spark-error">{sparkError}</p>}
                     <button className="mara-cta-btn mara-cta-btn--secondary"
                       onClick={() => { setChatPhase('idle'); setActiveMission(null); setCompletionResult(null); }}>
                       {t('missions.newMission')}

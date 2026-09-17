@@ -7,6 +7,7 @@ import {
   suggestMission,
   generatePersonalizedMission,
   shareMission,
+  shareMissionAsSpark,
   getCommunityFeed,
   getUserXP,
   getPersonality,
@@ -152,6 +153,16 @@ export function registerMissionRoutes(app: Express, requireAuth: any, requireRea
     const lang = rawLang ? getUserLang(userId, rawLang) : getUserLang(userId, undefined);
     const result = await submitProof(userId, req.params.id, proof as any, lang);
     res.json(result);
+  });
+
+  // Distinct from /api/missions/share above (which only records a share
+  // event + XP) — this one actually creates a Spark from the completed
+  // mission's proof + Mara's feedback. See shareMissionAsSpark() doc comment.
+  app.post('/api/missions/:userMissionId/share-as-spark', requireRealUser, missionWriteRateLimit, async (req: any, res: any) => {
+    const userId = getUserId(req);
+    const result = await shareMissionAsSpark(userId, req.params.userMissionId);
+    if (!result.success) return res.status(400).json(result);
+    res.status(201).json(result);
   });
 
   app.post('/api/missions/share', requireRealUser, missionWriteRateLimit, async (req: any, res: any) => {

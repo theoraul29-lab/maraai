@@ -204,7 +204,10 @@ const submitProofTxn = rawSqlite.transaction((
   const xpResult = addXPTxn(userId, xpReward);
   logEvent(userId, missionId, 'complete', { xpAwarded: xpReward });
   updateMaraKnowledge(userId, missionId, proof.text ?? '');
-  return xpResult;
+  const row = rawSqlite.prepare(
+    `SELECT id FROM user_missions WHERE user_id = ? AND mission_id = ? AND status = 'completed' ORDER BY completed_at DESC LIMIT 1`,
+  ).get(userId, missionId) as { id: string } | undefined;
+  return { ...xpResult, userMissionId: row?.id ?? null };
 });
 
 export async function submitProof(
@@ -259,12 +262,61 @@ Be personal — reference something concrete from what they wrote.`;
   return {
     success: true,
     maraFeedback,
+    userMissionId: xpResult.userMissionId,
     xp: xpResult.xp,
     level: xpResult.level,
     leveledUp: xpResult.leveledUp,
     gained: xpResult.gained,
     message: `+${xpResult.gained} XP${xpResult.leveledUp ? ' · LEVEL UP! 🎉' : ''}`,
   };
+}
+
+/**
+ * Turns a completed mission's proof into a real Spark (a `videos` row),
+ * with Mara's own feedback from that completion attached as the caption —
+ * not to be confused with /api/share or /api/missions/share, which only
+ * record a share event + award XP and never create any content. Only
+ * proofs with an actual photo/video can become a Spark; a text-only or
+ * audio-only proof has nothing visual to post.
+ */
+export async function shareMissionAsSpark(
+  userId: string,
+  userMissionId: string,
+): Promise<{ success: true; videoId: number } | { success: false; message: string }> {
+  const row = rawSqlite.prepare(`
+    SELECT um.id, um.status, um.proof_media_url, um.mara_feedback, m.title AS mission_title
+    FROM user_missions um
+    JOIN missions m ON m.id = um.mission_id
+    WHERE um.id = ? AND um.user_id = ?
+  `).get(userMissionId, userId) as {
+    id: string; status: string; proof_media_url: string | null; mara_feedback: string | null; mission_title: string;
+  } | undefined;
+
+  if (!row) return { success: false, message: 'Mission completion not found.' };
+  if (row.status !== 'completed') return { success: false, message: 'Mission is not completed yet.' };
+  if (!row.proof_media_url) return { success: false, message: 'This proof has no photo or video to share as a Spark.' };
+
+  // Refuse a duplicate Spark for the same completion (e.g. a double-click)
+  // rather than posting the same moment twice.
+  const existing = rawSqlite.prepare(
+    `SELECT id FROM videos WHERE source_kind = 'mission' AND source_id = ? LIMIT 1`,
+  ).get(userMissionId) as { id: number } | undefined;
+  if (existing) return { success: true, videoId: existing.id };
+
+  const isVideo = /\.(mp4|webm|mov|mkv)(\?|$)/i.test(row.proof_media_url);
+  const result = rawSqlite.prepare(`
+    INSERT INTO videos (url, type, title, description, creator_id, mime_type, moderation_status, source_kind, source_id)
+    VALUES (?, 'mission-spark', ?, ?, ?, ?, 'approved', 'mission', ?)
+  `).run(
+    row.proof_media_url,
+    row.mission_title.slice(0, 200),
+    (row.mara_feedback ?? '').slice(0, 1000),
+    userId,
+    isVideo ? 'video/mp4' : 'image/jpeg',
+    row.id,
+  );
+
+  return { success: true, videoId: Number(result.lastInsertRowid) };
 }
 
 function updateMaraKnowledge(userId: string, missionId: string, proofText: string) {
