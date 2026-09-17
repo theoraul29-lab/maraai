@@ -139,7 +139,23 @@ const ReelsComponent: React.FC = () => {
         axios.get(`${API_URL}/api/creator/analytics`).catch(() => ({ data: null })),
         axios.get(`${API_URL}/api/creator/my-videos`).catch(() => ({ data: [] })),
       ]);
-      if (statsRes.data) setCreatorStats(statsRes.data);
+      if (statsRes.data) {
+        // /api/creator/analytics returns {totalVideos, totalViews,
+        // totalLikes, followerCount} — different field names than
+        // CreatorStats. The Stats tab used to assign the raw response
+        // directly, so totalReels/followers/engagementRate were always
+        // undefined, and engagementRate.toFixed(1) below crashed the whole
+        // tab the moment anyone opened it (reported live). Map + compute
+        // engagementRate here, same as creator.tsx's own analytics fetch.
+        const raw = statsRes.data;
+        setCreatorStats({
+          totalReels: raw.totalVideos || 0,
+          totalViews: raw.totalViews || 0,
+          totalLikes: raw.totalLikes || 0,
+          followers: raw.followerCount || 0,
+          engagementRate: raw.totalViews ? (raw.totalLikes / raw.totalViews) * 100 : 0,
+        });
+      }
       if (Array.isArray(videosRes.data)) {
         setMyReels(videosRes.data.map((v: any) => ({
           id: v.id,

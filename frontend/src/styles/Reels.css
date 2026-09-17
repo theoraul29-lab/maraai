@@ -78,107 +78,18 @@
     0 2px 12px rgba(168, 85, 247, 0.18);
 }
 
-/* FEED MODE */
-.reels-feed {
-  display: grid;
-  grid-template-columns: 250px 1fr;
-  gap: 30px;
-  max-width: 1600px;
-  margin: 0 auto;
-}
-
-.feed-sidebar {
-  background: rgba(168, 85, 247, 0.05);
-  border: 1px solid rgba(168, 85, 247, 0.2);
-  border-radius: 10px;
-  padding: 20px;
-  height: fit-content;
-  position: sticky;
-  top: 20px;
-}
-
-.feed-sidebar h3 {
-  margin-top: 0;
-  margin-bottom: 20px;
-  font-size: 1.1rem;
-  color: #a855f7;
-}
-
-.tag-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.tag-btn {
-  padding: 8px 12px;
-  background: transparent;
-  border: 1px solid rgba(168, 85, 247, 0.2);
-  color: #888;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-align: left;
-  font-size: 0.9rem;
-}
-
-.tag-btn:hover {
-  border-color: rgba(168, 85, 247, 0.5);
-  color: #a855f7;
-  background: rgba(168, 85, 247, 0.1);
-}
-
-.tag-btn.active {
-  background: linear-gradient(90deg, rgba(168, 85, 247, 0.3), transparent);
-  border-color: #a855f7;
-  color: #a855f7;
-  box-shadow: inset 0 0 10px rgba(168, 85, 247, 0.2);
-}
-
-/* REELS GRID */
-.reels-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 20px;
-}
-
-.reel-card {
-  background: rgba(168, 85, 247, 0.05);
-  border: 1px solid rgba(168, 85, 247, 0.2);
-  border-radius: 10px;
-  overflow: hidden;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.reel-card:hover {
-  transform: translateY(-5px);
-  border-color: rgba(168, 85, 247, 0.5);
-  box-shadow: 0 10px 30px rgba(168, 85, 247, 0.2);
-}
-
+/* Pre-TikTok-style feed layout (.reels-feed grid + .feed-sidebar + .tag-btn
+   + .reels-grid + .reel-card and friends) removed — dead since the feed
+   switched to the vertical snap-scroll TikTokFeed component; confirmed zero
+   references left in ReelsComponent.tsx/TikTokFeed.tsx before deleting.
+   .reel-thumbnail/.reel-duration/.creator-avatar/.creator-name are kept —
+   still used by the "My Reels" grid and the selected-reel detail view. */
 .reel-thumbnail {
   width: 100%;
   aspect-ratio: 9 / 16;
   background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(139, 92, 246, 0.2));
   position: relative;
   overflow: hidden;
-}
-
-.reel-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 10px;
-  background: rgba(0, 0, 0, 0.3);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.reel-card:hover .reel-overlay {
-  opacity: 1;
 }
 
 .reel-duration {
@@ -189,45 +100,12 @@
   width: fit-content;
 }
 
-.reel-views {
-  background: rgba(0, 0, 0, 0.7);
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.85rem;
-  align-self: flex-end;
-}
-
-.reel-info {
-  padding: 15px;
-}
-
-.reel-creator {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
 .creator-avatar {
   font-size: 1.5rem;
 }
 
 .creator-name {
   font-size: 0.9rem;
-  color: #888;
-}
-
-.reel-card h4 {
-  margin: 10px 0 12px 0;
-  font-size: 0.95rem;
-  color: #fff;
-  line-height: 1.3;
-}
-
-.reel-stats {
-  display: flex;
-  gap: 10px;
-  font-size: 0.85rem;
   color: #888;
 }
 
