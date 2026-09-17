@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from './contexts/AuthContext';
 import { LanguageSelector } from './components/LanguageSelector';
@@ -135,6 +135,16 @@ const Nav: React.FC = () => {
 	const [messengerUnread, setMessengerUnread] = useState(0);
 	const { t } = useTranslation();
 	const { user, isAuthenticated } = useAuth();
+	const location = useLocation();
+	// These 6 pages now carry their own OrbNavStrip (the mini module-orb row
+	// added right under each page's header) — showing this bar's full module
+	// link row there too duplicated the exact same 7 destinations twice on
+	// one screen (reported live: "old top bar" + "new bottom one"). Everywhere
+	// else (Community, Admin, …) has no OrbNavStrip, so the links stay here —
+	// this only hides them where the replacement already exists. Search,
+	// notifications, messenger, settings, language and the admin link are
+	// untouched; none of those have an OrbNavStrip equivalent.
+	const hasOrbStrip = ['/missions', '/you', '/reels', '/writers-hub', '/creator-panel', '/pricing'].includes(location.pathname);
 
 	useEffect(() => {
 		fetch(`${API_URL}/api/config/features`)
@@ -150,7 +160,7 @@ const Nav: React.FC = () => {
 			<div className="nav-desktop">
 				<div className="nav-brand">{t('nav.brand')}</div>
 				<div className="nav-links-desktop">
-					{linkKeys.map((item) => (
+					{!hasOrbStrip && linkKeys.map((item) => (
 						<NavLink
 							key={item.to}
 							to={item.to}
@@ -225,23 +235,29 @@ const Nav: React.FC = () => {
 							</button>
 						)}
 					</div>
-					<button
-						className="hamburger-btn"
-						onClick={() => setMenuOpen(!menuOpen)}
-						aria-label={t('nav.toggleMenu')}
-						aria-expanded={menuOpen}
-					>
-						<span className="hamburger-line"></span>
-						<span className="hamburger-line"></span>
-						<span className="hamburger-line"></span>
-					</button>
+					{/* Nothing left to show in the dropdown once the module links
+						are hidden here (OrbNavStrip already covers them) unless
+						there's an admin link too — hide the toggle itself rather
+						than leave a button that opens an empty menu. */}
+					{(!hasOrbStrip || user?.isAdmin) && (
+						<button
+							className="hamburger-btn"
+							onClick={() => setMenuOpen(!menuOpen)}
+							aria-label={t('nav.toggleMenu')}
+							aria-expanded={menuOpen}
+						>
+							<span className="hamburger-line"></span>
+							<span className="hamburger-line"></span>
+							<span className="hamburger-line"></span>
+						</button>
+					)}
 				</div>
 			</div>
 
 			{/* Mobile Menu Dropdown */}
 			{menuOpen && (
 				<div className="nav-mobile-menu">
-					{linkKeys.map((item) => (
+					{!hasOrbStrip && linkKeys.map((item) => (
 						<NavLink
 							key={item.to}
 							to={item.to}
