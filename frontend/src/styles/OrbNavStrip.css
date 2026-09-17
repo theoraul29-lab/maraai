@@ -46,3 +46,10 @@
   color: #9a94b8;
   white-space: nowrap;
 }
+
+/* MobileBottomNav shows the same 6 destinations at thumb height below this
+   width (see hooks/useIsMobile.ts's MOBILE_BREAKPOINT_PX) — showing both
+   would duplicate the exact same links twice on one screen. */
+@media (max-width: 768px) {
+  .orbit-nav-strip { display: none; }
+}

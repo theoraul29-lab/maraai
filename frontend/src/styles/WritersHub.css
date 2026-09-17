@@ -1530,3 +1530,12 @@
   .library-page-card { padding: 22px 18px 30px; border-radius: 10px; }
   .library-continue-title { white-space: normal; }
 }
+
+/* MobileBottomNav (Phase 2) is a fixed bar at the bottom of the screen on
+   phones — without this its ~68px would sit on top of this page's own
+   bottom content. Mobile-only: desktop never shows that bar. */
+@media (max-width: 768px) {
+  .writers-content {
+    padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+  }
+}

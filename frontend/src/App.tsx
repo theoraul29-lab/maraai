@@ -8,6 +8,7 @@ import './App.css';
 
 // Importuri Componente corecte
 import Nav from './Nav';
+import MobileBottomNav from './components/MobileBottomNav';
 import { MaraChatWidget } from './components/MaraChatWidget';
 import P2PContributingBadge from './components/P2PContributingBadge';
 
@@ -226,6 +227,7 @@ function App() {
         <ThemeProvider>
         <div className="App">
           {!isHomePage && !isFullscreenPanel && <Nav />}
+          {!isHomePage && !isFullscreenPanel && <MobileBottomNav />}
           <OnboardingGuard />
           <ErrorBoundary level="section">
             <Suspense fallback={null}>

@@ -637,3 +637,12 @@
   .creator-action-card { padding: 10px 6px; }
   .creator-action-icon { font-size: 20px; }
 }
+
+/* MobileBottomNav (Phase 2) is a fixed bar at the bottom of the screen on
+   phones — without this its ~68px would sit on top of this page's own
+   bottom content. Mobile-only: desktop never shows that bar. */
+@media (max-width: 768px) {
+  .creator-content {
+    padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+  }
+}

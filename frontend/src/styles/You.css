@@ -1352,6 +1352,14 @@
 
   .you-messenger-wrap {
     padding: 8px;
-    height: calc(100vh - 56px);
+    height: calc(100vh - 56px - 68px - env(safe-area-inset-bottom, 0px));
+  }
+
+  /* MobileBottomNav (Phase 2) is a fixed ~68px bar at the bottom of the
+     screen on phones — without this, the last bit of the profile view
+     would sit underneath it. .you-page is the actual scrolling container
+     here (normal document flow), not .you-content. */
+  .you-page {
+    padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px));
   }
 }

@@ -6,6 +6,7 @@ import { LanguageSelector } from './components/LanguageSelector';
 import { GlobalSearch } from './components/GlobalSearch';
 import { SettingsModal } from './components/SettingsModal';
 import MessengerPanel from './components/MessengerPanel';
+import { ORBIT_STRIP_PATHS } from './lib/orbitModules';
 import axios from 'axios';
 import './styles/Nav.css';
 import './styles/GlobalSearch.css';
@@ -144,7 +145,7 @@ const Nav: React.FC = () => {
 	// this only hides them where the replacement already exists. Search,
 	// notifications, messenger, settings, language and the admin link are
 	// untouched; none of those have an OrbNavStrip equivalent.
-	const hasOrbStrip = ['/missions', '/you', '/reels', '/writers-hub', '/creator-panel', '/pricing'].includes(location.pathname);
+	const hasOrbStrip = (ORBIT_STRIP_PATHS as readonly string[]).includes(location.pathname);
 
 	useEffect(() => {
 		fetch(`${API_URL}/api/config/features`)

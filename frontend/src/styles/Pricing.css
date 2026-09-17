@@ -533,4 +533,13 @@
   .pricing-footer { flex-direction: column; gap: 8px; text-align: center; }
   .pricing-platform-grid { grid-template-columns: 1fr; }
   .pricing-platform { padding: 0 16px 40px; }
+
+  /* MobileBottomNav (Phase 2) only shows here for signed-in visitors
+     (matching OrbNavStrip's own gating on this page) — harmless to always
+     reserve the space either way, since an unauthenticated visitor just
+     gets a little extra bottom margin instead of content sitting under a
+     bar that, for them, was never actually there. */
+  .pricing-root {
+    padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+  }
 }

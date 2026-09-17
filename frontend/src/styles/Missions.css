@@ -1422,3 +1422,20 @@
     padding-left: max(16px, env(safe-area-inset-left));
   }
 }
+
+/* MobileBottomNav (Phase 2) is a fixed bar at the bottom of the screen on
+   phones — without this, its last ~68px would sit on top of this page's
+   own bottom content instead of beside it. Only at mobile widths: desktop
+   never shows that bar, so it must not steal 68px there too. Placed after
+   the safe-area block above so it wins the cascade for these same
+   elements at this width. */
+@media (max-width: 768px) {
+  .missions-panel-right,
+  .programs-root,
+  .journal-root,
+  .book-root,
+  .leaderboard-root,
+  .community-root {
+    padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+  }
+}

@@ -1111,6 +1111,26 @@
   .tiktok-title { font-size: 14px; }
 }
 
+/* MobileBottomNav (Phase 2) is a fixed ~68px bar at the bottom of the
+   screen on phones — without this, the last bit of each full-screen video
+   card (and the like/comment/share rail) would sit underneath it. Its own
+   breakpoint is 768px (wider than the 640px block above), so this is a
+   separate rule rather than folded into that one — phones between 641 and
+   768px wide get the bottom nav too and need this clearance even though
+   they don't match the 640px block. */
+@media (max-width: 768px) {
+  .tiktok-feed { height: calc(100vh - 160px - 68px - env(safe-area-inset-bottom, 0px)); }
+  .tiktok-side-rail { bottom: calc(110px + 68px + env(safe-area-inset-bottom, 0px)); }
+  .create-form,
+  .myreels-grid,
+  .stats-overview {
+    padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+  }
+}
+@media (max-width: 640px) {
+  .tiktok-side-rail { bottom: calc(100px + 68px + env(safe-area-inset-bottom, 0px)); }
+}
+
 /* ===== COMMENT PANEL (modal) ===== */
 
 .action-btn.active {
