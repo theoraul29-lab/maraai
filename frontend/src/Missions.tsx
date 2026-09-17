@@ -9,7 +9,6 @@ import {
 } from '@phosphor-icons/react';
 import ShareButton from './components/ShareButton';
 import PayPalProgramButton from './components/PayPalProgramButton';
-import OrbNavStrip from './components/OrbNavStrip';
 import { copyToClipboard } from './lib/clipboard';
 import './styles/Missions.css';
 
@@ -849,7 +848,7 @@ export default function Missions() {
 
   // ── main layout ───────────────────────────────────────────────────────────
   return (
-    <div className="missions-page orbit-ambient" data-module="missions">
+    <div className="missions-page">
 
       {/* Enroll modal */}
       {enrollingSlug && (
@@ -873,7 +872,7 @@ export default function Missions() {
       )}
 
       {/* Compact header */}
-      <div className="missions-header-v4 orbit-header">
+      <div className="missions-header-v4">
         <button className="missions-back-btn" onClick={() => navigate('/')} style={{ display:'flex', alignItems:'center', gap:5 }}><ArrowLeft size={15} />{t('missions.backHome')}</button>
         <div className="missions-xp-strip">
           <span className="missions-level-badge">Lvl {userXp.level}</span>
@@ -884,8 +883,6 @@ export default function Missions() {
           {userXp.streak > 0 && <span className="missions-streak-badge" style={{ display:'inline-flex', alignItems:'center', gap:3 }}><Fire size={13} weight="fill" />{userXp.streak}</span>}
         </div>
       </div>
-
-      <OrbNavStrip current="missions" />
 
       {/* Tab bar */}
       <div className="missions-tabs">

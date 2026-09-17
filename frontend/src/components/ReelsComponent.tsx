@@ -9,7 +9,6 @@ import {
 import TikTokFeed from './TikTokFeed';
 import type { TikTokReel } from './TikTokFeed';
 import ShareButton from './ShareButton';
-import OrbNavStrip from './OrbNavStrip';
 import '../styles/Reels.css';
 
 const API_URL = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:5000');
@@ -289,10 +288,10 @@ const ReelsComponent: React.FC = () => {
   const filteredReels = filterTag ? reels.filter(r => r.tags.some(t => t.toLowerCase() === filterTag.toLowerCase()) || r.topic === filterTag) : reels;
 
   return (
-    <div className="reels-container orbit-ambient" data-module="reels">
+    <div className="reels-container">
       {/* Header */}
-      <div className="reels-header orbit-header">
-        <h1><FilmStrip size={22} weight="bold" style={{ verticalAlign: 'middle', marginRight: 6 }} />{t('reels.headerTitle', 'SPARKS')}</h1>
+      <div className="reels-header">
+        <h1><FilmStrip size={22} weight="bold" style={{ verticalAlign: 'middle', marginRight: 6 }} />{t('reels.headerTitle', 'REELS')}</h1>
         <div className="reels-header-actions">
           <button className={`header-btn ${activeMode === 'feed' ? 'active' : ''}`} onClick={() => setActiveMode('feed')}><Television size={16} style={{ verticalAlign: 'middle', marginRight: 4 }} />{t('reels.feed')}</button>
           <button className={`header-btn ${activeMode === 'create' ? 'active' : ''}`} onClick={() => setActiveMode('create')}><Plus size={16} style={{ verticalAlign: 'middle', marginRight: 4 }} />{t('reels.create')}</button>
@@ -300,8 +299,6 @@ const ReelsComponent: React.FC = () => {
           <button className={`header-btn ${activeMode === 'stats' ? 'active' : ''}`} onClick={() => setActiveMode('stats')}><ChartBar size={16} style={{ verticalAlign: 'middle', marginRight: 4 }} />{t('reels.stats')}</button>
         </div>
       </div>
-
-      <OrbNavStrip current="reels" />
 
       {error && (
         <div style={{ background: 'rgba(255,34,34,0.15)', border: '1px solid rgba(255,34,34,0.4)', borderRadius: '8px', padding: '10px 14px', margin: '8px 16px', color:'#ff6b6b', fontSize:'13px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>

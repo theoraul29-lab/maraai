@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import OrbNavStrip from './components/OrbNavStrip';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from './contexts/AuthContext';
 import {
@@ -600,8 +599,8 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
 
   // ─── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="creator-container orbit-ambient" data-module="creators">
-      <div className="creator-header orbit-header">
+    <div className="creator-container">
+      <div className="creator-header">
         <div className="creator-header-left">
           <h1 className="creator-title">CREATOR</h1>
           {creatorXP.xp > 0 && (
@@ -610,8 +609,6 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
         </div>
         <button onClick={onClose} className="creator-close-btn"><PhX size={18} /></button>
       </div>
-
-      <OrbNavStrip current="creators" />
 
       <div className="creator-tabs">
         {TABS.map(tab => (

@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from './contexts/AuthContext';
 import { AuthModal } from './components/AuthModal';
 import ProgramPicker from './components/ProgramPicker';
-import OrbNavStrip from './components/OrbNavStrip';
 import './styles/Pricing.css';
 
 export default function Pricing() {
@@ -120,8 +119,6 @@ export default function Pricing() {
         <h1 className="pricing-title">{t('pricing.heroTitle')}</h1>
         <p className="pricing-subtitle">{t('pricing.heroSubtitle')}</p>
       </div>
-
-      {isAuthenticated && <OrbNavStrip current="programs" />}
 
       <div className="pricing-grid">
         {TIERS.map((tier) => (

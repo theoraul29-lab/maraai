@@ -22,7 +22,6 @@ import DOMPurify from 'dompurify';
 import { useAuth } from './contexts/AuthContext';
 import { RichEditor, sanitizeRichHtml } from './components/RichEditor';
 import ShareButton from './components/ShareButton';
-import OrbNavStrip from './components/OrbNavStrip';
 import PayPalArticleButton from './components/PayPalArticleButton';
 import { copyToClipboard } from './lib/clipboard';
 import './styles/WritersHub.css';
@@ -562,17 +561,15 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
     t(`writers.category.${normalizeCategory(cat)}`, { defaultValue: t(`writers.${cat}`, { defaultValue: cat }) });
 
   return (
-    <div className="writers-container orbit-ambient" data-module="writers">
+    <div className="writers-container">
       {shareToast && <div className="writers-toast">{shareToast}</div>}
       {purchaseNotice && <div className="writers-toast">{purchaseNotice}</div>}
 
-      <div className="writers-header orbit-header">
+      <div className="writers-header">
         <h1 className="writers-title">{t('writers.title')}</h1>
         <div className="writers-header-tagline">{t('writers.tagline', 'The platform for writers')}</div>
         <button onClick={onClose} className="writers-close-btn" aria-label={t('writers.close', 'Close')}>✕</button>
       </div>
-
-      <OrbNavStrip current="writers" />
 
       <div className="writers-tabs">
         <button onClick={() => setView('landing')} className={`writers-tab ${view === 'landing' ? 'active' : ''}`}>
