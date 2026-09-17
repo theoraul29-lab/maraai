@@ -36,7 +36,7 @@ export default function Pricing() {
     {
       id: 'vip_monthly' as const,
       name: 'VIP',
-      price: 20,
+      price: 21,
       color: '#a855f7',
       badge: t('pricing.tierVipBadge') as string | null,
       tagline: t('pricing.tierVipTagline'),
@@ -65,7 +65,7 @@ export default function Pricing() {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planId: 'vip_monthly', provider: 'stripe' }),
+        body: JSON.stringify({ planId: 'vip_monthly', provider: 'paypal' }),
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.url) {

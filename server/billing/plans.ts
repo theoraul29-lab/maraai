@@ -77,7 +77,7 @@ export const PLAN_CATALOGUE: readonly PlanDefinition[] = [
     id: 'vip_monthly',
     tier: 'vip',
     period: 'monthly',
-    priceCents: 2000, // €20.00/month
+    priceCents: 2100, // €21.00/month
     currency: 'EUR',
     features: VIP_FEATURES,
   },
@@ -112,23 +112,36 @@ export interface ProgramDefinition {
 // New Mindset + New Habit are the free on-ramp (~22 days combined) — enough
 // to feel the daily mission rhythm before any payment. Each program after
 // that is a flat, cheap one-time unlock (not scaled by length — New You is
-// 1095 days for the same €7 as the 90-day New Skills) so the price is never
+// 1095 days for the same €8 as the 90-day New Skills) so the price is never
 // the reason someone stops; see PROGRAM_BUNDLE for unlocking all four at
 // once, and TRANSFORMATION_BOOK for the paid PDF at the end of New You.
+//
+// Buying out of order (e.g. New Life without already owning New Skills and
+// New Body) is not a way to skip paying for the earlier ones — the purchase
+// endpoint expands the request to include every missing earlier-in-sequence
+// program automatically (see programs.ts#expandWithPrerequisites), charged
+// together in the same checkout. Paying in order, one at a time, stays €8
+// each; jumping ahead costs the sum of everything missing up to that point.
 export const PROGRAM_CATALOGUE: readonly ProgramDefinition[] = [
   { id: 'new_mindset', name: 'New Mindset', durationDays: 1,    priceCents: 0 },
   { id: 'new_habit',   name: 'New Habit',   durationDays: 21,   priceCents: 0 },
-  { id: 'new_skills',  name: 'New Skills',  durationDays: 90,   priceCents: 700 },
-  { id: 'new_body',    name: 'New Body',    durationDays: 180,  priceCents: 700 },
-  { id: 'new_life',    name: 'New Life',    durationDays: 365,  priceCents: 700 },
-  { id: 'new_you',     name: 'New You',     durationDays: 1095, priceCents: 700 },
+  { id: 'new_skills',  name: 'New Skills',  durationDays: 90,   priceCents: 800 },
+  { id: 'new_body',    name: 'New Body',    durationDays: 180,  priceCents: 800 },
+  { id: 'new_life',    name: 'New Life',    durationDays: 365,  priceCents: 800 },
+  { id: 'new_you',     name: 'New You',     durationDays: 1095, priceCents: 800 },
 ] as const;
 
-/** Unlocks New Skills + New Body + New Life + New You in one purchase (vs. €7 × 4 à la carte). */
+// Order here IS the progression/purchase sequence — server/billing/
+// programs.ts's expandWithPrerequisites() reads this array's order
+// directly, so this list must stay in new_skills -> new_body -> new_life
+// -> new_you order (already true; called out explicitly since it's now
+// load-bearing for billing logic, not just display order).
+
+/** Unlocks New Skills + New Body + New Life + New You in one purchase (vs. €8 × 4 à la carte). */
 export const PROGRAM_BUNDLE = {
   id: 'bundle_all_programs',
   name: 'All Programs Bundle',
-  priceCents: 2800,
+  priceCents: 2900,
   includes: ['new_skills', 'new_body', 'new_life', 'new_you'] as const,
 } as const;
 
@@ -136,7 +149,7 @@ export const PROGRAM_BUNDLE = {
 export const TRANSFORMATION_BOOK = {
   id: 'book_new_you',
   name: 'Your Transformation Book (PDF)',
-  priceCents: 5000,
+  priceCents: 5100,
   requiresProgram: 'new_you' as const,
 } as const;
 

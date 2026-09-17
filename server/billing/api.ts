@@ -30,6 +30,7 @@ import {
   readWebhookHeaders as readPayPalHeaders,
   verifyWebhookEvent as verifyPayPalEvent,
   handlePayPalEvent,
+  createPayPalSubscription,
 } from './paypal.js';
 
 function paymentsEnabled(): boolean {
@@ -249,14 +250,29 @@ export function registerBillingApi(app: Express): void {
         }
       }
 
-      // PayPal wiring ships in P2.0.2 — same shape (returns { url }) so the
-      // frontend just picks the provider and redirects.
-      return res.status(501).json({
-        error: 'checkout_not_implemented',
-        message: 'PayPal checkout not wired yet (Phase 2 P2.0.2).',
-        planId,
-        provider,
-      });
+      if (provider === 'paypal') {
+        try {
+          const user = await db
+            .select({ email: users.email })
+            .from(users)
+            .where(eq(users.id, userId))
+            .limit(1);
+          const { url, subscriptionId } = await createPayPalSubscription({
+            userId,
+            userEmail: user[0]?.email ?? null,
+            plan,
+          });
+          return res.json({ url, subscriptionId, provider: 'paypal' });
+        } catch (err) {
+          console.error('[billing] paypal subscription failed:', err);
+          return res.status(502).json({
+            error: 'paypal_subscription_failed',
+            message: 'Could not create PayPal subscription.',
+          });
+        }
+      }
+
+      return res.status(400).json({ error: 'unknown_provider', provider });
     } catch (err) {
       console.error('[billing] POST /subscribe failed:', err);
       return res.status(500).json({ error: 'internal_error' });

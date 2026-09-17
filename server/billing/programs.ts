@@ -81,6 +81,39 @@ export function hasPurchasedBook(userId: string): boolean {
   return hasCompletedPurchase(userId, TRANSFORMATION_BOOK.id);
 }
 
+// The 4 paid programs, in progression order — reads PROGRAM_CATALOGUE's own
+// order directly rather than re-listing the ids, so the two can't drift.
+const PAID_PROGRAM_ORDER: ProgramId[] = PROGRAM_CATALOGUE
+  .filter((p) => p.priceCents > 0)
+  .map((p) => p.id);
+
+/**
+ * Anti-skip rule for the sequential programs: paying for one later in the
+ * sequence than what the user already owns must also pay for every paid
+ * program in between, in the same purchase — buying New Life without
+ * already owning New Skills and New Body charges for all three together,
+ * not just New Life. Paying for each one in order, as you actually reach
+ * it, still costs the normal single-program price, since by then the
+ * earlier ones are already owned and get skipped here.
+ *
+ * Returns the ids that still need to be bought to legitimately end up
+ * owning `itemId` — itself included if not already owned, omitted if it
+ * (and everything before it) is already owned. Ids outside the sequenced
+ * paid-program set (the bundle, the book, a free program) pass through
+ * unchanged — this rule only applies to the 4 sequenced programs.
+ */
+export function expandWithPrerequisites(userId: string, itemId: string): string[] {
+  const idx = PAID_PROGRAM_ORDER.indexOf(itemId as ProgramId);
+  if (idx === -1) return [itemId];
+  const owned = new Set(purchasedItemIds(userId));
+  const need: string[] = [];
+  for (let i = 0; i <= idx; i++) {
+    const id = PAID_PROGRAM_ORDER[i];
+    if (!owned.has(id)) need.push(id);
+  }
+  return need;
+}
+
 /**
  * Record a completed purchase, idempotently (the unique index on
  * (user_id, program_id) WHERE status='completed' is the hard backstop —

@@ -1283,7 +1283,7 @@ export default function Missions() {
                   <PayPalProgramButton
                     programId="bundle_all_programs"
                     programName={t('missions.bundleTitle')}
-                    priceCents={2800}
+                    priceCents={2900}
                     onSuccess={() => {
                       loadPurchasedPrograms();
                       loadEnrollments();
@@ -1545,7 +1545,7 @@ export default function Missions() {
                         <PayPalProgramButton
                           programId="book_new_you"
                           programName={t('missions.bookTitle')}
-                          priceCents={5000}
+                          priceCents={5100}
                           onSuccess={() => { void loadBooks(); }}
                           onError={() => {}}
                         />

@@ -12,24 +12,44 @@ interface ProgramOption {
   days: number;
 }
 
-// All 4 paid programs are the same flat €7 (see server/billing/plans.ts —
+// All 4 paid programs are the same flat €8 (see server/billing/plans.ts —
 // price isn't scaled by length, New You's 1095 days costs the same as New
 // Skills' 90). Kept as a constant here rather than fetched, since it only
 // changes if the catalogue itself changes, at which point this file needs
 // updating anyway.
-const PROGRAM_PRICE_CENTS = 700;
+const PROGRAM_PRICE_CENTS = 800;
 // server/billing/plans.ts's TRANSFORMATION_BOOK.priceCents — the book only
 // unlocks after finishing New You (day 1095), so it's not one of the
 // picker's own checkboxes, but the running-total scale below still shows
-// where it lands: 4 programs (€28) + book (€50) = €78 for the full journey.
-const BOOK_PRICE_CENTS = 5000;
+// where it lands: 4 programs (€32) + book (€51) = €83 for the full journey.
+const BOOK_PRICE_CENTS = 5100;
 
+// Order matters here — it's the real purchase sequence, matching
+// server/billing/plans.ts's PROGRAM_CATALOGUE order exactly. Anti-skip rule
+// (see expandWithPrerequisites below): picking New Life without already
+// owning New Skills/New Body pulls those into the same purchase too, so
+// this order is what determines "earlier in the sequence", not just display.
 const PAID_PROGRAMS: ProgramOption[] = [
   { id: 'new_skills', name: 'New Skills', icon: '⚡', days: 90 },
   { id: 'new_body', name: 'New Body', icon: '💪', days: 180 },
   { id: 'new_life', name: 'New Life', icon: '🌅', days: 365 },
   { id: 'new_you', name: 'New You', icon: '✨', days: 1095 },
 ];
+
+// Mirrors server/billing/programs.ts#expandWithPrerequisites exactly (same
+// order, same "already owned is not needed again" logic) so the total this
+// card shows before checkout is the real total PayPal will charge — showing
+// €8 for a New Life pick that actually bills €24 would be a bad surprise.
+function expandWithPrerequisites(id: string, owned: Set<string>): string[] {
+  const idx = PAID_PROGRAMS.findIndex((p) => p.id === id);
+  if (idx === -1) return [id];
+  const need: string[] = [];
+  for (let i = 0; i <= idx; i++) {
+    const pid = PAID_PROGRAMS[i].id;
+    if (!owned.has(pid)) need.push(pid);
+  }
+  return need;
+}
 
 /**
  * "Pick your own programs" card for the Pricing page. New Mindset + New
@@ -77,7 +97,17 @@ export default function ProgramPicker() {
     });
   };
 
-  const selectedIds = PAID_PROGRAMS.filter((p) => selected.has(p.id) && !owned.has(p.id)).map((p) => p.id);
+  // Raw clicks, expanded with whatever earlier-in-sequence programs aren't
+  // already owned — this, not `selected` directly, is both what gets shown
+  // as checked/priced below AND what actually gets purchased, so a click on
+  // New Life alone visibly (and correctly) prices in New Skills + New Body
+  // too instead of surprising the user at checkout.
+  const expandedIds = new Set(
+    PAID_PROGRAMS
+      .filter((p) => selected.has(p.id) && !owned.has(p.id))
+      .flatMap((p) => expandWithPrerequisites(p.id, owned)),
+  );
+  const selectedIds = PAID_PROGRAMS.filter((p) => expandedIds.has(p.id)).map((p) => p.id);
   const totalCents = selectedIds.length * PROGRAM_PRICE_CENTS;
   const remainingUnowned = PAID_PROGRAMS.filter((p) => !owned.has(p.id)).length;
 
@@ -113,23 +143,30 @@ export default function ProgramPicker() {
       <div className="program-picker-grid">
         {PAID_PROGRAMS.map((p) => {
           const isOwned = owned.has(p.id);
-          const isSelected = selected.has(p.id) && !isOwned;
+          const isClicked = selected.has(p.id) && !isOwned;
+          // Included by the anti-skip rule because something later in the
+          // sequence is selected, not because this one was clicked directly.
+          const isAutoIncluded = !isClicked && !isOwned && expandedIds.has(p.id);
+          const isSelected = isClicked || isAutoIncluded;
           return (
             <button
               key={p.id}
               type="button"
-              className={`program-picker-item${isSelected ? ' selected' : ''}${isOwned ? ' owned' : ''}`}
+              className={`program-picker-item${isSelected ? ' selected' : ''}${isOwned ? ' owned' : ''}${isAutoIncluded ? ' auto-included' : ''}`}
               onClick={() => toggle(p.id)}
               disabled={isOwned || loadingAccess}
               aria-pressed={isSelected}
             >
               <span className="program-picker-check" aria-hidden="true">
-                {isOwned ? '✓' : isSelected ? '✓' : ''}
+                {isOwned || isSelected ? '✓' : ''}
               </span>
               <span className="program-picker-icon">{p.icon}</span>
               <span className="program-picker-body">
                 <span className="program-picker-name">{p.name}</span>
-                <span className="program-picker-days">{p.days} {t('pricing.days')}</span>
+                <span className="program-picker-days">
+                  {p.days} {t('pricing.days')}
+                  {isAutoIncluded && ` · ${t('pricing.pickerRequiredFirst', 'required first')}`}
+                </span>
               </span>
               <span className="program-picker-price">
                 {isOwned ? t('pricing.pickerUnlocked') : `€${(PROGRAM_PRICE_CENTS / 100).toFixed(0)}`}

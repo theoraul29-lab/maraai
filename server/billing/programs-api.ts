@@ -21,6 +21,7 @@ import {
   hasPurchasedBook,
   createPendingPurchase,
   markPurchaseCompleted,
+  expandWithPrerequisites,
 } from './programs.js';
 import { isPayPalConfigured, createPayPalOrder, capturePayPalOrder } from './paypal.js';
 
@@ -81,15 +82,23 @@ export function registerProgramBillingApi(
       if (!parsed.success) {
         return res.status(400).json({ error: 'invalid_body', details: parsed.error.flatten() });
       }
+      const userId = (req as any).user!.uid as string;
       const requestedIds = 'items' in parsed.data ? [...new Set(parsed.data.items)] : [parsed.data.item];
-      const items = requestedIds.map((id) => findPurchasableItem(id));
+
+      // Anti-skip rule (see programs.ts#expandWithPrerequisites): buying
+      // new_life without already owning new_skills/new_body pulls those
+      // into this same purchase automatically, at their normal price each —
+      // there's no way to pay for a later program while skipping what's
+      // missing before it in the sequence.
+      const expandedIds = [...new Set(requestedIds.flatMap((id) => expandWithPrerequisites(userId, id)))];
+
+      const items = expandedIds.map((id) => findPurchasableItem(id));
       const missingIndex = items.findIndex((i) => !i);
       if (missingIndex !== -1) {
-        return res.status(404).json({ error: 'unknown_item', item: requestedIds[missingIndex] });
+        return res.status(404).json({ error: 'unknown_item', item: expandedIds[missingIndex] });
       }
       const resolvedItems = items as NonNullable<(typeof items)[number]>[];
 
-      const userId = (req as any).user!.uid as string;
       const alreadyOwned = new Set(purchasedItemIds(userId));
       const toBuy = resolvedItems.filter((item) => !alreadyOwned.has(item.id));
       if (toBuy.length === 0) {
