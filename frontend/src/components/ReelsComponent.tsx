@@ -70,8 +70,15 @@ const ReelsComponent: React.FC = () => {
   const fetchFeed = useCallback(async (reset = false) => {
     try {
       setLoading(true);
-      const res = await axios.get(`${API_URL}/api/mara-feed`, {
-        params: { page: reset ? 0 : page, topic: filterTag || undefined }
+      // Switched from /api/mara-feed (pure ORDER BY RANDOM(), and it never
+      // even read `page`/`topic` — every "load more" re-fetched the same
+      // random 50) to /api/reels/feed, which ranks by real engagement
+      // (likes/views/shares, time-decayed) and actually respects
+      // limit/offset. Tag filtering was already client-side (see
+      // `filteredReels` below) even before this change, so nothing is lost.
+      const FEED_PAGE_SIZE = 20;
+      const res = await axios.get(`${API_URL}/api/reels/feed`, {
+        params: { limit: FEED_PAGE_SIZE, offset: (reset ? 0 : page) * FEED_PAGE_SIZE },
       });
       const data = res.data;
       // Flatten categories into a single feed
@@ -246,7 +253,11 @@ const ReelsComponent: React.FC = () => {
     const text = commentText.trim();
     setCommentText('');
     try {
-      await axios.post(`${API_URL}/api/videos/${selectedReel.id}/comment`, { text }, { withCredentials: true });
+      // Two bugs fixed here: the URL was singular ("/comment", the backend
+      // only ever registered plural "/comments" — a 404 on every attempt),
+      // and the body sent `text` while createComment() reads `content` — so
+      // even a corrected URL would have 400'd on "Comment content required".
+      await axios.post(`${API_URL}/api/videos/${selectedReel.id}/comments`, { content: text }, { withCredentials: true });
       setReels(prev => prev.map(r => r.id === selectedReel.id ? { ...r, comments: r.comments + 1 } : r));
       setSelectedReel(prev => prev ? { ...prev, comments: prev.comments + 1 } : prev);
     } catch { /* optimistic — count may not reflect server state */ }
