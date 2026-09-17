@@ -102,13 +102,35 @@ export async function uploadReel(req: Request, res: Response) {
     const description = (req.body?.description as string | undefined)?.trim() || '';
     const type = (req.body?.type as string | undefined)?.trim() || 'creator';
 
+    // Optional cross-module attribution: today only a Writers Hub "trailer"
+    // — a short Spark the author records to promote one of their own
+    // published articles. Same allow-listed sourceKind pattern as
+    // shareToYou() in creators.ts. Ownership + published-state are checked
+    // server-side so a trailer can't be attached to someone else's draft.
+    let sourceKind: string | null = null;
+    let sourceId: string | null = null;
+    const rawSourceKind = (req.body?.sourceKind as string | undefined)?.trim();
+    if (rawSourceKind === 'writers') {
+      const articleId = Number.parseInt(String(req.body?.sourceId ?? ''), 10);
+      const article = Number.isFinite(articleId)
+        ? await deps.storage.getWriterPageById(articleId)
+        : null;
+      if (!article || article.userId !== userId || !article.published) {
+        fs.unlink(file.path, () => { /* ignore cleanup errors */ });
+        res.status(403).json({ error: 'Cannot attach a trailer to that article' });
+        return;
+      }
+      sourceKind = 'writers';
+      sourceId = String(articleId);
+    }
+
     const fileKey = file.filename;
     const publicUrl = `/videos/files/${fileKey}`;
 
     const created = await deps.storage.createVideo({
       title: title.slice(0, 200),
       description: description.slice(0, 1000),
-      type,
+      type: sourceKind === 'writers' ? 'writers-trailer' : type,
       url: publicUrl,
       creatorId: userId,
       fileKey,
@@ -116,6 +138,8 @@ export async function uploadReel(req: Request, res: Response) {
       thumbnailUrl: null,
       durationSec: null,
       moderationStatus: 'approved',
+      sourceKind,
+      sourceId,
     } as any);
 
     res.status(201).json({ video: created });

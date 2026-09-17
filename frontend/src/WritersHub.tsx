@@ -164,6 +164,18 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
   const [publishing, setPublishing] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
 
+  // Sparks Phase 3: right after a publish succeeds, offer to record a short
+  // "trailer" Spark that promotes the new article (source_kind='writers').
+  // Kept deliberately minimal — a file picker, not a full composer — since
+  // the full Reels/Sparks upload UI already exists elsewhere for anyone who
+  // wants more control.
+  const [justPublished, setJustPublished] = useState<ApiArticle | null>(null);
+  const [trailerFile, setTrailerFile] = useState<File | null>(null);
+  const [trailerUploading, setTrailerUploading] = useState(false);
+  const [trailerError, setTrailerError] = useState<string | null>(null);
+  const [trailerDone, setTrailerDone] = useState(false);
+  const trailerFileRef = useRef<HTMLInputElement>(null);
+
   // "My Sales" panel — open to any author, not just VIP/1000-follower
   // creators (see server/storage.ts's getWriterSalesSummary doc comment).
   const [sales, setSales] = useState<SalesSummary | null>(null);
@@ -331,6 +343,10 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
       if (article && typeof article.id === 'number') {
         setLibrary((prev) => [article, ...prev]);
         resetComposer();
+        setTrailerFile(null);
+        setTrailerError(null);
+        setTrailerDone(false);
+        setJustPublished(article);
         setView('library');
       } else {
         setPublishError(t('writers.publishFailed', 'Failed to publish'));
@@ -348,6 +364,31 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
       }
     } finally {
       setPublishing(false);
+    }
+  };
+
+  const handleUploadTrailer = async () => {
+    if (!trailerFile || !justPublished) return;
+    setTrailerUploading(true);
+    setTrailerError(null);
+    try {
+      const fd = new FormData();
+      fd.append('video', trailerFile);
+      fd.append('title', justPublished.title);
+      fd.append('description', justPublished.excerpt || '');
+      fd.append('sourceKind', 'writers');
+      fd.append('sourceId', String(justPublished.id));
+      await axios.post(`${API_URL}/api/reels/upload`, fd, {
+        withCredentials: true,
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setTrailerDone(true);
+      setTrailerFile(null);
+    } catch (err) {
+      const detail = axios.isAxiosError(err) ? err.response?.data?.error : undefined;
+      setTrailerError(detail || t('writers.trailerFailed', 'Failed to upload trailer'));
+    } finally {
+      setTrailerUploading(false);
     }
   };
 
@@ -799,6 +840,44 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
+
+            {justPublished && (
+              <div className="writers-trailer-card">
+                <p className="writers-trailer-title">
+                  {t('writers.publishedTitle', { title: justPublished.title, defaultValue: `"${justPublished.title}" is live!` })}
+                </p>
+                {trailerDone ? (
+                  <p className="writers-trailer-done">{t('writers.trailerShared', 'Trailer Spark posted!')}</p>
+                ) : (
+                  <>
+                    <p className="writers-trailer-hint">
+                      {t('writers.trailerHint', 'Record a short Spark to help readers discover it.')}
+                    </p>
+                    <div className="writers-trailer-row">
+                      <input
+                        ref={trailerFileRef}
+                        type="file"
+                        accept="video/mp4,video/webm,video/quicktime,video/x-matroska"
+                        onChange={(e) => setTrailerFile(e.target.files?.[0] ?? null)}
+                        className="writers-trailer-input"
+                      />
+                      <button
+                        onClick={handleUploadTrailer}
+                        disabled={!trailerFile || trailerUploading}
+                        className="writers-button small"
+                      >
+                        {trailerUploading ? t('writers.trailerUploading', 'Uploading…') : t('writers.trailerShare', 'Share as Spark')}
+                      </button>
+                    </div>
+                    {trailerError && <p className="writers-trailer-error">{trailerError}</p>}
+                  </>
+                )}
+                <button onClick={() => setJustPublished(null)} className="writers-button small secondary">
+                  {t('writers.dismiss', 'Dismiss')}
+                </button>
+              </div>
+            )}
+
             {loading && <p className="writers-dim">{t('writers.loadingLibrary')}</p>}
             {!loading && library.length === 0 && (
               <p className="writers-dim">{t('writers.emptyLibrary')}</p>

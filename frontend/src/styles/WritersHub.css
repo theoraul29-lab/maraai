@@ -993,6 +993,48 @@
 .writers-library-header .writers-section-title {
   margin: 0;
 }
+
+.writers-trailer-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+}
+.writers-trailer-title {
+  margin: 0;
+  font-weight: 600;
+  font-size: 14px;
+}
+.writers-trailer-hint {
+  margin: 0;
+  font-size: 13px;
+  opacity: 0.75;
+}
+.writers-trailer-done {
+  margin: 0;
+  font-size: 13px;
+  color: #4ade80;
+}
+.writers-trailer-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.writers-trailer-input {
+  flex: 1;
+  min-width: 160px;
+  font-size: 12px;
+}
+.writers-trailer-error {
+  margin: 0;
+  font-size: 13px;
+  color: #ff9b9b;
+}
 .writers-search-input {
   flex: 1;
   min-width: 180px;

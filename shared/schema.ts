@@ -34,6 +34,13 @@ export const videos = pgTable('videos', {
   durationSec: integer('duration_sec'),
   thumbnailUrl: text('thumbnail_url'),
   moderationStatus: text('moderation_status').default('approved').notNull(),
+  // Cross-module attribution (Sparks Phase 3), same convention as
+  // userPosts.sourceKind/sourceId above. Allowed `sourceKind` values so far:
+  // 'mission' | 'writers' | null. `sourceId` is text because it points at
+  // ids from other tables (e.g. user_missions.id, writer_pages.id) which are
+  // not necessarily numeric.
+  sourceKind: text('source_kind'),
+  sourceId: text('source_id'),
   createdAt: integer('created_at', { mode: 'timestamp' })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
