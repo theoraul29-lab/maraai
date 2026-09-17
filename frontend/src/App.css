@@ -127,6 +127,23 @@
   --accent-soft: #e9d5ff;
 }
 
+/* ── Standard breakpoint scale (mobile design audit, Phase 0) ───────────
+   CSS custom properties cannot be read inside an @media condition (a real
+   CSS-spec limitation — `@media (max-width: var(--x))` is invalid), so this
+   is a documented convention for new/touched media queries, not a variable
+   any file can consume directly:
+     phone:   max-width: 480px
+     tablet:  max-width: 768px   (the JS-side match — see hooks/useIsMobile.ts)
+     desktop: min-width: 1024px
+   Existing files each hardcode their own breakpoint (480/520/540/600/640/
+   720/768/900/980/1023/1024/1440px — a real, confirmed spread found during
+   the audit) chosen for that component's own content at the time it was
+   written; retroactively rewriting all of them to these 3 values was judged
+   too high-risk for too little benefit (some of that spread reflects a
+   genuine per-component sizing need, not just drift — and a blind rewrite
+   can't be visually verified here). New/touched components should use
+   480/768/1024 going forward so the spread stops growing. */
+
 /* ══════════════════════════════════════════════════════════════════════
    ORBIT DESIGN SYSTEM — homepage-modeled visual language for every module
    page. Each module's root container gets a `data-module="…"` attribute

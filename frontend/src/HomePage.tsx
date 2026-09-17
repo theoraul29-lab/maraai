@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useErrorHandler } from './hooks/useErrorHandler';
 import { useTouchGesture } from './hooks/useTouchGesture';
 import { useAccessible } from './hooks/useAccessible';
+import { useIsMobile } from './hooks/useIsMobile';
 import './OrbitalStyles.css';
 // NOTE: the chat widget is now rendered globally in App.tsx (`<MaraChatWidget />`)
 // so we do NOT mount a second one here. Until 2026-05 the home rendered two
@@ -42,29 +43,6 @@ interface Particle {
   life: number;
   color: string;
 }
-
-/**
- * Mobile detection hook
- */
-const useIsMobile = () => {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(
-        typeof window !== 'undefined' &&
-        (window.innerWidth < 768 ||
-          /mobile|android|iphone|ipad|phone/i.test(navigator.userAgent))
-      );
-    };
-
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  return isMobile;
-};
 
 function HomePage() {
   const navigate = useNavigate();
