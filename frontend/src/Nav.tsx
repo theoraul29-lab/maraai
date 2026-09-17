@@ -17,6 +17,12 @@ const linkKeys = [
 	{ to: '/reels', key: 'reels', icon: '🎬' },
 	{ to: '/missions', key: 'missions', icon: '🎯' },
 	{ to: '/community', key: 'community', icon: '🌐' },
+	// Was entirely missing — the lock-icon logic below (`item.key === 'vip'`)
+	// already existed and had a real i18n key (nav.vip) waiting, but with no
+	// 'vip' entry in this list it could never fire: Membership/VIP was only
+	// reachable from the homepage "Programs" orb, never from this nav once
+	// you'd left home.
+	{ to: '/pricing', key: 'vip', icon: '💎' },
 	{ to: '/creator-panel', key: 'creator', icon: '✨' },
 	{ to: '/writers-hub', key: 'writers', icon: '✍️' },
 	{ to: '/you', key: 'profile', icon: '👤' },

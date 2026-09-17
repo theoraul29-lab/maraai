@@ -76,7 +76,11 @@ function internalShareUrl(origin: string, sourceModule: string, sourceId: string
     case 'post':
       return `${origin}/you?post=${encodeURIComponent(sourceId)}`;
     case 'profile':
-      return `${origin}/you?u=${encodeURIComponent(sourceId)}`;
+      // /profile/:id is the canonical route (added for Sparks/Writers Hub
+      // creator-name links); /you?u=<id> still works as a redirect for
+      // already-shared links (see you.tsx), but new shares point straight
+      // at the real route.
+      return `${origin}/profile/${encodeURIComponent(sourceId)}`;
     case 'article':
       return `${origin}/writers-hub?a=${encodeURIComponent(sourceId)}`;
     default:

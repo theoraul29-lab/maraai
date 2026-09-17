@@ -980,7 +980,7 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
                 <button
                   type="button"
                   className="you-fb-friend-link"
-                  onClick={() => navigate(`/you?u=${u.id}`)}
+                  onClick={() => navigate(`/profile/${u.id}`)}
                 >
                   {u.profileImageUrl ? (
                     <img className="you-fb-friend-avatar" src={u.profileImageUrl} alt={u.displayName || u.firstName || ''} />

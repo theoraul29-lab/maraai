@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from './contexts/AuthContext';
@@ -739,10 +740,10 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
                 )}
 
                 {growthPath.suggestedMission && (
-                  <a href="/missions" className="growth-suggested-mission">
+                  <Link to="/missions" className="growth-suggested-mission">
                     <span>{t('creatorExtra.growthSuggestedMission', 'Keep your streak going:')}</span>
                     <strong>{growthPath.suggestedMission.title}</strong>
-                  </a>
+                  </Link>
                 )}
               </div>
             )}
@@ -1000,7 +1001,7 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
                           · {new Date(art.createdAt).toLocaleDateString(i18n.language)}
                         </div>
                       </div>
-                      <a href="/writers-hub" className="creator-video-btn view" style={{ textDecoration: 'none' }}>{t('creatorExtra.editBtn')}</a>
+                      <Link to="/writers-hub" className="creator-video-btn view" style={{ textDecoration: 'none' }}>{t('creatorExtra.editBtn')}</Link>
                     </div>
                   ))}
                 </div>
@@ -1321,7 +1322,7 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
                           {art.type} · 👁️ {formatNum(art.views || 0)} · {new Date(art.createdAt).toLocaleDateString(i18n.language)}
                         </div>
                       </div>
-                      <a href="/writers-hub" className="creator-video-btn view" style={{ textDecoration: 'none' }}>{t('creatorExtra.editBtn')}</a>
+                      <Link to="/writers-hub" className="creator-video-btn view" style={{ textDecoration: 'none' }}>{t('creatorExtra.editBtn')}</Link>
                     </div>
                   ))}
                 </div>
@@ -1378,7 +1379,7 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
             ))}
             <div className="creator-profile-link">
               <span>{t('creatorExtra.publicLinkLabel')} </span>
-              <a href="/you" style={{ color: '#ff6b00' }}>{t('creatorExtra.profileLinkText')}</a>
+              <Link to="/you" style={{ color: '#ff6b00' }}>{t('creatorExtra.profileLinkText')}</Link>
             </div>
             <button className={`creator-button${profileSaving ? ' disabled' : ''}`}
               onClick={handleProfileSave} disabled={profileSaving} style={{ marginTop: 8 }}>

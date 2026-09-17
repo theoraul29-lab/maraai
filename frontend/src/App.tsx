@@ -211,7 +211,14 @@ function App() {
   // belong on that page anymore, same reasoning as excluding it from Control
   // Center above.
   const isYouRoute = location.pathname === '/you';
-  const isFullscreenPanel = ['/creator-panel', '/writers-hub', '/control-center'].includes(location.pathname);
+  // Creator Panel and Writers Hub used to hide Nav too (their own full-
+  // viewport overlay CSS, now normal document flow like every other
+  // module) — that made them navigation dead-ends: no direct way to reach
+  // a sibling module, and their own close button always went to "/"
+  // instead of back to wherever the user came from. Control Center stays
+  // excluded — it's a separate admin surface, not one of the consumer
+  // modules this applies to.
+  const isFullscreenPanel = location.pathname === '/control-center';
 
   return (
     <ErrorBoundary level="page">
