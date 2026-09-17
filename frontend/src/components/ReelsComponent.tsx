@@ -16,6 +16,7 @@ const API_URL = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'ht
 interface Reel {
   id: number;
   creator: string;
+  creatorId?: string | null;
   avatar: string;
   title: string;
   url: string;
@@ -94,7 +95,8 @@ const ReelsComponent: React.FC = () => {
 
       const mapped = feedItems.map((v: any) => ({
         id: v.id,
-        creator: v.creator || v.username || t('reels.defaultCreator', 'Creator'),
+        creator: v.creatorName || v.creator || v.username || t('reels.defaultCreator', 'Creator'),
+        creatorId: v.creatorId || null,
         avatar: '🎬',
         title: v.title || t('reels.untitled', 'Untitled'),
         url: v.url || v.videoUrl || '#',

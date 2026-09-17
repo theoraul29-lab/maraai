@@ -15,7 +15,7 @@
  *  - Drafts-urile locale sunt păstrate — HTML în loc de plaintext.
  */
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import DOMPurify from 'dompurify';
@@ -643,7 +643,16 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
                         <h4>{w.title}</h4>
                         <p>{w.excerpt || ''}</p>
                         <div className="writers-featured-meta">
-                          <span>{t('writers.by')} {w.penName}</span>
+                          <span>
+                            {t('writers.by')}{' '}
+                            <Link
+                              to={`/profile/${w.userId}?from=writers&fromId=${w.id}`}
+                              className="writers-author-link"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {w.penName}
+                            </Link>
+                          </span>
                           {typeof w.readTimeMinutes === 'number' && (
                             <span>· {t('writers.readTime', '{{n}} min', { n: w.readTimeMinutes })}</span>
                           )}
@@ -906,7 +915,10 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
                           <span className={`writers-vis writers-vis-${w.visibility}`}>{t(`writers.visibility.${w.visibility}`)}</span>
                         </div>
                         <div className="writers-manuscript-author">
-                          {t('writers.by')} {w.penName}
+                          {t('writers.by')}{' '}
+                          <Link to={`/profile/${w.userId}?from=writers&fromId=${w.id}`} className="writers-author-link">
+                            {w.penName}
+                          </Link>
                           {typeof w.readTimeMinutes === 'number' && (
                             <> · {t('writers.readTime', '{{n}} min', { n: w.readTimeMinutes })}</>
                           )}
@@ -1053,7 +1065,10 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
               )}
               <h1>{readingWork.title}</h1>
               <p className="writers-reading-author">
-                {t('writers.by')} {readingWork.penName}
+                {t('writers.by')}{' '}
+                <Link to={`/profile/${readingWork.userId}?from=writers&fromId=${readingWork.id}`} className="writers-author-link">
+                  {readingWork.penName}
+                </Link>
                 {' · '}{translateCategory(readingWork.category)}
                 {' · '}
                 <span className={`writers-vis writers-vis-${readingWork.visibility}`}>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import ShareButton from './ShareButton';
 import '../styles/UserProfile.css';
@@ -32,6 +32,7 @@ interface UserProfileProps {
 const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [profile, setProfile] = useState<UserProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -125,9 +126,19 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
   const handleFollow = async () => {
     if (!profile) return;
     try {
+      // Creator Growth Path: if this profile view was reached from a Spark
+      // or a Writers Hub article (?from=spark|writers&fromId=<content id>),
+      // attribute the follow to that surface so the creator can see where
+      // their growth is actually coming from. Only sent on the follow
+      // action itself, never on unfollow.
+      const from = searchParams.get('from');
+      const fromId = searchParams.get('fromId');
+      const attributeSource = !isFollowing && (from === 'spark' || from === 'writers') && !!fromId;
       const response = await fetch(`/api/profile/${profile.id}/follow`, {
         method: 'POST',
         credentials: 'include',
+        headers: attributeSource ? { 'Content-Type': 'application/json' } : undefined,
+        body: attributeSource ? JSON.stringify({ sourceKind: from, sourceId: fromId }) : undefined,
       });
       if (response.ok) {
         setIsFollowing(!isFollowing);

@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
-import { Route, Routes, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { Route, Routes, Navigate, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { PreviewBanner } from './components/PreviewBanner';
 import { usePreviewStatus } from './hooks/usePreviewStatus';
@@ -20,6 +20,7 @@ const Creators = lazy(() => import('./creator').then((m) => ({ default: m.Creato
 const Reels = lazy(() => import('./reels'));
 const WritersHub = lazy(() => import('./WritersHub').then((m) => ({ default: m.WritersHub })));
 const You = lazy(() => import('./you'));
+const UserProfile = lazy(() => import('./components/UserProfile'));
 const ResetPassword = lazy(() => import('./ResetPassword'));
 const ResetPasswordConfirmation = lazy(() => import('./ResetPasswordConfirmation'));
 import HomePage from './HomePage';
@@ -188,6 +189,18 @@ function AuthedP2PBadge() {
   return <P2PContributingBadge backgroundNodeEnabled={backgroundNodeEnabled} />;
 }
 
+// UserProfile only ever took a userId prop + local onClose before (rendered
+// as a modal from inside You). This makes it reachable as a real, linkable
+// URL from anywhere — Sparks, Writers Hub — so a tap on a creator's name
+// works regardless of which module it happens from, and the follow action
+// there can carry ?from=/&fromId= for Creator Growth Path attribution.
+function ProfileRoute() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  if (!id) return <Navigate to="/you" replace />;
+  return <UserProfile userId={id} onClose={() => navigate(-1)} />;
+}
+
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -215,6 +228,7 @@ function App() {
                 <Route path="/membership" element={<RequireAuth><VIP onClose={() => navigate('/')} /></RequireAuth>} />
                 <Route path="/creator-panel" element={<RequireAuth><Creators onClose={() => navigate('/')} /></RequireAuth>} />
                 <Route path="/you" element={<RequireAuth allowPreview><You /></RequireAuth>} />
+                <Route path="/profile/:id" element={<RequireAuth allowPreview><ProfileRoute /></RequireAuth>} />
                 <Route path="/reels" element={<RequireAuth allowPreview><Reels /></RequireAuth>} />
                 <Route path="/writers-hub" element={<RequireAuth allowPreview><WritersHub onClose={() => navigate('/')} /></RequireAuth>} />
                 <Route path="/community" element={<RequireAuth allowPreview><Community /></RequireAuth>} />

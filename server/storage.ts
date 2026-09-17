@@ -94,7 +94,7 @@ export interface IStorage {
   getReelsFeed(options?: {
     limit?: number;
     offset?: number;
-  }): Promise<Video[]>;
+  }): Promise<(Video & { creatorName: string | null; creatorAvatar: string | null })[]>;
 
   createVideoComment(
     comment: InsertVideoComment,
@@ -2301,7 +2301,7 @@ export class DatabaseStorage implements IStorage {
   async getReelsFeed(options?: {
     limit?: number;
     offset?: number;
-  }): Promise<Video[]> {
+  }): Promise<(Video & { creatorName: string | null; creatorAvatar: string | null })[]> {
     const limit = Math.min(Math.max(options?.limit ?? 20, 1), 100);
     const offset = Math.max(options?.offset ?? 0, 0);
     // Engagement score: likes*3 + views + shares*5 - hours_since_creation*0.1
@@ -2313,9 +2313,35 @@ export class DatabaseStorage implements IStorage {
     // We coerce it through `strftime('%s', …)` so the subtraction is in
     // seconds. `COALESCE` + fallback to `strftime('%s','now')` keeps rows
     // with a NULL `createdAt` from torpedoing the sort.
+    //
+    // leftJoin users so a Spark card can show + link to its real creator
+    // (Creator Growth Path) instead of a generic placeholder — left, not
+    // inner, because creatorId is nullable on legacy/seed videos.
     return await db
-      .select()
+      .select({
+        id: videos.id,
+        url: videos.url,
+        type: videos.type,
+        title: videos.title,
+        description: videos.description,
+        creatorId: videos.creatorId,
+        likes: videos.likes,
+        views: videos.views,
+        shares: videos.shares,
+        fileKey: videos.fileKey,
+        mimeType: videos.mimeType,
+        durationSec: videos.durationSec,
+        thumbnailUrl: videos.thumbnailUrl,
+        moderationStatus: videos.moderationStatus,
+        sourceKind: videos.sourceKind,
+        sourceId: videos.sourceId,
+        externalPlatform: videos.externalPlatform,
+        createdAt: videos.createdAt,
+        creatorName: sql<string | null>`coalesce(${users.displayName}, ${users.firstName}, ${users.email})`,
+        creatorAvatar: users.profileImageUrl,
+      })
       .from(videos)
+      .leftJoin(users, eq(users.id, videos.creatorId))
       .where(eq(videos.moderationStatus, 'approved'))
       .orderBy(
         desc(

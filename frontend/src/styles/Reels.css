@@ -1168,6 +1168,8 @@
 }
 .tiktok-creator-avatar { font-size: 22px; }
 .tiktok-creator-name { font-size: 15px; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.7); }
+.tiktok-creator-row--link { text-decoration: none; cursor: pointer; }
+.tiktok-creator-row--link:hover .tiktok-creator-name { text-decoration: underline; }
 
 .tiktok-title {
   font-size: 15px;

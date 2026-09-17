@@ -1,9 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 
 export interface TikTokReel {
   id: number;
   creator: string;
+  creatorId?: string | null;
   avatar: string;
   title: string;
   url: string;
@@ -411,10 +413,20 @@ const ReelCard: React.FC<ReelCardProps> = ({
 
       {/* Bottom info overlay (creator, title, music) */}
       <div className="tiktok-bottom-info">
-        <div className="tiktok-creator-row">
-          <span className="tiktok-creator-avatar">{reel.avatar}</span>
-          <span className="tiktok-creator-name">@{reel.creator}</span>
-        </div>
+        {reel.creatorId ? (
+          <Link
+            to={`/profile/${reel.creatorId}?from=spark&fromId=${reel.id}`}
+            className="tiktok-creator-row tiktok-creator-row--link"
+          >
+            <span className="tiktok-creator-avatar">{reel.avatar}</span>
+            <span className="tiktok-creator-name">@{reel.creator}</span>
+          </Link>
+        ) : (
+          <div className="tiktok-creator-row">
+            <span className="tiktok-creator-avatar">{reel.avatar}</span>
+            <span className="tiktok-creator-name">@{reel.creator}</span>
+          </div>
+        )}
         <div className="tiktok-title">{reel.title}</div>
         {reel.description && (
           <div className="tiktok-description">{reel.description}</div>
