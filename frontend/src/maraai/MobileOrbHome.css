@@ -1,4 +1,5 @@
-/* Mobile-only infinite vertical orb selector for the home screen.
+/* Mobile-only vertical orb selector for the home screen, driven by
+   native scroll-snap (finite list — see MobileOrbHome.tsx header).
    Self-contained: no globals leak; everything is scoped under
    `.mara-orb-home`. */
 
@@ -10,7 +11,6 @@
   background: #000000;
   color: #f4eaff;
   overflow: hidden;
-  touch-action: none;
   user-select: none;
   -webkit-user-select: none;
   font-family:
@@ -91,26 +91,45 @@
   text-transform: uppercase;
 }
 
-/* Selector viewport: full screen, all orbs absolutely positioned and
-   transformed. */
+/* Selector viewport: a native vertical scroller. All motion (momentum,
+   snapping) is handled by the browser's own compositor — this is the
+   entire fix for the "trembling" a hand-rolled per-frame physics loop
+   was exposed to. `pan-y` lets vertical touch gestures scroll it while
+   still allowing the outer page to ignore horizontal/pinch gestures;
+   `overscroll-behavior` stops a swipe past either end from bubbling into
+   a pull-to-refresh or rubber-banding the whole page. */
 .mara-orb-home__viewport {
   position: absolute;
   inset: 0;
   z-index: 2;
-  display: grid;
-  place-items: center;
-  cursor: grab;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  scroll-snap-type: y mandatory;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
-.mara-orb-home__viewport:active {
-  cursor: grabbing;
+.mara-orb-home__viewport::-webkit-scrollbar {
+  display: none;
 }
 
+/* The rail needs top/bottom padding so the FIRST/LAST orb can still
+   reach the exact vertical centre of the viewport when scrolled all the
+   way to that end — otherwise scroll-snap has nowhere left to scroll to
+   and they'd stop short of centre. That padding is 50dvh (half the
+   viewport) minus half the orb's own height (66px of its 132px) — half
+   the orb, not half the row pitch, since it's the orb's centre that has
+   to land on the viewport's centre, independent of the gap between rows.
+   `dvh` (not `%`) is used deliberately — padding percentages resolve
+   against the container's WIDTH per spec, never its height, so `%` here
+   would silently compute the wrong thing on a narrow phone screen. */
 .mara-orb-home__rail {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding-block: calc(50dvh - 66px);
 }
 
 .mara-orb-home__hint {
@@ -127,19 +146,25 @@
   pointer-events: none;
 }
 
-/* A single orb. All visual properties are driven by inline transform/
-   opacity/filter for cheap GPU compositing.
+/* A single orb. Sits in normal flow now (no absolute positioning, no
+   overlap) — the rail's flex `gap` provides the spacing that used to be
+   computed per-frame. `scroll-snap-align: center` is what makes this
+   orb, specifically, a stopping point for the native scroller.
+
+   The centre/near/far look is 3 discrete states (below) transitioned by
+   this one `transition` rule — GPU-composited, not driven by JS on every
+   frame, which is the actual fix for the reported "trembling".
 
    Every orb-internal selector is scoped under `.mara-orb-home` so it
    does not collide with the desktop orbital home which uses a global
    `.mara-orb` class for its centre orb. */
 .mara-orb-home .mara-orb {
-  position: absolute;
-  top: 50%;
-  left: 50%;
+  position: relative;
+  flex: none;
   width: 132px;
   height: 132px;
-  margin: -66px 0 0 -66px;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
   border-radius: 50%;
   display: flex;
   flex-direction: column;
@@ -161,13 +186,26 @@
     inset 0 -10px 30px rgba(86, 21, 158, 0.55),
     inset 0 6px 14px rgba(255, 255, 255, 0.22);
   border: 1px solid rgba(199, 125, 255, 0.55);
-  will-change: transform, opacity, filter;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition:
-    box-shadow 300ms var(--ease-smooth, ease),
-    transform 200ms var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
+    transform 200ms var(--ease-smooth, ease),
+    opacity 200ms var(--ease-smooth, ease),
+    filter 200ms var(--ease-smooth, ease),
+    box-shadow 300ms var(--ease-smooth, ease);
   pointer-events: auto;
+}
+
+.mara-orb-home .mara-orb--near {
+  transform: scale(0.82);
+  opacity: 0.65;
+  filter: blur(1.5px);
+}
+
+.mara-orb-home .mara-orb--far {
+  transform: scale(0.6);
+  opacity: 0.28;
+  filter: blur(3px);
 }
 
 .mara-orb-home .mara-orb__icon {
@@ -199,9 +237,12 @@
   filter: drop-shadow(0 0 14px rgba(199, 125, 255, 0.32));
 }
 
-.mara-orb-home .mara-orb--tap {
-  /* Triggered briefly on tap for "press" feedback. The transform is
-     handled in JS so it stacks with the per-frame physics transform. */
+/* Press feedback via the native :active pseudo-class instead of a JS
+   timeout toggling a class — the browser applies/removes this the
+   instant a real pointer press starts/ends, no code involved. Combines
+   additively with whichever centre/near/far scale is already active. */
+.mara-orb-home .mara-orb:active {
+  filter: brightness(1.15);
 }
 
 /* Disable our overlay entirely on > 768px so desktop falls back to the

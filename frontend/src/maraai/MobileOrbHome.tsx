@@ -1,34 +1,33 @@
-// Mobile-only "infinite vertical orb" home selector for MaraAI.
+// Mobile-only vertical orb selector for the home screen.
 //
 // Behaviour spec:
 //   - Full-screen, black bg with subtle purple glow particles.
 //   - Vertical chain of glowing orbs, the centred one is selected.
-//   - Touch drag + inertia + snap-to-centre. iOS-feeling deceleration.
-//   - Infinite loop via modulo recycling — render a fixed window of
-//     visible slots, never a growing DOM.
-//   - Mobile-only: parent gates on width ≤ 768px; component is also
+//   - Native scroll-snap drives all motion — no custom velocity/inertia
+//     math. The browser's own compositor handles momentum and snapping,
+//     which is what makes this immune to the "trembling" a hand-rolled
+//     requestAnimationFrame physics loop is exposed to under any main-
+//     thread pressure (GC pause, background tab, slower phone).
+//   - Finite list (You -> Creators), not an infinite loop: scroll-snap
+//     doesn't have a native wrap-around primitive, and reintroducing one
+//     manually would bring back exactly the kind of per-frame JS this
+//     rewrite removes. Six items is a short enough chain that reaching
+//     either end is one quick swipe away.
+//   - Mobile-only: parent gates on width <= 768px; component is also
 //     hidden by CSS at min-width: 769px as defence in depth.
 //
 // Implementation notes:
-//   - All physics state lives in refs and is mutated inside a single
-//     RAF loop. React state is updated only when the active item index
-//     changes (tap target / a11y label) — no per-frame setState.
-//   - Item position is encoded by a continuous "offset" measured in
-//     items, not pixels. Distance from centre = |offset - itemIndex|.
-//   - For each visible slot k ∈ [-VIS, VIS], we render the item at
-//     index `(round(offset) + k) mod count`, positioned at
-//     `(k - frac) * SPACING_PX` where frac = offset - round(offset).
-//     This keeps DOM size constant regardless of item count.
+//   - `activeIndex` (which orb is centred) is derived from an
+//     IntersectionObserver watching a thin band at the exact vertical
+//     centre of the scroll viewport (rootMargin: -49% top/bottom) —
+//     the browser tells us when an orb crosses that band; we never poll.
+//   - The centre/near/far visual treatment (scale, opacity, blur) is 3
+//     discrete states transitioned by CSS, not a continuous per-pixel
+//     function. It's a deliberate trade-off: slightly less fluid-looking
+//     than a perfectly continuous curve, but entirely GPU-composited and
+//     therefore immune to main-thread jank.
 
-import {
-  type PointerEvent as ReactPointerEvent,
-  type ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AuthButton } from '../components/AuthButton';
@@ -46,15 +45,6 @@ type OrbItem = {
   to: string;
   icon: ReactNode;
 };
-
-const SPACING_PX = 130; // distance between consecutive orb centres
-const VISIBLE_SLOTS = 4; // -4..+4 ⇒ 9 rendered orbs at any time
-const FRICTION_PER_FRAME = 0.94; // velocity decay each ~16ms tick (iOS-ish)
-const MIN_VELOCITY = 0.0008; // items/ms; below this, snap & stop
-const SNAP_DURATION_MS = 320;
-const TAP_THRESHOLD_PX = 8;
-const TAP_THRESHOLD_MS = 240;
-const MAX_FLICK_VELOCITY = 0.012; // items/ms (≈ 1.5 items per 125ms)
 
 const ICONS: Record<OrbId, ReactNode> = {
   you: (
@@ -117,25 +107,6 @@ const ITEMS: OrbItem[] = [
   { id: 'creators', label: 'Creators', to: '/creator-panel', icon: ICONS.creators },
 ];
 
-type DragState = {
-  pointerId: number;
-  startY: number;
-  lastY: number;
-  startTime: number;
-  lastTime: number;
-  startedAtOffset: number;
-  // Recent (y, t) samples used to compute release velocity. Buffer is
-  // small and ring-style — we only ever look at the last ~80ms.
-  samples: Array<{ y: number; t: number }>;
-  moved: boolean;
-};
-
-type SnapState = {
-  from: number;
-  to: number;
-  startedAt: number;
-} | null;
-
 export type MobileOrbHomeProps = {
   /** Override item list (mainly for tests / Storybook). */
   items?: OrbItem[];
@@ -145,314 +116,56 @@ export function MobileOrbHome({ items = ITEMS }: MobileOrbHomeProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { t } = useTranslation();
-  const count = items.length;
 
-  // Header overlay state — settings panel + auth modal for the
-  // mobile-only "Create account" CTA.
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [showProgramsLock, setShowProgramsLock] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
 
   const PROGRAMS_LAUNCH = new Date('2026-07-01T00:00:00Z');
   const isProgramsLocked = () => Date.now() < PROGRAMS_LAUNCH.getTime();
 
-  // Continuous offset in "items". Integer values mean an item is exactly
-  // centred. We allow negative + unbounded; we mod-it-back when picking
-  // which item to render in each slot.
-  const offsetRef = useRef(0);
-  // items / ms
-  const velocityRef = useRef(0);
-  const dragRef = useRef<DragState | null>(null);
-  const snapRef = useRef<SnapState>(null);
-  const rafRef = useRef<number | null>(null);
-  const lastFrameRef = useRef<number | null>(null);
-  const slotRefs = useRef<Array<HTMLButtonElement | null>>([]);
-  const tappedSlotRef = useRef<number | null>(null);
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+  const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
-  // The only piece of physics state we mirror to React. Everything else
-  // stays in refs to keep the RAF loop allocation-free.
-  const [activeIndex, setActiveIndex] = useState(0);
+  // Which orb is centred is derived entirely from the browser telling us
+  // an element crossed a thin band at the exact vertical middle of the
+  // scroll viewport — no scroll-position math, no per-frame sampling.
+  useEffect(() => {
+    const root = viewportRef.current;
+    if (!root) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const idx = Number((entry.target as HTMLElement).dataset.index);
+          if (!Number.isNaN(idx)) setActiveIndex(idx);
+        }
+      },
+      { root, rootMargin: '-49% 0px -49% 0px', threshold: 0 },
+    );
+    itemRefs.current.forEach((el) => {
+      if (el) observer.observe(el);
+    });
+    return () => observer.disconnect();
+  }, [items]);
 
-  // Build the slot array once. Slots are stable React keys; the actual
-  // item shown in each slot is computed every frame via modulo.
-  const slots = useMemo(() => {
-    const out: number[] = [];
-    for (let k = -VISIBLE_SLOTS; k <= VISIBLE_SLOTS; k++) out.push(k);
-    return out;
-  }, []);
-
-  const mod = useCallback(
-    (n: number) => ((n % count) + count) % count,
-    [count],
-  );
-
-  const applyTransforms = useCallback(() => {
-    const offset = offsetRef.current;
-    const rounded = Math.round(offset);
-    const frac = offset - rounded;
-
-    for (let i = 0; i < slots.length; i++) {
-      const k = slots[i];
-      const el = slotRefs.current[i];
-      if (!el) continue;
-      const slotOffset = k - frac;
-      const dist = Math.abs(slotOffset);
-      const y = slotOffset * SPACING_PX;
-      const scale = clamp(1 - 0.18 * dist, 0.55, 1);
-      const opacity = clamp(1 - 0.27 * dist, 0.04, 1);
-      // blur() was being computed and applied on every one of the 8
-      // off-centre slots, every frame, during any motion — real GPU cost
-      // for a mobile device, reported as a "trembling" feel. Past dist=2.5
-      // opacity is already down to ~0.19 and falling, so skipping the
-      // filter there (rather than shrinking it) is visually unnoticeable
-      // but removes that cost for roughly half the rendered slots.
-      const blurPx = dist < 2.5 ? clamp(dist * 0.6, 0, 6) : 0;
-      el.style.transform = `translate3d(-50%, calc(-50% + ${y.toFixed(2)}px), 0) scale(${scale.toFixed(3)})`;
-      el.style.opacity = String(opacity);
-      el.style.filter = blurPx > 0.05 ? `blur(${blurPx.toFixed(2)}px)` : 'none';
-      el.style.zIndex = String(100 - Math.round(dist * 10));
-      el.classList.toggle('mara-orb--center', dist < 0.5);
-    }
-
-    // Item content for each slot is derived from `activeIndex` in JSX,
-    // so we only need to push state when the centred index actually
-    // changes. Doing it this way means React re-renders just once per
-    // crossed boundary, not every frame.
-    const newActive = mod(rounded);
-    if (newActive !== activeIndex) {
-      setActiveIndex(newActive);
-    }
-  }, [activeIndex, mod, slots]);
-
-  const stopRaf = useCallback(() => {
-    if (rafRef.current != null) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-    }
-    lastFrameRef.current = null;
-  }, []);
-
-  const startSnap = useCallback((target?: number) => {
-    const from = offsetRef.current;
-    const to = target ?? Math.round(from);
-    snapRef.current = { from, to, startedAt: performance.now() };
-    velocityRef.current = 0;
-  }, []);
-
-  const tickPhysics = useCallback(
-    (now: number) => {
-      const last = lastFrameRef.current;
-      const dt = last == null ? 16 : Math.min(now - last, 50);
-      lastFrameRef.current = now;
-
-      // While actively dragging, offsetRef is driven directly by pointer
-      // position (see onPointerMove) — this loop's only job during a drag
-      // is to paint that position at the display's own refresh rate,
-      // instead of onPointerMove painting on every raw touch/pointer
-      // event, which can fire faster than the screen actually repaints and
-      // reads as jitter on some devices. No offset math here; that stays
-      // entirely in onPointerMove for a drag in progress.
-      if (dragRef.current) {
-        applyTransforms();
-        rafRef.current = requestAnimationFrame(tickPhysics);
+  const handleOrbClick = useCallback(
+    (index: number) => {
+      const item = items[index];
+      // Bring the tapped orb to centre for a clear visual confirmation
+      // (mirrors the old "snap then navigate" feel) before navigating —
+      // native smooth-scroll, same GPU-composited path as the rest.
+      itemRefs.current[index]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (item.to === '/pricing' && isProgramsLocked()) {
+        setShowProgramsLock(true);
+        setTimeout(() => setShowProgramsLock(false), 3500);
         return;
       }
-
-      const snap = snapRef.current;
-      if (snap) {
-        const t = clamp((now - snap.startedAt) / SNAP_DURATION_MS, 0, 1);
-        const eased = easeOutCubic(t);
-        offsetRef.current = snap.from + (snap.to - snap.from) * eased;
-        if (t >= 1) {
-          offsetRef.current = snap.to;
-          snapRef.current = null;
-        }
-      } else {
-        // Inertia phase
-        offsetRef.current += velocityRef.current * dt;
-        velocityRef.current *= Math.pow(FRICTION_PER_FRAME, dt / 16);
-        if (Math.abs(velocityRef.current) < MIN_VELOCITY) {
-          velocityRef.current = 0;
-          // Snap to nearest after coast finishes.
-          startSnap();
-        }
-      }
-
-      applyTransforms();
-
-      const stillMoving =
-        snapRef.current != null || Math.abs(velocityRef.current) >= MIN_VELOCITY;
-      if (stillMoving) {
-        rafRef.current = requestAnimationFrame(tickPhysics);
-      } else {
-        rafRef.current = null;
-        lastFrameRef.current = null;
-      }
+      window.setTimeout(() => navigate(item.to), 150);
     },
-    [applyTransforms, startSnap],
+    [items, navigate],
   );
-
-  const ensureRunning = useCallback(() => {
-    if (rafRef.current == null) {
-      lastFrameRef.current = null;
-      rafRef.current = requestAnimationFrame(tickPhysics);
-    }
-  }, [tickPhysics]);
-
-  // Initial layout pass (before any input).
-  useEffect(() => {
-    applyTransforms();
-  }, [applyTransforms]);
-
-  // --- Pointer / touch handlers ---------------------------------------------
-
-  const onPointerDown = useCallback(
-    (e: ReactPointerEvent<HTMLDivElement>) => {
-      const target = e.currentTarget;
-      // Only primary-button drags count; ignore right click / multi-touch
-      // beyond the first contact.
-      if (dragRef.current) return;
-      target.setPointerCapture(e.pointerId);
-
-      // Halt any ongoing motion.
-      stopRaf();
-      snapRef.current = null;
-      const now = performance.now();
-      dragRef.current = {
-        pointerId: e.pointerId,
-        startY: e.clientY,
-        lastY: e.clientY,
-        startTime: now,
-        lastTime: now,
-        startedAtOffset: offsetRef.current,
-        samples: [{ y: e.clientY, t: now }],
-        moved: false,
-      };
-      velocityRef.current = 0;
-      // Start the paint loop now — tickPhysics's dragRef.current branch
-      // takes over painting at the display's own rate for the rest of
-      // this drag (see onPointerMove).
-      ensureRunning();
-    },
-    [ensureRunning, stopRaf],
-  );
-
-  const onPointerMove = useCallback(
-    (e: ReactPointerEvent<HTMLDivElement>) => {
-      const drag = dragRef.current;
-      if (!drag || drag.pointerId !== e.pointerId) return;
-      const dy = e.clientY - drag.startY;
-      if (!drag.moved && Math.abs(dy) > TAP_THRESHOLD_PX) drag.moved = true;
-      // Drag down (+dy) should move the chain DOWN — meaning earlier items
-      // come into the centre, i.e. offset DECREASES.
-      offsetRef.current = drag.startedAtOffset - dy / SPACING_PX;
-      drag.lastY = e.clientY;
-      drag.lastTime = performance.now();
-      drag.samples.push({ y: drag.lastY, t: drag.lastTime });
-      // Keep ~120ms of samples — enough for a stable velocity estimate.
-      const horizon = drag.lastTime - 120;
-      while (drag.samples.length > 2 && drag.samples[0].t < horizon) {
-        drag.samples.shift();
-      }
-      // Painting happens in tickPhysics's RAF loop now, not here — see the
-      // comment on ensureRunning() in onPointerDown.
-    },
-    [],
-  );
-
-  const finishDrag = useCallback(
-    (e: ReactPointerEvent<HTMLDivElement>) => {
-      const drag = dragRef.current;
-      if (!drag || drag.pointerId !== e.pointerId) return;
-      try {
-        e.currentTarget.releasePointerCapture(e.pointerId);
-      } catch {
-        /* already released */
-      }
-      dragRef.current = null;
-
-      const now = performance.now();
-      const elapsed = now - drag.startTime;
-
-      // Always consume any pending tap target. If we don't reset here, a
-      // drag that moved past the tap threshold would leave the ref dirty
-      // and the next bare-background pointerup would mis-trigger snap or
-      // navigation against a stale slot.
-      const slot = tappedSlotRef.current;
-      tappedSlotRef.current = null;
-
-      // Tap detection: tiny, fast, and ended on an orb → navigate.
-      if (!drag.moved && elapsed < TAP_THRESHOLD_MS) {
-        if (slot != null) {
-          const itemIndex = mod(Math.round(offsetRef.current) + slot);
-          const item = items[itemIndex];
-          // Any tapped orb navigates now, not just the centred one —
-          // previously an off-centre tap only recentred it, requiring a
-          // second tap to actually go anywhere, reported as unintuitive.
-          // Still snaps the tapped orb to centre first for a clear visual
-          // confirmation of what was picked, then navigates.
-          startSnap(Math.round(offsetRef.current) + slot);
-          ensureRunning();
-          const el = slotRefs.current[VISIBLE_SLOTS + slot];
-          if (el) {
-            el.classList.add('mara-orb--tap');
-            setTimeout(() => el?.classList.remove('mara-orb--tap'), 180);
-          }
-          if (item.to === '/pricing' && isProgramsLocked()) {
-            setShowProgramsLock(true);
-            setTimeout(() => setShowProgramsLock(false), 3500);
-          } else {
-            window.setTimeout(() => navigate(item.to), 160);
-          }
-          return;
-        }
-      }
-
-      // Velocity from the last-120ms samples. Pixels/ms → items/ms.
-      let velocityPxPerMs = 0;
-      const samples = drag.samples;
-      if (samples.length >= 2) {
-        const first = samples[0];
-        const last = samples[samples.length - 1];
-        const dt = Math.max(1, last.t - first.t);
-        velocityPxPerMs = (last.y - first.y) / dt;
-      }
-      // Convert: drag down (+dy) ⇒ offset goes down (−)
-      let velocityItemsPerMs = -velocityPxPerMs / SPACING_PX;
-      velocityItemsPerMs = clamp(velocityItemsPerMs, -MAX_FLICK_VELOCITY, MAX_FLICK_VELOCITY);
-      velocityRef.current = velocityItemsPerMs;
-
-      // If the user barely moved at the end, just snap.
-      if (Math.abs(velocityItemsPerMs) < MIN_VELOCITY) {
-        velocityRef.current = 0;
-        startSnap();
-      }
-      ensureRunning();
-    },
-    [ensureRunning, items, mod, navigate, startSnap],
-  );
-
-  const onPointerCancel = finishDrag;
-  const onPointerUp = finishDrag;
-
-  // Slot-level tap so we know WHICH slot the user lifted on. We bind on
-  // pointerdown to record, but only act on pointerup (handled in
-  // finishDrag).
-  const handleSlotPointerDown = useCallback(
-    (slotKey: number) => {
-      tappedSlotRef.current = slotKey;
-    },
-    [],
-  );
-
-  // Cleanup
-  useEffect(() => {
-    return () => {
-      if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
-    };
-  }, []);
-
-  // --- Render ---------------------------------------------------------------
 
   return (
     <main
@@ -474,8 +187,8 @@ export function MobileOrbHome({ items = ITEMS }: MobileOrbHomeProps) {
 
       {/* Top action bar — login/register, language, settings.
           Sits above the orb chain (z-index 5) and uses
-          `pointer-events: auto` so the orb viewport's drag handler
-          doesn't swallow taps on these controls. */}
+          `pointer-events: auto` so the scroll viewport doesn't
+          swallow taps on these controls. */}
       <div className="mara-orb-home__actions">
         <div className="mara-orb-home__actions-left">
           <AuthButton />
@@ -515,28 +228,23 @@ export function MobileOrbHome({ items = ITEMS }: MobileOrbHomeProps) {
         />
       )}
 
-      <div
-        className="mara-orb-home__viewport"
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerCancel}
-      >
+      <div className="mara-orb-home__viewport" ref={viewportRef}>
         <div className="mara-orb-home__rail">
-          {slots.map((k, slotIdx) => {
-            const itemIndex = mod(activeIndex + k);
-            const item = items[itemIndex];
+          {items.map((item, index) => {
+            const dist = Math.abs(index - activeIndex);
+            const stateClass =
+              dist === 0 ? 'mara-orb--center' : dist === 1 ? 'mara-orb--near' : 'mara-orb--far';
             return (
               <button
-                key={k}
+                key={item.id}
                 ref={(el) => {
-                  slotRefs.current[slotIdx] = el;
+                  itemRefs.current[index] = el;
                 }}
+                data-index={index}
                 type="button"
-                className={`mara-orb${k === 0 ? ' mara-orb--center' : ''}`}
-                aria-label={k === 0 ? `${item.label} (selected)` : item.label}
-                onPointerDown={() => handleSlotPointerDown(k)}
-                style={{ touchAction: 'none' }}
+                className={`mara-orb ${stateClass}`}
+                aria-label={index === activeIndex ? `${item.label} (selected)` : item.label}
+                onClick={() => handleOrbClick(index)}
               >
                 <span className="mara-orb__icon" aria-hidden>
                   {item.icon}
@@ -576,15 +284,3 @@ export function MobileOrbHome({ items = ITEMS }: MobileOrbHomeProps) {
     </main>
   );
 }
-
-// --- helpers -----------------------------------------------------------------
-
-function clamp(v: number, lo: number, hi: number): number {
-  return Math.max(lo, Math.min(hi, v));
-}
-
-function easeOutCubic(t: number): number {
-  const u = 1 - t;
-  return 1 - u * u * u;
-}
-
