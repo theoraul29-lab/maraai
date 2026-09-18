@@ -46,6 +46,11 @@ type OrbItem = {
   icon: ReactNode;
 };
 
+// Matches the API_URL convention used across the rest of the frontend
+// (e.g. creator.tsx): same-origin in production, explicit backend host in
+// dev where Vite (5173) and the backend (5000 by default) run separately.
+const API_URL = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:5000');
+
 const ICONS: Record<OrbId, ReactNode> = {
   you: (
     <svg viewBox="0 0 24 24" width="32" height="32" aria-hidden>
@@ -120,10 +125,35 @@ export function MobileOrbHome({ items = ITEMS }: MobileOrbHomeProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [showProgramsLock, setShowProgramsLock] = useState(false);
+  const [creatorLockMessage, setCreatorLockMessage] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
   const PROGRAMS_LAUNCH = new Date('2026-07-01T00:00:00Z');
   const isProgramsLocked = () => Date.now() < PROGRAMS_LAUNCH.getTime();
+
+  // Real follower count + creator-status, used only to decide whether
+  // tapping the Creators orb needs a heads-up before entering — the page
+  // itself (server/modules/creators.ts#getGrowthPath) is deliberately open
+  // to everyone with an account regardless of this value; monetisation
+  // features inside it are what actually require 1000 followers.
+  const creatorGrowthRef = useRef<{ followers: number; isCreator: boolean } | null>(null);
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    fetch(`${API_URL}/api/creator/growth-path`, { credentials: 'include' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled && data) {
+          creatorGrowthRef.current = { followers: data.followers, isCreator: data.isCreator };
+        }
+      })
+      .catch(() => {
+        /* Non-critical — tapping Creators just skips the heads-up on failure. */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -161,6 +191,21 @@ export function MobileOrbHome({ items = ITEMS }: MobileOrbHomeProps) {
         setShowProgramsLock(true);
         setTimeout(() => setShowProgramsLock(false), 3500);
         return;
+      }
+      if (item.to === '/creator-panel') {
+        const growth = creatorGrowthRef.current;
+        if (growth && !growth.isCreator) {
+          const remaining = Math.max(0, 1000 - growth.followers);
+          setCreatorLockMessage(
+            `🔒 Monetizarea se deblochează la 1000 followeri. Ai ${growth.followers} — mai ai ${remaining}. Intri oricum să-ți vezi traseul de creștere →`,
+          );
+          setTimeout(() => setCreatorLockMessage(null), 3500);
+          // Still navigates — the growth-path page itself is deliberately
+          // open below 1000 followers (see server/modules/creators.ts), this
+          // is only a heads-up about which features stay locked once inside.
+          window.setTimeout(() => navigate(item.to), 1600);
+          return;
+        }
       }
       window.setTimeout(() => navigate(item.to), 150);
     },
@@ -279,6 +324,19 @@ export function MobileOrbHome({ items = ITEMS }: MobileOrbHomeProps) {
           <div style={{ fontSize: 11, fontWeight: 400, opacity: 0.7, marginTop: 4 }}>
             Explorează celelalte module până atunci.
           </div>
+        </div>
+      )}
+
+      {creatorLockMessage && (
+        <div style={{
+          position: 'fixed', bottom: 28, left: '50%', transform: 'translateX(-50%)',
+          background: 'rgba(14,10,26,0.97)', border: '1px solid rgba(236,72,153,0.4)',
+          borderRadius: 14, padding: '12px 20px', color: '#fce7f3',
+          fontSize: 13, fontWeight: 600, zIndex: 9999, textAlign: 'center',
+          boxShadow: '0 8px 32px rgba(236,72,153,0.25)',
+          width: 'calc(100vw - 48px)', maxWidth: 340,
+        }}>
+          {creatorLockMessage}
         </div>
       )}
     </main>
