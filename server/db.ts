@@ -216,8 +216,8 @@ sqlite.exec(`
   -- Audit P2: cross-process advisory lock for the brain cycle. A single
   -- row per lock name, with a TTL'd lease and a heartbeat column. Managed
   -- exclusively by server/lib/singleton-lock.ts, which also creates this
-  -- same table (identical schema, both `IF NOT EXISTS`) via its own
-  -- ensureTable() — intentional duplication, not a bug; see the comment
+  -- same table (identical schema, both "IF NOT EXISTS") via its own
+  -- ensureTable() -- intentional duplication, not a bug; see the comment
   -- there for why it's kept in both places.
   CREATE TABLE IF NOT EXISTS mara_singleton_locks (
     name TEXT PRIMARY KEY,
