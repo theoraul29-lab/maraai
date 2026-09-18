@@ -15,6 +15,8 @@
     "smoke:growth": "node scripts/test-growth-engineer.mjs",
     "smoke:audit-p2": "tsx scripts/test-audit-p2.mts",
     "smoke:auth": "node scripts/smoke-auth.mjs",
+    "smoke:account": "node scripts/smoke-account.mjs",
+    "smoke:billing": "node scripts/smoke-billing.mjs",
     "smoke:admin-chat": "tsx scripts/test-admin-chat.mts",
     "smoke:mara-cli": "node scripts/smoke-mara-cli.mjs",
     "smoke:code-explorer": "tsx scripts/test-code-explorer.mts",

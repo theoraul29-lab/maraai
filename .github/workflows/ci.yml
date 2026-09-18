@@ -117,6 +117,8 @@ jobs:
           run_smoke smoke:growth
           run_smoke smoke:audit-p2
           run_smoke smoke:auth
+          run_smoke smoke:account
+          run_smoke smoke:billing
           run_smoke smoke:admin-chat
           run_smoke smoke:mara-cli
           run_smoke smoke:code-explorer
