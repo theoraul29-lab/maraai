@@ -275,8 +275,11 @@ export function getP2PSuccessRate(): { success: number; failure: number; rate: n
 
 /**
  * Try offloading a lightweight task to P2P browser nodes.
- * Returns the result JSON if a node completes it within timeout, null otherwise.
- * The caller falls back to Anthropic on null.
+ * Returns the result JSON if a node completes it within timeout, null
+ * otherwise — the caller decides what null means (fall back to a local/
+ * Anthropic computation, or just skip an optional enrichment; e.g.
+ * document-reader.ts's term-frequency pre-analysis is purely additive and
+ * simply proceeds without it on null).
  */
 export async function tryP2PTask(
   input: CreateTaskInput,
