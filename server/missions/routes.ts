@@ -20,6 +20,7 @@ import {
   completeProgramDay,
 } from './program-engine.js';
 import { hasPurchasedBook } from '../billing/programs.js';
+import { generateBookPdfBuffer, type BookChapterForPdf } from './book-pdf.js';
 
 const SUPPORTED_LANGS = new Set([
   'en','ro','de','fr','es','it','pt','ru','uk','nl','sv','bg','ja','ko',
@@ -446,6 +447,47 @@ export function registerMissionRoutes(app: Express, requireAuth: any, requireRea
       .get(req.params.id, userId);
     if (!book) return res.status(404).json({ message: 'Book not found.' });
     res.json({ book });
+  });
+
+  // Real PDF download — same ownership + purchase gate as /api/books/my's
+  // redaction (the New You book is the paid product; everything else is
+  // free). Generated on demand, see book-pdf.ts for why nothing is cached
+  // to disk.
+  app.get('/api/books/:id/pdf', requireAuth, async (req: any, res: any) => {
+    const userId = getUserId(req);
+    const book = rawSqlite
+      .prepare(
+        `SELECT b.*, p.name as program_name, p.slug as program_slug
+         FROM user_books b
+         LEFT JOIN user_program_enrollments e ON e.id = b.program_enrollment_id
+         LEFT JOIN mission_programs p ON p.id = e.program_id
+         WHERE b.id = ? AND b.user_id = ?`,
+      )
+      .get(req.params.id, userId) as any;
+    if (!book) return res.status(404).json({ message: 'Book not found.' });
+    if (book.program_slug === 'new-you' && !hasPurchasedBook(userId)) {
+      return res.status(402).json({ message: 'This book must be purchased before it can be downloaded.' });
+    }
+
+    let chapters: BookChapterForPdf[];
+    try { chapters = JSON.parse(book.chapters); } catch { chapters = []; }
+    if (!Array.isArray(chapters)) chapters = [];
+
+    try {
+      const pdf = await generateBookPdfBuffer({
+        title: book.title,
+        subtitle: book.subtitle,
+        programName: book.program_name,
+        chapters,
+      });
+      const filename = `${String(book.title).replace(/[^\w\s-]/g, '').trim().slice(0, 80) || 'book'}.pdf`;
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(pdf);
+    } catch (error) {
+      console.error('[books] PDF generation failed:', error);
+      res.status(500).json({ message: 'Could not generate the PDF. Please try again.' });
+    }
   });
 
   console.log('[missions] ✅ Routes registered (v4)');

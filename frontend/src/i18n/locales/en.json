@@ -972,6 +972,7 @@
     "bookMetaLocked": "{{chapters}} chapters written · unlock to read",
     "bookClose": "▲ Close",
     "bookRead": "▼ Read the book",
+    "bookDownloadPdf": "⬇ Download PDF",
     "bookLoadError": "Error loading the book.",
     "leaderboardTitle": "🏆 Top users",
     "leaderboardSubtitle": "Ranking by accumulated XP",

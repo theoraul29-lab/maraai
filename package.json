@@ -38,6 +38,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.33.1",
     "@sentry/node": "10.59.0",
+    "@types/pdfkit": "^0.17.6",
     "axios": "^1.15.0",
     "bcryptjs": "^2.4.3",
     "better-sqlite3": "^12.8.0",
@@ -52,6 +53,7 @@
     "memoizee": "^0.4.15",
     "multer": "^2.1.1",
     "pdf-parse": "^1.1.1",
+    "pdfkit": "^0.20.2",
     "resend": "^6.12.3",
     "sanitize-html": "^2.17.7",
     "sqlite-vec": "^0.1.10-alpha.4",

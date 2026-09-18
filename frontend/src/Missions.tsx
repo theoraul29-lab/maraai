@@ -1551,9 +1551,21 @@ export default function Missions() {
                         />
                       </div>
                     ) : (
-                      <button className="book-read-btn">
-                        {selectedBook?.id === book.id ? t('missions.bookClose') : t('missions.bookRead')}
-                      </button>
+                      <div className="book-actions" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          className="book-read-btn"
+                          onClick={() => setSelectedBook(selectedBook?.id === book.id ? null : book)}
+                        >
+                          {selectedBook?.id === book.id ? t('missions.bookClose') : t('missions.bookRead')}
+                        </button>
+                        <a
+                          className="book-download-btn"
+                          href={`/api/books/${book.id}/pdf`}
+                          download
+                        >
+                          {t('missions.bookDownloadPdf')}
+                        </a>
+                      </div>
                     )}
                   </div>
                 </div>

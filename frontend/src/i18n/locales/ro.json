@@ -972,6 +972,7 @@
     "bookMetaLocked": "{{chapters}} capitole scrise · deblochează pentru a citi",
     "bookClose": "▲ Închide",
     "bookRead": "▼ Citește cartea",
+    "bookDownloadPdf": "⬇ Descarcă PDF",
     "bookLoadError": "Eroare la încărcarea cărții.",
     "leaderboardTitle": "🏆 Top utilizatori",
     "leaderboardSubtitle": "Ranking by accumulated XP",

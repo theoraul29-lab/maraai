@@ -1217,6 +1217,20 @@
   font-size: 12px;
   cursor: pointer;
 }
+.book-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.book-download-btn {
+  background: transparent;
+  border: 1px solid rgba(148,163,184,0.3);
+  color: #94a3b8;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+.book-download-btn:hover { border-color: rgba(168,85,247,0.4); color: #c4b5fd; }
 .book-unlock-cta { max-width: 260px; }
 .book-content {
   background: rgba(10,8,20,0.95);
