@@ -39,8 +39,6 @@ import {
   type InsertVideoComment,
   type ChatMessage,
   type InsertChatMessage,
-  type PremiumOrder,
-  type InsertPremiumOrder,
   type WriterPage,
   type InsertWriterPage,
   type WriterComment,
@@ -156,11 +154,7 @@ export interface IStorage {
   updateUserLanguage(userId: string, language: string): Promise<void>;
   updateUserTheme(userId: string, theme: string): Promise<void>;
 
-  createPremiumOrder(order: InsertPremiumOrder): Promise<PremiumOrder>;
-  getPremiumOrders(userId?: string): Promise<PremiumOrder[]>;
   getUserPremiumStatus(userId: string): Promise<boolean>;
-  confirmPremiumOrder(orderId: number): Promise<PremiumOrder>;
-  rejectPremiumOrder(orderId: number): Promise<PremiumOrder>;
 
   getMonthlyPostCount(userId: string): Promise<number>;
   recordCreatorPost(userId: string, videoId: number): Promise<void>;
@@ -734,25 +728,6 @@ export class DatabaseStorage implements IStorage {
     await db.delete(chatMessages).where(lt(chatMessages.createdAt, cutoff));
   }
 
-  async createPremiumOrder(order: InsertPremiumOrder): Promise<PremiumOrder> {
-    const [created] = await db.insert(premiumOrders).values(order).returning();
-    return created;
-  }
-
-  async getPremiumOrders(userId?: string): Promise<PremiumOrder[]> {
-    if (userId) {
-      return await db
-        .select()
-        .from(premiumOrders)
-        .where(eq(premiumOrders.userId, userId))
-        .orderBy(desc(premiumOrders.createdAt));
-    }
-    return await db
-      .select()
-      .from(premiumOrders)
-      .orderBy(desc(premiumOrders.createdAt));
-  }
-
   async getUserPremiumStatus(userId: string): Promise<boolean> {
     const orders = await db
       .select()
@@ -764,26 +739,6 @@ export class DatabaseStorage implements IStorage {
         ),
       );
     return orders.length > 0;
-  }
-
-  async confirmPremiumOrder(orderId: number): Promise<PremiumOrder> {
-    const updates = { status: "confirmed", confirmedAt: new Date() };
-
-    const [updated] = await db
-      .update(premiumOrders)
-      .set(updates)
-      .where(eq(premiumOrders.id, orderId))
-      .returning();
-    return updated;
-  }
-
-  async rejectPremiumOrder(orderId: number): Promise<PremiumOrder> {
-    const [updated] = await db
-      .update(premiumOrders)
-      .set({ status: "rejected" })
-      .where(eq(premiumOrders.id, orderId))
-      .returning();
-    return updated;
   }
 
   async updateUserLanguage(userId: string, language: string): Promise<void> {

@@ -8,6 +8,14 @@
 // that is a local DB read, so a book never "disappears" even if Gutendex or
 // Gutenberg is briefly unreachable later.
 import { rawSqlite } from '../db.js';
+import { assertSafeExternalUrl } from '../lib/ssrf-guard.js';
+
+// Gutendex's own response tells us which host actually serves a book's
+// text — always some gutenberg.org mirror in practice, but defence-in-depth
+// against a compromised/malicious Gutendex response pointing this server's
+// outbound fetch at an internal address (metadata endpoints, localhost,
+// etc.) costs nothing here since the real host never changes.
+const GUTENBERG_CONTENT_DOMAINS = ['gutenberg.org'];
 
 const GUTENDEX_BASE = 'https://gutendex.com/books/';
 const SUPPORTED_LANGS = new Set(['ro', 'en', 'de']);
@@ -153,8 +161,14 @@ export async function fetchAndCacheBook(id: number): Promise<CachedBook> {
   const htmlUrl = meta.formats['text/html; charset=utf-8'] ?? meta.formats['text/html'];
   const contentUrl = plainUrl ?? htmlUrl;
   if (!contentUrl) throw new Error('No readable text format is available for this book');
+  // Validate before fetching — see GUTENBERG_CONTENT_DOMAINS above. Only the
+  // URL is checked here (host allowlist + resolves to a public IP); the
+  // actual request below keeps its own timeout/headers rather than the
+  // shorter generic ones in ssrf-guard's own fetchAllowedExternalUrl, since
+  // Gutenberg's mirrors are known to need more room (see TEXT_FETCH_TIMEOUT_MS).
+  const safeContentUrl = await assertSafeExternalUrl(contentUrl, GUTENBERG_CONTENT_DOMAINS);
 
-  const textResp = await fetch(contentUrl, { headers: FETCH_HEADERS, signal: AbortSignal.timeout(TEXT_FETCH_TIMEOUT_MS) });
+  const textResp = await fetch(safeContentUrl, { headers: FETCH_HEADERS, signal: AbortSignal.timeout(TEXT_FETCH_TIMEOUT_MS) });
   if (!textResp.ok) throw new Error(`Failed to download book text (${textResp.status})`);
   const buf = await textResp.arrayBuffer();
   if (buf.byteLength > MAX_CONTENT_BYTES) throw new Error('This book exceeds the size limit for in-platform reading');

@@ -109,8 +109,12 @@ const server = createServer((req: IncomingMessage, res: ServerResponse) => {
   })();
 });
 
-server.listen(PORT, '0.0.0.0', () => {
-  console.info(`[bridge] Mara local execution bridge listening on :${PORT} (repo: ${process.cwd()})`);
+// Loopback-only: cloudflared runs on this same machine and proxies tunnel
+// traffic to localhost, so binding wider than 127.0.0.1 only expands the
+// attack surface (LAN, or the public internet on a misconfigured
+// router/firewall) without the tunnel needing it.
+server.listen(PORT, '127.0.0.1', () => {
+  console.info(`[bridge] Mara local execution bridge listening on 127.0.0.1:${PORT} (repo: ${process.cwd()})`);
 });
 
 process.on('SIGINT', () => { server.close(() => process.exit(0)); });

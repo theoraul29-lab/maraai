@@ -34,15 +34,8 @@ import * as profileModule from './modules/profile.js';
 import * as notificationsModule from './modules/notifications.js';
 import * as pushModule from './modules/push.js';
 import * as searchModule from './modules/search.js';
-import * as ordersModule from './modules/orders.js';
-import * as adminOrdersModule from './modules/adminOrders.js';
-import * as paymentsModule from './modules/payments.js';
 import * as pythonBridgeModule from './modules/pythonBridge.js';
 import * as messengerModule from './modules/messenger.js';
-import {
-  StripeProvider,
-  PayPalProvider,
-} from './modules/providers.js';
 import {
   getMaraResponse,
   MOOD_TO_THEME,
@@ -315,21 +308,6 @@ export async function registerRoutes(
   userPrefsModule.injectDeps({ storage });
   adminModule.injectDeps({ storage });
   profileModule.injectDeps({ storage });
-  ordersModule.injectDeps({ storage, z });
-  adminOrdersModule.injectDeps({ storage });
-  paymentsModule.injectDeps({
-    stripeProvider: new StripeProvider(),
-    paypalProvider: new PayPalProvider(),
-  });
-
-  // Payment endpoints (require auth)
-  app.post('/api/payments/stripe', requireRealUser, paymentsModule.processStripePayment);
-  app.post('/api/payments/paypal', requireRealUser, paymentsModule.processPayPalPayment);
-
-  // Admin order management (require admin)
-  app.get('/api/admin/orders', requireAdmin, adminOrdersModule.getOrders);
-  app.post('/api/admin/orders/:id/confirm', requireAdmin, adminOrdersModule.confirmOrder);
-  app.post('/api/admin/orders/:id/reject', requireAdmin, adminOrdersModule.rejectOrder);
 
   // ─── Flag public: frontend verifică dacă sistemul de plăți e activ ─────────
   // FORCE_PAYMENTS_INACTIVE is an explicit operator kill-switch that wins
@@ -342,21 +320,6 @@ export async function registerRoutes(
   app.get('/api/config/features', (_req: any, res: any) => {
     res.json({ paymentsActive: paymentsActive() });
   });
-
-  // ─── Middleware: blochează /api/premium/* când plățile sunt inactive ────────
-  const requirePaymentsActive = (_req: any, res: any, next: any) => {
-    if (!paymentsActive()) {
-      return res.status(503).json({
-        error: 'payments_inactive',
-        message: 'VIP se activează în curând după lansarea oficială.',
-      });
-    }
-    return next();
-  };
-
-  // Orders and premium endpoints (require auth + plăți active)
-  app.get('/api/premium/status', requireAuth, requirePaymentsActive, ordersModule.getPremiumStatus);
-  app.post('/api/premium/order', requireRealUser, requirePaymentsActive, ordersModule.createPremiumOrder);
 
   // ─── Onboarding status: verifică dacă userul a completat onboarding-ul ─────
   app.get('/api/user/onboarding-status', requireAuth, (req: any, res: any) => {

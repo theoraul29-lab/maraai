@@ -35,6 +35,8 @@ rawSqlite.exec(`
   )
 `);
 
+// Also created independently by anthropic-key-store.ts on its own import —
+// see the comment there for why the duplication is intentional/harmless.
 rawSqlite.exec(`
   CREATE TABLE IF NOT EXISTS system_config (
     key TEXT PRIMARY KEY,

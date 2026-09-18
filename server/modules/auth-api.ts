@@ -418,15 +418,6 @@ async function meHandler(req: Request, res: Response) {
   });
 }
 
-async function oauthHandler(req: Request, res: Response) {
-  const provider = String(req.params.provider || '').toLowerCase();
-  if (provider !== 'google') {
-    return authError(res, 400, 'oauth_unsupported', 'Unsupported OAuth provider.');
-  }
-  // Real OAuth wiring (Google/Facebook app + callback) tracked separately.
-  return authError(res, 501, 'oauth_not_enabled', `OAuth (${provider}) not yet enabled. Use email + password for now.`, { provider });
-}
-
 const changePasswordBodySchema = z.object({
   currentPassword: passwordSchema,
   newPassword: passwordSchema,
@@ -612,5 +603,4 @@ export const signup = wrapAsync('signup', signupHandler);
 export const login = wrapAsync('login', loginHandler);
 export const logout = wrapAsync('logout', logoutHandler);
 export const me = wrapAsync('me', meHandler);
-export const oauth = wrapAsync('oauth', oauthHandler);
 export const changePassword = wrapAsync('change-password', changePasswordHandler);

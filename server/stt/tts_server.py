@@ -229,4 +229,6 @@ if __name__ == "__main__":
     import uvicorn
 
     port = int(os.environ.get("MARA_TTS_PORT", "5753"))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    # Loopback-only: reachable through the Cloudflare Tunnel (cloudflared
+    # proxies to localhost on this same machine), never bound wider.
+    uvicorn.run(app, host="127.0.0.1", port=port)

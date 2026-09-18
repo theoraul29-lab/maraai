@@ -41,6 +41,11 @@ export interface SingletonLockOptions {
 const DEFAULT_HOLDER = `${process.env.HOSTNAME ?? 'local'}-${process.pid}-${Date.now()}`;
 
 function ensureTable(): void {
+  // Also created independently by server/db.ts on its own import — both
+  // statements are `IF NOT EXISTS` against the identical schema, so
+  // whichever loads first wins and the other is a harmless no-op. Kept in
+  // both places deliberately rather than introducing a load-order
+  // dependency between two otherwise-unrelated modules.
   rawSqlite.exec(`
     CREATE TABLE IF NOT EXISTS mara_singleton_locks (
       name TEXT PRIMARY KEY,

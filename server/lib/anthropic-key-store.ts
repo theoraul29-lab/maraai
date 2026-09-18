@@ -16,6 +16,11 @@ import { rawSqlite } from '../db.js';
 
 const CONFIG_KEY = 'anthropic_api_key_override';
 
+// Also created independently by costGuard.ts on its own import — both
+// statements are `IF NOT EXISTS` against the identical schema, so whichever
+// module loads first wins and the other is a harmless no-op. Kept in both
+// places deliberately rather than introducing a load-order dependency
+// between two otherwise-unrelated modules.
 rawSqlite.exec(`
   CREATE TABLE IF NOT EXISTS system_config (
     key TEXT PRIMARY KEY,
@@ -26,8 +31,29 @@ rawSqlite.exec(`
 
 function getEncryptionKey(): Buffer {
   // SESSION_SECRET is required in production (server/index.ts refuses to
-  // boot without it) and is not rotated casually, so it's a reasonable
-  // at-rest encryption key for this without introducing a new secret.
+  // boot without it) and is not rotated casually, so it's a reasonable base
+  // material without introducing a new secret to manage. We derive a
+  // purpose-specific key via HKDF (RFC 5869) rather than hashing
+  // SESSION_SECRET directly, so this key is cryptographically independent
+  // from the one that signs session cookies — a leak of one no longer
+  // implies the other, which a raw `sha256(SESSION_SECRET)` reuse would.
+  const secret = process.env.SESSION_SECRET || 'dev-only-insecure-key-do-not-use-in-production';
+  const derived = crypto.hkdfSync(
+    'sha256',
+    secret,
+    Buffer.alloc(0),
+    'maraai:anthropic-key-store:v1',
+    32,
+  );
+  return Buffer.from(derived);
+}
+
+// Pre-HKDF derivation (raw sha256(SESSION_SECRET)) — kept only so a value
+// encrypted before this change can still be read once. decryptWithKey()
+// tries the current key first and falls back to this one; any subsequent
+// save (setAnthropicApiKeyOverride) re-encrypts under the new key, so this
+// fallback naturally stops being needed without a hard cutover/migration.
+function getLegacyEncryptionKey(): Buffer {
   const secret = process.env.SESSION_SECRET || 'dev-only-insecure-key-do-not-use-in-production';
   return crypto.createHash('sha256').update(secret).digest();
 }
@@ -40,19 +66,27 @@ function encrypt(plaintext: string): string {
   return Buffer.concat([iv, authTag, encrypted]).toString('base64');
 }
 
+function decryptWithKey(payload: string, key: Buffer): string {
+  const buf = Buffer.from(payload, 'base64');
+  const iv = buf.subarray(0, 12);
+  const authTag = buf.subarray(12, 28);
+  const encrypted = buf.subarray(28);
+  const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+  decipher.setAuthTag(authTag);
+  return Buffer.concat([decipher.update(encrypted), decipher.final()]).toString('utf8');
+}
+
 function decrypt(payload: string): string | null {
   try {
-    const buf = Buffer.from(payload, 'base64');
-    const iv = buf.subarray(0, 12);
-    const authTag = buf.subarray(12, 28);
-    const encrypted = buf.subarray(28);
-    const decipher = crypto.createDecipheriv('aes-256-gcm', getEncryptionKey(), iv);
-    decipher.setAuthTag(authTag);
-    return Buffer.concat([decipher.update(encrypted), decipher.final()]).toString('utf8');
+    return decryptWithKey(payload, getEncryptionKey());
   } catch {
-    // Wrong/rotated SESSION_SECRET, or corrupted value — treat as absent
-    // rather than crashing the AI request path.
-    return null;
+    try {
+      return decryptWithKey(payload, getLegacyEncryptionKey());
+    } catch {
+      // Wrong/rotated SESSION_SECRET, or corrupted value — treat as absent
+      // rather than crashing the AI request path.
+      return null;
+    }
   }
 }
 

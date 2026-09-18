@@ -32,6 +32,14 @@ RUN npm prune --omit=dev
 # Stage 2: Runtime
 FROM node:20-bookworm-slim
 
+# Explicit rather than relying on the platform operator to set it: several
+# security-relevant branches (CSP, CORS/CSRF strict mode — see server/
+# index.ts and server/auth.ts) and the prod-vs-dev static-serving path key
+# off this. Only set in the runtime stage — setting it in the builder stage
+# above would make `npm ci` skip the devDependencies (vite/esbuild/tsx) the
+# build itself needs.
+ENV NODE_ENV=production
+
 WORKDIR /app
 
 # dumb-init: signal handling. gosu: dropping privileges at runtime (Debian's
