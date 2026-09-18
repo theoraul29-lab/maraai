@@ -1941,20 +1941,25 @@ export async function registerRoutes(
       const message = typeof req.body?.message === 'string' ? req.body.message.trim() : '';
       if (!message) return res.status(400).json({ error: 'message is required' });
 
-      // Full autonomy: an explicit code-write instruction from the owner, spoken
-      // or typed here, triggers plan → apply → typecheck/build gate → commit →
-      // push with zero further approval click. Only this admin-gated surface —
-      // never the public user chat — can reach this path.
+      // An explicit code-write instruction from the owner, spoken or typed
+      // here, triggers plan generation only — it lands in Control Center as
+      // waiting_approval, same as a plan created there directly, and still
+      // needs a real admin approval click before anything is applied,
+      // committed, or pushed (see autonomous-code-pipeline.ts). Only this
+      // admin-gated surface — never the public user chat — can reach this
+      // path.
       const actor = req.user?.uid ?? 'owner';
       if (await detectCodeWriteIntent(message)) {
-        // The full plan -> apply -> typecheck/build -> commit -> push chain
-        // can take well over a minute — awaiting it here left the chat
-        // looking unresponsive for that whole time (confirmed: an owner
-        // audit/check request that this detector misclassified as a code
-        // request appeared to just never answer). Acknowledge immediately;
-        // the real work still runs with the same full autonomy as before,
-        // its result lands in the knowledge base (so the next chat message
-        // can reference it) and in Control Center -> Mara Activity.
+        // Planning (LLM analysis + diff generation) can take a while —
+        // awaiting it here left the chat looking unresponsive for that whole
+        // time (confirmed: an owner audit/check request that this detector
+        // misclassified as a code request appeared to just never answer).
+        // Acknowledge immediately; the plan preparation still runs in the
+        // background and lands in the knowledge base (so the next chat
+        // message can reference it) and in Control Center -> Mara Activity.
+        // No self-approval anymore (see autonomous-code-pipeline.ts) — the
+        // resulting plan waits there for a real admin approval click before
+        // anything is applied/committed/pushed.
         void handleAutonomousCodeRequest(message, actor)
           .then((outcome) => storeKnowledge(
             'platform_insight',
@@ -1962,11 +1967,11 @@ export async function registerRoutes(
             `Cerere: "${message.slice(0, 300)}". Rezultat: ${outcome.reply}`,
             'self_reflection',
             80,
-            { module: 'chat-code-request', autoApply: true, outcome: outcome.status },
+            { module: 'chat-code-request', autoApply: false, outcome: outcome.status },
           ))
           .catch((err) => console.error('[admin/mara/chat] background code request failed:', err));
         return res.json({
-          reply: 'Am înțeles asta ca o cerere de modificare de cod — lucrez la ea acum și revin cu rezultatul (îl vezi și în Control Center → Mara Activity).',
+          reply: 'Am înțeles asta ca o cerere de modificare de cod — pregătesc un plan acum și îl las în Control Center pentru aprobarea ta (îl vezi și în Mara Activity).',
           codeAction: 'in_progress',
         });
       }

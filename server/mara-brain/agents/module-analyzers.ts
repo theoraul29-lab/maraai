@@ -5,14 +5,16 @@
 // insights + concrete growth proposals, and stores the proposals in
 // `maraPlatformInsights` (status='proposed') for admin approval.
 //
-// Analyzers only propose, EXCEPT Writers Hub and Missions: for these two
-// (the modules the owner explicitly approved for full autonomy), the
-// top-priority proposal per cycle also gets attempted through the real
-// plan -> apply -> validate -> commit -> push pipeline, capped to one
-// attempt per module per 6h and never for anything touching payment/payout
-// code — see AUTO_APPLY_REGISTRY_ID and maybeAutoApplyTopProposal below.
-// Every other module (You/Sparks/Growth/Creators/VIP) stays propose-only;
-// the admin dashboard surfaces those proposals for manual review as before.
+// Analyzers only propose, EXCEPT Writers Hub and Missions: for these two,
+// the top-priority proposal per cycle also gets planned through the real
+// Code Agent pipeline (plan -> LLM diff generation), capped to one attempt
+// per module per 6h — see AUTO_APPLY_REGISTRY_ID and
+// maybeAutoApplyTopProposal below. That plan is NOT applied/committed/pushed
+// automatically (see autonomous-code-pipeline.ts for why self-approval was
+// removed): it lands in Control Center exactly like a plan a human typed in
+// directly, waiting for a real admin approval click. Every other module
+// (You/Sparks/Growth/Creators/VIP) stays propose-only, same as before; the
+// admin dashboard surfaces those proposals for manual review as before.
 //
 // Each analyzer costs at most 1 LLM call. The learning rate limiter gates
 // all calls against the daily cap.
@@ -65,10 +67,11 @@ function isValidProposal(p: unknown): p is ProposalShape {
   );
 }
 
-// Writers Hub and Missions are the two modules the owner explicitly approved
-// for full autonomy ("aplice singura si sa mi dea rezultatul") — every other
-// analyzer stays propose-only, same as before. Maps to the module registry
-// id used by the Code Agent planner for file-scoped context.
+// Writers Hub and Missions are the two modules that get a plan prepared
+// automatically (still requiring a real admin approval click, see the file
+// header above) — every other analyzer stays propose-only, same as before.
+// Maps to the module registry id used by the Code Agent planner for
+// file-scoped context.
 const AUTO_APPLY_REGISTRY_ID: Partial<Record<ModuleKey, string>> = {
   writers: 'writers-hub',
   missions: 'missions',
@@ -116,21 +119,22 @@ async function maybeAutoApplyTopProposal(
   try {
     result = await autoApplyModuleProposal(description, moduleContext, actor);
   } catch (err) {
-    console.error(`[ModuleAnalyzer:${module}] auto-apply failed:`, err);
+    console.error(`[ModuleAnalyzer:${module}] plan preparation failed:`, err);
     return;
   }
 
-  if (result.outcome === 'committed') {
-    try { await storage.updatePlatformInsightStatus(top.insightId, 'completed'); } catch { /* dashboard will just show it as still proposed */ }
-  }
-
-  const summary = result.outcome === 'committed'
-    ? `Mara a implementat singură și a trimis în producție: "${top.proposal.title}". ${result.detail}`
-    : `Mara a încercat să implementeze autonom "${top.proposal.title}", dar nu a ajuns în producție (${result.outcome}). ${result.detail}`;
+  // No self-approval anymore (see autonomous-code-pipeline.ts) — a plan
+  // reaching git now always requires a real admin click in Control Center,
+  // so the insight stays 'proposed' here regardless of outcome; it only
+  // moves to 'completed' if/when an admin actually approves and the change
+  // ships (tracked separately, not by this analyzer).
+  const summary = result.outcome === 'held_for_review'
+    ? `Mara a pregătit un plan pentru "${top.proposal.title}" — așteaptă aprobare în Control Center. ${result.detail}`
+    : `Mara a încercat să pregătească un plan pentru "${top.proposal.title}", dar nu a reușit (${result.outcome}). ${result.detail}`;
   try {
-    await storeKnowledge('platform_insight', `Încercare de cod autonomă — ${module}`, summary, 'self_reflection', 80, { module, autoApply: true, outcome: result.outcome, planId: result.planId });
+    await storeKnowledge('platform_insight', `Plan de cod pregătit — ${module}`, summary, 'self_reflection', 80, { module, autoApply: false, outcome: result.outcome, planId: result.planId });
   } catch (err) {
-    console.error(`[ModuleAnalyzer:${module}] failed to record auto-apply outcome:`, err);
+    console.error(`[ModuleAnalyzer:${module}] failed to record proposal outcome:`, err);
   }
 }
 

@@ -1,36 +1,24 @@
 /**
- * Faza 3 — autonomous code-write pipeline.
- *
- * The owner explicitly chose full autonomy: no human approval click between
- * "Mara, implement X" and code landing on `main`. The technical safety net
- * that replaces the click is unchanged from the rest of the Control Center:
- * protected paths (server/services/repository-modifier.ts), backup+rollback
- * on every file write, and — the new piece — an automatic, non-negotiable
- * typecheck/build gate. If that gate fails, the chain stops before anything
- * reaches git; nothing broken is ever committed.
- *
- * Every step below still goes through the same control-task-engine rows,
- * risk classification, and audit trail as the admin-driven manual flow — the
- * only difference is that this orchestrator calls approveControlTask /
- * reviewControlTask itself instead of waiting for a human to click them.
+ * Faza 3 — code-write request pipeline, revised: a real human approval click
+ * is required before any code Mara proposes (from chat, or from her own
+ * module analyzers) reaches git. This module used to self-approve every
+ * step (plan -> apply -> validate -> stage -> commit -> push) with no human
+ * in the loop; that self-approval is removed. What both entry points below
+ * now do is identical to the first half of the existing, already-audited
+ * manual Control Center flow: create the request, have the LLM plan it, and
+ * stop — the plan sits in `waiting_approval` until an admin reviews it and
+ * clicks Approve in Control Center (POST /api/control/code-agent/plans/:id/
+ * approve), exactly like a plan a human typed into Control Center directly.
+ * Nothing about the approval/apply/validate/commit/push machinery itself
+ * changed — see code-agent.ts and control-task-engine.ts — only who is
+ * allowed to press "go" on it.
  */
 import { llmGenerate } from '../llm.js';
 import {
-  approveCodeAgentPlan,
   createCodeAgentRequestWithTask,
-  getCodeAgentPlan,
   planCodeAgentRequest,
   type CodeAgentModuleContext,
-  type CodeAgentPlanRow,
 } from './code-agent.js';
-import {
-  approveControlTask,
-  createControlTask,
-  findValidationTaskForProposal,
-  reviewControlTask,
-  type ControlTaskRow,
-} from './control-task-engine.js';
-import { runOneControlTask } from '../bootstrap/control-task-worker.js';
 
 // Confirmed live: bare "platform" matched ordinary Romanian words like
 // "platformă"/"platformei" in completely unrelated requests (e.g. "fă un
@@ -40,13 +28,6 @@ import { runOneControlTask } from '../bootstrap/control-task-worker.js';
 // keywords are already specific action verbs that a status/audit/check
 // request wouldn't contain.
 const CODE_INTENT_KEYWORDS = /\b(implement|implementeaz|cod(ul)?|funcț|functi|feature|bug|repar|fix|adaug|schimb|modific|scrie.*cod)/i;
-
-export interface AutoCodeOutcome {
-  outcome: 'committed' | 'rejected' | 'failed';
-  detail: string;
-  commitMessage?: string;
-  filesChanged?: string[];
-}
 
 /** Cheap keyword pre-filter, then a strict LLM confirmation — conservative on purpose. */
 export async function detectCodeWriteIntent(message: string): Promise<boolean> {
@@ -67,111 +48,15 @@ export async function detectCodeWriteIntent(message: string): Promise<boolean> {
   }
 }
 
-async function runAndAwait(taskId: number): Promise<ControlTaskRow | null> {
-  return runOneControlTask(taskId);
-}
-
-/**
- * Chains what the manual Control Center flow requires separate approval
- * clicks for: apply → automatic typecheck/build gate → stage → commit →
- * push. Stops at the first failure; the automatic gate is what decides
- * whether code ever reaches git, not a human.
- */
-export async function autoApplyCodeAgentPlan(planId: number, actor: string): Promise<AutoCodeOutcome> {
-  const plan = getCodeAgentPlan(planId);
-  if (!plan) throw new Error(`Code Agent plan not found: ${planId}`);
-  if (!plan.changes.length) {
-    return { outcome: 'rejected', detail: 'Plan propunea zero modificări — nimic de aplicat.' };
-  }
-
-  const approved = approveCodeAgentPlan(planId, actor);
-  if (!approved) throw new Error(`Plan ${planId} is not awaiting approval`);
-
-  const approvedApplyTask = approveControlTask(approved.task.id, actor);
-  if (!approvedApplyTask) return { outcome: 'failed', detail: 'Nu am putut aproba automat task-ul de aplicare a modificărilor.' };
-  const applied = await runAndAwait(approvedApplyTask.id);
-  if (!applied || applied.status !== 'COMPLETED') {
-    return { outcome: 'failed', detail: `Aplicarea modificărilor a eșuat: ${applied?.error ?? 'stare necunoscută'}` };
-  }
-
-  const validationTask = findValidationTaskForProposal(applied.id);
-  if (!validationTask) return { outcome: 'failed', detail: 'Task-ul de validare (typecheck/build) nu a fost creat automat.' };
-  const validated = await runAndAwait(validationTask.id);
-  const validationPassed = validated?.status === 'COMPLETED';
-  reviewControlTask(validationTask.id, validationPassed ? 'approved' : 'rejected', actor);
-  if (!validationPassed) {
-    return {
-      outcome: 'rejected',
-      detail: `Poarta automată de corectitudine (${validationTask.taskType}) a eșuat — modificările NU au fost trimise în git. Fișierele scrise rămân, dar pot fi restaurate din backup.`,
-    };
-  }
-
-  const filePaths = plan.changes.map((change) => String(change.path));
-  const stageTask = createControlTask({
-    taskType: 'git.stage_proposal',
-    title: `Stage Code Agent plan #${planId}`,
-    payload: { paths: filePaths, proposalTaskId: applied.id, validationTaskId: validationTask.id },
-    priority: 'high',
-    createdBy: actor,
-    assignedAgent: 'code-agent',
-  });
-  approveControlTask(stageTask.id, actor);
-  const staged = await runAndAwait(stageTask.id);
-  if (!staged || staged.status !== 'COMPLETED') {
-    return { outcome: 'failed', detail: `Stage-ul modificărilor în git a eșuat: ${staged?.error ?? 'stare necunoscută'}` };
-  }
-
-  const commitMessage = buildCommitMessage(plan, planId);
-  const commitTask = createControlTask({
-    taskType: 'git.commit_staged',
-    title: `Commit Code Agent plan #${planId}`,
-    payload: { message: commitMessage, proposalTaskId: applied.id, validationTaskId: validationTask.id },
-    priority: 'high',
-    createdBy: actor,
-    assignedAgent: 'code-agent',
-  });
-  approveControlTask(commitTask.id, actor);
-  const committed = await runAndAwait(commitTask.id);
-  if (!committed || committed.status !== 'COMPLETED') {
-    return { outcome: 'failed', detail: `Commit-ul a eșuat: ${committed?.error ?? 'stare necunoscută'}` };
-  }
-
-  const pushTask = createControlTask({
-    taskType: 'git.push',
-    title: `Push Code Agent plan #${planId}`,
-    payload: { commitTaskId: commitTask.id },
-    priority: 'high',
-    createdBy: actor,
-    assignedAgent: 'code-agent',
-  });
-  approveControlTask(pushTask.id, actor);
-  const pushed = await runAndAwait(pushTask.id);
-  if (!pushed || pushed.status !== 'COMPLETED') {
-    return { outcome: 'failed', detail: `Push-ul către GitHub a eșuat: ${pushed?.error ?? 'stare necunoscută'}. Commit-ul există local pe laptop, dar nu a ajuns pe main.` };
-  }
-
-  return {
-    outcome: 'committed',
-    detail: `${filePaths.length} fișier(e) modificate și trimise pe main: ${commitMessage}. Railway va redeploya automat.`,
-    commitMessage,
-    filesChanged: filePaths,
-  };
-}
-
-function buildCommitMessage(plan: CodeAgentPlanRow, planId: number): string {
-  const summary = typeof plan.analysis.summary === 'string' && plan.analysis.summary.trim()
-    ? plan.analysis.summary.trim().split('\n')[0].slice(0, 100)
-    : `Autonomous change from Code Agent plan #${planId}`;
-  return `${summary}\n\nCo-Authored-By: Mara <mara@hellomara.net>`;
-}
-
 // Files/content that must never be auto-committed by Mara's own module
 // analyzers, even though writers/missions autonomy is fully approved — money
 // movement (PayPal orders, payouts, the 90/10 split) stays a human click.
 // This is narrower than the owner-instructed chat path (handleAutonomousCodeRequest
-// above), which the owner explicitly exempted from any approval click at all;
-// self-generated proposals get this one extra guard since nobody reviewed the
-// idea itself before it reached the planner.
+// above), which used to be exempted from any approval click at all before
+// this file removed self-approval entirely; kept as extra context in the
+// held-for-review message below (payment/payout plans are worth a reviewer
+// knowing to look closer at), not as a behavior branch anymore — every
+// proposal is held for review now, not just payment-sensitive ones.
 const PAYMENT_SENSITIVE_PATH_PREFIXES = ['server/billing/'];
 const PAYMENT_SENSITIVE_KEYWORDS = [
   'pricecents', 'amountcents', 'authorsharecents', 'platformsharecents',
@@ -188,19 +73,17 @@ function isPaymentSensitiveChange(change: Record<string, unknown>): boolean {
 }
 
 export interface ModuleProposalOutcome {
-  outcome: 'committed' | 'held_for_review' | 'no_changes' | 'rejected' | 'failed';
+  outcome: 'held_for_review' | 'no_changes' | 'failed';
   detail: string;
-  commitMessage?: string;
-  filesChanged?: string[];
   planId?: number;
 }
 
 /**
- * Same plan -> apply -> validate -> commit -> push chain as
- * handleAutonomousCodeRequest, but for proposals Mara generates herself (the
- * per-module growth analyzers), not a direct owner instruction. Plans that
- * touch payment/payout code are held back for a manual click instead of
- * being committed — see the guard above.
+ * Plans a proposal Mara generated herself (the per-module growth analyzers)
+ * and stops: the plan is left `waiting_approval`, same as any plan created
+ * from Control Center directly, for a real admin to review and approve. This
+ * function no longer applies/commits/pushes anything itself — see the file
+ * header for why that changed.
  */
 export async function autoApplyModuleProposal(
   description: string,
@@ -217,21 +100,26 @@ export async function autoApplyModuleProposal(
         planId: plan.id,
       };
     }
-    if (plan.changes.some(isPaymentSensitiveChange)) {
-      return {
-        outcome: 'held_for_review',
-        detail: `Planul #${plan.id} atinge cod de plăți/venituri — lăsat pentru revizuire manuală în Control Center, nu aplicat automat.`,
-        planId: plan.id,
-      };
-    }
-    const result = await autoApplyCodeAgentPlan(plan.id, actor);
-    return { ...result, planId: plan.id };
+    const paymentNote = plan.changes.some(isPaymentSensitiveChange)
+      ? ' Atinge cod de plăți/venituri — revizuiește cu atenție sporită.'
+      : '';
+    return {
+      outcome: 'held_for_review',
+      detail: `Planul #${plan.id} e pregătit și așteaptă aprobare în Control Center.${paymentNote}`,
+      planId: plan.id,
+    };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return { outcome: 'failed', detail: message };
   }
 }
 
+/**
+ * Plans a code change the owner asked for in chat and stops: the plan is
+ * left `waiting_approval` for a real admin approval click in Control Center
+ * — this function no longer applies/commits/pushes anything itself, see the
+ * file header for why that changed.
+ */
 export async function handleAutonomousCodeRequest(description: string, actor: string): Promise<{ reply: string; status: string }> {
   const { request } = createCodeAgentRequestWithTask(description, 'high', actor);
   try {
@@ -242,13 +130,12 @@ export async function handleAutonomousCodeRequest(description: string, actor: st
         status: 'no_changes',
       };
     }
-    const result = await autoApplyCodeAgentPlan(plan.id, actor);
-    if (result.outcome === 'committed') {
-      return { reply: `Am implementat modificarea și am trimis-o în producție.\n\n${result.detail}`, status: 'committed' };
-    }
-    return { reply: `Nu am finalizat automat implementarea: ${result.detail}`, status: result.outcome };
+    return {
+      reply: `Am pregătit un plan (#${plan.id}, ${plan.changes.length} fișier(e)) — aprobă-l în Control Center ca să fie aplicat.`,
+      status: 'waiting_approval',
+    };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    return { reply: `Am întâmpinat o eroare la implementare: ${message}`, status: 'error' };
+    return { reply: `Am întâmpinat o eroare la pregătirea planului: ${message}`, status: 'error' };
   }
 }
