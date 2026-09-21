@@ -38,7 +38,7 @@
     "desktop:install-shortcut": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/install-mara-desktop-shortcut.ps1"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.33.1",
+    "@anthropic-ai/sdk": "^0.127.0",
     "@sentry/node": "10.59.0",
     "@types/pdfkit": "^0.17.6",
     "axios": "^1.15.0",
