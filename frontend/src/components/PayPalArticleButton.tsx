@@ -60,7 +60,7 @@ export default function PayPalArticleButton({ articleId, priceCents, onSuccess, 
         if (res.ok || res.status === 0 || res.type === 'opaqueredirect') {
           onSuccess();
         } else {
-          const msg = 'Capturare eșuată. Contactează suportul.';
+          const msg = t('paypal.captureFailed', 'Payment capture failed. Please contact support.');
           setErrMsg(msg);
           setStatus('error');
           onError?.(msg);
@@ -68,7 +68,7 @@ export default function PayPalArticleButton({ articleId, priceCents, onSuccess, 
       },
 
       onError: (err) => {
-        const msg = String(err) || 'Eroare PayPal';
+        const msg = String(err) || t('paypal.error', 'PayPal error');
         setErrMsg(msg);
         setStatus('error');
         onError?.(msg);
@@ -105,6 +105,7 @@ export default function PayPalArticleButton({ articleId, priceCents, onSuccess, 
 }
 
 function FallbackButton({ articleId, priceCents, disabled, onError }: Omit<Props, 'onSuccess'>) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
 
   const handleClick = async () => {
@@ -130,7 +131,9 @@ function FallbackButton({ articleId, priceCents, disabled, onError }: Omit<Props
       onClick={handleClick}
       disabled={disabled || loading}
     >
-      {loading ? '⏳ Redirecționare…' : `💳 Plătește ${(priceCents / 100).toFixed(2)} EUR cu PayPal`}
+      {loading
+        ? t('paypal.redirecting', '⏳ Redirecting…')
+        : t('paypal.payWith', '💳 Pay {{amount}} EUR with PayPal', { amount: (priceCents / 100).toFixed(2) })}
     </button>
   );
 }

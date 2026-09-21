@@ -123,8 +123,13 @@ async function pingOllama(): Promise<boolean> {
       signal: controller.signal,
     });
     ok = res.ok;
-  } catch {
+    if (!ok) {
+      const body = await res.text().catch(() => '');
+      console.warn(`[Ollama] Health check got HTTP ${res.status} from ${getBaseUrl()}/api/tags: ${body.slice(0, 300)}`);
+    }
+  } catch (err) {
     ok = false;
+    console.warn(`[Ollama] Health check failed against ${getBaseUrl()}/api/tags:`, err);
   } finally {
     clearTimeout(timer);
   }

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { AgentCatalogEntry } from '../types/control';
 import { useMaraCore } from '../hooks/useMaraCore';
 import { copyToClipboard, stripMarkdown } from '../lib/clipboard';
@@ -11,12 +12,12 @@ const RISK_ICON: Record<string, string> = {
   CRITICAL: '●',
 };
 
-const RISK_LABEL: Record<string, string> = {
-  READ_ONLY: 'doar citește',
-  LOW_RISK: 'risc scăzut',
-  MODERATE_RISK: 'risc moderat',
-  HIGH_RISK: 'risc ridicat',
-  CRITICAL: 'critic',
+const RISK_LABEL_KEY: Record<string, string> = {
+  READ_ONLY: 'mara.risk.readOnly',
+  LOW_RISK: 'mara.risk.low',
+  MODERATE_RISK: 'mara.risk.moderate',
+  HIGH_RISK: 'mara.risk.high',
+  CRITICAL: 'mara.risk.critical',
 };
 
 const CHAT_IDLE_COLLAPSE_MS = 6000;
@@ -36,6 +37,7 @@ const CHAT_IDLE_COLLAPSE_MS = 6000;
  * orb for attention.
  */
 export function MaraCore({ agents }: { agents: AgentCatalogEntry[] }) {
+  const { t } = useTranslation();
   const {
     messages, sending, listening, transcribing, speaking,
     voiceSupported, recognitionBlocked, statusNote, sendMessage, toggleConversation, conversationActive,
@@ -103,16 +105,16 @@ export function MaraCore({ agents }: { agents: AgentCatalogEntry[] }) {
 
   const orbState = transcribing ? 'transcribing' : listening ? 'listening' : speaking ? 'speaking' : 'idle';
   const orbLabel = !voiceSupported
-    ? 'Recunoașterea vocală nu e disponibilă'
+    ? t('mara.orb.voiceUnavailable', 'Voice recognition is not available')
     : conversationActive
       ? (transcribing
-          ? 'Mara transcrie ce ai spus…'
+          ? t('mara.orb.transcribing', 'Mara is transcribing what you said…')
           : listening
-            ? 'Te ascult — vorbește liber, mă opresc singură'
+            ? t('mara.orb.listening', "I'm listening — speak freely, I'll stop on my own")
             : speaking
-              ? 'Mara vorbește — apasă ca să o oprești'
-              : 'Conversație activă — apasă ca să închei')
-      : 'Apasă și vorbește cu Mara — conversație continuă, fără alte clickuri';
+              ? t('mara.orb.speaking', 'Mara is speaking — click to stop her')
+              : t('mara.orb.activeConversation', 'Active conversation — click to end'))
+      : t('mara.orb.pressToTalk', 'Press and talk to Mara — continuous conversation, no extra clicks');
 
   return (
     <div className="mcc-nexus">
@@ -165,7 +167,7 @@ export function MaraCore({ agents }: { agents: AgentCatalogEntry[] }) {
                     </ul>
                   )}
                   <div className="mcc-agent-tooltip-meta">
-                    <span className={`mcc-topology-risk mcc-topology-risk--${agent.risk.toLowerCase()}`}>{RISK_LABEL[agent.risk] ?? agent.risk}</span>
+                    <span className={`mcc-topology-risk mcc-topology-risk--${agent.risk.toLowerCase()}`}>{RISK_LABEL_KEY[agent.risk] ? t(RISK_LABEL_KEY[agent.risk]) : agent.risk}</span>
                     <span className="mcc-agent-tooltip-exec">{agent.execution}</span>
                   </div>
                 </div>
@@ -176,23 +178,23 @@ export function MaraCore({ agents }: { agents: AgentCatalogEntry[] }) {
       </div>
 
       <div className={`mcc-nexus-chat${chatOpen ? '' : ' mcc-nexus-chat--collapsed'}`}>
-        <button type="button" className="mcc-nexus-chat-toggle" onClick={toggleChat} title={chatOpen ? 'Ascunde chat-ul scris' : 'Arată chat-ul scris'}>
+        <button type="button" className="mcc-nexus-chat-toggle" onClick={toggleChat} title={chatOpen ? t('mara.chat.hide', 'Hide the text chat') : t('mara.chat.show', 'Show the text chat')}>
           <span className={`mcc-nexus-chat-arrow${chatOpen ? ' mcc-nexus-chat-arrow--down' : ' mcc-nexus-chat-arrow--up'}`}>▲</span>
-          <span>Chat scris</span>
+          <span>{t('mara.chat.title', 'Text chat')}</span>
         </button>
         <div className="mcc-nexus-chat-body">
           <div className="mcc-nexus-log" ref={logRef}>
-            {!messages.length && <p className="mcc-muted">Scrie-i Marei aici — pentru voce, folosește orbul de mai sus.</p>}
+            {!messages.length && <p className="mcc-muted">{t('mara.chat.emptyState', 'Write to Mara here — for voice, use the orb above.')}</p>}
             {messages.map((m) => (
               <div className={`mcc-nexus-msg mcc-nexus-msg--${m.role}`} key={m.ts}>
-                <span className="mcc-nexus-msg-role">{m.role === 'user' ? 'TU' : 'MARA'}</span>
+                <span className="mcc-nexus-msg-role">{m.role === 'user' ? t('mara.chat.you', 'YOU') : 'MARA'}</span>
                 <p>{m.content}</p>
                 <button
                   type="button"
                   className={`mcc-nexus-msg-copy${copiedTs === m.ts ? ' mcc-nexus-msg-copy--done' : ''}`}
                   onClick={() => handleCopyMessage(m.content, m.ts)}
-                  title={copiedTs === m.ts ? 'Copiat!' : 'Copiază mesajul'}
-                  aria-label="Copiază mesajul"
+                  title={copiedTs === m.ts ? t('mara.chat.copied', 'Copied!') : t('mara.chat.copyMessage', 'Copy message')}
+                  aria-label={t('mara.chat.copyMessage', 'Copy message')}
                 >
                   {copiedTs === m.ts ? '✓' : '📋'}
                 </button>
@@ -205,45 +207,45 @@ export function MaraCore({ agents }: { agents: AgentCatalogEntry[] }) {
             <input
               ref={inputRef}
               type="text"
-              placeholder="Scrie-i Marei..."
+              placeholder={t('mara.chat.placeholder', 'Write to Mara...')}
               disabled={sending}
               autoComplete="off"
               onFocus={scheduleIdleCollapse}
               onChange={scheduleIdleCollapse}
             />
-            <button type="submit" disabled={sending}>Trimite</button>
+            <button type="submit" disabled={sending}>{t('mara.chat.send', 'Send')}</button>
           </form>
           <div className="mcc-nexus-footer-row">
             {ttsSupported && (
-              <div className="mcc-voice-picker" title="Vocea Marei">
+              <div className="mcc-voice-picker" title={t('mara.voice.title', "Mara's voice")}>
                 <button
                   type="button"
                   className={`mcc-voice-picker-btn${voiceStyle === 'male' ? ' mcc-voice-picker-btn--active' : ''}`}
                   onClick={() => setVoiceStyle('male')}
                 >
-                  Masculină
+                  {t('mara.voice.male', 'Male')}
                 </button>
                 <button
                   type="button"
                   className={`mcc-voice-picker-btn${voiceStyle === 'female' ? ' mcc-voice-picker-btn--active' : ''}`}
                   onClick={() => setVoiceStyle('female')}
                 >
-                  Feminină
+                  {t('mara.voice.female', 'Female')}
                 </button>
               </div>
             )}
             <div className="mcc-nexus-status">
               {transcribing
-                ? 'Mara transcrie…'
+                ? t('mara.status.transcribing', 'Mara is transcribing…')
                 : speaking
-                  ? 'Mara vorbește…'
+                  ? t('mara.status.speaking', 'Mara is speaking…')
                   : listening
-                    ? 'Ascult…'
+                    ? t('mara.status.listening', 'Listening…')
                     : conversationActive
-                      ? 'Conversație activă…'
+                      ? t('mara.status.activeConversation', 'Active conversation…')
                       : recognitionBlocked
-                        ? 'Ascultare indisponibilă aici'
-                        : 'Idle'}
+                        ? t('mara.status.listeningUnavailable', 'Listening unavailable here')
+                        : t('mara.status.idle', 'Idle')}
             </div>
           </div>
         </div>

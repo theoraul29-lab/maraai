@@ -1110,7 +1110,65 @@
     "faq3Q": "What if I miss a day in the program?",
     "faq3A": "Nothing bad — Mara keeps your progress. The streak resets but the program continues.",
     "faq4Q": "How do I pay?",
-    "faq4A": "Stripe (card) or PayPal. Secure transaction, automatic invoice."
+    "faq4A": "Stripe (card) or PayPal. Secure transaction, automatic invoice.",
+    "vipComingSoon": "VIP activates soon — check back in a few days.",
+    "vipError": "Couldn't start the subscription. Please try again."
+  },
+  "paypal": {
+    "captureFailed": "Payment capture failed. Please contact support.",
+    "error": "PayPal error",
+    "redirecting": "⏳ Redirecting…",
+    "payWith": "💳 Pay {{amount}} EUR with PayPal"
+  },
+  "mara": {
+    "risk": {
+      "readOnly": "read-only",
+      "low": "low risk",
+      "moderate": "moderate risk",
+      "high": "high risk",
+      "critical": "critical"
+    },
+    "orb": {
+      "voiceUnavailable": "Voice recognition is not available",
+      "transcribing": "Mara is transcribing what you said…",
+      "listening": "I'm listening — speak freely, I'll stop on my own",
+      "speaking": "Mara is speaking — click to stop her",
+      "activeConversation": "Active conversation — click to end",
+      "pressToTalk": "Press and talk to Mara — continuous conversation, no extra clicks"
+    },
+    "chat": {
+      "hide": "Hide the text chat",
+      "show": "Show the text chat",
+      "title": "Text chat",
+      "emptyState": "Write to Mara here — for voice, use the orb above.",
+      "you": "YOU",
+      "copied": "Copied!",
+      "copyMessage": "Copy message",
+      "placeholder": "Write to Mara...",
+      "send": "Send"
+    },
+    "voice": {
+      "title": "Mara's voice",
+      "male": "Male",
+      "female": "Female"
+    },
+    "status": {
+      "transcribing": "Mara is transcribing…",
+      "speaking": "Mara is speaking…",
+      "listening": "Listening…",
+      "activeConversation": "Active conversation…",
+      "listeningUnavailable": "Listening unavailable here",
+      "idle": "Idle"
+    },
+    "errors": {
+      "noResponse": "Mara didn't respond.",
+      "connectionFailed": "Connection to Mara failed — try again.",
+      "listeningUnavailable": "Listening isn't available right now — Mara's local voice service isn't responding.",
+      "nothingDetected": "Nothing detected — press again to talk.",
+      "notUnderstood": "Didn't catch anything — try again, closer to the microphone.",
+      "transcriptionFailed": "Voice transcription failed — the local service didn't respond.",
+      "micUnavailable": "Microphone isn't accessible — check the app's permissions."
+    }
   },
   "cookie": {
     "ariaLabel": "Cookie information",

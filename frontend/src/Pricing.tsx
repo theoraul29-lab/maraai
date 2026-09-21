@@ -74,11 +74,11 @@ export default function Pricing() {
       }
       setVipNotice(
         data.error === 'payments_disabled' || res.status === 503
-          ? t('pricing.vipComingSoon', 'VIP se activează în curând — revino în câteva zile.')
-          : t('pricing.vipError', 'Nu am putut porni abonarea. Încearcă din nou.'),
+          ? t('pricing.vipComingSoon', 'VIP activates soon — check back in a few days.')
+          : t('pricing.vipError', "Couldn't start the subscription. Please try again."),
       );
     } catch {
-      setVipNotice(t('pricing.vipError', 'Nu am putut porni abonarea. Încearcă din nou.'));
+      setVipNotice(t('pricing.vipError', "Couldn't start the subscription. Please try again."));
     } finally {
       setSubscribing(false);
     }

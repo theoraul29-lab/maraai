@@ -97,7 +97,7 @@ export function useMaraCore() {
   const ttsConfigRef = useRef<TtsConfig | null>(null);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
   const sendingRef = useRef(false);
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   // Mirrors `conversationActive` synchronously for use inside async
   // callbacks (VAD ticks, recognition events, the post-speak continuation
@@ -242,9 +242,9 @@ export function useMaraCore() {
         body: JSON.stringify({ message: trimmed, lang: opts?.lang }),
       });
       const data = await response.json() as { reply?: string };
-      reply = data.reply ?? 'Mara nu a răspuns.';
+      reply = data.reply ?? t('mara.errors.noResponse', "Mara didn't respond.");
     } catch {
-      reply = 'Conexiunea cu Mara a eșuat — încearcă din nou.';
+      reply = t('mara.errors.connectionFailed', 'Connection to Mara failed — try again.');
     }
     setMessages((prev) => [...prev, { role: 'mara', content: reply, ts: Date.now() }]);
     sendingRef.current = false;
@@ -325,7 +325,7 @@ export function useMaraCore() {
       setListening(false);
       if (event?.error === 'network' && !sttConfigRef.current) {
         setRecognitionBlocked(true);
-        setStatusNote('Ascultarea nu e disponibilă acum — serviciul vocal local al Marei nu răspunde.');
+        setStatusNote(t('mara.errors.listeningUnavailable', "Listening isn't available right now — Mara's local voice service isn't responding."));
       }
       // Web Speech's own "you didn't say anything" signal — without this,
       // a conversation would get stuck showing itself as active with
@@ -333,7 +333,7 @@ export function useMaraCore() {
       // and so the next listen, never fires).
       if (event?.error === 'no-speech' && conversationModeRef.current) {
         setConversationMode(false);
-        setStatusNote('Nu am detectat nimic — apasă din nou ca să vorbești.');
+        setStatusNote(t('mara.errors.nothingDetected', 'Nothing detected — press again to talk.'));
       }
     };
     recognition.onend = () => setListening(false);
@@ -371,16 +371,16 @@ export function useMaraCore() {
         // drive both the chat reply's language and the TTS voice pick.
         void sendMessageRef.current(text, { voiceTurn: true, lang: data.language });
       } else {
-        setStatusNote('Nu am înțeles nimic — încearcă din nou, mai aproape de microfon.');
+        setStatusNote(t('mara.errors.notUnderstood', "Didn't catch anything — try again, closer to the microphone."));
         if (conversationModeRef.current) setConversationMode(false);
       }
     } catch {
-      setStatusNote('Transcrierea vocală a eșuat — serviciul local nu a răspuns.');
+      setStatusNote(t('mara.errors.transcriptionFailed', "Voice transcription failed — the local service didn't respond."));
       if (conversationModeRef.current) setConversationMode(false);
     } finally {
       setTranscribing(false);
     }
-  }, [setConversationMode]);
+  }, [setConversationMode, t]);
 
   // Voice-activity detection tuning for the auto-stop-on-silence below.
   // RMS is computed on a -1..1 normalized signal, so background noise
@@ -458,7 +458,7 @@ export function useMaraCore() {
         const noSpeech = noSpeechDetectedRef.current;
         noSpeechDetectedRef.current = false;
         if (noSpeech) {
-          setStatusNote('Nu am detectat nimic — apasă din nou ca să vorbești.');
+          setStatusNote(t('mara.errors.nothingDetected', 'Nothing detected — press again to talk.'));
           if (conversationModeRef.current) setConversationMode(false);
           return;
         }
@@ -470,9 +470,9 @@ export function useMaraCore() {
       setStatusNote(null);
       setListening(true);
     } catch {
-      setStatusNote('Microfonul nu e accesibil — verifică permisiunile aplicației.');
+      setStatusNote(t('mara.errors.micUnavailable', "Microphone isn't accessible — check the app's permissions."));
     }
-  }, [transcribeWithLocalStt, setConversationMode]);
+  }, [transcribeWithLocalStt, setConversationMode, t]);
 
   // Starts one listening turn via whichever backend is active — shared by
   // the initial click in toggleConversation and by sendMessage's

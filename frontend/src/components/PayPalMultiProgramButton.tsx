@@ -66,7 +66,7 @@ export default function PayPalMultiProgramButton({ programIds, totalCents, onSuc
         if (res.ok || res.status === 0 || res.type === 'opaqueredirect') {
           onSuccess(idsRef.current);
         } else {
-          const msg = 'Capturare eșuată. Contactează suportul.';
+          const msg = t('paypal.captureFailed', 'Payment capture failed. Please contact support.');
           setErrMsg(msg);
           setStatus('error');
           onError?.(msg);
@@ -74,7 +74,7 @@ export default function PayPalMultiProgramButton({ programIds, totalCents, onSuc
       },
 
       onError: (err) => {
-        const msg = String(err) || 'Eroare PayPal';
+        const msg = String(err) || t('paypal.error', 'PayPal error');
         setErrMsg(msg);
         setStatus('error');
         onError?.(msg);
@@ -116,6 +116,7 @@ export default function PayPalMultiProgramButton({ programIds, totalCents, onSuc
 }
 
 function FallbackButton({ programIds, totalCents, disabled, onError }: Omit<Props, 'onSuccess'>) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
 
   const handleClick = async () => {
@@ -142,7 +143,9 @@ function FallbackButton({ programIds, totalCents, disabled, onError }: Omit<Prop
       onClick={handleClick}
       disabled={disabled || loading || programIds.length === 0}
     >
-      {loading ? '⏳ Redirecționare…' : `💳 Plătește ${(totalCents / 100).toFixed(2)} EUR cu PayPal`}
+      {loading
+        ? t('paypal.redirecting', '⏳ Redirecting…')
+        : t('paypal.payWith', '💳 Pay {{amount}} EUR with PayPal', { amount: (totalCents / 100).toFixed(2) })}
     </button>
   );
 }

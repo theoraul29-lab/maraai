@@ -1110,7 +1110,65 @@
     "faq3Q": "Ce se întâmplă dacă ratez o zi?",
     "faq3A": "Nimic grav — Mara îți păstrează progresul. Streak-ul se resetează dar programul continuă.",
     "faq4Q": "Cum plătesc?",
-    "faq4A": "Stripe (card) sau PayPal. Tranzacție sigură, factură automată."
+    "faq4A": "Stripe (card) sau PayPal. Tranzacție sigură, factură automată.",
+    "vipComingSoon": "VIP se activează în curând — revino în câteva zile.",
+    "vipError": "Nu am putut porni abonarea. Încearcă din nou."
+  },
+  "paypal": {
+    "captureFailed": "Capturare eșuată. Contactează suportul.",
+    "error": "Eroare PayPal",
+    "redirecting": "⏳ Redirecționare…",
+    "payWith": "💳 Plătește {{amount}} EUR cu PayPal"
+  },
+  "mara": {
+    "risk": {
+      "readOnly": "doar citește",
+      "low": "risc scăzut",
+      "moderate": "risc moderat",
+      "high": "risc ridicat",
+      "critical": "critic"
+    },
+    "orb": {
+      "voiceUnavailable": "Recunoașterea vocală nu e disponibilă",
+      "transcribing": "Mara transcrie ce ai spus…",
+      "listening": "Te ascult — vorbește liber, mă opresc singură",
+      "speaking": "Mara vorbește — apasă ca să o oprești",
+      "activeConversation": "Conversație activă — apasă ca să închei",
+      "pressToTalk": "Apasă și vorbește cu Mara — conversație continuă, fără alte clickuri"
+    },
+    "chat": {
+      "hide": "Ascunde chat-ul scris",
+      "show": "Arată chat-ul scris",
+      "title": "Chat scris",
+      "emptyState": "Scrie-i Marei aici — pentru voce, folosește orbul de mai sus.",
+      "you": "TU",
+      "copied": "Copiat!",
+      "copyMessage": "Copiază mesajul",
+      "placeholder": "Scrie-i Marei...",
+      "send": "Trimite"
+    },
+    "voice": {
+      "title": "Vocea Marei",
+      "male": "Masculină",
+      "female": "Feminină"
+    },
+    "status": {
+      "transcribing": "Mara transcrie…",
+      "speaking": "Mara vorbește…",
+      "listening": "Ascult…",
+      "activeConversation": "Conversație activă…",
+      "listeningUnavailable": "Ascultare indisponibilă aici",
+      "idle": "Idle"
+    },
+    "errors": {
+      "noResponse": "Mara nu a răspuns.",
+      "connectionFailed": "Conexiunea cu Mara a eșuat — încearcă din nou.",
+      "listeningUnavailable": "Ascultarea nu e disponibilă acum — serviciul vocal local al Marei nu răspunde.",
+      "nothingDetected": "Nu am detectat nimic — apasă din nou ca să vorbești.",
+      "notUnderstood": "Nu am înțeles nimic — încearcă din nou, mai aproape de microfon.",
+      "transcriptionFailed": "Transcrierea vocală a eșuat — serviciul local nu a răspuns.",
+      "micUnavailable": "Microfonul nu e accesibil — verifică permisiunile aplicației."
+    }
   },
   "cookie": {
     "ariaLabel": "Informații cookie",

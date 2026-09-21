@@ -345,6 +345,7 @@
     width: 100vw;
     max-width: none;
     height: 100vh;
+    height: 100dvh;
     max-height: none;
     border-radius: 0;
     overflow-y: auto;
