@@ -139,14 +139,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         await login(email, password);
       } else {
         await signup(email, password, name, { helpMara });
-        if (helpMara) {
-          fetch('/api/maraai/consent', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ p2pEnabled: true }),
-          }).catch(() => {});
-        }
       }
       onClose();
     } catch (err) {
