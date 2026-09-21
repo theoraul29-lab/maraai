@@ -303,55 +303,63 @@ const GUIDE_SECTIONS = [
     icon: '🤖',
     name: 'MARA',
     path: '/',
-    desc: 'Chat AI principal — pune întrebări, primești răspunsuri inteligente și personalizate.',
+    descKey: 'onboarding.guide.mara.desc',
+    descDefault: 'Main AI chat — ask questions, get smart, personalized answers.',
   },
   {
     icon: '🎬',
     name: 'REELS',
     path: '/reels',
-    desc: 'Conținut video scurt — urmărește reels de la creatori și publică propriile tale videoclipuri.',
+    descKey: 'onboarding.guide.reels.desc',
+    descDefault: 'Short video content — watch reels from creators and publish your own videos.',
   },
   {
     icon: '👤',
     name: 'YOU',
     path: '/you',
-    desc: 'Profilul tău — activitate, misiuni completate, mesaje directe și setări personale.',
+    descKey: 'onboarding.guide.you.desc',
+    descDefault: 'Your profile — activity, completed missions, direct messages and personal settings.',
   },
   {
     icon: '✍️',
     name: 'WRITERS',
     path: '/writers-hub',
-    desc: 'Secțiunea scriitori — publică articole, cumpără conținut premium, construiește o audiență.',
+    descKey: 'onboarding.guide.writers.desc',
+    descDefault: 'Writers section — publish articles, buy premium content, build an audience.',
   },
   {
     icon: '✨',
     name: 'CREATORS',
     path: '/creator-panel',
-    desc: 'Secțiunea creatori — gestionează videoclipuri, urmăritori și monetizare.',
+    descKey: 'onboarding.guide.creators.desc',
+    descDefault: 'Creators section — manage videos, followers and monetization.',
   },
   {
     icon: '👑',
     name: 'VIP',
     path: '/membership',
-    desc: 'Beneficii premium — acces la funcții avansate. Disponibil după lansarea oficială.',
+    descKey: 'onboarding.guide.vip.desc',
+    descDefault: 'Premium benefits — access to advanced features. Available after official launch.',
     locked: true,
   },
   {
     icon: '🎯',
     name: 'MISSIONS',
     path: '/missions',
-    desc: 'Misiuni și XP — completează provocări zilnice, câștigă experiență și urcă în clasament.',
+    descKey: 'onboarding.guide.missions.desc',
+    descDefault: 'Missions and XP — complete daily challenges, earn experience and climb the leaderboard.',
   },
 ];
 
 function GuideStep({ onContinue }: { onContinue: () => void }) {
+  const { t } = useTranslation();
   const [slide, setSlide] = useState(0);
   const current = GUIDE_SECTIONS[slide];
   const isLast = slide === GUIDE_SECTIONS.length - 1;
 
   return (
     <section className="maraai-onboarding-section">
-      <h2>Descoperă platforma</h2>
+      <h2>{t('onboarding.discoverPlatform', 'Discover the platform')}</h2>
       <p className="maraai-onboarding-helper">
         {slide + 1} / {GUIDE_SECTIONS.length}
       </p>
@@ -362,7 +370,7 @@ function GuideStep({ onContinue }: { onContinue: () => void }) {
           {current.name}
           {current.locked && <span className="maraai-guide-lock"> 🔒</span>}
         </div>
-        <p className="maraai-guide-desc">{current.desc}</p>
+        <p className="maraai-guide-desc">{t(current.descKey, current.descDefault)}</p>
       </div>
 
       <div className="maraai-guide-dots">
@@ -379,16 +387,16 @@ function GuideStep({ onContinue }: { onContinue: () => void }) {
       <div className="maraai-guide-nav">
         {slide > 0 && (
           <button className="maraai-onboarding-cta maraai-onboarding-cta--secondary" onClick={() => setSlide(s => s - 1)}>
-            ← Înapoi
+            ← {t('common.back', 'Back')}
           </button>
         )}
         {isLast ? (
           <button className="maraai-onboarding-cta" onClick={onContinue}>
-            Continuă →
+            {t('common.continue', 'Continue')} →
           </button>
         ) : (
           <button className="maraai-onboarding-cta" onClick={() => setSlide(s => s + 1)}>
-            Următor →
+            {t('common.next', 'Next')} →
           </button>
         )}
       </div>

@@ -169,7 +169,7 @@ const Nav: React.FC = () => {
 						>
 							{t(`nav.${item.key}`)}
 							{item.key === 'vip' && !paymentsActive && (
-								<span className="nav-lock" title="Disponibil după lansare">🔒</span>
+								<span className="nav-lock" title={t('nav.availableAfterLaunch', 'Available after launch')}>🔒</span>
 							)}
 						</NavLink>
 					))}

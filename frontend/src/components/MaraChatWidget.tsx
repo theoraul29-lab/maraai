@@ -291,12 +291,12 @@ export function MaraChatWidget() {
                   <button
                     className="mara-copy-all-btn"
                     onClick={handleCopyAll}
-                    title={copiedId === 'all' ? 'Copiat!' : 'Copiază conversația'}
-                    aria-label="Copiază toată conversația"
+                    title={copiedId === 'all' ? t('common.copied', 'Copied!') : t('maraChat.copyConversation', 'Copy conversation')}
+                    aria-label={t('maraChat.copyAllConversation', 'Copy entire conversation')}
                   >
                     {copiedId === 'all' ? '✓' : '📋'}
                   </button>
-                  <button className="mara-clear-btn" onClick={clearConversation} title="Șterge conversația">
+                  <button className="mara-clear-btn" onClick={clearConversation} title={t('maraChat.clearConversation', 'Clear conversation')}>
                     🗑️
                   </button>
                 </>
@@ -367,8 +367,8 @@ export function MaraChatWidget() {
                   <button
                     className={`mara-copy-btn ${copiedId === msg.id ? 'mara-copy-btn--done' : ''}`}
                     onClick={() => handleCopyMessage(msg)}
-                    title={copiedId === msg.id ? 'Copiat!' : 'Copiază mesajul'}
-                    aria-label="Copiază mesajul"
+                    title={copiedId === msg.id ? t('common.copied', 'Copied!') : t('maraChat.copyMessage', 'Copy message')}
+                    aria-label={t('maraChat.copyMessage', 'Copy message')}
                   >
                     {copiedId === msg.id ? '✓' : '📋'}
                   </button>

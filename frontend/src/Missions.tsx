@@ -966,8 +966,8 @@ export default function Missions() {
                           `mission-${activeMission.id}`,
                         );
                       }}
-                      title={copiedKey === `mission-${activeMission.id}` ? 'Copiat!' : 'Copiază misiunea'}
-                      aria-label="Copiază misiunea"
+                      title={copiedKey === `mission-${activeMission.id}` ? t('common.copied', 'Copied!') : t('missions.copyMission', 'Copy mission')}
+                      aria-label={t('missions.copyMission', 'Copy mission')}
                     >
                       {copiedKey === `mission-${activeMission.id}` ? '✓' : '📋'}
                     </button>
@@ -1067,8 +1067,8 @@ export default function Missions() {
                           type="button"
                           className={`missions-copy-btn${copiedKey === 'done-feedback' ? ' missions-copy-btn--done' : ''}`}
                           onClick={() => handleCopyMaraText(completionResult.maraFeedback!, 'done-feedback')}
-                          title={copiedKey === 'done-feedback' ? 'Copiat!' : 'Copiază'}
-                          aria-label="Copiază"
+                          title={copiedKey === 'done-feedback' ? t('common.copied', 'Copied!') : t('common.copy', 'Copy')}
+                          aria-label={t('common.copy', 'Copy')}
                         >
                           {copiedKey === 'done-feedback' ? '✓' : '📋'}
                         </button>

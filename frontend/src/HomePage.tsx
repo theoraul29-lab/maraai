@@ -439,9 +439,9 @@ function HomePage() {
           boxShadow: '0 8px 32px rgba(236,72,153,0.25)',
           animation: 'slideUp .3s ease',
         }}>
-          🔒 Programs se activează pe <strong>1 iulie 2026</strong>
+          🔒 {t('programs.activatesOn', 'Programs activates on')} <strong>{t('programs.launchDate', '1 July 2026')}</strong>
           <div style={{ fontSize: 12, fontWeight: 400, opacity: 0.7, marginTop: 4 }}>
-            Continuă să explorezi celelalte module până atunci.
+            {t('programs.exploreOtherModules', 'Keep exploring the other modules until then.')}
           </div>
         </div>
       )}

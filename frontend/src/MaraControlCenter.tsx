@@ -494,7 +494,7 @@ export default function MaraControlCenter() {
                 <article className="mcc-panel">
                   <div className="mcc-panel-heading"><h2>Security</h2><span>Bans · honeypot · circuits</span></div>
                   <div className="mcc-module-health-grid">
-                    <div><span>IP-uri blocate</span><strong>{security?.blacklistedIps.total ?? 0}</strong></div>
+                    <div><span>Blocked IPs</span><strong>{security?.blacklistedIps.total ?? 0}</strong></div>
                     <div><span>Honeypot (24h)</span><strong>{security?.honeypot.eventsLast24h ?? 0}</strong></div>
                     <div><span>Worker</span><strong>{security?.controlWorker.enabled ? (security.controlWorker.running ? 'RUNNING' : 'ENABLED') : 'OFF'}</strong></div>
                   </div>
@@ -507,7 +507,7 @@ export default function MaraControlCenter() {
                   {!!security?.blacklistedIps.recent.length && security.blacklistedIps.recent.slice(0, 4).map((ban) => (
                     <div className="mcc-signal" key={ban.ip}><span>{ban.ip} · {ban.reason}</span><strong>{ban.hitCount}×</strong></div>
                   ))}
-                  {!security && <p className="mcc-muted">Se încarcă starea de securitate...</p>}
+                  {!security && <p className="mcc-muted">Loading security status...</p>}
                 </article>
                 <article className="mcc-panel">
                   <div className="mcc-panel-heading"><h2>Recent Brain logs</h2><span>{logs?.brainLogs.length ?? 0} loaded</span></div>
@@ -748,18 +748,18 @@ export default function MaraControlCenter() {
           <section className="mcc-panel mcc-panel--wide mcc-panel--scroll">
             <div className="mcc-panel-heading"><h2>Security Agent</h2><span>Bans · honeypot · circuits</span></div>
             <div className="mcc-module-health-grid">
-              <div><span>IP-uri blocate</span><strong>{security?.blacklistedIps.total ?? 0}</strong></div>
+              <div><span>Blocked IPs</span><strong>{security?.blacklistedIps.total ?? 0}</strong></div>
               <div><span>Honeypot (24h)</span><strong>{security?.honeypot.eventsLast24h ?? 0}</strong></div>
               <div><span>Control worker</span><strong>{security?.controlWorker.enabled ? (security.controlWorker.running ? 'RUNNING' : 'ENABLED') : 'OFF'}</strong></div>
             </div>
             {security?.circuits.map((circuit) => (
               <div className="mcc-signal" key={circuit.provider}>
                 <span>circuit · {circuit.provider}</span>
-                <strong className={circuit.state === 'open' ? 'mcc-circuit-open' : undefined}>{circuit.state.toUpperCase()} ({circuit.failures} eșecuri)</strong>
+                <strong className={circuit.state === 'open' ? 'mcc-circuit-open' : undefined}>{circuit.state.toUpperCase()} ({circuit.failures} failures)</strong>
               </div>
             ))}
             {!!security?.blacklistedIps.recent.length && <>
-              <p className="mcc-muted" style={{ marginTop: 10 }}>IP-uri recente:</p>
+              <p className="mcc-muted" style={{ marginTop: 10 }}>Recent IPs:</p>
               {security.blacklistedIps.recent.slice(0, 5).map((ban) => (
                 <div className="mcc-signal" key={ban.ip}>
                   <span>{ban.ip} · {ban.reason}</span>
@@ -767,7 +767,7 @@ export default function MaraControlCenter() {
                 </div>
               ))}
             </>}
-            {!security && <p className="mcc-muted">Se încarcă starea de securitate...</p>}
+            {!security && <p className="mcc-muted">Loading security status...</p>}
           </section>
         </div>}
 

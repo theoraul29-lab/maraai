@@ -197,7 +197,7 @@ export function MobileOrbHome({ items = ITEMS }: MobileOrbHomeProps) {
         if (growth && !growth.isCreator) {
           const remaining = Math.max(0, 1000 - growth.followers);
           setCreatorLockMessage(
-            `🔒 Monetizarea se deblochează la 1000 followeri. Ai ${growth.followers} — mai ai ${remaining}. Intri oricum să-ți vezi traseul de creștere →`,
+            t('creator.monetizationLockToast', '🔒 Monetization unlocks at 1000 followers. You have {{followers}} — {{remaining}} to go. You can still enter to see your growth path →', { followers: growth.followers, remaining }),
           );
           setTimeout(() => setCreatorLockMessage(null), 3500);
           // Still navigates — the growth-path page itself is deliberately
@@ -320,9 +320,9 @@ export function MobileOrbHome({ items = ITEMS }: MobileOrbHomeProps) {
           boxShadow: '0 8px 32px rgba(236,72,153,0.25)',
           width: 'calc(100vw - 48px)', maxWidth: 340,
         }}>
-          🔒 Programs — disponibil din <strong>1 iulie 2026</strong>
+          🔒 {t('programs.availableFrom', 'Programs — available from')} <strong>{t('programs.launchDate', '1 July 2026')}</strong>
           <div style={{ fontSize: 11, fontWeight: 400, opacity: 0.7, marginTop: 4 }}>
-            Explorează celelalte module până atunci.
+            {t('programs.exploreOtherModules', 'Keep exploring the other modules until then.')}
           </div>
         </div>
       )}

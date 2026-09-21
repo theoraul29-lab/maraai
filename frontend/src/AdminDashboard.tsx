@@ -816,7 +816,7 @@ function GrowthTab() {
                 <span className={`adb-exp-badge adb-exp-badge--${exp.status}`}>{exp.status}</span>
                 <span className="adb-exp-ice">ICE: {exp.ice_score?.toFixed(1)}</span>
                 {exp.ab_users > 0 && (
-                  <span className="adb-exp-ab-users">👥 {exp.ab_users} în A/B</span>
+                  <span className="adb-exp-ab-users">👥 {exp.ab_users} in A/B</span>
                 )}
               </div>
 

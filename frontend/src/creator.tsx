@@ -372,7 +372,7 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
         xpTotal += xpRes.data?.xpGained ?? 30;
       }
 
-      showSuccess(`Publicat! +${xpTotal} XP câștigat`);
+      showSuccess(t('creator.publishedXpEarned', 'Published! +{{xp}} XP earned', { xp: xpTotal }));
       setCreateTitle(''); setCreateContent(''); setCreateTags(''); setCreateUrl('');
       if (createFilePreview) URL.revokeObjectURL(createFilePreview);
       setCreateFile(null); setCreateFilePreview('');
