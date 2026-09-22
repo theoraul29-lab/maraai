@@ -204,6 +204,20 @@ export function OnboardingFlow({ onClose, initialStep = 'welcome' }: OnboardingF
     }
   }
 
+  // "Skip for now" used to just navigate away without persisting anything,
+  // so OnboardingGuard (App.tsx) — which only knows the flow is done once
+  // this same local record exists — sent the user right back here on every
+  // subsequent page load. Recording the skip here makes it a real, durable
+  // choice instead of a no-op.
+  async function handleSkip() {
+    await localSet(NAMESPACES.ONBOARDING, 'completed', {
+      mode: null,
+      skipped: true,
+      completedAtMs: Date.now(),
+    });
+    onClose();
+  }
+
   return (
     <div className="maraai-onboarding-overlay" role="dialog" aria-modal="true">
       <div className="maraai-onboarding-card">
@@ -265,7 +279,7 @@ export function OnboardingFlow({ onClose, initialStep = 'welcome' }: OnboardingF
         ) : null}
 
         <footer className="maraai-onboarding-footer">
-          <button className="maraai-onboarding-skip" onClick={onClose}>
+          <button className="maraai-onboarding-skip" onClick={() => void handleSkip()}>
             {step === 'done' ? t('onboarding.skipBtnDone') : t('onboarding.skipBtn')}
           </button>
         </footer>

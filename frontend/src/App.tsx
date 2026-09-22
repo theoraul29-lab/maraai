@@ -5,6 +5,7 @@ import { PreviewBanner } from './components/PreviewBanner';
 import { ReactivationBanner } from './components/ReactivationBanner';
 import { usePreviewStatus } from './hooks/usePreviewStatus';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { localGet, NAMESPACES } from './maraai/localStore';
 import './App.css';
 
 // Importuri Componente corecte
@@ -106,10 +107,18 @@ function OnboardingGuard() {
     if (location.pathname === '/onboarding') return;
 
     checked.current = true;
-    fetch('/api/user/onboarding-status', { credentials: 'include' })
-      .then(r => r.json())
-      .then(data => { if (!data.done) navigate('/onboarding', { replace: true }); })
-      .catch(() => {});
+    // OnboardingFlow's own completion (Activate, or Skip for now) is
+    // recorded locally under NAMESPACES.ONBOARDING — check that first so a
+    // user who already finished or explicitly skipped the tour isn't sent
+    // straight back to it on every fresh page load. The server flag below
+    // tracks a separate, unrelated thing (the Missions personality quiz)
+    // and previously was the only thing this guard checked.
+    localGet(NAMESPACES.ONBOARDING, 'completed').then((local) => {
+      if (local) return;
+      return fetch('/api/user/onboarding-status', { credentials: 'include' })
+        .then(r => r.json())
+        .then(data => { if (!data.done) navigate('/onboarding', { replace: true }); });
+    }).catch(() => {});
   }, [isAuthenticated, loading, user, navigate, location.pathname]);
 
   return null;
