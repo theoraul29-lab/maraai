@@ -55,7 +55,13 @@
       "Bash(node -e \"console.log\\(new Date\\(1792242289*1000\\).toISOString\\(\\)\\)\")",
       "Bash(curl -s -b \"C:/Users/theor/AppData/Local/Temp/mara_cookies.txt\" https://hellomara.net/api/auth/me)",
       "Bash(curl -s https://hellomara.net/)",
-      "Bash(curl -sI https://hellomara.net/reels)"
+      "Bash(curl -sI https://hellomara.net/reels)",
+      "Read(//c/Users/theor/.cloudflared/**)",
+      "Read(//d//**)",
+      "Bash(curl -s -m 10 https://ollama.hellomara.net/api/tags)",
+      "Bash(curl -s -m 10 -o /dev/null -w \"HTTP %{http_code}\\\\n\" https://ollama.hellomara.net/)",
+      "Bash(curl -s https://hellomara.net/api/health)",
+      "Bash(curl -s https://hellomara.net/api/_debug/env-ollama)"
     ],
     "additionalDirectories": [
       "\\tmp\\walkthrough-stash"

@@ -97,8 +97,11 @@ function setCreatorMonetizationActive(active: boolean): void {
 }
 
 // GET-only, requireAuth (not admin): the Earnings tab itself needs this for
-// every creator, not just admins.
+// every creator, not just admins. no-store: this can flip at any time from
+// Control Center and must never be served from a stale cache (see the same
+// fix on /api/control/* in routes.ts for the bug this class of caching caused).
 export const getMonetizationStatus = requireAuth(async (_req, res) => {
+  res.set('Cache-Control', 'no-store');
   res.json({ active: isCreatorMonetizationActive() });
 });
 

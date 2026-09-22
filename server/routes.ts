@@ -161,6 +161,21 @@ export async function registerRoutes(
   app: Express,
 ): Promise<Server> {
 
+  // Control Center polls /api/control/* every 10s expecting live state.
+  // Express generates a weak ETag for every JSON response by default; when
+  // the polled data genuinely changes (e.g. an admin flips an integration's
+  // configuration), the response body differs but nothing here told the
+  // browser/any intermediary not to cache it — so it kept validating against
+  // a stale cached copy via If-None-Match and rendering an old 304 body
+  // instead of ever re-fetching the new one. Confirmed live: an admin-set
+  // env var took effect server-side immediately (verified directly) but
+  // Control Center kept showing the pre-change state indefinitely. These
+  // are live operational dashboards, never meant to be cached at all.
+  app.use('/api/control', (_req, res, next) => {
+    res.set('Cache-Control', 'no-store');
+    next();
+  });
+
   // Middleware: requires a session user id to be present.
   // NOTE: every visitor gets a stable anonymous session uid (see
   // setupSessionAuth), so this only rejects requests with no session at all.
