@@ -185,9 +185,20 @@ async function boot() {
   // Electron session's HTTP cache and Service Worker storage persist to
   // disk in userData across restarts by design. Clear the cache on every
   // launch so the app always fetches whatever is actually live right now.
+  //
+  // clearCache() alone only empties the HTTP cache — the frontend also
+  // registers a PWA service worker (vite-plugin-pwa, registerType:
+  // 'autoUpdate') whose own Cache Storage is a separate store that
+  // clearCache() does not touch, so a previously-registered worker kept
+  // serving whatever JS/CSS bundle was live on a past launch indefinitely,
+  // regardless of new deploys. This admin tool has no use for offline/PWA
+  // behavior anyway, so clear both stores and drop the registration outright.
   try {
     await mainWindow.webContents.session.clearCache();
-    appendLog('Cleared HTTP cache before loading Control Center');
+    await mainWindow.webContents.session.clearStorageData({
+      storages: ['serviceworkers', 'cachestorage'],
+    });
+    appendLog('Cleared HTTP cache + service worker/cache storage before loading Control Center');
   } catch (error) {
     appendLog(`Cache clear failed (non-fatal): ${error instanceof Error ? error.message : String(error)}`);
   }
