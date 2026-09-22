@@ -354,7 +354,14 @@ const ReelCard: React.FC<ReelCardProps> = ({
   return (
     <div className="tiktok-reel" data-reel-id={reel.id}>
       <div className="tiktok-reel-media" onClick={handleTap}>
-        {youTubeId && (
+        {youTubeId && isActive && (
+          // Only the currently active card gets a live YouTube iframe.
+          // Every reel used to render its own autoplaying embed on mount —
+          // a feed of ~20 videos meant ~20 simultaneous YouTube players
+          // initializing at once, which YouTube's own embed surfaced back
+          // as a generic player configuration error instead of actually
+          // starting them. Inactive cards now render nothing here (falls
+          // through to the placeholder below) until scrolled into view.
           <iframe
             ref={iframeRef}
             className="tiktok-reel-iframe"
@@ -363,6 +370,9 @@ const ReelCard: React.FC<ReelCardProps> = ({
             allowFullScreen
             title={reel.title}
           />
+        )}
+        {youTubeId && !isActive && (
+          <div className="tiktok-reel-placeholder" aria-hidden>🎬</div>
         )}
         {isNativeVideo && (
           <video
