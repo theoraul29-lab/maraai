@@ -1219,6 +1219,11 @@
   font-size: 13px;
   cursor: pointer;
   backdrop-filter: blur(4px);
+  /* .you-fb-identity (below, in DOM order) overlaps the cover's bottom
+     ~80px with a negative margin-top so the avatar can sit on top of the
+     banner. Without an explicit z-index here, that later sibling paints
+     over this button and silently swallows its clicks. */
+  z-index: 2;
 }
 .you-fb-cover-edit:hover {
   background: rgba(0, 0, 0, 0.75);
@@ -1701,7 +1706,9 @@
 /* ---- Avatar click-to-change ------------------------------------------- */
 .you-fb-avatar-click-wrap {
   position: relative;
-  display: inline-block;
+  display: block;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
 }
 .you-fb-avatar-clickable {

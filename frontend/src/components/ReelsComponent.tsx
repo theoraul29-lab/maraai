@@ -520,6 +520,7 @@ const ReelsComponent: React.FC = () => {
                   allow="autoplay; encrypted-media"
                   allowFullScreen
                   title={selectedReel.title}
+                  referrerPolicy="strict-origin-when-cross-origin"
                 />
               ) : selectedReel.url !== '#' ? (
                 <video src={selectedReel.url} controls autoPlay style={{ width:'100%', height:'100%', objectFit:'contain' }} />

@@ -267,8 +267,6 @@ body,
   background: var(--app-bg, #000000);
   overflow-x: hidden;
   overflow-y: auto;
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
 }
 
 .App {

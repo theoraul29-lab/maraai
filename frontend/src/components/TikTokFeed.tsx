@@ -369,6 +369,7 @@ const ReelCard: React.FC<ReelCardProps> = ({
             allow="autoplay; encrypted-media; picture-in-picture"
             allowFullScreen
             title={reel.title}
+            referrerPolicy="strict-origin-when-cross-origin"
           />
         )}
         {youTubeId && !isActive && (

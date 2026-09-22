@@ -51,7 +51,11 @@
       "Bash(npm view *)",
       "Bash(npm install *)",
       "Bash(rm -f test-avatar-cover.mjs)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(node -e \"console.log\\(new Date\\(1792242289*1000\\).toISOString\\(\\)\\)\")",
+      "Bash(curl -s -b \"C:/Users/theor/AppData/Local/Temp/mara_cookies.txt\" https://hellomara.net/api/auth/me)",
+      "Bash(curl -s https://hellomara.net/)",
+      "Bash(curl -sI https://hellomara.net/reels)"
     ],
     "additionalDirectories": [
       "\\tmp\\walkthrough-stash"

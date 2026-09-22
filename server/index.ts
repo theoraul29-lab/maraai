@@ -99,6 +99,14 @@ app.use(
       },
     } : false,
     crossOriginEmbedderPolicy: false,
+    // Helmet defaults to `no-referrer`, which sends third-party iframes
+    // (the YouTube Sparks embeds below) zero Referer header at all. YouTube
+    // Error 153 ("Video player configuration error") is a known symptom of
+    // exactly that: the player has no origin signal to validate against.
+    // `strict-origin-when-cross-origin` is the browsers' own safe default —
+    // it still only ever leaks the bare origin (https://hellomara.net), never
+    // the full path/query, to any cross-origin request.
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
   }),
 );
 
