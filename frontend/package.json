@@ -34,6 +34,7 @@
     "postcss": "^8.4.38",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-easy-crop": "^6.2.3",
     "react-i18next": "^17.0.2",
     "react-router-dom": "^7.13.2",
     "tailwindcss": "^4.2.1"

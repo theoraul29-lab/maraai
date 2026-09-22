@@ -1153,6 +1153,12 @@
       "lessons": "Lecții"
     }
   },
+  "imageCrop": {
+    "title": "Ajustează poza",
+    "zoom": "Zoom",
+    "saving": "Se salvează…",
+    "use": "Folosește poza"
+  },
   "notFound": {
     "title": "Pagina nu a fost găsită",
     "redirecting": "Redirecționare spre pagina principală în {{seconds}}s…",

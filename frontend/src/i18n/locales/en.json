@@ -1153,6 +1153,12 @@
       "lessons": "Lessons"
     }
   },
+  "imageCrop": {
+    "title": "Adjust photo",
+    "zoom": "Zoom",
+    "saving": "Saving…",
+    "use": "Use photo"
+  },
   "notFound": {
     "title": "Page not found",
     "redirecting": "Redirecting to home in {{seconds}}s…",

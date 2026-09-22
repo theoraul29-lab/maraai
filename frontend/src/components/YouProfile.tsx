@@ -4,6 +4,7 @@ import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
 import Messenger from './Messenger';
+import { ImageCropModal } from './ImageCropModal';
 import {
   ChatCircle, ChartBar, FilmStrip, Image, UsersThree, Article, Clock,
   Heart, VideoCamera,
@@ -24,6 +25,25 @@ async function uploadImageFile(file: File): Promise<string> {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
   return res.data.url;
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+const AVATAR_ASPECT = 1;
+const COVER_ASPECT = 3;
+
+interface CropSession {
+  imageSrc: string;
+  aspect: number;
+  shape: 'round' | 'rect';
+  onDone: (file: File) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -126,6 +146,12 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
   const [directUploadError, setDirectUploadError] = useState<string | null>(null);
   const directAvatarRef = useRef<HTMLInputElement>(null);
   const directCoverRef = useRef<HTMLInputElement>(null);
+
+  // Pan/zoom crop step shown between picking a file and uploading it, for
+  // both the direct tap-to-change avatar/cover and the edit-profile modal's
+  // equivalents — one shared modal instance, driven by whichever handler
+  // below opens it.
+  const [cropSession, setCropSession] = useState<CropSession | null>(null);
 
   // Photos tab — direct multi-photo upload + lightbox
   const photosFileRef = useRef<HTMLInputElement>(null);
@@ -400,7 +426,18 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
 
   const handleDirectAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
+    if (directAvatarRef.current) directAvatarRef.current.value = '';
     if (!f) return;
+    const imageSrc = await readFileAsDataUrl(f);
+    setCropSession({
+      imageSrc,
+      aspect: AVATAR_ASPECT,
+      shape: 'round',
+      onDone: (cropped) => void uploadDirectAvatar(cropped),
+    });
+  };
+
+  const uploadDirectAvatar = async (f: File) => {
     setDirectAvatarUploading(true);
     setDirectUploadError(null);
     try {
@@ -416,12 +453,22 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
       setDirectUploadError(code);
     }
     setDirectAvatarUploading(false);
-    if (directAvatarRef.current) directAvatarRef.current.value = '';
   };
 
   const handleDirectCoverChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
+    if (directCoverRef.current) directCoverRef.current.value = '';
     if (!f) return;
+    const imageSrc = await readFileAsDataUrl(f);
+    setCropSession({
+      imageSrc,
+      aspect: COVER_ASPECT,
+      shape: 'rect',
+      onDone: (cropped) => void uploadDirectCover(cropped),
+    });
+  };
+
+  const uploadDirectCover = async (f: File) => {
     setDirectCoverUploading(true);
     setDirectUploadError(null);
     try {
@@ -1212,18 +1259,28 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
                   style={{ display: 'none' }}
                   onChange={async (e) => {
                     const f = e.target.files?.[0];
+                    if (avatarFileRef.current) avatarFileRef.current.value = '';
                     if (!f) return;
-                    setAvatarUploading(true);
-                    setEditError(null);
-                    try {
-                      const url = await uploadImageFile(f);
-                      setEditDraft(d => ({ ...d, profileImageUrl: url }));
-                    } catch {
-                      setEditError('upload_failed');
-                    } finally {
-                      setAvatarUploading(false);
-                      if (avatarFileRef.current) avatarFileRef.current.value = '';
-                    }
+                    const imageSrc = await readFileAsDataUrl(f);
+                    setCropSession({
+                      imageSrc,
+                      aspect: AVATAR_ASPECT,
+                      shape: 'round',
+                      onDone: (cropped) => {
+                        void (async () => {
+                          setAvatarUploading(true);
+                          setEditError(null);
+                          try {
+                            const url = await uploadImageFile(cropped);
+                            setEditDraft(d => ({ ...d, profileImageUrl: url }));
+                          } catch {
+                            setEditError('upload_failed');
+                          } finally {
+                            setAvatarUploading(false);
+                          }
+                        })();
+                      },
+                    });
                   }}
                 />
                 <button
@@ -1265,18 +1322,28 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
                   style={{ display: 'none' }}
                   onChange={async (e) => {
                     const f = e.target.files?.[0];
+                    if (coverFileRef.current) coverFileRef.current.value = '';
                     if (!f) return;
-                    setCoverUploading(true);
-                    setEditError(null);
-                    try {
-                      const url = await uploadImageFile(f);
-                      setEditDraft(d => ({ ...d, coverImageUrl: url }));
-                    } catch {
-                      setEditError('upload_failed');
-                    } finally {
-                      setCoverUploading(false);
-                      if (coverFileRef.current) coverFileRef.current.value = '';
-                    }
+                    const imageSrc = await readFileAsDataUrl(f);
+                    setCropSession({
+                      imageSrc,
+                      aspect: COVER_ASPECT,
+                      shape: 'rect',
+                      onDone: (cropped) => {
+                        void (async () => {
+                          setCoverUploading(true);
+                          setEditError(null);
+                          try {
+                            const url = await uploadImageFile(cropped);
+                            setEditDraft(d => ({ ...d, coverImageUrl: url }));
+                          } catch {
+                            setEditError('upload_failed');
+                          } finally {
+                            setCoverUploading(false);
+                          }
+                        })();
+                      },
+                    });
                   }}
                 />
                 <button
@@ -1367,6 +1434,21 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
         initialRecipientId={messengerRecipient?.id}
         initialRecipientName={messengerRecipient?.name}
       />
+
+      {/* --- Avatar/cover crop step (shared by direct tap-to-change and the edit modal) --- */}
+      {cropSession && (
+        <ImageCropModal
+          imageSrc={cropSession.imageSrc}
+          aspect={cropSession.aspect}
+          cropShape={cropSession.shape}
+          onCancel={() => setCropSession(null)}
+          onSave={(blob) => {
+            const file = new File([blob], 'cropped.jpg', { type: 'image/jpeg' });
+            cropSession.onDone(file);
+            setCropSession(null);
+          }}
+        />
+      )}
     </div>
   );
 };
