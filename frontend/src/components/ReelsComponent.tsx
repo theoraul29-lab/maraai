@@ -53,6 +53,7 @@ const ReelsComponent: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedReel, setSelectedReel] = useState<Reel | null>(null);
+  const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
   const [creatorStats, setCreatorStats] = useState<CreatorStats>({ totalReels: 0, totalViews: 0, totalLikes: 0, followers: 0, engagementRate: 0 });
   const [filterTag, setFilterTag] = useState<string>('');
   const [page, setPage] = useState(0);
@@ -214,6 +215,21 @@ const ReelsComponent: React.FC = () => {
     } catch { /* silent */ }
   };
 
+  const handleFollow = async (creatorId: string) => {
+    // Optimistic — the feed doesn't currently carry each creator's existing
+    // follow state (would need a backend change to the feed query), so this
+    // tracks "followed during this session" rather than true prior state.
+    setFollowingIds((prev) => new Set(prev).add(creatorId));
+    try {
+      const res = await axios.post<{ following: boolean }>(`${API_URL}/api/profile/${creatorId}/follow`, {}, { withCredentials: true });
+      if (!res.data.following) {
+        setFollowingIds((prev) => { const next = new Set(prev); next.delete(creatorId); return next; });
+      }
+    } catch {
+      setFollowingIds((prev) => { const next = new Set(prev); next.delete(creatorId); return next; });
+    }
+  };
+
   const handleView = async (reelId: number) => {
     try { await axios.post(`${API_URL}/api/videos/${reelId}/view`); } catch { /* silent */ }
   };
@@ -369,6 +385,8 @@ const ReelsComponent: React.FC = () => {
                 setReels(prev => prev.map(r => r.id === id ? { ...r, shares: r.shares + 1 } : r));
               } catch { /* silent */ }
             }}
+            onFollow={handleFollow}
+            followingIds={followingIds}
             onLoadMore={() => { if (hasMore && !loading) fetchFeed(false); }}
             loading={loading}
             hasMore={hasMore}

@@ -463,6 +463,8 @@
   "reels": {
     "unmute": "Unmute",
     "mute": "Mute",
+    "follow": "Follow",
+    "following": "Following",
     "like": "Like",
     "comment": "Comment",
     "share": "Share",

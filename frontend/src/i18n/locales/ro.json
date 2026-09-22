@@ -463,6 +463,8 @@
   "reels": {
     "unmute": "Sunet activat",
     "mute": "Fără sunet",
+    "follow": "Urmărește",
+    "following": "Urmărești",
     "like": "Apreciază",
     "comment": "Comentează",
     "share": "Distribuie",

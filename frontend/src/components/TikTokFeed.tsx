@@ -29,6 +29,8 @@ interface Props {
   onView: (id: number) => void;
   onComment?: (id: number) => void;
   onShare?: (id: number) => void;
+  onFollow?: (creatorId: string) => void;
+  followingIds?: Set<string>;
   onLoadMore?: () => void;
   loading?: boolean;
   hasMore?: boolean;
@@ -129,6 +131,8 @@ const TikTokFeed: React.FC<Props> = ({
   onView,
   onComment,
   onShare,
+  onFollow,
+  followingIds,
   onLoadMore,
   loading,
   hasMore,
@@ -224,6 +228,8 @@ const TikTokFeed: React.FC<Props> = ({
           onSave={onSave}
           onComment={onComment}
           onShare={onShare}
+          onFollow={onFollow}
+          isFollowing={!!(reel.creatorId && followingIds?.has(reel.creatorId))}
         />
       ))}
 
@@ -244,12 +250,16 @@ interface ReelCardProps {
   onSave: (id: number) => void;
   onComment?: (id: number) => void;
   onShare?: (id: number) => void;
+  onFollow?: (creatorId: string) => void;
+  isFollowing?: boolean;
 }
 
 const ReelCard: React.FC<ReelCardProps> = ({
   reel,
   isActive,
   muted,
+  onFollow,
+  isFollowing,
   onLike,
   onSave,
   onComment,
@@ -414,13 +424,25 @@ const ReelCard: React.FC<ReelCardProps> = ({
       {/* Bottom info overlay (creator, title, music) */}
       <div className="tiktok-bottom-info">
         {reel.creatorId ? (
-          <Link
-            to={`/profile/${reel.creatorId}?from=spark&fromId=${reel.id}`}
-            className="tiktok-creator-row tiktok-creator-row--link"
-          >
-            <span className="tiktok-creator-avatar">{reel.avatar}</span>
-            <span className="tiktok-creator-name">@{reel.creator}</span>
-          </Link>
+          <div className="tiktok-creator-row">
+            <Link
+              to={`/profile/${reel.creatorId}?from=spark&fromId=${reel.id}`}
+              className="tiktok-creator-row--link"
+            >
+              <span className="tiktok-creator-avatar">{reel.avatar}</span>
+              <span className="tiktok-creator-name">@{reel.creator}</span>
+            </Link>
+            {onFollow && !isFollowing && (
+              <button
+                type="button"
+                className="tiktok-follow-btn"
+                onClick={(e) => { e.stopPropagation(); onFollow(reel.creatorId!); }}
+              >
+                {t('reels.follow', 'Follow')}
+              </button>
+            )}
+            {isFollowing && <span className="tiktok-following-badge">{t('reels.following', 'Following')}</span>}
+          </div>
         ) : (
           <div className="tiktok-creator-row">
             <span className="tiktok-creator-avatar">{reel.avatar}</span>
