@@ -45,7 +45,44 @@ export class ErrorBoundary extends React.Component<
     return { hasError: true };
   }
 
+  /**
+   * Vite builds every route/chunk under a content hash (e.g.
+   * reels-D8Xg-Nnt.js) that changes on every deploy — a tab left open
+   * across a deploy, or a stale service-worker-cached shell, still
+   * references the *old* hash, which 404s the moment the user navigates
+   * to a route that lazy-loads it. That's a plain stale-cache situation,
+   * not a real app error: a normal reload fetches the current index.html
+   * (correct hashes) and fixes it immediately, so we do that automatically
+   * instead of showing "Something went wrong" for what the user
+   * experiences as the app just being broken. Guarded by a sessionStorage
+   * flag so a *genuine* repeated failure still surfaces the real fallback
+   * UI instead of reload-looping forever.
+   */
+  private isChunkLoadError(error: Error): boolean {
+    const msg = error.message || '';
+    return (
+      /Failed to fetch dynamically imported module/i.test(msg) ||
+      /Importing a module script failed/i.test(msg) ||
+      /Loading chunk .* failed/i.test(msg) ||
+      error.name === 'ChunkLoadError'
+    );
+  }
+
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    if (this.isChunkLoadError(error)) {
+      try {
+        const key = 'mara_chunk_reload_attempted';
+        if (!sessionStorage.getItem(key)) {
+          sessionStorage.setItem(key, '1');
+          window.location.reload();
+          return;
+        }
+      } catch {
+        // sessionStorage unavailable (private mode etc.) — fall through to
+        // the normal error UI rather than silently doing nothing.
+      }
+    }
+
     const appError = error as AppError;
     appError.code = appError.code || 'REACT_ERROR';
     appError.context = {

@@ -1410,13 +1410,15 @@
   border-bottom-color: #a855f7;
 }
 @media (max-width: 480px) {
-  /* Used to hide .you-fb-tab-label entirely at this width — the one place
-     in the mobile audit where content disappeared instead of compressing.
-     .you-fb-tabs already scrolls horizontally (overflow-x:auto above), so
-     there's no need to drop the text — just make room for the same
-     swipeable-pill pattern the rest of this bar already uses. */
-  .you-fb-tabs { margin: 12px 8px 0; gap: 0; }
-  .you-fb-tab { padding: 10px 10px; font-size: 12px; gap: 4px; }
+  /* All 6 tabs (Timeline/About/Friends/Photos/Videos/Stats) never fit one
+     row at phone widths even at the smallest reasonable padding — the
+     previous fix kept them on one row via horizontal scroll, but real
+     usage showed people didn't realize they could swipe and thought half
+     the profile was missing. Wrapping to 2-3 rows keeps every label fully
+     visible with no scrolling needed, at the cost of a little vertical
+     space instead. */
+  .you-fb-tabs { margin: 12px 8px 0; gap: 4px; flex-wrap: wrap; overflow-x: visible; justify-content: center; }
+  .you-fb-tab { padding: 8px 10px; font-size: 12px; gap: 4px; flex: 0 1 auto; }
   .you-fb-tab-icon svg { width: 16px; height: 16px; }
 }
 

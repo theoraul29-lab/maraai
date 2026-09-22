@@ -22,6 +22,12 @@ import { InstallPromptBanner } from './pwa/InstallPromptBanner';
 // user never sees a flash of English when a lazy language (fr, de, …) was
 // previously saved to localStorage.
 langReady.then(() => {
+  // A successful mount means we're running current code — clear the
+  // stale-chunk auto-reload guard (see ErrorBoundary.tsx) so a *later*
+  // deploy in this same tab session can still trigger one automatic
+  // recovery reload instead of only ever getting one per tab lifetime.
+  try { sessionStorage.removeItem('mara_chunk_reload_attempted'); } catch { /* ignore */ }
+
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
       <BrowserRouter>
