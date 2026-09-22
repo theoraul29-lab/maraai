@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 export default function NotFound() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [seconds, setSeconds] = useState(5);
 
@@ -27,9 +29,9 @@ export default function NotFound() {
       color: '#F0F0F0',
     }}>
       <h1 style={{ fontSize: '80px', margin: 0, color: '#a855f7', lineHeight: 1 }}>404</h1>
-      <p style={{ fontSize: '18px', margin: 0, opacity: 0.7 }}>Page not found</p>
+      <p style={{ fontSize: '18px', margin: 0, opacity: 0.7 }}>{t('notFound.title', 'Page not found')}</p>
       <p style={{ fontSize: '14px', margin: 0, opacity: 0.4 }}>
-        Redirecting to home in {seconds}s…
+        {t('notFound.redirecting', 'Redirecting to home in {{seconds}}s…', { seconds })}
       </p>
       <button
         onClick={() => navigate('/', { replace: true })}
@@ -45,7 +47,7 @@ export default function NotFound() {
           cursor: 'pointer',
         }}
       >
-        Go home
+        {t('notFound.goHome', 'Go home')}
       </button>
     </div>
   );

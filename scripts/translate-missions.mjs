@@ -171,11 +171,20 @@ async function translateChunk(chunk, fromLang, toLang) {
   const prompt = `Translate the following JSON array from ${fromLang} to ${toLang}.
 Keep each "id" value unchanged. Translate only: title, description, proof_prompt, steps (it is a JSON array encoded as a string — translate the strings inside it but keep it as a JSON-encoded string), reflection.
 Preserve tone: these are short personal-development mission cards. Keep it natural and motivational, not literal.
-Return ONLY a valid JSON array, no markdown fences:
+Respond with ONLY the JSON array itself — no preamble, no explanation, no markdown fences, nothing before or after it:
 ${JSON.stringify(payload)}`;
 
   const raw = await provider.generate(prompt);
-  const clean = raw.replace(/```json|```/g, '').trim();
+  // Smaller local models routinely wrap the JSON in a conversational
+  // preamble/sentence ("Here is the translation:\n[...]") despite explicit
+  // instructions not to — extract the outermost [...] rather than requiring
+  // the whole response to be pure JSON.
+  const start = raw.indexOf('[');
+  const end = raw.lastIndexOf(']');
+  if (start === -1 || end === -1 || end < start) {
+    throw new Error(`no JSON array found in LLM response: ${raw.slice(0, 200)}`);
+  }
+  const clean = raw.slice(start, end + 1);
   const parsed = JSON.parse(clean);
   if (!Array.isArray(parsed)) throw new Error('LLM did not return a JSON array');
   return parsed;
@@ -247,8 +256,14 @@ async function main() {
       continue;
     }
     console.log(`\n[${lang}] translating English → ${LANG_NAMES[lang]}...`);
-    const map = await translateAll(english, 'English', LANG_NAMES[lang]);
-    writeBundle(lang, map, hashById, missions);
+    try {
+      const map = await translateAll(english, 'English', LANG_NAMES[lang]);
+      writeBundle(lang, map, hashById, missions);
+    } catch (err) {
+      // One language's persistent failure (bad model output, transient
+      // outage) must not abort every language after it in the run.
+      console.error(`  ✗ [${lang}] failed, skipping: ${err.message}`);
+    }
   }
 
   console.log('\nDone.');

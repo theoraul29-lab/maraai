@@ -138,6 +138,13 @@ export function recordOllamaFailure(): void {
 
 export function recordOllamaSuccess(): void {
   consecutiveOllamaFailures = 0;
+  // A real successful call is stronger evidence than the TTL-based
+  // auto-expiry below — don't make users/autonomous callers wait out the
+  // remaining forced-fallback window once Ollama has demonstrably recovered.
+  if (isOllamaForcedFallback()) {
+    setOllamaForcedFallback(false);
+    console.log('[costGuard] Ollama succeeded — clearing forced-fallback flag early.');
+  }
 }
 
 export function costGuard(req: Request, res: Response, next: NextFunction): void {

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const ResetPasswordConfirmation: React.FC = () => {
+  const { t } = useTranslation();
   const [token, setToken] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -17,12 +19,12 @@ const ResetPasswordConfirmation: React.FC = () => {
     e.preventDefault();
     if (password !== confirm) {
       setStatus('error');
-      setMessage('Passwords do not match.');
+      setMessage(t('resetPassword.mismatch', 'Passwords do not match.'));
       return;
     }
     if (!token) {
       setStatus('error');
-      setMessage('Reset token is missing. Please use the link from your email.');
+      setMessage(t('resetPassword.tokenMissing', 'Reset token is missing. Please use the link from your email.'));
       return;
     }
     setStatus('loading');
@@ -35,32 +37,32 @@ const ResetPasswordConfirmation: React.FC = () => {
       });
       if (!res.ok) {
         const payload = await res.json().catch(() => ({}));
-        throw new Error(payload?.message || 'Reset failed');
+        throw new Error(payload?.message || t('resetPassword.failed', 'Reset failed'));
       }
       setStatus('done');
     } catch (err: any) {
       setStatus('error');
-      setMessage(err?.message || 'Something went wrong. Please try again.');
+      setMessage(err?.message || t('resetPassword.somethingWrong', 'Something went wrong. Please try again.'));
     }
   };
 
   return (
     <div style={{ color: '#fff', padding: '60px 20px', maxWidth: 420, margin: '0 auto' }}>
-      <h2 style={{ marginBottom: 24 }}>Set a new password</h2>
+      <h2 style={{ marginBottom: 24 }}>{t('resetPassword.setNewTitle', 'Set a new password')}</h2>
 
       {status === 'done' ? (
         <div>
           <p style={{ color: '#a3e635', marginBottom: 16 }}>
-            Your password has been updated. You can now sign in.
+            {t('resetPassword.updated', 'Your password has been updated. You can now sign in.')}
           </p>
-          <a href="/" style={{ color: '#a78bfa' }}>← Go to home</a>
+          <a href="/" style={{ color: '#a78bfa' }}>← {t('resetPassword.goHome', 'Go to home')}</a>
         </div>
       ) : (
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {!token && (
             <div>
               <label htmlFor="reset-token" style={{ fontSize: 14, color: '#ccc' }}>
-                Reset token
+                {t('resetPassword.tokenLabel', 'Reset token')}
               </label>
               <input
                 id="reset-token"
@@ -68,7 +70,7 @@ const ResetPasswordConfirmation: React.FC = () => {
                 required
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
-                placeholder="Paste your reset token"
+                placeholder={t('resetPassword.tokenPlaceholder', 'Paste your reset token')}
                 style={{
                   marginTop: 6,
                   width: '100%',
@@ -85,7 +87,7 @@ const ResetPasswordConfirmation: React.FC = () => {
           )}
           <div>
             <label htmlFor="new-password" style={{ fontSize: 14, color: '#ccc' }}>
-              New password
+              {t('resetPassword.newPasswordLabel', 'New password')}
             </label>
             <input
               id="new-password"
@@ -94,7 +96,7 @@ const ResetPasswordConfirmation: React.FC = () => {
               minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="At least 8 characters"
+              placeholder={t('resetPassword.newPasswordPlaceholder', 'At least 8 characters')}
               style={{
                 marginTop: 6,
                 width: '100%',
@@ -110,7 +112,7 @@ const ResetPasswordConfirmation: React.FC = () => {
           </div>
           <div>
             <label htmlFor="confirm-password" style={{ fontSize: 14, color: '#ccc' }}>
-              Confirm password
+              {t('resetPassword.confirmLabel', 'Confirm password')}
             </label>
             <input
               id="confirm-password"
@@ -119,7 +121,7 @@ const ResetPasswordConfirmation: React.FC = () => {
               minLength={8}
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
-              placeholder="Repeat new password"
+              placeholder={t('resetPassword.confirmPlaceholder', 'Repeat new password')}
               style={{
                 marginTop: 6,
                 width: '100%',
@@ -149,10 +151,10 @@ const ResetPasswordConfirmation: React.FC = () => {
               fontSize: 15,
             }}
           >
-            {status === 'loading' ? 'Saving…' : 'Set new password'}
+            {status === 'loading' ? t('resetPassword.saving', 'Saving…') : t('resetPassword.setNewCta', 'Set new password')}
           </button>
           <a href="/reset-password" style={{ color: '#a78bfa', fontSize: 13 }}>
-            ← Request a new link
+            ← {t('resetPassword.requestNewLink', 'Request a new link')}
           </a>
         </form>
       )}

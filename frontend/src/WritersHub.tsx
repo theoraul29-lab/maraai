@@ -578,6 +578,9 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
         <button onClick={() => setView('landing')} className={`writers-tab ${view === 'landing' ? 'active' : ''}`}>
           🏛 {t('writers.home', 'Home')}
         </button>
+        <button onClick={() => setView('classics')} className={`writers-tab ${view === 'classics' ? 'active' : ''}`}>
+          🏛️ {t('writers.classicsTab', 'Public Library')}
+        </button>
         <button onClick={() => setView('write')} className={`writers-tab ${view === 'write' ? 'active' : ''}`}>
           🖋 {t('writers.workshop')}
         </button>
@@ -586,9 +589,6 @@ export const WritersHub: React.FC<Props> = ({ onClose }) => {
         </button>
         <button onClick={() => setView('drafts')} className={`writers-tab ${view === 'drafts' ? 'active' : ''}`}>
           📂 {t('writers.drafts')}
-        </button>
-        <button onClick={() => setView('classics')} className={`writers-tab ${view === 'classics' ? 'active' : ''}`}>
-          🏛️ {t('writers.classicsTab', 'Public Library')}
         </button>
         {user && (
           <button onClick={() => setView('sales')} className={`writers-tab ${view === 'sales' ? 'active' : ''}`}>

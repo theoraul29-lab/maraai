@@ -218,9 +218,9 @@ export function SubsystemSettings({ onClose, onRequestLogin }: Props) {
                 <div className="p2p-settings-title-row">
                   <span className="p2p-settings-icon">🌐</span>
                   <div>
-                    <div className="p2p-settings-title">P2P Network</div>
+                    <div className="p2p-settings-title">{t('p2p.networkTitle', 'P2P Network')}</div>
                     <div className="p2p-settings-subtitle">
-                      {networkStatsLoading ? 'Loading…' : `${activeNodes} active nodes`}
+                      {networkStatsLoading ? t('common.loading', 'Loading…') : t('p2p.activeNodes', '{{count}} active nodes', { count: activeNodes })}
                     </div>
                   </div>
                   <label className="p2p-toggle p2p-toggle--large">
@@ -236,7 +236,7 @@ export function SubsystemSettings({ onClose, onRequestLogin }: Props) {
                 {p2pEnabled && (
                   <div className="p2p-independence-meter">
                     <div className="p2p-independence-meter__label">
-                      <span>Network independence</span>
+                      <span>{t('p2p.networkIndependence', 'Network independence')}</span>
                       <span>{Math.min(100, Math.round((activeNodes / 200) * 100))}%</span>
                     </div>
                     <div className="p2p-independence-meter__track">
@@ -249,9 +249,9 @@ export function SubsystemSettings({ onClose, onRequestLogin }: Props) {
                 )}
                 {p2pEnabled && (
                   <ul className="p2p-settings-benefits">
-                    <li>⚡ Earn Mara Credits passively</li>
-                    <li>🔒 Encrypted tasks only — zero data exposure</li>
-                    <li>🎛️ Full bandwidth control below</li>
+                    <li>⚡ {t('p2p.benefitCredits', 'Earn Mara Credits passively')}</li>
+                    <li>🔒 {t('p2p.benefitEncrypted', 'Encrypted tasks only — zero data exposure')}</li>
+                    <li>🎛️ {t('p2p.benefitControl', 'Full bandwidth control below')}</li>
                   </ul>
                 )}
               </div>

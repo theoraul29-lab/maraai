@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const ResetPassword: React.FC = () => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
   const [message, setMessage] = useState('');
@@ -17,26 +19,26 @@ const ResetPassword: React.FC = () => {
       });
       if (!res.ok) {
         const payload = await res.json().catch(() => ({}));
-        throw new Error(payload?.message || 'Request failed');
+        throw new Error(payload?.message || t('resetPassword.requestFailed', 'Request failed'));
       }
       setStatus('done');
-      setMessage('If an account exists for that email, a reset link has been sent.');
+      setMessage(t('resetPassword.linkSent', 'If an account exists for that email, a reset link has been sent.'));
     } catch (err: any) {
       setStatus('error');
-      setMessage(err?.message || 'Something went wrong. Please try again.');
+      setMessage(err?.message || t('resetPassword.somethingWrong', 'Something went wrong. Please try again.'));
     }
   };
 
   return (
     <div style={{ color: '#fff', padding: '60px 20px', maxWidth: 420, margin: '0 auto' }}>
-      <h2 style={{ marginBottom: 24 }}>Reset your password</h2>
+      <h2 style={{ marginBottom: 24 }}>{t('resetPassword.requestTitle', 'Reset your password')}</h2>
 
       {status === 'done' ? (
         <p style={{ color: '#a3e635' }}>{message}</p>
       ) : (
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <label htmlFor="reset-email" style={{ fontSize: 14, color: '#ccc' }}>
-            Email address
+            {t('resetPassword.emailLabel', 'Email address')}
           </label>
           <input
             id="reset-email"
@@ -70,9 +72,9 @@ const ResetPassword: React.FC = () => {
               fontSize: 15,
             }}
           >
-            {status === 'loading' ? 'Sending…' : 'Send reset link'}
+            {status === 'loading' ? t('resetPassword.sending', 'Sending…') : t('resetPassword.sendCta', 'Send reset link')}
           </button>
-          <a href="/" style={{ color: '#a78bfa', fontSize: 13 }}>← Back to home</a>
+          <a href="/" style={{ color: '#a78bfa', fontSize: 13 }}>← {t('resetPassword.backHome', 'Back to home')}</a>
         </form>
       )}
     </div>

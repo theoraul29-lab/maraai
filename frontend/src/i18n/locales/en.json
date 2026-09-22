@@ -461,6 +461,11 @@
     "coverUploadFailed": "Cover upload failed. Try a URL instead."
   },
   "reels": {
+    "unmute": "Unmute",
+    "mute": "Mute",
+    "like": "Like",
+    "comment": "Comment",
+    "share": "Share",
     "feed": "Feed",
     "create": "Create",
     "myReels": "My Sparks",
@@ -1029,7 +1034,13 @@
   },
   "p2p": {
     "badgeTitle": "Contributing to Mara: {{tasks}} tasks, {{xp}} XP",
-    "contributing": "Contributing to Mara 🟢"
+    "contributing": "Contributing to Mara 🟢",
+    "networkTitle": "P2P Network",
+    "activeNodes": "{{count}} active nodes",
+    "networkIndependence": "Network independence",
+    "benefitCredits": "Earn Mara Credits passively",
+    "benefitEncrypted": "Encrypted tasks only — zero data exposure",
+    "benefitControl": "Full bandwidth control below"
   },
   "share": {
     "title": "Share",
@@ -1130,6 +1141,47 @@
     "faq4A": "Stripe (card) or PayPal. Secure transaction, automatic invoice.",
     "vipComingSoon": "VIP activates soon — check back in a few days.",
     "vipError": "Couldn't start the subscription. Please try again."
+  },
+  "search": {
+    "placeholder": "Search people, Sparks, articles…",
+    "loading": "Searching…",
+    "empty": "No results",
+    "kind": {
+      "people": "People",
+      "reels": "Sparks",
+      "articles": "Articles",
+      "lessons": "Lessons"
+    }
+  },
+  "notFound": {
+    "title": "Page not found",
+    "redirecting": "Redirecting to home in {{seconds}}s…",
+    "goHome": "Go home"
+  },
+  "resetPassword": {
+    "mismatch": "Passwords do not match.",
+    "tokenMissing": "Reset token is missing. Please use the link from your email.",
+    "failed": "Reset failed",
+    "somethingWrong": "Something went wrong. Please try again.",
+    "setNewTitle": "Set a new password",
+    "updated": "Your password has been updated. You can now sign in.",
+    "goHome": "Go to home",
+    "tokenLabel": "Reset token",
+    "tokenPlaceholder": "Paste your reset token",
+    "newPasswordLabel": "New password",
+    "newPasswordPlaceholder": "At least 8 characters",
+    "confirmLabel": "Confirm password",
+    "confirmPlaceholder": "Repeat new password",
+    "saving": "Saving…",
+    "setNewCta": "Set new password",
+    "requestNewLink": "Request a new link",
+    "requestFailed": "Request failed",
+    "linkSent": "If an account exists for that email, a reset link has been sent.",
+    "requestTitle": "Reset your password",
+    "emailLabel": "Email address",
+    "sending": "Sending…",
+    "sendCta": "Send reset link",
+    "backHome": "Back to home"
   },
   "programs": {
     "activatesOn": "Programs activates on",
@@ -1493,6 +1545,17 @@
     "needsClaudeCode": "⚡ Needs Claude Code"
   },
   "privacyPolicy": {
+    "labelEmail": "Email",
+    "labelContent": "Content",
+    "labelMissions": "Missions",
+    "labelMessages": "Messages",
+    "labelSession": "Session",
+    "labelDeletion": "Deletion",
+    "labelAccess": "Access",
+    "labelRectification": "Rectification",
+    "labelErasure": "Erasure",
+    "labelPortability": "Portability",
+    "labelObjection": "Objection",
     "title": "Privacy Policy",
     "updated": "Last updated: June 1, 2026",
     "back": "Back",

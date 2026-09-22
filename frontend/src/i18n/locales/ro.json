@@ -461,6 +461,11 @@
     "coverUploadFailed": "Cover upload failed. Try a URL instead."
   },
   "reels": {
+    "unmute": "Sunet activat",
+    "mute": "Fără sunet",
+    "like": "Apreciază",
+    "comment": "Comentează",
+    "share": "Distribuie",
     "feed": "Flux",
     "create": "Creează",
     "myReels": "Sparks-urile mele",
@@ -1029,7 +1034,13 @@
   },
   "p2p": {
     "badgeTitle": "Contribui la Mara: {{tasks}} sarcini, {{xp}} XP",
-    "contributing": "Contribui la Mara 🟢"
+    "contributing": "Contribui la Mara 🟢",
+    "networkTitle": "Rețea P2P",
+    "activeNodes": "{{count}} noduri active",
+    "networkIndependence": "Independența rețelei",
+    "benefitCredits": "Câștigă pasiv Mara Credits",
+    "benefitEncrypted": "Doar sarcini criptate — zero expunere de date",
+    "benefitControl": "Control complet al lățimii de bandă mai jos"
   },
   "share": {
     "title": "Distribuie",
@@ -1130,6 +1141,47 @@
     "faq4A": "Stripe (card) sau PayPal. Tranzacție sigură, factură automată.",
     "vipComingSoon": "VIP se activează în curând — revino în câteva zile.",
     "vipError": "Nu am putut porni abonarea. Încearcă din nou."
+  },
+  "search": {
+    "placeholder": "Caută persoane, Sparks, articole…",
+    "loading": "Se caută…",
+    "empty": "Niciun rezultat",
+    "kind": {
+      "people": "Persoane",
+      "reels": "Sparks",
+      "articles": "Articole",
+      "lessons": "Lecții"
+    }
+  },
+  "notFound": {
+    "title": "Pagina nu a fost găsită",
+    "redirecting": "Redirecționare spre pagina principală în {{seconds}}s…",
+    "goHome": "Acasă"
+  },
+  "resetPassword": {
+    "mismatch": "Parolele nu coincid.",
+    "tokenMissing": "Token-ul de resetare lipsește. Folosește link-ul din email.",
+    "failed": "Resetarea a eșuat",
+    "somethingWrong": "Ceva nu a mers bine. Încearcă din nou.",
+    "setNewTitle": "Setează o parolă nouă",
+    "updated": "Parola ta a fost actualizată. Te poți conecta acum.",
+    "goHome": "Mergi acasă",
+    "tokenLabel": "Token de resetare",
+    "tokenPlaceholder": "Lipește token-ul de resetare",
+    "newPasswordLabel": "Parolă nouă",
+    "newPasswordPlaceholder": "Minim 8 caractere",
+    "confirmLabel": "Confirmă parola",
+    "confirmPlaceholder": "Repetă parola nouă",
+    "saving": "Se salvează…",
+    "setNewCta": "Setează parola nouă",
+    "requestNewLink": "Solicită un link nou",
+    "requestFailed": "Solicitarea a eșuat",
+    "linkSent": "Dacă există un cont pentru acel email, un link de resetare a fost trimis.",
+    "requestTitle": "Resetează-ți parola",
+    "emailLabel": "Adresă de email",
+    "sending": "Se trimite…",
+    "sendCta": "Trimite link de resetare",
+    "backHome": "Înapoi acasă"
   },
   "programs": {
     "activatesOn": "Programs se activează pe",
@@ -1493,6 +1545,17 @@
     "needsClaudeCode": "⚡ Necesită Claude Code"
   },
   "privacyPolicy": {
+    "labelEmail": "Email",
+    "labelContent": "Conținut",
+    "labelMissions": "Misiuni",
+    "labelMessages": "Mesaje",
+    "labelSession": "Sesiune",
+    "labelDeletion": "Ștergere",
+    "labelAccess": "Acces",
+    "labelRectification": "Rectificare",
+    "labelErasure": "Ștergere",
+    "labelPortability": "Portabilitate",
+    "labelObjection": "Opoziție",
     "title": "Politica de Confidentialitate",
     "updated": "Ultima actualizare: 1 iunie 2026",
     "back": "Inapoi",

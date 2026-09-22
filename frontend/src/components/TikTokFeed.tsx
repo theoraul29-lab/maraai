@@ -208,7 +208,7 @@ const TikTokFeed: React.FC<Props> = ({
       {/* Global mute toggle in top-right */}
       <button
         className="tiktok-mute-btn"
-        aria-label={muted ? 'Unmute' : 'Mute'}
+        aria-label={muted ? t('reels.unmute', 'Unmute') : t('reels.mute', 'Mute')}
         onClick={() => setMuted((m) => !m)}
       >
         {muted ? '🔇' : '🔊'}
@@ -381,7 +381,7 @@ const ReelCard: React.FC<ReelCardProps> = ({
         <button
           className={`tiktok-action ${reel.isLiked ? 'liked' : ''}`}
           onClick={() => onLike(reel.id)}
-          aria-label="Like"
+          aria-label={t('reels.like', 'Like')}
         >
           <span className="tiktok-action-icon">{reel.isLiked ? '❤️' : '🤍'}</span>
           <span className="tiktok-action-count">{formatNumber(reel.likes)}</span>
@@ -389,7 +389,7 @@ const ReelCard: React.FC<ReelCardProps> = ({
         <button
           className="tiktok-action"
           onClick={() => onComment?.(reel.id)}
-          aria-label="Comment"
+          aria-label={t('reels.comment', 'Comment')}
         >
           <span className="tiktok-action-icon">💬</span>
           <span className="tiktok-action-count">{formatNumber(reel.comments)}</span>
@@ -397,7 +397,7 @@ const ReelCard: React.FC<ReelCardProps> = ({
         <button
           className="tiktok-action"
           onClick={() => onShare?.(reel.id)}
-          aria-label="Share"
+          aria-label={t('reels.share', 'Share')}
         >
           <span className="tiktok-action-icon">↗️</span>
           <span className="tiktok-action-count">{formatNumber(reel.shares)}</span>

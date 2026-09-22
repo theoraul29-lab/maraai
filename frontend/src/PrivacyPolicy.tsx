@@ -21,11 +21,11 @@ export default function PrivacyPolicy() {
           <h2>{t('privacyPolicy.s1Title')}</h2>
           <p>{t('privacyPolicy.s1Intro')}</p>
           <ul>
-            <li><strong>Email:</strong> {t('privacyPolicy.s1Auth')}</li>
-            <li><strong>Content:</strong> {t('privacyPolicy.s1Content')}</li>
-            <li><strong>Missions:</strong> {t('privacyPolicy.s1Missions')}</li>
-            <li><strong>Messages:</strong> {t('privacyPolicy.s1Messages')}</li>
-            <li><strong>Session:</strong> {t('privacyPolicy.s1Session')}</li>
+            <li><strong>{t('privacyPolicy.labelEmail', 'Email')}:</strong> {t('privacyPolicy.s1Auth')}</li>
+            <li><strong>{t('privacyPolicy.labelContent', 'Content')}:</strong> {t('privacyPolicy.s1Content')}</li>
+            <li><strong>{t('privacyPolicy.labelMissions', 'Missions')}:</strong> {t('privacyPolicy.s1Missions')}</li>
+            <li><strong>{t('privacyPolicy.labelMessages', 'Messages')}:</strong> {t('privacyPolicy.s1Messages')}</li>
+            <li><strong>{t('privacyPolicy.labelSession', 'Session')}:</strong> {t('privacyPolicy.s1Session')}</li>
           </ul>
         </section>
 
@@ -54,9 +54,9 @@ export default function PrivacyPolicy() {
         <section className="privacy-section">
           <h2>{t('privacyPolicy.s4Title')}</h2>
           <ul>
-            <li><strong>Messages:</strong> {t('privacyPolicy.s4Li1')}</li>
-            <li><strong>Content:</strong> {t('privacyPolicy.s4Li2')}</li>
-            <li><strong>Deletion:</strong> {t('privacyPolicy.s4Li3')}</li>
+            <li><strong>{t('privacyPolicy.labelMessages', 'Messages')}:</strong> {t('privacyPolicy.s4Li1')}</li>
+            <li><strong>{t('privacyPolicy.labelContent', 'Content')}:</strong> {t('privacyPolicy.s4Li2')}</li>
+            <li><strong>{t('privacyPolicy.labelDeletion', 'Deletion')}:</strong> {t('privacyPolicy.s4Li3')}</li>
           </ul>
         </section>
 
@@ -64,11 +64,11 @@ export default function PrivacyPolicy() {
           <h2>{t('privacyPolicy.s5Title')}</h2>
           <p>{t('privacyPolicy.s5Intro')}</p>
           <ul>
-            <li><strong>Access:</strong> {t('privacyPolicy.s5Li1')}</li>
-            <li><strong>Rectification:</strong> {t('privacyPolicy.s5Li2')}</li>
-            <li><strong>Erasure:</strong> {t('privacyPolicy.s5Li3')}</li>
-            <li><strong>Portability:</strong> {t('privacyPolicy.s5Li4')}</li>
-            <li><strong>Objection:</strong> {t('privacyPolicy.s5Li5')}</li>
+            <li><strong>{t('privacyPolicy.labelAccess', 'Access')}:</strong> {t('privacyPolicy.s5Li1')}</li>
+            <li><strong>{t('privacyPolicy.labelRectification', 'Rectification')}:</strong> {t('privacyPolicy.s5Li2')}</li>
+            <li><strong>{t('privacyPolicy.labelErasure', 'Erasure')}:</strong> {t('privacyPolicy.s5Li3')}</li>
+            <li><strong>{t('privacyPolicy.labelPortability', 'Portability')}:</strong> {t('privacyPolicy.s5Li4')}</li>
+            <li><strong>{t('privacyPolicy.labelObjection', 'Objection')}:</strong> {t('privacyPolicy.s5Li5')}</li>
           </ul>
         </section>
 

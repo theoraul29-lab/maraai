@@ -723,7 +723,11 @@ ${JSON.stringify(payload)}`;
         // source: 'user_chat' bypasses the brain rate-limiter (autonomous cap).
         // Mission translation is triggered by a live user request, so it must
         // not compete with the daily autonomous-brain call budget.
-        const TRANSLATE_TIMEOUT_MS = parseInt(process.env.TRANSLATE_TIMEOUT_MS ?? '', 10) || 45000;
+        // Must stay >= OLLAMA_TIMEOUT_MS (default 120s, see ollama-provider.ts)
+        // so a slow-but-healthy local model finishes translating before this
+        // race gives up and silently falls back to English — a 45s timeout
+        // here was shorter than Ollama's own budget and could fire first.
+        const TRANSLATE_TIMEOUT_MS = parseInt(process.env.TRANSLATE_TIMEOUT_MS ?? '', 10) || 130000;
         const raw = await Promise.race([
           llmGenerate(prompt, { source: 'user_chat' }),
           new Promise<never>((_, reject) => setTimeout(() => reject(new Error('translate_timeout')), TRANSLATE_TIMEOUT_MS)),
