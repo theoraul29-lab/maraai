@@ -62,6 +62,54 @@ async function isEligibleCreator(userId: string): Promise<boolean> {
   return followers >= MIN_CREATOR_FOLLOWERS;
 }
 
+// --- Creator monetization activation ----------------------------------------
+//
+// Whether the Earnings tab shows live payout/earnings UI at all. Previously
+// a hardcoded frontend date (creator.tsx: `new Date('2026-07-01T00:00:00Z')`)
+// that silently "unlocked" the moment it passed, with zero connection to
+// whether the business was actually ready to process real creator payouts —
+// an admin now flips this explicitly from Control Center instead.
+//
+// system_config is also created independently by costGuard.ts / anthropic-key
+// -store.ts on their own imports — see the comment there for why the
+// duplication is intentional/harmless.
+rawSqlite.exec(`
+  CREATE TABLE IF NOT EXISTS system_config (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at INTEGER NOT NULL DEFAULT (unixepoch())
+  )
+`);
+
+function isCreatorMonetizationActive(): boolean {
+  const row = rawSqlite.prepare(
+    `SELECT value FROM system_config WHERE key = 'creator_monetization_active'`,
+  ).get() as { value: string } | undefined;
+  return row?.value === 'true';
+}
+
+function setCreatorMonetizationActive(active: boolean): void {
+  rawSqlite.prepare(
+    `INSERT INTO system_config (key, value, updated_at)
+     VALUES ('creator_monetization_active', ?, unixepoch())
+     ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = unixepoch()`,
+  ).run(active ? 'true' : 'false');
+}
+
+// GET-only, requireAuth (not admin): the Earnings tab itself needs this for
+// every creator, not just admins.
+export const getMonetizationStatus = requireAuth(async (_req, res) => {
+  res.json({ active: isCreatorMonetizationActive() });
+});
+
+// Admin-only write side, called from Control Center's Integrations panel.
+export function adminSetMonetizationStatus(req: Request, res: Response): void {
+  const active = req.body?.active === true;
+  setCreatorMonetizationActive(active);
+  console.log(`[creators] Monetization ${active ? 'activated' : 'deactivated'} by admin`);
+  res.json({ active });
+}
+
 function isAdmin(userId: string | null): boolean {
   if (!userId) return false;
   const adminIds = (process.env.ADMIN_USER_IDS || '')

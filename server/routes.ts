@@ -601,6 +601,7 @@ export async function registerRoutes(
   app.post('/api/creator/share-to-you', requireAuth, creatorsModule.shareToYou);
   app.get('/api/creator/my-comments', requireAuth, creatorsModule.getMyComments);
   app.get('/api/creator/growth-path', requireAuth, creatorsModule.getGrowthPath);
+  app.get('/api/creator/monetization-status', requireAuth, creatorsModule.getMonetizationStatus);
 
   // Chat endpoints (require auth)
   app.get(api.chat.list.path, requireAuth, chatModule.getChatHistory);
@@ -1462,6 +1463,18 @@ export async function registerRoutes(
     } catch (error) {
       res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to clear Anthropic key' });
     }
+  });
+
+  // Creator monetization: replaces a hardcoded frontend launch date that
+  // silently unlocked the Earnings tab once it passed with an explicit
+  // admin-controlled switch. See creators.ts for the read side
+  // (/api/creator/monetization-status, any authenticated user).
+  app.post('/api/control/creator-monetization', requireAdmin, (req: any, res: any) => {
+    creatorsModule.adminSetMonetizationStatus(req, res);
+    recordControlAdminAction(
+      req.body?.active === true ? 'creator_monetization.activated' : 'creator_monetization.deactivated',
+      0, req.user?.uid ?? null, {}, 'integration',
+    );
   });
 
   app.get('/api/control/github/status', requireAdmin, async (_req: any, res: any) => {

@@ -84,6 +84,8 @@ export default function MaraControlCenter() {
   const [codeTaskMessage, setCodeTaskMessage] = useState('');
   const [anthropicKeyInput, setAnthropicKeyInput] = useState('');
   const [anthropicKeyMessage, setAnthropicKeyMessage] = useState<string | null>(null);
+  const [monetizationActive, setMonetizationActive] = useState<boolean | null>(null);
+  const [monetizationMessage, setMonetizationMessage] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -107,6 +109,7 @@ export default function MaraControlCenter() {
         ['github', getJson<GitHubStatusSnapshot>('/api/control/github/status')],
         ['railway', getJson<RailwayStatusSnapshot>('/api/control/railway/status')],
         ['security', getJson<SecuritySnapshot>('/api/control/security')],
+        ['monetization', getJson<{ active: boolean }>('/api/creator/monetization-status')],
       ] as const;
       const results = await Promise.allSettled(requests.map(([, request]) => request));
       if (!active) return;
@@ -129,6 +132,7 @@ export default function MaraControlCenter() {
         github: GitHubStatusSnapshot;
         railway: RailwayStatusSnapshot;
         security: SecuritySnapshot;
+        monetization: { active: boolean };
       }>(requests.map(([name]) => name), results);
       if (values.overview) setDashboard(values.overview);
       if (values.brain) { setBrain(values.brain.brain); setProvider(values.brain.ai); }
@@ -151,6 +155,7 @@ export default function MaraControlCenter() {
       if (values.github) setGithubStatus(values.github);
       if (values.railway) setRailwayStatus(values.railway);
       if (values.security) setSecurity(values.security);
+      if (values.monetization) setMonetizationActive(values.monetization.active);
       setError(failures.length ? `Unavailable: ${failures.join(', ')}` : null);
       setUpdatedAt(new Date());
     };
@@ -335,6 +340,27 @@ export default function MaraControlCenter() {
       setAnthropicKeyMessage('Cleared. Running on Ollama only until a key is added again.');
     } catch (cause) {
       setAnthropicKeyMessage(cause instanceof Error ? cause.message : 'Failed to clear Anthropic key');
+    } finally {
+      setTaskBusy(null);
+    }
+  }
+
+  async function toggleMonetization(active: boolean) {
+    setTaskBusy('monetization');
+    setMonetizationMessage(null);
+    try {
+      const response = await fetch('/api/control/creator-monetization', {
+        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active }),
+      });
+      const data = await response.json() as { active?: boolean; error?: string };
+      if (!response.ok) throw new Error(data.error ?? `Request returned ${response.status}`);
+      setMonetizationActive(data.active ?? active);
+      setMonetizationMessage(data.active
+        ? 'Monetization is now live — the Earnings tab shows real payout UI to eligible creators.'
+        : 'Monetization deactivated — the Earnings tab shows the "not active yet" placeholder again.');
+    } catch (cause) {
+      setMonetizationMessage(cause instanceof Error ? cause.message : 'Failed to update monetization status');
     } finally {
       setTaskBusy(null);
     }
@@ -792,6 +818,31 @@ export default function MaraControlCenter() {
                 )}
               </div>
               {anthropicKeyMessage && <p className="mcc-muted">{anthropicKeyMessage}</p>}
+            </div>
+            <div className="mcc-anthropic-key-form">
+              <div className="mcc-panel-heading"><h2>Creator Monetization</h2><span>{monetizationActive ? 'LIVE' : 'NOT ACTIVE'}</span></div>
+              <p className="mcc-muted">
+                Controls whether the Creators panel's Earnings tab shows real payout/earnings UI, or the
+                &quot;not active yet&quot; placeholder. Replaces the old hardcoded July 1 date — flip this
+                when the platform is actually ready for real creator payouts.
+              </p>
+              <div className="mcc-task-actions">
+                <button
+                  type="button"
+                  disabled={taskBusy === 'monetization' || monetizationActive === true}
+                  onClick={() => void toggleMonetization(true)}
+                >
+                  Activate
+                </button>
+                <button
+                  type="button"
+                  disabled={taskBusy === 'monetization' || monetizationActive === false}
+                  onClick={() => void toggleMonetization(false)}
+                >
+                  Deactivate
+                </button>
+              </div>
+              {monetizationMessage && <p className="mcc-muted">{monetizationMessage}</p>}
             </div>
           </section>
         </div>}

@@ -14,11 +14,6 @@ import './styles/Creator.css';
 
 const API_URL = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:5000');
 
-const LAUNCH_DATE = new Date('2026-07-01T00:00:00Z');
-function getDaysUntilLaunch() {
-  return Math.max(0, Math.ceil((LAUNCH_DATE.getTime() - Date.now()) / 86400000));
-}
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Video {
@@ -129,6 +124,7 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
   const [articles, setArticles] = useState<Article[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
   const [growthPath, setGrowthPath] = useState<GrowthPath | null>(null);
+  const [monetizationActive, setMonetizationActive] = useState(false);
   const [profile, setProfile] = useState<ProfileData>({ displayName: '', bio: '', location: '', website: '' });
   const [postStatus, setPostStatus] = useState({ canPost: true, postsToday: 0, maxDaily: 5 });
   const [loading, setLoading] = useState(true);
@@ -211,12 +207,13 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
     setLoading(true);
     setError('');
     try {
-      const [analyticsRes, videosRes, statusRes, profileRes, growthRes] = await Promise.all([
+      const [analyticsRes, videosRes, statusRes, profileRes, growthRes, monetizationRes] = await Promise.all([
         axios.get(`${API_URL}/api/creator/analytics`, { withCredentials: true }).catch(() => ({ data: null })),
         axios.get(`${API_URL}/api/creator/my-videos`, { withCredentials: true }).catch(() => ({ data: [] })),
         axios.get(`${API_URL}/api/creator/post-status`, { withCredentials: true }).catch(() => ({ data: { canPost: true, postsToday: 0, maxDaily: 5 } })),
         axios.get(`${API_URL}/api/profile/me`, { withCredentials: true }).catch(() => ({ data: null })),
         axios.get(`${API_URL}/api/creator/growth-path`, { withCredentials: true }).catch(() => ({ data: null })),
+        axios.get(`${API_URL}/api/creator/monetization-status`, { withCredentials: true }).catch(() => ({ data: { active: false } })),
       ]);
       if (analyticsRes.data) {
         setAnalytics({
@@ -233,6 +230,7 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
       setVideos(Array.isArray(videosRes.data) ? videosRes.data : []);
       if (statusRes.data) setPostStatus(statusRes.data);
       if (growthRes.data) setGrowthPath(growthRes.data);
+      setMonetizationActive(monetizationRes.data?.active === true);
       if (profileRes.data?.user) {
         const u = profileRes.data.user;
         setProfile({
@@ -1015,48 +1013,37 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
         )}
 
         {/* ═══════════════════ EARNINGS ═══════════════════ */}
-        {activeTab === 'earnings' && (() => {
-          const days = getDaysUntilLaunch();
-          const launched = days === 0;
-          return (
-            <>
-              <h3 className="creator-section-title">{t('creatorExtra.earningsTitle')}</h3>
+        {activeTab === 'earnings' && (
+          <>
+            <h3 className="creator-section-title">{t('creatorExtra.earningsTitle')}</h3>
 
-              {!launched ? (
-                <div className="creator-launch-lock">
-                  <div className="creator-launch-icon"><Lock size={32} /></div>
-                  <div className="creator-launch-title">{t('creatorExtra.monetizationDate', { date: '1 July 2026' })}</div>
-                  <div className="creator-launch-countdown">
-                    <div className="creator-countdown-box">
-                      <div className="creator-countdown-num">{days}</div>
-                      <div className="creator-countdown-unit">{t('creatorExtra.daysRemaining')}</div>
-                    </div>
+            {!monetizationActive ? (
+              <div className="creator-launch-lock">
+                <div className="creator-launch-icon"><Lock size={32} /></div>
+                <div className="creator-launch-title">{t('creatorExtra.monetizationNotYetActive', 'Monetization is not active yet')}</div>
+                <div className="creator-launch-text">
+                  {t('creatorExtra.keepCreating')}
+                  <br />{t('creatorExtra.creatorSubscription')}
+                </div>
+                <div className="creator-earnings-preview">
+                  <div className="creator-earnings-preview-item">
+                    <span>{t('creatorExtra.estimatedEarnings')}</span><span className="creator-locked">€ —</span>
                   </div>
-                  <div className="creator-launch-text">
-                    {t('creatorExtra.keepCreating')}
-                    <br />{t('creatorExtra.creatorSubscription')}
+                  <div className="creator-earnings-preview-item">
+                    <span>{t('creatorExtra.articlesSold')}</span><span className="creator-locked">— </span>
                   </div>
-                  <div className="creator-earnings-preview">
-                    <div className="creator-earnings-preview-item">
-                      <span>{t('creatorExtra.estimatedEarnings')}</span><span className="creator-locked">€ —</span>
-                    </div>
-                    <div className="creator-earnings-preview-item">
-                      <span>{t('creatorExtra.articlesSold')}</span><span className="creator-locked">— </span>
-                    </div>
-                    <div className="creator-earnings-preview-item">
-                      <span>{t('creatorExtra.revenueShare')}</span><span className="creator-locked">70%</span>
-                    </div>
-                    <div className="creator-earnings-note">{t('creatorExtra.availableDate', { date: '01.07.2026' })}</div>
+                  <div className="creator-earnings-preview-item">
+                    <span>{t('creatorExtra.revenueShare')}</span><span className="creator-locked">70%</span>
                   </div>
                 </div>
-              ) : (
-                <div className="creator-earnings-live">
-                  <div className="creator-section-subtitle">{t('creatorExtra.liveEarnings')}</div>
-                </div>
-              )}
-            </>
-          );
-        })()}
+              </div>
+            ) : (
+              <div className="creator-earnings-live">
+                <div className="creator-section-subtitle">{t('creatorExtra.liveEarnings')}</div>
+              </div>
+            )}
+          </>
+        )}
 
         {/* ═══════════════════ STUDIO ═══════════════════ */}
         {activeTab === 'studio' && (

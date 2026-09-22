@@ -428,14 +428,6 @@
 }
 .creator-launch-icon { font-size: 36px; margin-bottom: 10px; }
 .creator-launch-title { font-size: 15px; font-weight: 700; color: #ff6b00; margin-bottom: 16px; }
-.creator-launch-countdown { display: flex; justify-content: center; margin-bottom: 16px; }
-.creator-countdown-box {
-  background: rgba(255, 107, 0, 0.15);
-  border: 2px solid #ff6b00;
-  border-radius: 10px; padding: 16px 28px; text-align: center;
-}
-.creator-countdown-num { font-size: 36px; font-weight: 900; color: #ff6b00; }
-.creator-countdown-unit { font-size: 12px; color: #888; text-transform: uppercase; margin-top: 4px; }
 .creator-launch-text { font-size: 13px; color: #aaa; line-height: 1.6; margin-bottom: 16px; }
 
 .creator-earnings-preview {
@@ -448,7 +440,6 @@
 }
 .creator-earnings-preview-item:last-child { border-bottom: none; }
 .creator-locked { color: #555; font-weight: 700; }
-.creator-earnings-note { font-size: 11px; color: #666; padding: 8px 14px; }
 
 /* ── Studio Tabs ─────────────────────────────────────────────────────────── */
 .creator-studio-tabs {
