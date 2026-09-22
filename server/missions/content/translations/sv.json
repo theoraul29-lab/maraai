@@ -1,0 +1,888 @@
+{
+  "lang": "sv",
+  "lang_name": "Swedish",
+  "generated_at": "2026-09-22T02:26:48.890Z",
+  "provider": "ollama",
+  "model": "llama3.1:8b",
+  "missions": {
+    "disc-001": {
+      "title": "Väck dig en timme tidigare",
+      "description": "Morgonen är din innan den tillhör världen. Väck dig en timme tidigare och använd den tiden bara för dig själv.",
+      "proof_prompt": "Skriv vad du gjorde i den timmen och hur du kände dig.",
+      "steps": [
+        "Sätt din väckarklocka en timme tidigare",
+        "Resistera impulsen att sova in",
+        "Gör något bara för dig själv i den timmen"
+      ],
+      "reflection": "Vad upptäckte du om dig själv i morgonens tystnad?",
+      "source_hash": "d6467737ce1a50c6"
+    },
+    "disc-002": {
+      "title": "24 timmar utan sociala medier",
+      "description": "En hel dag utan att scrolla. Notera vad som dyker upp när du inte distraheras.",
+      "proof_prompt": "Skärmavbild från Skärmtid visande 0 minuter.",
+      "steps": [
+        "Ta bort apparna tillfälligt",
+        "Låt dina vänner veta att du är offline",
+        "Notera vad du känner när du får impulsen att öppna din telefon"
+      ],
+      "reflection": "Vad gjorde du med den tid du vann?",
+      "source_hash": "f3f87f060a3e2e6b"
+    },
+    "disc-003": {
+      "title": "7 dagar med motion i rad",
+      "description": "20 minuter rörelse per dag, 7 dagar i sträck. Något som helst räcker.",
+      "proof_prompt": "Foto eller skärmavbild från din träningsapp på dag 7.",
+      "steps": [
+        "Välj en aktivitet du gillar",
+        "Schemalägg den bestämt i din kalender",
+        "Glöm inte en enda dag"
+      ],
+      "reflection": "Hur förändrades din energi under de 7 dagarna?",
+      "source_hash": "7d4bac8fca5a4ce2"
+    },
+    "creat-001": {
+      "title": "Skapa något med dina händer",
+      "description": "En teckning, en skulptur, en foto tagen med avsikt. Processen är viktig, inte resultatet.",
+      "proof_prompt": "Foto av vad du skapade.",
+      "steps": [
+        "Välj ditt material",
+        "Gör det utan att döma",
+        "Njut av processen"
+      ],
+      "reflection": "Vad uttryckte du utan att märka det?",
+      "source_hash": "11829407037adcad"
+    },
+    "creat-002": {
+      "title": "Skriv ett brev till din framtida själv",
+      "description": "Skriv till den du kommer att vara om ett år. Berätta vad du hoppas på, vad du fruktar, vad du lär dig.",
+      "proof_prompt": "Klistra in brevet eller en del av det.",
+      "steps": [
+        "Hitta 20 minuters lugn",
+        "Skriv utan att redigera",
+        "Seal det och håll det i ett år"
+      ],
+      "reflection": "Vad skulle du mest vilja veta om ett år?",
+      "source_hash": "5d26efbdf7c61d0f"
+    },
+    "creat-003": {
+      "title": "Fotografera vardagslivets skönhet",
+      "description": "Gå 30 minuter och fotografera vanliga saker som har något speciellt om dem.",
+      "proof_prompt": "Publicera din vackraste foto.",
+      "steps": [
+        "Gå ut utan att ha någon bestämd destination",
+        "Se som om du såg allt för första gången",
+        "Fotografera vad som kaptar ditt öga"
+      ],
+      "reflection": "Vad märkte du som vanligtvis går oansenligt?",
+      "source_hash": "b6f70c8e4530868f"
+    },
+    "life-001": {
+      "title": "Ett måltid lagad med intention",
+      "description": "Laga något från grunden, utan att skynda. Var närvarande i varje steg.",
+      "proof_prompt": "Foto av den färdiga måltiden.",
+      "steps": [
+        "Välj en ny recept",
+        "Köpa ingredienserna medvetet",
+        "Laga utan telefon eller TV"
+      ],
+      "reflection": "Hur var det att vara fullt närvarande i köket?",
+      "source_hash": "1e779ea46b33a075"
+    },
+    "life-002": {
+      "title": "Ring någon du älskar utan anledning",
+      "description": "Inte en text — en riktig ringning. Tala utan att skynda.",
+      "proof_prompt": "Skriv hur den där konversationen gick.",
+      "steps": [
+        "Tänk på någon du inte pratat med på länge",
+        "Ring utan någon bestämd anledning",
+        "Var närvarande i konversationen"
+      ],
+      "reflection": "Vad känslan var?",
+      "source_hash": "68977c2a1caae963"
+    },
+    "life-003": {
+      "title": "Naturens stillhet — utan telefon",
+      "description": "Gå ut och lämna telefonen hemma. Observera. Lyssna. Var bara.",
+      "proof_prompt": "Skriv vad du observerade, hörde eller kände.",
+      "steps": [
+        "Lämna telefonen hemma",
+        "Gå utan mål",
+        "Observera med alla dina sinnen"
+      ],
+      "reflection": "När kände du dig senast fullt närvarande i naturen?",
+      "source_hash": "17940393f1879b91"
+    },
+    "acc-001": {
+      "title": "En bokstav av förlåtelse till dig själv",
+      "description": "Skriver dig en bokstav av förlåtelse för något från förflutet som du fortfarande bär med dig.",
+      "proof_prompt": "Skriv en fragment eller hur du kände dig när du skrev det.",
+      "steps": [
+        "Välj något från förflutet som du inte har förlåtit dig för",
+        "Skriv som om du skrev till en vän",
+        "Läs det med vänlighet"
+      ],
+      "reflection": "Vad förändrades i dig efter att du skrivit det?",
+      "source_hash": "862f204791250950"
+    },
+    "acc-002": {
+      "title": "3 saker jag accepterar om mig själv",
+      "description": "Inte dina styrkor — saker du ser som brister och väljer att acceptera.",
+      "proof_prompt": "Skriv de 3 sakerna och varför du väljer att acceptera dem.",
+      "steps": [
+        "Sitta i tystnad med dig själv i 5 minuter",
+        "Skriv utan att döma",
+        "Läs det högt"
+      ],
+      "reflection": "Hur kändes det att säga dessa saker med vänlighet?",
+      "source_hash": "0196c131ed6eb039"
+    },
+    "help-001": {
+      "title": "Gör ett oväntat gärning för en främling",
+      "description": "Köp en kopp kaffe, håll dörren, säg något vänligt. Utan att hoppas på något i retur.",
+      "proof_prompt": "Berätta vad som hände och hur du kände dig.",
+      "steps": [
+        "Stanna uppmärksam på dem runt dig idag",
+        "Välj ett litet men äkta gärning",
+        "Gör det utan att nämna det för någon annan"
+      ],
+      "reflection": "Vad kände du när du gav utan att förvänta dig något?",
+      "source_hash": "b973936c9d2c9b26"
+    },
+    "help-002": {
+      "title": "Lyssna på någon på riktigt",
+      "description": "Hitta någon som behöver bli hörd. Ge inget råd. Lyssna bara.",
+      "proof_prompt": "Hur var det att lyssna utan att sticka in med dina egna tankar?",
+      "steps": [
+        "Välj någon som verkar ha något på sin kanning",
+        "Fråga hur de mår och lyssna",
+        "Resistera impulsen att erbjuda lösningar"
+      ],
+      "reflection": "Vad lärde du dig om denna person som du inte visste?",
+      "source_hash": "58db2a65cf463c0b"
+    },
+    "self-001": {
+      "title": "Vilka värderingar styr ditt liv?",
+      "description": "Skriv de första 5 värderingarna utan att överföra. Fråga dig själv: lever du efter dem?",
+      "proof_prompt": "Skriv värderingarna och en reflektion om hur närvarande de är.",
+      "steps": [
+        "Skriv 5 värderingar på 2 minuter",
+        "Inte redigera, inte överföra",
+        "Reflektera: vilken är den mest negligerade?"
+      ],
+      "reflection": "Om ditt liv var en film, vilken värdering skulle vara huvudtemat?",
+      "source_hash": "d90e8d7e85134d19"
+    },
+    "self-002": {
+      "title": "Vad gör dig glad?",
+      "description": "Inte vad som borde göra dig glad. Vad gör dig glad på riktigt.",
+      "proof_prompt": "Lista 10 saker och välj den mest viktiga.",
+      "steps": [
+        "Skriv snabbt 10 saker som ger dig glädje",
+        "Inte censurera något",
+        "Fråga dig själv: hur många av dem gör du regelbundet?"
+      ],
+      "reflection": "Hur ofta tillåter du dig själv att göra vad som gör dig glad?",
+      "source_hash": "2369bde2153a8735"
+    },
+    "hobby-001": {
+      "title": "Prova något du aldrig gjort förut",
+      "description": "Steg ut ur din bekvämlighetszon, försiktigt. Ge det minst 30 minuter.",
+      "proof_prompt": "Foto under eller efter aktiviteten.",
+      "steps": [
+        "Välj något helt nytt",
+        "Ge det minst 30 minuter",
+        "Inte döma dig själv om du inte är bra på det första gången"
+      ],
+      "reflection": "Kände du att du upptäckte något om dig själv?",
+      "source_hash": "64fa2bdb6aa849f8"
+    },
+    "hobby-002": {
+      "title": "Återuppliva en övergiven hobby",
+      "description": "Något du en gång älskade och släppt ifrån dig. Bring det tillbaka till livet för en dag.",
+      "proof_prompt": "Någon bevisning — foto, text, video.",
+      "steps": [
+        "Tänk på vad du älskade som barn",
+        "Reservera 1 timme för den här hobbyn",
+        "Märk hur du känner när du kommer tillbaka till det"
+      ],
+      "reflection": "Varför släppte du det? Vad fick det att komma tillbaka?",
+      "source_hash": "78d4c33501b8758e"
+    },
+    "daily-001": {
+      "title": "Kontakta dig själv",
+      "description": "Hur mår du idag — riktigt? 2 minuters ärlighet med dig själv.",
+      "proof_prompt": "Skriv ett ord eller en mening om hur du mår idag.",
+      "steps": [
+        "Sitta med dig själv i 2 minuter",
+        "Var helt ärlig",
+        "Det finns inget felaktigt svar"
+      ],
+      "reflection": null,
+      "source_hash": "8db06b2efd9d4f5c"
+    },
+    "daily-002": {
+      "title": "3 saker du är tacksam för",
+      "description": "Inte något generiskt — något specifikt från idag.",
+      "proof_prompt": "Skriv de 3 sakerna.",
+      "steps": [
+        "Tänk på idag",
+        "Välj 3 konkreta, specifika saker",
+        "Skriv ner dem"
+      ],
+      "reflection": null,
+      "source_hash": "a376b8ca7deb932c"
+    },
+    "mr-001": {
+      "title": "Den första timmen är ditt",
+      "description": "Väck dig 1 timme tidigare. Inga telefon, inga nyheter, inga sociala medier. Denna timme tillhör dig innan den tillhör världen.",
+      "proof_prompt": "Skriv 3 ord om hur du känner i den här timmen som är din. Inga mer.",
+      "steps": [
+        "Sätt din vek 1 timme tidigare",
+        "Håll din telefon i flygplansläge tills 9:00",
+        "Var närvarande i morgonens tystnad",
+        "Skriv de 3 orden i slutet av timmen"
+      ],
+      "reflection": "Vad upptäckte du om dig själv i morgonens tystnad?",
+      "source_hash": "b14d40e7fcedab45"
+    },
+    "mr-002": {
+      "title": "Ditt kroppsspråk",
+      "description": "5 minuter rörelse när du vaknar. Det behöver inte vara intensivt. Stretching, dans, gå runt i huset. Din kropp vet vad den behöver.",
+      "proof_prompt": "Fotografera platsen där du rörde dig. Inte dig själv — platsen. Morgonljuset.",
+      "steps": [
+        "Strax efter att du vaknat, innan du gör något annat",
+        "Sätt på en låt som gör dig rörlig",
+        "5 minuter medveten rörelse",
+        "Fotografera platsen i slutet"
+      ],
+      "reflection": "Vad sa din kropp dig under dessa 5 minuter?",
+      "source_hash": "7190e100f4eda3eb"
+    },
+    "mr-003": {
+      "title": "Dagens intention",
+      "description": "Skriv EN enda sak du vill KANSA idag. Inte att göra. Inte att uppnå. Att känna.",
+      "proof_prompt": "Skriv EN enda ord eller en kort mening — din intention för idag.",
+      "steps": [
+        "Sitta i tystnad i 2 minuter",
+        "Fråga dig själv: vad vill jag KANSA idag?",
+        "Skriv det första svaret som kommer — analysera inte",
+        "Läs det högt"
+      ],
+      "reflection": "I kväll — kände du det? Varför eller varför inte?",
+      "source_hash": "d86fe34062c23bed"
+    },
+    "mr-004": {
+      "title": "Kaffe i tystnad",
+      "description": "Drick din första kopp kaffe eller te utan telefon, nyheter, musik. 10 minuter av fullständig närvaro med ditt dryckesglas.",
+      "proof_prompt": "Fotografera ditt glas. Inga filter. Naturligt ljus.",
+      "steps": [
+        "Bereda din favoritdryck",
+        "Lämna telefonen i ett annat rum",
+        "Sitta i 10 minuter med bara dina tankar",
+        "Fotografera glaset i slutet"
+      ],
+      "reflection": "Vilka tankar kom upp i tystnaden?",
+      "source_hash": "60ccf75da0690705"
+    },
+    "mr-005": {
+      "title": "Dagens brev",
+      "description": "Skriv 5 meningar om hur du vill att idagen ska gå — som om den hade gått perfekt redan.",
+      "proof_prompt": "De 5 meningarna. I förflutna tiden, som om dagen hade varit perfekt.",
+      "steps": [
+        "Stäng ögonen i 1 minut",
+        "Föreställ dig den bästa versionen av din dag",
+        "Skriv 5 meningar i förflutna tiden: \"Idag kände jag...\"",
+        "Läs dem högt innan du lämnar huset"
+      ],
+      "reflection": "I kväll: hur många av de 5 meningarna blev verklighet?",
+      "source_hash": "3e4ae04d2e14c371"
+    },
+    "mr-006": {
+      "title": "Konkret tack",
+      "description": "Inte \"Jag är tacksam för min familj\". Välj EN specifik stund från igår. En liten, konkret detalj.",
+      "proof_prompt": "Beskriv den specifika stunden. Var var du? Vad hände? Hur kände du dig exakt?",
+      "steps": [
+        "Tänk på igår",
+        "Identifiera EN liten men riktig stund",
+        "Beskriv den i detalj — inte generiskt",
+        "Känna tack för den stunden"
+      ],
+      "reflection": "Varför valde du exakt den här stunden?",
+      "source_hash": "f768efeac00e87d7"
+    },
+    "mr-007": {
+      "title": "Andningsteknik",
+      "description": "4-7-8-tekniken: andas in i 4 sekunder, håll andan i 7 sekunder, andas ut i 8 sekunder. Upprepa 4 gånger.",
+      "proof_prompt": "Beskriv din tillstånd FÖRE och ditt tillstånd EFTER.",
+      "steps": [
+        "Sitt bekvämt med ryggen rakt",
+        "andas in genom näsan i 4 sekunder",
+        "håll andan i 7 sekunder",
+        "andas ut genom munnen i 8 sekunder",
+        "upprepa 4 gånger"
+      ],
+      "reflection": "Vad förändrades i kroppen och hjärnan?",
+      "source_hash": "7e05edc1316ae428"
+    },
+    "mr-008": {
+      "title": "Vision för dagen",
+      "description": "Stäng ögonen i 2 minuter. Bilda dig en bild av den bästa versionen av idag. Då rit eller skriv vad du såg.",
+      "proof_prompt": "Rita eller skriv din vision. Någon form. Någon färg. Judga inte.",
+      "steps": [
+        "Sitt bekvämt och stäng ögonen",
+        "låt ditt sinne bilda den perfekta dagen",
+        "notera detaljerna — färger, ljud, känslor",
+        "öppna ögonen och skriv det på papper eller i text direkt"
+      ],
+      "reflection": "Vilken detalj i visionen överraskade dig?",
+      "source_hash": "7402c40780e77929"
+    },
+    "mr-009": {
+      "title": "En sak som skulle göra mig stolt",
+      "description": "Inte to-do-listan. EN enda sak. Om du bara gör den här idag — är dagen en fullständig framgång.",
+      "proof_prompt": "På morgonen: skriv den ena sak som gör dig stolt. På kvällen: hur kände du dig efter att ha gjort den?",
+      "steps": [
+        "På morgonen: identifiera EN enda viktig sak",
+        "skriv den någonstans synlig — på en anteckning bredvid dig",
+        "gör den här saken först, innan något annat",
+        "på kvällen: rapportera hur du kände dig"
+      ],
+      "reflection": "Varför är den här saken så viktig?",
+      "source_hash": "f2ded89a4e21195f"
+    },
+    "mr-010": {
+      "title": "Mitt mantra för idag",
+      "description": "En enkel mening för att vägleda dig idag. Inte en citat. Din. Från vad du känner just nu, i detta ögonblick.",
+      "proof_prompt": "Ditt mantra. En mening. Din.",
+      "steps": [
+        "Sitt stilla med dig själv i 1 minut",
+        "Vad behöver du höra idag?",
+        "Skriv meningen — din, inte en citat",
+        "Upprepa den 3 gånger högt och tydligt"
+      ],
+      "reflection": "Hjälpte detta mantra dig idag?",
+      "source_hash": "0b9cb71a2e7a5245"
+    },
+    "iw-001": {
+      "title": "En brev till dig själv om förlåtelse",
+      "description": "Det svåraste som du inte har förlåtit dig själv för. Skriv dig en brev som om du skrev till en nära vän som gjort ett misstag.",
+      "proof_prompt": "Ditt brev. Komplett eller fragmentariskt. Mara domar ingenting.",
+      "steps": [
+        "Hitta 30 minuter av fullständig ensamhet",
+        "Identifiera det som du inte har förlåtit dig själv för",
+        "Skriv som om du skrev till en vän — med vänlighet",
+        "Läs det högt och ensam"
+      ],
+      "reflection": "Vad förändrades efter att du skrivit det?",
+      "source_hash": "b2a13524bba0f29b"
+    },
+    "iw-002": {
+      "title": "Ditt största hot",
+      "description": "Skriv eller teckna om ditt största hot. Analysera det inte. Jämställ det inte. Beskriv det bara.",
+      "proof_prompt": "Text eller teckning — vilket som känns lättare för att uttrycka vad du känner.",
+      "steps": [
+        "Sitt stilla med ditt hot i 5 minuter utan att fly från det",
+        "Märka var du känner det i din kropp",
+        "Beskriv det eller teckna det utan att döma",
+        "Ge det ett namn"
+      ],
+      "reflection": "Vad hände när du stod ansikte mot ansikte med det?",
+      "source_hash": "1a3b61a89d3ae5bc"
+    },
+    "iw-003": {
+      "title": "Vem skadade dig mest?",
+      "description": "Inte för att döma eller hämnas. För att förstå och befria dig. Skriv utan att redigera.",
+      "proof_prompt": "Skriv fritt. Redigera inte. Censura inte. Mara läser med fullständig empati.",
+      "steps": [
+        "Se till att du är ensam och trygg",
+        "Skriv utan att lyfta pennen/händerna från tangentbordet",
+        "Redigera inte, censura inte, döma inte",
+        "På slutet, ta 3 djupa andetag"
+      ],
+      "reflection": "Vad kände du efter att du skrivit det?",
+      "source_hash": "0dda1691cea09797"
+    },
+    "iw-004": {
+      "title": "Barnet inom dig",
+      "description": "Vad skulle du säga till den 7-åriga du en gång var? Vad skulle de vilja veta? Vad skulle göra dem trygga?",
+      "proof_prompt": "En brev till din yngre själv. Eller en teckning. Eller båda.",
+      "steps": [
+        "Hitta en foto av dig själv som barn om du har en",
+        "Titta på den i några minuter",
+        "Skriv dem en brev eller teckna för dem",
+        "Vad skulle du ha velat höra då?"
+      ],
+      "reflection": "Vad kände det där barnet när de läste din brev?",
+      "source_hash": "8d2c2eddb7e7e3e4"
+    },
+    "iw-005": {
+      "title": "Din mask",
+      "description": "Vad ansikte visar du världen mot vem du verkligen är när ingen tittar? Beskriv skillnaden ärligt.",
+      "proof_prompt": "Text eller två teckningar: masken och den riktiga ansikte.",
+      "steps": [
+        "Tänk på den senaste veckan",
+        "Hur presenterade du dig för andra?",
+        "Vem var du när du var ensam?",
+        "Beskriv eller teckna båda versioner"
+      ],
+      "reflection": "Hur stor är skillnaden? Varför?",
+      "source_hash": "e1472165dfae5fe9"
+    },
+    "iw-006": {
+      "title": "Rösten i din huvud",
+      "description": "Hur talar du till dig själv när ingen lyssnar? Med vänlighet eller med hårdhet? Skriv 10 saker du regelbundet säger till dig själv.",
+      "proof_prompt": "10 saker du säger till dig själv. Ärligt. Precis som de är.",
+      "steps": [
+        "Var helt ärlig — ingen annan läser",
+        "Skriv de första 10 återkommande tankarna du har om dig själv",
+        "Markera varje: vänlig eller hård?",
+        "Välj EN hård tanke och skriv om den med vänlighet"
+      ],
+      "reflection": "Om någon talade till en vän på samma sätt som du talar till dig själv — hur skulle du känna?",
+      "source_hash": "32a2479cef87f795"
+    },
+    "iw-007": {
+      "title": "Dina gränser",
+      "description": "Där säger du JA när du vill säga NEJ? Med vem? När? Varför fortsätter du ge efter?",
+      "proof_prompt": "3 konkreta situationer där du sa JA när du ville säga NEJ.",
+      "steps": [
+        "Tänk på den senaste månaden",
+        "Identifiera 3 riktiga, konkreta situationer",
+        "För varje: vad du sa vs vad du ville säga",
+        "Välj en och skriv hur det skulle ha sett ut om du hade sagt NEJ"
+      ],
+      "reflection": "Varför är det svårt för dig att säga NEJ i de situationerna?",
+      "source_hash": "ed4aa8745a5239f0"
+    },
+    "iw-008": {
+      "title": "Ditt förhållande till pengar",
+      "description": "Inte om hur mycket du har eller inte har. Om vad du känner mot pengar. Rädsla? Skam? Makt? Likgiltighet?",
+      "proof_prompt": "Skriv ärligt om ditt förhållande till pengar. Barndom, familj, övertygelser.",
+      "steps": [
+        "Tänk efter på din första minne som involverar pengar",
+        "Vad sa dina föräldrar om pengar?",
+        "Vad känner du nu när du tänker på pengar?",
+        "Var tror du att detta känslomässiga svar kommer ifrån?"
+      ],
+      "reflection": "Vilken övertygelse om pengar vill du ändra?",
+      "source_hash": "b77cb84900f415f7"
+    },
+    "iw-009": {
+      "title": "Ditt kropp — en brev",
+      "description": "Skriv en brev till din kropp. Vad skulle du säga till den? Vad säger den till dig? Vad skulle du tacka den för? Vad skulle du be om ursäkt för?",
+      "proof_prompt": "Ditt brev till din kropp. Komplett, ärligt, från hjärtat.",
+      "steps": [
+        "Sitta i tystnad i några minuter",
+        "Gör en mental skanning från huvud till tå",
+        "Vad känner du i varje del av din kropp?",
+        "Skriv brevet — med tacksamhet och förlåtelse"
+      ],
+      "reflection": "Vad sa din kropp i detta brev?",
+      "source_hash": "11265d3635e734d2"
+    },
+    "iw-010": {
+      "title": "Momentet som förändrade dig",
+      "description": "Ett händelse som förändrade allt. Det finns ett innan och ett efter. Beskriv båda.",
+      "proof_prompt": "Berättelsen om momentet. Innan. Händelsen. Efter. Vem du är nu på grund av det.",
+      "steps": [
+        "Identifiera det här momentet — du vet vilket det är",
+        "Beskriv vem du var innan",
+        "Beskriv vad som hände",
+        "Beskriv vem du är nu på grund av det"
+      ],
+      "reflection": "Om det här momentet inte hade hänt — vem skulle du vara idag?",
+      "source_hash": "69574dbf61af03de"
+    },
+    "iw-011": {
+      "title": "Vad betyder framgång för DIG?",
+      "description": "Inte för dina föräldrar. Inte för samhället. Inte för dina vänner. För dig. Nu. Verkligt.",
+      "proof_prompt": "Definiera din framgång. Med ingen social filter.",
+      "steps": [
+        "Komplett ignorera vad andra tycker",
+        "Skriv din egen definition av framgång",
+        "Är det om pengar? Tid? Relationer? Frihet? Kreativitet?",
+        "Lever du enligt denna definition nu?"
+      ],
+      "reflection": "Hur långt är du från din verkliga framgång?",
+      "source_hash": "1edc82ed578cef80"
+    },
+    "iw-012": {
+      "title": "Ditt djupaste längtan",
+      "description": "Vad längtar du mest efter? Inte nödvändigtvis något materiellt. Det kan vara en tillstånd, en anslutning, en version av dig själv.",
+      "proof_prompt": "Text eller teckning — det som bäst uttrycker din längtan.",
+      "steps": [
+        "Sitt i fullständig tystnad i 5 minuter",
+        "Vad känns som saknas verkligen?",
+        "Analysera inte — känna efter",
+        "Uttryck din längtan utan censur"
+      ],
+      "reflection": "Hur länge har denna längtan existerat? Vad skapar den?",
+      "source_hash": "c16f76abbd90d68b"
+    },
+    "iw-013": {
+      "title": "En brev till din framtida själv",
+      "description": "Skriv ett brev till dig själv 5 år från nu. Vad vill du att de ska veta? Vad hoppas du på? Vad vill du lämna efter dig?",
+      "proof_prompt": "Käre mig, 5 år från nu...",
+      "steps": [
+        "Föreställ dig dig själv 5 år från nu",
+        "Skriv ett ärligt brev",
+        "Berätta vad du hoppas på, vad du fruktar, vad du vill för dem",
+        "Seal det i appen"
+      ],
+      "reflection": "Vad förvånade dig i vad du skrev?",
+      "source_hash": "8d185e17d0769bbc"
+    },
+    "iw-014": {
+      "title": "Tacksamhet för motgång",
+      "description": "Livets svåraste ögonblick. Inte det lättaste — det SVÄRVASTE. Vad lärde det dig?",
+      "proof_prompt": "Ögonblicket. Vad det lärde dig. Vem du är på grund av det.",
+      "steps": [
+        "Identifiera det svåraste ögonblicket — du vet vilket det är",
+        "Skriv vad som hände utan att dramatisera",
+        "Identifiera 3 saker du fick av det ögonblicket",
+        "Ge tack till det ögonblicket"
+      ],
+      "reflection": "Om det ögonblicket inte hade inträffat — vad hade du inte lärt dig?",
+      "source_hash": "3ae6df955792a95c"
+    },
+    "iw-015": {
+      "title": "Vem är du, verkligen?",
+      "description": "Inte vad du gör. Inte vad du har. Inte den roll du spelar. Vem är du? Detta fråga har ingen felaktig svar.",
+      "proof_prompt": "Text, teckning, foto collage — allt som uttrycker vem du verkligen är.",
+      "steps": [
+        "Sitt i fullständig tystnad i 10 minuter",
+        "Fråga dig själv: vem är jag?",
+        "Sök inte efter det \"rätta\" svaret — det finns inte",
+        "Uttryck vad du känner, inte vad du tänker"
+      ],
+      "reflection": "Hur har svaret förändrats jämfört med ett år sedan?",
+      "source_hash": "48c9c74b5ce71101"
+    },
+    "ce-001": {
+      "title": "Ta en bild av din dag",
+      "description": "En enda bild som representerar hur du känner idag. Inte perfekt. Inte filterad. Autentisk.",
+      "proof_prompt": "Din bild av idag. Det kan vara vad som helst.",
+      "steps": [
+        "Ta inte i hast — leta efter rätt ögonblick",
+        "Fotografera utan filter och utan redigering",
+        "Det kan vara en sak, en plats, ett ljus, en skugga",
+        "Det ska representera hur du känner — inte hur du ser ut"
+      ],
+      "reflection": "Varför representerar denna bild din dag?",
+      "source_hash": "3ba377f29a79f0d1"
+    },
+    "ce-002": {
+      "title": "Teckna din rädsla",
+      "description": "Du behöver inte vara en konstnär. Någon form, någon färg. Ge din rädsla en visuell form.",
+      "proof_prompt": "En bild av ditt teckning. Oavsett hur \"oprofessionell\" det är.",
+      "steps": [
+        "Ta en tom sida och teckningsredskap",
+        "Ta inte i planering — låt din hand gå",
+        "Teckna vad din rädsla ser ut som",
+        "Ge den en titel"
+      ],
+      "reflection": "Vad ser din rädsla ut som? Vad överraskade dig?",
+      "source_hash": "e00ba9b79e689dca"
+    },
+    "ce-003": {
+      "title": "Skriv ett brev till en främling",
+      "description": "Någon du inte känner men känner att behöver dessa ord. Kanske är det någon som går igenom vad du gick igenom.",
+      "proof_prompt": "Det fullständiga brevet. Det kan publiceras anonymt i gemenskapen.",
+      "steps": [
+        "Tänk på en svår stund i din liv",
+        "Vad hade du velat höra då?",
+        "Skriv till den okända personen",
+        "Du kan välja om du vill publicera det anonymt eller behålla det"
+      ],
+      "reflection": "Skrivande för någon annan — vad upptäckte du om dig själv?",
+      "source_hash": "e273bf8acd6bd43d"
+    },
+    "ce-004": {
+      "title": "Kollaget av dina drömmar",
+      "description": "Hitta 5 bilder runt dig — inte från tidningar — som representerar ditt idealiska liv. Fotografera dem tillsammans.",
+      "proof_prompt": "En bild av ditt kollage. Eller 5 separata bilder.",
+      "steps": [
+        "Sök i ditt hem eller dina omgivningar",
+        "Hitta 5 föremål eller bilder som representerar ditt dröm",
+        "Anordna dem och fotografera",
+        "Skriv 2 ord för varje"
+      ],
+      "reflection": "Vad upptäckte du som verkligen är viktigt?",
+      "source_hash": "3a443952bd961229"
+    },
+    "ce-005": {
+      "title": "Ditt nuvarande musik",
+      "description": "En sång som precis representerar vad du känner just nu. Inte vad du tycker om, utan vad du KÄNNER. Varför just den här sången?",
+      "proof_prompt": "Sångtiteln och varför den representerar precis vad du känner nu.",
+      "steps": [
+        "Sitt i tystnad i 2 minuter",
+        "Vad är den första sången som kommer till dig spontant?",
+        "Lyssna på den en gång, hela vägen igenom",
+        "Skriv varför den här sången representerar idag"
+      ],
+      "reflection": "Vad säger din musikval att om din nuvarande tillstånd?",
+      "source_hash": "f316307538e7602e"
+    },
+    "ce-006": {
+      "title": "Skapa en 4-radig dikt",
+      "description": "Den behöver inte rimma. Den behöver inte vara perfekt. 4 rader om idag, om dig själv, om vad du känner.",
+      "proof_prompt": "Din dikt. 4 rader. Din egen.",
+      "steps": [
+        "Tänk inte — skriv det första som kommer",
+        "Redigera inte efter att du har skrivit",
+        "Dom inte om det är \"bra\" eller inte",
+        "Läs den högt"
+      ],
+      "reflection": "Vad överraskade dig i din egen dikt?",
+      "source_hash": "d2f3b39dc2f5419a"
+    },
+    "ce-007": {
+      "title": "Fotografera vardagsvårdig skönhet",
+      "description": "Gå ut i 30 minuter utan mål. Fotografera 5 vardagsföremål som har något speciellt om dem.",
+      "proof_prompt": "De bästa 1-3 foto från din promenad.",
+      "steps": [
+        "Gå ut utan mål och utan brådska",
+        "Se allting som om du såg det för första gången",
+        "Fotografera vad som kaptar ditt öga",
+        "Inga filter, ingen redigering"
+      ],
+      "reflection": "Vad såg du idag som vanligtvis går oansenligt?",
+      "source_hash": "87a424bb523e69b9"
+    },
+    "ce-008": {
+      "title": "Skapa början på din bok",
+      "description": "Den första sidan i boken om din livshistoria. Inte biografin — boken. Den första meningen. Var du vill att den ska börja.",
+      "proof_prompt": "Den första meningen. Du kan skriva på någon person, från någon stund i ditt liv.",
+      "steps": [
+        "Tänk inte — skriv det första som kommer",
+        "Det kan börja var som helst — barndomen, igår, nu",
+        "Skriv utan att redigera första gången",
+        "Läs den och bestäm dig om du vill behålla den eller omarbeta den"
+      ],
+      "reflection": "Varför valde du att börja där?",
+      "source_hash": "11e805bdc509795c"
+    },
+    "ce-009": {
+      "title": "Mål din dröm",
+      "description": "Visualisera din dröm genom konst. Platsen, människorna, vad ditt idealiska liv ser ut. Inte perfekt — verkligt.",
+      "proof_prompt": "Ett foto av din teckning eller collage.",
+      "steps": [
+        "Ta en stor skissblad om du har ett",
+        "Teckna eller limma in bilder",
+        "Inkludera: platsen, människorna, aktiviteterna, känslorna",
+        "Judga inte — uttryck dig"
+      ],
+      "reflection": "Vilken del av teckningen är den viktigaste?",
+      "source_hash": "4e0fbd6d61295ba4"
+    },
+    "ce-010": {
+      "title": "Den brev du aldrig skickade",
+      "description": "Till någon från din förflutna eller nuvarande. Allt du ville säga men inte gjorde. Nu kan du.",
+      "proof_prompt": "Det fullständiga brevet. Du bestämmer: skicka det, håll det privat eller radera det.",
+      "steps": [
+        "Identifiera personen och vad du ville säga",
+        "Skriv utan att tänka på om du kommer att skicka det",
+        "På slutet har du 3 alternativ: skicka, håll privat, radera",
+        "Vad du än väljer — det är ditt beslut"
+      ],
+      "reflection": "Vad förändrades efter att du skrivit det?",
+      "source_hash": "bc17ccb3d762aa0c"
+    },
+    "ce-011": {
+      "title": "Fotografera dina händer",
+      "description": "Vad berättar dina händer? Vad har de byggt? Vad har de förstört? Vad har de läkt? Vad har de skapat?",
+      "proof_prompt": "Ett foto av dina händer + några ord om deras historia.",
+      "steps": [
+        "Titta på dina händer i några minuter",
+        "Tänk på allt de har gjort",
+        "Fotografera dem i naturligt ljus",
+        "Skriv 3 meningar om deras historia"
+      ],
+      "reflection": "Vad upptäckte du om dig själv när du tittade på dina händer?",
+      "source_hash": "cf98737e79136c1e"
+    },
+    "ce-012": {
+      "title": "Omrita din dåliga dag",
+      "description": "Ta din mest recenta dåliga dag. Teckna eller skriv hur den hade sett ut om den hade gått bra.",
+      "proof_prompt": "Omritad dag — text eller teckning.",
+      "steps": [
+        "Tänk på en recent dålig dag",
+        "Beskriv vad som gick fel",
+        "Omskriv eller omrita hur den hade kunnat vara",
+        "Vad hade kunnat vara annorlunda?"
+      ],
+      "reflection": "Vad kan du faktiskt kontrollera om en dålig dag?",
+      "source_hash": "829cce9ab4274531"
+    },
+    "ce-013": {
+      "title": "Ditt manifest",
+      "description": "5 saker du tror på med hela ditt väsen. Principerna du lever efter eller vill leva efter.",
+      "proof_prompt": "Ditt manifest. 5 principer. Dina.",
+      "steps": [
+        "Tänk inte för mycket — skriv vad som kommer",
+        "Vad är inte-negotierbart för dig?",
+        "Hur vill du leva?",
+        "Vad vill du stå för?"
+      ],
+      "reflection": "Lever du efter detta manifest nu?",
+      "source_hash": "996911d37d23ce27"
+    },
+    "ce-014": {
+      "title": "Säg det ut högt",
+      "description": "Säg ut högt något du aldrig sagt förut. Du behöver inte spela in det — du måste säga det ut.",
+      "proof_prompt": "Inte vad du sa — utan hur du kände när du sa det. Och om världen förändrades.",
+      "steps": [
+        "Identifiera det osagda",
+        "Hitta en privat plats",
+        "Säg det ut högt — 3 gånger",
+        "Sitt en stund med vad du känner efteråt"
+      ],
+      "reflection": "Varför har du inte sagt det förr?",
+      "source_hash": "19d728c73182ca1d"
+    },
+    "ce-015": {
+      "title": "Skapa något med dina händer",
+      "description": "Något som helst — lera, papper, trä, mat, tyg. Något som inte existerade förrän du skapade det.",
+      "proof_prompt": "En foto av ditt skapelseverk. Dess historia på 2 meningar.",
+      "steps": [
+        "Välj ett material från hemmet",
+        "Tänk inte för mycket — låt dina händer gå",
+        "Skapa något — något som helst",
+        "Fotografera det innan du domdar resultatet"
+      ],
+      "reflection": "Vad kände du medan du skapade?",
+      "source_hash": "1aebc0ee7f9c8e6c"
+    },
+    "lc-001": {
+      "title": "Ditt verkliga CV",
+      "description": "Inte jobben. De ögonblick som definierar dig. 5 upplevelser som verkligen betydde något i att forma dig.",
+      "proof_prompt": "Dina 5 definierande upplevelser. Inte jobb — livsögonblick.",
+      "steps": [
+        "Tänk på de upplevelser som förändrade dig",
+        "Välj 5 — inte nödvändigtvis positiva",
+        "Beskriv vad du fick ut av varje",
+        "Detta är ditt verkliga erfarenhet"
+      ],
+      "reflection": "Vad mönster ser du i dessa 5 upplevelser?",
+      "source_hash": "c401b01e31759147"
+    },
+    "lc-002": {
+      "title": "Vad skulle den modiga versionen av dig göra?",
+      "description": "En beslutande du har skjutit upp. Vad skulle din version utan rädsla, utan ursäkter, utan \"men\" göra?",
+      "proof_prompt": "Det skjutna beslutet. Vad den modiga versionen skulle göra. Den första lilla steget du kan ta imorgon.",
+      "steps": [
+        "Identifiera det skjutna beslutet — du vet vilket det är",
+        "Skriv: vad skulle din rädselslösa version göra?",
+        "Identifiera den minsta möjliga steget",
+        "Kommit till Mara att du kommer att ta det imorgon"
+      ],
+      "reflection": "Vad som egentligen hindrar dig?",
+      "source_hash": "535710bdc0b1051e"
+    },
+    "lc-003": {
+      "title": "En dag i ditt idealiska liv",
+      "description": "Beskriv i detalj en perfekt dag från din framtid. Från att vakna upp till att gå och sova. Konkret och specifik.",
+      "proof_prompt": "Ditt idealiska liv. Timme för timme. Konkret.",
+      "steps": [
+        "Write from 06:00 to 23:00",
+        "Be specific — not \"I wake up happy\"",
+        "Include: where you are, with whom, what you do, how you feel",
+        "Don't censor anything you desire"
+      ],
+      "reflection": "Vilket element i den här dagen kan du börja bygga nu?",
+      "source_hash": "277da80c78202975"
+    },
+    "lc-004": {
+      "title": "Färdigheten som skrämmer dig",
+      "description": "Vilken färdighet har du undvikit att lära dig? Varför skrämmer det dig? Det kan vara något som helst — programmering, målning, dans, offentlig föreläsning.",
+      "proof_prompt": "Färdigheten. Varför den skrämmer dig. Ett första litet steg du kan ta idag.",
+      "steps": [
+        "Identifiera färdigheten du tänker på men aldrig börjar",
+        "Skriv varför det egentligen skrämmer dig",
+        "Hitta den minsta möjliga steget",
+        "Ta det steget — idag, precis nu"
+      ],
+      "reflection": "Vad som skulle förändras i ditt liv om du mästade den här färdigheten?",
+      "source_hash": "6d4edd6e9126ee4f"
+    },
+    "lc-005": {
+      "title": "Den svåra konversationen",
+      "description": "En konversation du har undvikit i lång tid. Med vem? Om vad? Mara förbereder dig för den.",
+      "proof_prompt": "Med vem. Om vad. Vad exakt du vill säga. Vad du fruktar kommer att hända.",
+      "steps": [
+        "Identifiera den undvikna konversationen",
+        "Skriv exakt vad du vill säga",
+        "Skriv vad du fruktar den andra personen kommer att säga",
+        "Rollen spela den med Mara förehand"
+      ],
+      "reflection": "Vad som skulle förändras om du hade den här konversationen?",
+      "source_hash": "37f8eca5a7bcc5e7"
+    },
+    "lc-006": {
+      "title": "Din dröm och pengar",
+      "description": "Hur mycket kostar din idealiska livsstil? Beräkna det riktigt. Månadskostnad. Årsbudget. Utan att skrämmas.",
+      "proof_prompt": "Den verkliga beräkningen. Din idealiska livsstil. Hur mycket det kostar månadsvis och årsvis.",
+      "steps": [
+        "Beskriv din idealiska livsstil",
+        "Estimera den verkliga månadsbudgeten",
+        "Beräkna gapet jämfört med din nuvarande inkomst",
+        "Identifiera 3 sätt att sluta gapet"
+      ],
+      "reflection": "Är det mer eller mindre än du tänkte?",
+      "source_hash": "10117caa61afdb62"
+    },
+    "lc-007": {
+      "title": "Karriärbytet",
+      "description": "Om du kunde göra något annat i morgon — vad skulle det vara? Mara hjälper dig att utforska den verkliga möjligheten.",
+      "proof_prompt": "Vad du skulle göra. Varför du inte gör det nu. Vad som skulle behöva förändras.",
+      "steps": [
+        "Skriv: om det fanns inga risker, vad skulle du göra?",
+        "Forskning kring den nya karriären — 30 minuter",
+        "Skriv vad du skulle vinna och vad du skulle förlora",
+        "Identifiera EN liten steg mot det"
+      ],
+      "reflection": "Vad håller dig kvar i din nuvarande situation mer — säkerhet eller rädsla?",
+      "source_hash": "bc84e3d33c8bfccc"
+    },
+    "lc-008": {
+      "title": "Din relation till tid",
+      "description": "Följ en hel dag — exakt vad du gjorde, timme för timme. Sanningsenligt. Utan att förhärliga.",
+      "proof_prompt": "Dagens tidjournal. Timme för timme. Sanningsenligt.",
+      "steps": [
+        "På morgonen: sätt en påminnelse varje 2:a timme",
+        "Notera exakt vad du gjorde",
+        "På slutet: beräkna % av tid per aktivitet",
+        "Identifiera din största \"tidsdödande\""
+      ],
+      "reflection": "Vad visade den här dagen dig om dina verkliga prioriteringar?",
+      "source_hash": "6380f31dcf7e82ce"
+    },
+    "lc-009": {
+      "title": "Bra om du frågar",
+      "description": "Ring eller skriv till någon och fråga om hjälp med något verkligt. Inte metaforiskt. Något konkret som du inte kan klara av själv.",
+      "proof_prompt": "Vem du pratade med. Vad du frågade om. Hur du kände dig när du frågade. Vad som hände efteråt.",
+      "steps": [
+        "Identifiera något du verkligen behöver hjälp med",
+        "Välj en person som kan hjälpa dig",
+        "Fråga direkt — utan överdrivna ursäkter",
+        "Rapportera sanningsenligt vad som hände"
+      ],
+      "reflection": "Varför var det svårt eller lätt för dig att fråga?",
+      "source_hash": "20d0a777cae67bac"
+    },
+    "lc-010": {
+      "title": "Din första steg",
+      "description": "Det där som du har undvikit i månader eller år. Idag tar du FÖRST STEGET. Oavsett hur litet. Omöjligt att göra mindre.",
+      "proof_prompt": "Vad det är för något. Vad exakt steg du tog. Hur litet det var. Hur du kände dig efteråt.",
+      "steps": [
+        "Identifiera det uppskjutna ärendet — du vet vilket det är",
+        "Identifiera den minsta möjliga steg",
+        "Gör det nu — medan du läser detta",
+        "Rapportera exakt vad du gjorde"
+      ],
+      "reflection": "Hur kände du dig efter det första steget?",
+      "source_hash": "f6c2bbd0e2401c73"
+    }
+  }
+}

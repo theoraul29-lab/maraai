@@ -1,0 +1,888 @@
+{
+  "lang": "vi",
+  "lang_name": "Vietnamese",
+  "generated_at": "2026-09-22T02:12:28.549Z",
+  "provider": "ollama",
+  "model": "llama3.1:8b",
+  "missions": {
+    "disc-001": {
+      "title": "Sáng sớm 1 giờ trước",
+      "description": "Sáng sớm thuộc về bạn trước khi nó thuộc về thế giới. Sáng sớm 1 giờ trước và sử dụng thời gian đó chỉ cho riêng mình.",
+      "proof_prompt": "Viết những gì bạn làm trong giờ đó và cảm xúc của bạn.",
+      "steps": [
+        "Đặt chuông báo 1h trước",
+        "Cố gắng chống lại sự muốn ngủ lại",
+        "Làm một điều gì đó chỉ cho bạn trong giờ đó"
+      ],
+      "reflection": "Bạn đã khám phá ra điều gì về bản thân trong yên tĩnh của sáng sớm?",
+      "source_hash": "d6467737ce1a50c6"
+    },
+    "disc-002": {
+      "title": "24 giờ không sử dụng mạng xã hội",
+      "description": "Một ngày hoàn toàn không lướt web. Nhận biết những gì xuất hiện khi bạn không bị phân tâm.",
+      "proof_prompt": "Màn hình chụp từ Screen Time cho thấy 0 phút.",
+      "steps": [
+        "Xóa tạm thời các ứng dụng",
+        "Thông báo cho bạn bè biết bạn đang ngoại tuyến",
+        "Nhận biết những gì bạn cảm thấy khi bạn có cảm giác muốn mở điện thoại"
+      ],
+      "reflection": "Bạn đã làm gì với thời gian bạn đã giành được?",
+      "source_hash": "f3f87f060a3e2e6b"
+    },
+    "disc-003": {
+      "title": "7 ngày tập luyện liên tiếp",
+      "description": "20 phút vận động mỗi ngày, 7 ngày liên tiếp. Bất kỳ loại nào cũng được.",
+      "proof_prompt": "Ảnh hoặc màn hình chụp từ ứng dụng tập luyện của bạn vào ngày thứ 7.",
+      "steps": [
+        "Chọn một hoạt động bạn thích",
+        "Lập kế hoạch nó nghiêm túc trong lịch của bạn",
+        "Không bỏ qua một ngày nào"
+      ],
+      "reflection": "Làm thế nào năng lượng của bạn đã thay đổi trong 7 ngày?",
+      "source_hash": "7d4bac8fca5a4ce2"
+    },
+    "creat-001": {
+      "title": "Tạo một điều gì đó bằng tay",
+      "description": "Một bản vẽ, một tác phẩm điêu khắc, một bức ảnh chụp với ý định. Quá trình quan trọng hơn kết quả.",
+      "proof_prompt": "Ảnh của những gì bạn tạo ra.",
+      "steps": [
+        "Chọn vật liệu",
+        "Tạo nó mà không đánh giá",
+        "Thưởng thức quá trình"
+      ],
+      "reflection": "Bạn đã thể hiện điều gì mà không nhận ra?",
+      "source_hash": "11829407037adcad"
+    },
+    "creat-002": {
+      "title": "Viết một bức thư cho bản thân trong tương lai",
+      "description": "Viết cho người bạn sẽ trở thành trong 1 năm tới. Nói với họ những gì bạn hy vọng, những gì bạn sợ, những gì bạn đang học hỏi.",
+      "proof_prompt": "Dán bức thư hoặc một phần của nó.",
+      "steps": [
+        "Tìm 20 phút yên tĩnh",
+        "Viết mà không chỉnh sửa",
+        "Gói và giữ nó trong 1 năm"
+      ],
+      "reflection": "Bạn muốn biết điều gì nhiều nhất sau 1 năm?",
+      "source_hash": "5d26efbdf7c61d0f"
+    },
+    "creat-003": {
+      "title": "Chụp ảnh vẻ đẹp của những điều thường thấy",
+      "description": "Đi bộ 30 phút và chụp ảnh những điều thường thấy nhưng có điều gì đó đặc biệt về chúng.",
+      "proof_prompt": "Đăng ảnh đẹp nhất của bạn.",
+      "steps": [
+        "Ra đi mà không có điểm đến cố định",
+        "Nhìn như thể bạn đang nhìn mọi thứ lần đầu tiên",
+        "Chụp ảnh những điều nào đó bắt mắt bạn"
+      ],
+      "reflection": "Bạn đã nhận thấy điều gì mà thường bị bỏ qua?",
+      "source_hash": "b6f70c8e4530868f"
+    },
+    "life-001": {
+      "title": "Một bữa ăn được nấu với ý thức",
+      "description": "Nấu một món ăn từ đầu, mà không vội vàng. Có mặt trong từng bước.",
+      "proof_prompt": "Ảnh của bữa ăn hoàn thành.",
+      "steps": [
+        "Chọn một công thức mới",
+        "Mua nguyên liệu một cách tỉnh táo",
+        "Nấu mà không có điện thoại hoặc TV"
+      ],
+      "reflection": "Làm thế nào để bạn có thể hiện diện đầy đủ trong bếp?",
+      "source_hash": "1e779ea46b33a075"
+    },
+    "life-002": {
+      "title": "Gọi cho ai đó bạn yêu thương mà không có lý do",
+      "description": "Không phải là tin nhắn — một cuộc gọi thực sự. Nói mà không vội vàng.",
+      "proof_prompt": "Viết cách cuộc trò chuyện diễn ra.",
+      "steps": [
+        "Dành thời gian suy nghĩ về ai đó bạn chưa gọi cho trong một thời gian",
+        "Gọi mà không có mục đích cụ thể",
+        "Có mặt trong cuộc trò chuyện"
+      ],
+      "reflection": "Bạn đã cảm nhận được sự kết nối gì?",
+      "source_hash": "68977c2a1caae963"
+    },
+    "life-003": {
+      "title": "30 phút trong thiên nhiên — không có điện thoại",
+      "description": "Ra ngoài và để điện thoại ở nhà. Observe. Nghe. Chỉ là.",
+      "proof_prompt": "Viết những gì bạn quan sát, nghe hoặc cảm nhận.",
+      "steps": [
+        "Để điện thoại ở nhà",
+        "Đi bộ mà không có điểm đến",
+        "Quan sát bằng tất cả các giác quan"
+      ],
+      "reflection": "Khi nào bạn đã cảm thấy hiện diện đầy đủ trong thiên nhiên?",
+      "source_hash": "17940393f1879b91"
+    },
+    "acc-001": {
+      "title": "Một bức thư tha thứ cho bản thân",
+      "description": "Viết một bức thư tha thứ cho bản thân về một điều gì đó từ quá khứ mà bạn vẫn mang theo.",
+      "proof_prompt": "Viết một phần của nó hoặc cảm xúc khi viết nó.",
+      "steps": [
+        "Chọn một điều gì đó từ quá khứ bạn chưa tha thứ cho bản thân",
+        "Viết như thể bạn đang viết cho một người bạn",
+        "Đọc nó với lòng nhân ái"
+      ],
+      "reflection": "Điều gì đã thay đổi trong bạn sau khi viết nó?",
+      "source_hash": "862f204791250950"
+    },
+    "acc-002": {
+      "title": "3 điều tôi chấp nhận về bản thân",
+      "description": "Không phải là điểm mạnh - những điều bạn xem là điểm yếu và chọn chấp nhận.",
+      "proof_prompt": "Viết 3 điều và lý do bạn chọn chấp nhận chúng.",
+      "steps": [
+        "Ngồi yên lặng với bản thân trong 5 phút",
+        "Viết mà không đánh giá",
+        "Đọc nó ra loa"
+      ],
+      "reflection": "Làm thế nào để nó cảm thấy khi nói những điều này với sự nhân hậu?",
+      "source_hash": "0196c131ed6eb039"
+    },
+    "help-001": {
+      "title": "Làm một hành động bất ngờ cho người lạ",
+      "description": "Mua một tách cà phê, mở cửa cho người đi sau, nói một điều tốt đẹp. Không mong đợi gì về phía sau.",
+      "proof_prompt": "Báo cáo về điều gì đã xảy ra và cảm giác của bạn.",
+      "steps": [
+        "Cố gắng chú ý đến những người xung quanh bạn hôm nay",
+        "Chọn một hành động nhỏ nhưng chân thành",
+        "Làm nó mà không nói với bất kỳ ai khác"
+      ],
+      "reflection": "Bạn cảm thấy thế nào khi cho mà không mong đợi gì?",
+      "source_hash": "b973936c9d2c9b26"
+    },
+    "help-002": {
+      "title": "Thật sự lắng nghe ai đó",
+      "description": "Tìm người cần được nghe. Không đưa ra lời khuyên. Chỉ lắng nghe.",
+      "proof_prompt": "Làm thế nào để lắng nghe mà không can thiệp?",
+      "steps": [
+        "Chọn người có vẻ như có điều gì đó trên đầu họ",
+        "Hỏi họ về tình hình và lắng nghe",
+        "Cố gắng không đưa ra giải pháp"
+      ],
+      "reflection": "Bạn học được điều gì về người này mà bạn không biết?",
+      "source_hash": "58db2a65cf463c0b"
+    },
+    "self-001": {
+      "title": "Giá trị nào hướng dẫn cuộc sống của bạn?",
+      "description": "Viết 5 giá trị đầu tiên mà không suy nghĩ quá nhiều. Hỏi bản thân: bạn đang sống theo chúng không?",
+      "proof_prompt": "Viết giá trị và một phản ánh về mức độ hiện diện của chúng.",
+      "steps": [
+        "Viết 5 giá trị trong 2 phút",
+        "Không chỉnh sửa, không suy nghĩ quá nhiều",
+        "Phản ánh: giá trị nào bị bỏ qua nhiều nhất?"
+      ],
+      "reflection": "Nếu cuộc sống của bạn là một bộ phim, giá trị nào sẽ là chủ đề trung tâm?",
+      "source_hash": "d90e8d7e85134d19"
+    },
+    "self-002": {
+      "title": "Điều gì làm cho bạn hạnh phúc?",
+      "description": "Không phải là điều nên làm cho bạn hạnh phúc. Điều gì làm cho bạn hạnh phúc.",
+      "proof_prompt": "Danh sách 10 điều và chọn điều quan trọng nhất.",
+      "steps": [
+        "Viết nhanh 10 điều mang lại niềm vui cho bạn",
+        "Không chặn lại bất cứ điều gì",
+        "Hỏi bản thân: bạn thường xuyên làm bao nhiêu trong số chúng?"
+      ],
+      "reflection": "Bạn cho phép bản thân làm điều gì đó mang lại hạnh phúc cho bạn bao nhiêu?",
+      "source_hash": "2369bde2153a8735"
+    },
+    "hobby-001": {
+      "title": "Thử một điều bạn chưa từng làm trước đây",
+      "description": "Ra khỏi vùng an toàn, nhẹ nhàng. Cho nó ít nhất 30 phút.",
+      "proof_prompt": "Ảnh trong hoặc sau hoạt động.",
+      "steps": [
+        "Chọn điều hoàn toàn mới",
+        "Cho nó ít nhất 30 phút",
+        "Không đánh giá bản thân nếu bạn không giỏi nó lần đầu tiên"
+      ],
+      "reflection": "Bạn cảm thấy bạn đã khám phá điều gì về bản thân?",
+      "source_hash": "64fa2bdb6aa849f8"
+    },
+    "hobby-002": {
+      "title": "Khôi phục một sở thích bị bỏ rơi",
+      "description": "Một điều bạn từng yêu thích và bỏ qua. Mang nó trở lại cuộc sống trong một ngày.",
+      "proof_prompt": "Bất kỳ bằng chứng nào - ảnh, văn bản, video.",
+      "steps": [
+        "Thật sự suy nghĩ về điều bạn yêu thích khi còn nhỏ",
+        "Đặt 1 giờ cho sở thích đó",
+        "Chú ý cảm giác khi trở lại với nó"
+      ],
+      "reflection": "Tại sao bạn bỏ nó? Điều gì đã mang nó trở lại?",
+      "source_hash": "78d4c33501b8758e"
+    },
+    "daily-001": {
+      "title": "Kiểm tra với bản thân",
+      "description": "Bạn đang thế nào hôm nay - thật sự? 2 phút của sự thật với bản thân.",
+      "proof_prompt": "Viết một từ hoặc một câu về tình hình của bạn hôm nay.",
+      "steps": [
+        "Ngồi yên lặng với bản thân trong 2 phút",
+        "Tự nhiên và chân thành",
+        "Không có câu trả lời sai"
+      ],
+      "reflection": null,
+      "source_hash": "8db06b2efd9d4f5c"
+    },
+    "daily-002": {
+      "title": "3 điều bạn biết ơn",
+      "description": "Không phải là điều chung chung - điều cụ thể từ hôm nay.",
+      "proof_prompt": "Viết 3 điều.",
+      "steps": [
+        "Thật sự suy nghĩ về hôm nay",
+        "Chọn 3 điều cụ thể, cụ thể",
+        "Viết chúng xuống"
+      ],
+      "reflection": null,
+      "source_hash": "a376b8ca7deb932c"
+    },
+    "mr-001": {
+      "title": "Giờ đầu tiên thuộc về bạn",
+      "description": "Đi ngủ 1 giờ sớm hơn. Không có điện thoại. Không có tin tức. Không có mạng xã hội. Giờ này thuộc về bạn trước khi nó thuộc về thế giới.",
+      "proof_prompt": "Viết 3 từ về cảm giác của bạn trong giờ của bạn. Không có gì khác.",
+      "steps": [
+        "Đặt đồng hồ 1 giờ sớm hơn",
+        "Giữ điện thoại ở chế độ bay trên cho đến 9:00",
+        "Cảm thấy hiện diện trong yên tĩnh của buổi sáng",
+        "Viết 3 từ vào cuối giờ"
+      ],
+      "reflection": "Bạn khám phá điều gì về bản thân trong yên tĩnh của buổi sáng?",
+      "source_hash": "b14d40e7fcedab45"
+    },
+    "mr-002": {
+      "title": "Lời nói của cơ thể",
+      "description": "5 phút di chuyển khi thức dậy. Không cần phải cường điệu. Giãn cơ, nhảy múa, đi lại trong nhà. Cơ thể biết mình cần gì.",
+      "proof_prompt": "Nghiên cứu nơi bạn di chuyển. Không phải bạn — nơi đó. Ánh sáng buổi sáng.",
+      "steps": [
+        "Ngay sau khi thức dậy, trước khi làm bất cứ điều gì",
+        "Chọn một bài hát khiến bạn di chuyển",
+        "5 phút di chuyển ý thức",
+        "Nghiên cứu nơi đó vào cuối"
+      ],
+      "reflection": "Cơ thể bạn nói gì trong 5 phút đó?",
+      "source_hash": "7190e100f4eda3eb"
+    },
+    "mr-003": {
+      "title": "Tầm nhìn của ngày hôm nay",
+      "description": "Viết một điều duy nhất bạn muốn THỂ HIỆN hôm nay. Không phải làm, không phải đạt được. Để THỂ HIỆN.",
+      "proof_prompt": "Viết một từ duy nhất hoặc một câu ngắn — tầm nhìn của bạn hôm nay.",
+      "steps": [
+        "Ngồi im lặng trong 2 phút",
+        "Hỏi bản thân: điều gì bạn muốn THỂ HIỆN hôm nay?",
+        "Viết câu trả lời đầu tiên mà không phân tích",
+        "Đọc nó ra loa"
+      ],
+      "reflection": "Vào buổi tối — bạn đã cảm thấy điều đó chưa? Tại sao hay tại sao không?",
+      "source_hash": "d86fe34062c23bed"
+    },
+    "mr-004": {
+      "title": "Cà phê trong im lặng",
+      "description": "Uống cà phê hoặc trà đầu tiên mà không có điện thoại, không tin tức, không nhạc. 10 phút hoàn toàn hiện diện với thức uống của bạn.",
+      "proof_prompt": "Nghiên cứu cốc cà phê. Không có bộ lọc. Ánh sáng tự nhiên.",
+      "steps": [
+        "Chuẩn bị thức uống yêu thích",
+        "Dời điện thoại ra khỏi phòng",
+        "Ngồi trong 10 phút với những suy nghĩ của bạn",
+        "Nghiên cứu cốc vào cuối"
+      ],
+      "reflection": "Những suy nghĩ nào đã xuất hiện trong im lặng?",
+      "source_hash": "60ccf75da0690705"
+    },
+    "mr-005": {
+      "title": "Thư của ngày hôm nay",
+      "description": "Viết 5 câu về cách bạn muốn ngày hôm nay diễn ra — như thể nó đã diễn ra hoàn hảo.",
+      "proof_prompt": "5 câu. Trong quá khứ đơn, như thể ngày đã hoàn hảo.",
+      "steps": [
+        "Ngồi im lặng trong 1 phút",
+        "Tưởng tượng phiên bản hoàn hảo nhất của ngày hôm nay",
+        "Viết 5 câu trong quá khứ đơn: \"Hôm nay tôi cảm thấy...\"",
+        "Đọc chúng ra loa trước khi rời khỏi nhà"
+      ],
+      "reflection": "Vào buổi tối: bao nhiêu câu trong 5 câu đã trở thành hiện thực?",
+      "source_hash": "3e4ae04d2e14c371"
+    },
+    "mr-006": {
+      "title": "Cảm ơn cụ thể",
+      "description": "Không phải \"Tôi biết ơn gia đình\". Chọn một khoảnh khắc cụ thể từ hôm qua. Một chi tiết cụ thể, nhỏ.",
+      "proof_prompt": "Mô tả khoảnh khắc cụ thể. Bạn ở đâu? Điều gì đã xảy ra? Bạn cảm thấy thế nào?",
+      "steps": [
+        "Think about yesterday",
+        "Identify ONE small but real moment",
+        "Describe it in detail — not generically",
+        "Feel gratitude for that moment"
+      ],
+      "reflection": null,
+      "source_hash": "f768efeac00e87d7"
+    },
+    "mr-007": {
+      "title": "Hít thở",
+      "description": "Kỹ thuật 4-7-8: hít vào 4 giây, giữ 7 giây, hít ra 8 giây. Lặp lại 4 lần.",
+      "proof_prompt": "Mô tả trạng thái trước và sau.",
+      "steps": [
+        "Ngồi thoải mái với lưng thẳng",
+        "Hít vào qua mũi 4 giây",
+        "Giữ hơi thở 7 giây",
+        "Hít ra qua miệng 8 giây",
+        "Lặp lại 4 lần"
+      ],
+      "reflection": "Điều gì đã thay đổi trong cơ thể và tâm trí?",
+      "source_hash": "7e05edc1316ae428"
+    },
+    "mr-008": {
+      "title": "Tầm nhìn của ngày hôm nay",
+      "description": "Ngồi im lặng trong 2 phút. Tưởng tượng phiên bản hoàn hảo nhất của ngày hôm nay. Sau đó, vẽ hoặc viết những gì bạn thấy.",
+      "proof_prompt": "Vẽ hoặc viết tầm nhìn của bạn. Mọi hình dạng. Mọi màu sắc. Không cần đánh giá.",
+      "steps": [
+        "Ngồi thoải mái và im lặng",
+        "Tưởng tượng phiên bản hoàn hảo nhất của ngày hôm nay",
+        "Lưu ý chi tiết — màu sắc, âm thanh, cảm xúc",
+        "Mở mắt và viết nó ngay lập tức"
+      ],
+      "reflection": "Điểm nào trong tầm nhìn đã khiến bạn ngạc nhiên?",
+      "source_hash": "7402c40780e77929"
+    },
+    "mr-009": {
+      "title": "Một điều gì đó sẽ khiến tôi tự hào",
+      "description": "Không phải danh sách việc cần làm. Một điều duy nhất. Nếu bạn chỉ làm điều đó hôm nay — ngày hôm nay là một thành công hoàn toàn.",
+      "proof_prompt": "Sáng mai: viết điều đó. Vào buổi tối: bạn cảm thấy thế nào sau khi làm nó?",
+      "steps": [
+        "Sáng mai: xác định một điều duy nhất quan trọng",
+        "Viết nó ở một nơi dễ thấy — bên cạnh bạn",
+        "Làm điều đó trước khi làm bất cứ điều gì khác",
+        "Vào buổi tối: báo cáo cảm xúc của bạn"
+      ],
+      "reflection": "Tại sao điều đó lại quan trọng?",
+      "source_hash": "f2ded89a4e21195f"
+    },
+    "mr-010": {
+      "title": "Mantra của ngày hôm nay",
+      "description": "Một câu đơn giản để hướng dẫn bạn hôm nay. Không phải một trích dẫn. Của bạn. Từ những gì bạn cảm thấy ngay bây giờ, trong khoảnh khắc này.",
+      "proof_prompt": "Mantra của bạn. Một câu đơn giản. Của bạn.",
+      "steps": [
+        "Ngồi với bản thân trong 1 phút",
+        "Điều gì bạn cần nghe hôm nay?",
+        "Viết câu đó — của bạn, không phải một trích dẫn",
+        "Lặp lại nó 3 lần ra loa"
+      ],
+      "reflection": "Mantra này đã giúp bạn hôm nay chưa?",
+      "source_hash": "0b9cb71a2e7a5245"
+    },
+    "iw-001": {
+      "title": "Thư xin lỗi cho bản thân",
+      "description": "Điều gì đó khó khăn nhất bạn chưa tha thứ cho bản thân. Viết một bức thư như thể bạn đang viết cho một người bạn thân thiết đã phạm một lỗi.",
+      "proof_prompt": "Bức thư của bạn. Hoàn chỉnh hoặc không hoàn chỉnh. Mara không đánh giá gì cả.",
+      "steps": [
+        "Tìm 30 phút im lặng hoàn toàn",
+        "Xác định điều gì bạn chưa tha thứ cho bản thân",
+        "Viết như thể viết cho một người bạn — với lòng trắc ẩn",
+        "Đọc nó ra loa, một mình"
+      ],
+      "reflection": "Điều gì đã thay đổi sau khi bạn viết nó?",
+      "source_hash": "b2a13524bba0f29b"
+    },
+    "iw-002": {
+      "title": "Lời thú tội lớn nhất của bạn",
+      "description": "Viết hoặc vẽ về nỗi sợ lớn nhất của bạn. Không phân tích. Không biện minh. Chỉ mô tả.",
+      "proof_prompt": "Text hoặc vẽ — bất cứ điều gì dễ dàng hơn để thể hiện cảm xúc của bạn.",
+      "steps": [
+        "Ngồi với nỗi sợ của bạn trong 5 phút mà không chạy trốn",
+        "Chú ý nơi bạn cảm thấy nó trong cơ thể",
+        "Mô tả nó hoặc vẽ nó mà không phán xét",
+        "Tặng nó một cái tên"
+      ],
+      "reflection": "Điều gì đã xảy ra khi bạn đứng đối mặt với nó?",
+      "source_hash": "1a3b61a89d3ae5bc"
+    },
+    "iw-003": {
+      "title": "Ai đã làm tổn thương bạn nhất?",
+      "description": "Không để phán xét hoặc trả thù. Để hiểu và tự do. Viết mà không chỉnh sửa.",
+      "proof_prompt": "Viết tự do. Không chỉnh sửa. Không kiểm duyệt. Mara đọc với sự đồng cảm hoàn toàn.",
+      "steps": [
+        "Đảm bảo bạn một mình và an toàn",
+        "Viết mà không rời khỏi bút hoặc tay",
+        "Không chỉnh sửa, không kiểm duyệt, không phán xét",
+        "Cuối cùng, hít ba hơi sâu"
+      ],
+      "reflection": "Bạn cảm thấy thế nào sau khi viết nó?",
+      "source_hash": "0dda1691cea09797"
+    },
+    "iw-004": {
+      "title": "Trẻ em bên trong bạn",
+      "description": "Bạn sẽ nói gì với đứa trẻ 7 tuổi mà bạn từng là? Điều gì họ muốn biết? Điều gì sẽ khiến họ cảm thấy an toàn?",
+      "proof_prompt": "Một bức thư cho bản thân trẻ em. Hoặc vẽ. Hoặc cả hai.",
+      "steps": [
+        "Tìm một bức ảnh của bản thân khi còn nhỏ nếu bạn có một",
+        "Đảm bảo nhìn vào nó trong vài phút",
+        "Viết cho họ một bức thư hoặc vẽ cho họ",
+        "Điều gì bạn muốn nghe lại vào thời điểm đó?"
+      ],
+      "reflection": "Trẻ em đó cảm thấy thế nào khi đọc bức thư của bạn?",
+      "source_hash": "8d2c2eddb7e7e3e4"
+    },
+    "iw-005": {
+      "title": "Mặt nạ của bạn",
+      "description": "Gương mặt bạn thể hiện cho thế giới vs ai bạn thực sự là khi không ai nhìn? Mô tả sự khác biệt một cách trung thực.",
+      "proof_prompt": "Text hoặc hai bản vẽ: mặt nạ và mặt thật.",
+      "steps": [
+        "Thật sự suy nghĩ về tuần qua",
+        "Bạn đã thể hiện bản thân ra sao với người khác?",
+        "Bạn là ai khi một mình?",
+        "Mô tả hoặc vẽ cả hai phiên bản"
+      ],
+      "reflection": "Sự khác biệt có lớn không? Tại sao?",
+      "source_hash": "e1472165dfae5fe9"
+    },
+    "iw-006": {
+      "title": "Giọng nói trong đầu bạn",
+      "description": "Bạn nói gì với bản thân khi không ai nghe? Với lòng nhân ái hay với sự tàn nhẫn? Viết 10 điều bạn thường nói với bản thân.",
+      "proof_prompt": "10 điều bạn nói với bản thân. Trung thực. Bất kỳ điều gì cũng được.",
+      "steps": [
+        "Tuyệt đối trung thực — không ai khác đang đọc",
+        "Viết 10 suy nghĩ lặp đi lặp lại đầu tiên về bản thân",
+        "Đánh dấu mỗi: nhân ái hay tàn nhẫn?",
+        "Chọn một suy nghĩ tàn nhẫn và viết lại nó với lòng nhân ái"
+      ],
+      "reflection": "Nếu ai đó nói với một người bạn theo cách bạn nói với bản thân — bạn sẽ cảm thấy thế nào?",
+      "source_hash": "32a2479cef87f795"
+    },
+    "iw-007": {
+      "title": "Ranh giới của bạn",
+      "description": "Bạn nói CHỈNH khi bạn muốn nói KHÔNG? Với ai? Khi nào? Tại sao bạn tiếp tục nhượng bộ?",
+      "proof_prompt": "3 tình huống cụ thể nơi bạn nói CHỈNH khi bạn muốn nói KHÔNG.",
+      "steps": [
+        "Thật sự suy nghĩ về tháng qua",
+        "Nhận biết 3 tình huống cụ thể",
+        "Đối với mỗi: điều bạn nói vs điều bạn muốn nói",
+        "Chọn một và viết về cách nó sẽ trông nếu bạn nói KHÔNG"
+      ],
+      "reflection": "Tại sao nó khó khăn cho bạn để nói KHÔNG trong những tình huống đó?",
+      "source_hash": "ed4aa8745a5239f0"
+    },
+    "iw-008": {
+      "title": "Sự tương tác của bạn với tiền",
+      "description": "Không liên quan đến số tiền bạn có hay không có. Về CẢM GIÁC CỦA BẠN đối với tiền. Sợ? Thất vọng? Tự tin? Bất chấp?",
+      "proof_prompt": "Viết trung thực về mối quan hệ của bạn với tiền. Thời thơ ấu, gia đình, niềm tin.",
+      "steps": [
+        "Thật sự suy nghĩ về ký ức đầu tiên của bạn liên quan đến tiền",
+        "Điều gì cha mẹ nói về tiền?",
+        "Điều gì bạn cảm thấy khi nghĩ về tiền?",
+        "Nơi bạn nghĩ cảm giác này đến từ?"
+      ],
+      "reflection": "Niềm tin nào về tiền bạn muốn thay đổi?",
+      "source_hash": "b77cb84900f415f7"
+    },
+    "iw-009": {
+      "title": "Thân thể của bạn — một bức thư",
+      "description": "Viết một bức thư cho cơ thể của bạn. Điều gì bạn sẽ nói với nó? Điều gì nó nói với bạn? Điều gì bạn sẽ cảm ơn nó? Điều gì bạn sẽ xin lỗi?",
+      "proof_prompt": "Bức thư của bạn cho cơ thể. Hoàn toàn, trung thực, từ trái tim.",
+      "steps": [
+        "Ngồi yên lặng trong vài phút",
+        "Thực hiện một quét tinh thần từ đầu đến chân",
+        "Điều gì bạn cảm thấy ở mỗi phần của cơ thể?",
+        "Viết bức thư — với lòng biết ơn và tha thứ"
+      ],
+      "reflection": "Thân thể của bạn nói gì với bạn trong bức thư này?",
+      "source_hash": "11265d3635e734d2"
+    },
+    "iw-010": {
+      "title": "Lúc thay đổi bạn",
+      "description": "Một sự kiện đã thay đổi mọi thứ. Có một trước và một sau. Mô tả cả hai.",
+      "proof_prompt": "Câu chuyện của sự kiện. Trước. Sự kiện. Sau. Ai bạn là bây giờ vì nó.",
+      "steps": [
+        "Nhận biết sự kiện đó — bạn biết nó là gì",
+        "Mô tả ai bạn là trước đó",
+        "Mô tả điều gì đã xảy ra",
+        "Mô tả ai bạn là bây giờ vì nó"
+      ],
+      "reflection": "Nếu sự kiện đó không xảy ra — ai bạn sẽ là ngày hôm nay?",
+      "source_hash": "69574dbf61af03de"
+    },
+    "iw-011": {
+      "title": "Điều gì là thành công đối với BẠN?",
+      "description": "Không phải cho cha mẹ của bạn. Không phải cho xã hội. Không phải cho bạn bè của bạn. Đối với bạn. Bây giờ. Thực sự.",
+      "proof_prompt": "Xác định thành công của bạn. Không có bộ lọc xã hội nào.",
+      "steps": [
+        "Tuyệt đối bỏ qua điều gì mà người khác nghĩ",
+        "Viết định nghĩa của bạn về thành công",
+        "Là về tiền? Thời gian? Quan hệ? Tự do? Sáng tạo?",
+        "Bạn đang sống theo định nghĩa này bây giờ?"
+      ],
+      "reflection": "Bạn đang xa thành công thực sự bao nhiêu?",
+      "source_hash": "1edc82ed578cef80"
+    },
+    "iw-012": {
+      "title": "Sự khao khát sâu sắc nhất của bạn",
+      "description": "Bạn khao khát điều gì nhất? Không nhất thiết phải là một vật chất. Nó có thể là một trạng thái, một kết nối, một phiên bản của chính bạn.",
+      "proof_prompt": "Nội dung bằng văn bản hoặc hình vẽ — điều gì tốt hơn để thể hiện sự khao khát đó.",
+      "steps": [
+        "Ngồi yên lặng trong 5 phút",
+        "Tìm hiểu điều gì thực sự thiếu",
+        "Không phân tích — cảm nhận",
+        "Thể hiện sự khao khát đó mà không bị kiểm soát"
+      ],
+      "reflection": "Sự khao khát này đã tồn tại trong bao lâu? Điều gì tạo ra nó?",
+      "source_hash": "c16f76abbd90d68b"
+    },
+    "iw-013": {
+      "title": "Một bức thư cho bản thân trong tương lai",
+      "description": "Viết một bức thư cho bản thân 5 năm sau. Bạn muốn họ biết điều gì? Bạn hy vọng điều gì? Bạn để lại cho họ một di sản gì?",
+      "proof_prompt": "Kính thưa tôi, 5 năm sau...",
+      "steps": [
+        "Tưởng tượng bạn là chính mình 5 năm sau",
+        "Viết một bức thư chân thành",
+        "Báo cho họ điều bạn hy vọng, điều bạn sợ, điều bạn muốn cho họ",
+        "Gửi nó vào ứng dụng"
+      ],
+      "reflection": "Điều gì đã khiến bạn ngạc nhiên khi đọc lại bức thư?",
+      "source_hash": "8d185e17d0769bbc"
+    },
+    "iw-014": {
+      "title": "Cảm ơn cho sự khó khăn",
+      "description": "Lúc khó khăn nhất trong cuộc đời bạn. Không phải lúc dễ dàng — mà là lúc KHÓ KHăn nhất. Điều gì nó đã dạy bạn?",
+      "proof_prompt": "Lúc đó. Điều gì nó đã dạy bạn. Bạn là ai vì nó?",
+      "steps": [
+        "Tìm hiểu lúc khó khăn nhất — bạn biết rõ nó là lúc nào",
+        "Viết lại sự việc mà không phô trương",
+        "Tìm hiểu 3 điều bạn đã thu được từ lúc đó",
+        "Cảm ơn lúc đó"
+      ],
+      "reflection": "Nếu lúc đó không xảy ra — điều gì bạn sẽ không biết?",
+      "source_hash": "3ae6df955792a95c"
+    },
+    "iw-015": {
+      "title": "Bạn là ai, thực sự?",
+      "description": "Không phải là công việc bạn làm. Không phải là tài sản bạn có. Không phải là vai trò bạn đóng. Bạn là ai? Câu hỏi này không có câu trả lời sai.",
+      "proof_prompt": "Nội dung bằng văn bản, hình vẽ, tập hợp ảnh — bất cứ điều gì thể hiện bạn thực sự là ai.",
+      "steps": [
+        "Ngồi yên lặng trong 10 phút",
+        "Hỏi bản thân: bạn là ai?",
+        "Không tìm kiếm câu trả lời 'đúng' — không có câu trả lời đó",
+        "Thể hiện những gì bạn cảm nhận, không phải những gì bạn nghĩ"
+      ],
+      "reflection": "Câu trả lời đã thay đổi so với 1 năm trước sao?",
+      "source_hash": "48c9c74b5ce71101"
+    },
+    "ce-001": {
+      "title": "Nghiên cứu ngày hôm nay qua ảnh",
+      "description": "Một bức ảnh đơn giản để thể hiện cảm xúc của bạn hôm nay. Không phải là hoàn hảo. Không phải là được lọc. Sincer.",
+      "proof_prompt": "Bức ảnh của bạn hôm nay. Nó có thể là bất cứ điều gì.",
+      "steps": [
+        "Không vội vàng — tìm kiếm thời điểm đúng",
+        "Nghiên cứu mà không sử dụng bộ lọc và không chỉnh sửa",
+        "Nó có thể là một vật thể, một địa điểm, một ánh sáng, một bóng tối",
+        "Nó nên thể hiện cảm xúc của bạn — không phải là hình dạng của bạn"
+      ],
+      "reflection": "Tại sao bức ảnh này lại thể hiện ngày hôm nay của bạn?",
+      "source_hash": "3ba377f29a79f0d1"
+    },
+    "ce-002": {
+      "title": "Vẽ hình cho nỗi sợ của bạn",
+      "description": "Bạn không cần phải là một nghệ sĩ. Bất kỳ hình dạng nào, bất kỳ màu nào. Cho nỗi sợ của bạn một hình dạng trực quan.",
+      "proof_prompt": "Một bức ảnh của bản vẽ. Dù nó có 'không chuyên nghiệp' đến đâu đi nữa.",
+      "steps": [
+        "Lấy một tờ giấy trắng và các công cụ vẽ",
+        "Không lên kế hoạch — để tay bạn đi",
+        "Vẽ hình cho nỗi sợ của bạn",
+        "Đặt tên cho nó"
+      ],
+      "reflection": "Nỗi sợ của bạn có hình dạng gì? Điều gì đã khiến bạn ngạc nhiên?",
+      "source_hash": "e00ba9b79e689dca"
+    },
+    "ce-003": {
+      "title": "Viết một bức thư cho một người lạ",
+      "description": "Một người bạn không biết nhưng cảm thấy họ cần những lời này. Có thể đó là người đang trải qua những gì bạn đã trải qua.",
+      "proof_prompt": "Bức thư hoàn chỉnh. Nó có thể được công bố một cách vô danh trong cộng đồng.",
+      "steps": [
+        "Tìm hiểu một lúc khó khăn trong cuộc đời bạn",
+        "Điều gì bạn muốn nghe vào lúc đó?",
+        "Viết cho người đó vô danh",
+        "Bạn có thể chọn công bố nó một cách vô danh hoặc giữ nó"
+      ],
+      "reflection": "Viết cho người khác — điều gì bạn đã khám phá về bản thân?",
+      "source_hash": "e273bf8acd6bd43d"
+    },
+    "ce-004": {
+      "title": "Bộ ảnh của giấc mơ của bạn",
+      "description": "Tìm 5 hình ảnh xung quanh bạn — không phải từ các tạp chí — mà thể hiện cuộc sống lý tưởng của bạn. Nghiên cứu chúng cùng nhau.",
+      "proof_prompt": "Một bức ảnh của bộ ảnh. Hoặc 5 bức ảnh riêng biệt.",
+      "steps": [
+        "Tìm kiếm trong nhà hoặc xung quanh bạn",
+        "Tìm 5 vật thể hoặc hình ảnh thể hiện giấc mơ của bạn",
+        "Sắp xếp chúng và chụp lại",
+        "Viết 2 từ cho mỗi hình ảnh"
+      ],
+      "reflection": "Điều gì bạn đã khám phá thực sự quan trọng?",
+      "source_hash": "3a443952bd961229"
+    },
+    "ce-005": {
+      "title": "Âm nhạc của khoảnh khắc này",
+      "description": "Một bản nhạc thể hiện chính xác cảm xúc của bạn trong lúc này. Không phải là bản nhạc bạn thích — mà là bản nhạc bạn cảm nhận.",
+      "proof_prompt": "Tiêu đề của bản nhạc và lý do tại sao nó thể hiện chính xác cảm xúc của bạn trong lúc này.",
+      "steps": [
+        "Ngồi yên lặng trong 2 phút",
+        "Bản nhạc nào xuất hiện trong tâm trí bạn một cách tự nhiên?",
+        "Nghe nó một lần, từ đầu đến cuối",
+        "Viết lý do tại sao bản nhạc này thể hiện hôm nay"
+      ],
+      "reflection": "Bản nhạc bạn chọn nói lên điều gì về trạng thái của bạn?",
+      "source_hash": "f316307538e7602e"
+    },
+    "ce-006": {
+      "title": "Viết một bài thơ 4 dòng",
+      "description": "Không nhất thiết phải có nhịp điệu. Không nhất thiết phải hoàn hảo. 4 dòng về hôm nay, về bạn, về cảm xúc của bạn.",
+      "proof_prompt": "Bài thơ của bạn. 4 dòng. Của bạn.",
+      "steps": [
+        "Không suy nghĩ — viết điều đầu tiên xuất hiện",
+        "Không chỉnh sửa sau khi viết",
+        "Không đánh giá xem nó có 'tốt' hay không",
+        "Đọc nó ra tiếng nói"
+      ],
+      "reflection": "Điều gì đã khiến bạn ngạc nhiên trong bài thơ của chính mình?",
+      "source_hash": "d2f3b39dc2f5419a"
+    },
+    "ce-007": {
+      "title": "Lấy ảnh vẻ đẹp bình thường",
+      "description": "Ra ngoài 30 phút mà không có điểm đến. Lấy ảnh 5 điều thường ngày nhưng có điều gì đó đặc biệt.",
+      "proof_prompt": "3 ảnh hay nhất từ chuyến đi của bạn.",
+      "steps": [
+        "Ra ngoài mà không có điểm đến và không vội",
+        "Nhìn như thể bạn đang thấy mọi thứ lần đầu tiên",
+        "Lấy ảnh bất cứ điều gì bạn thấy",
+        "Không sử dụng bộ lọc, không chỉnh sửa"
+      ],
+      "reflection": "Bạn thấy điều gì hôm nay mà thường bị bỏ qua?",
+      "source_hash": "87a424bb523e69b9"
+    },
+    "ce-008": {
+      "title": "Viết đầu tiên của cuốn sách về cuộc đời bạn",
+      "description": "Trang đầu tiên của cuốn sách về cuộc đời bạn. Không phải là tiểu sử — cuốn sách. Trang đầu tiên. Bạn có thể bắt đầu ở bất cứ nơi nào bạn muốn.",
+      "proof_prompt": "Trang đầu tiên. Bạn có thể viết trong bất cứ nhân vật nào, từ bất cứ thời điểm nào của cuộc đời bạn.",
+      "steps": [
+        "Không lên kế hoạch — viết điều đầu tiên mà bạn nghĩ",
+        "Nó có thể bắt đầu ở bất cứ nơi nào — thời thơ ấu, hôm qua, bây giờ",
+        "Viết mà không chỉnh sửa lần đầu tiên",
+        "Đọc lại và quyết định có giữ nó hay viết lại"
+      ],
+      "reflection": "Tại sao bạn lại chọn bắt đầu ở đó?",
+      "source_hash": "11e805bdc509795c"
+    },
+    "ce-009": {
+      "title": "Vẽ nơi bạn muốn đến",
+      "description": "Thực hành tưởng tượng qua nghệ thuật. Nơi, người, cuộc sống lý tưởng của bạn. Không phải là hoàn hảo — thực tế.",
+      "proof_prompt": "Một ảnh của bản vẽ hoặc collage của bạn.",
+      "steps": [
+        "Lấy một tờ lớn nếu bạn có",
+        "Vẽ hoặc dán hình ảnh",
+        "Bao gồm: nơi, người, hoạt động, cảm xúc",
+        "Không đánh giá — biểu đạt"
+      ],
+      "reflection": "Điểm nào của bản vẽ quan trọng nhất?",
+      "source_hash": "4e0fbd6d61295ba4"
+    },
+    "ce-010": {
+      "title": "Đoạn thư bạn chưa gửi",
+      "description": "Đến ai đó từ quá khứ hoặc hiện tại. Mọi điều bạn muốn nói nhưng chưa nói. Bây giờ bạn có thể.",
+      "proof_prompt": "Đoạn thư hoàn chỉnh. Bạn quyết định: gửi nó, giữ nó riêng tư, xóa nó.",
+      "steps": [
+        "Xác định người và điều bạn muốn nói",
+        "Viết mà không nghĩ về việc bạn sẽ gửi nó",
+        "Cuối cùng bạn có 3 lựa chọn: gửi, giữ riêng tư, xóa",
+        "Dù bạn chọn gì — đó là quyết định của bạn"
+      ],
+      "reflection": "Điều gì thay đổi sau khi bạn viết nó?",
+      "source_hash": "bc17ccb3d762aa0c"
+    },
+    "ce-011": {
+      "title": "Lấy ảnh của đôi tay bạn",
+      "description": "Đôi tay của bạn nói điều gì? Những gì họ đã xây dựng? Những gì họ đã phá hủy? Những gì họ đã chữa lành? Những gì họ đã tạo ra?",
+      "proof_prompt": "Một ảnh của đôi tay bạn + một vài từ về câu chuyện của chúng.",
+      "steps": [
+        "Nhìn đôi tay bạn trong vài phút",
+        "Thật sự suy nghĩ về mọi thứ họ đã làm",
+        "Lấy ảnh của chúng trong ánh sáng tự nhiên",
+        "Viết 3 câu về câu chuyện của chúng"
+      ],
+      "reflection": "Bạn khám phá điều gì về bản thân khi nhìn đôi tay?",
+      "source_hash": "cf98737e79136c1e"
+    },
+    "ce-012": {
+      "title": "Lại vẽ lại ngày tồi tệ của bạn",
+      "description": "Lấy ngày tồi tệ gần đây nhất. Vẽ hoặc viết lại như thể nó đã đi tốt.",
+      "proof_prompt": "Ngày được vẽ lại — văn bản hoặc vẽ.",
+      "steps": [
+        "Think about a recent bad day",
+        "Describe what went wrong",
+        "Rewrite or redraw how it could have been",
+        "What should have been different?"
+      ],
+      "reflection": null,
+      "source_hash": "829cce9ab4274531"
+    },
+    "ce-013": {
+      "title": "Tuyên ngôn của bạn",
+      "description": "5 điều bạn tin tưởng với cả trái tim. Các nguyên tắc bạn sống theo hoặc muốn sống theo.",
+      "proof_prompt": "Tuyên ngôn của bạn. 5 nguyên tắc. Của bạn.",
+      "steps": [
+        "Don't overthink — write what comes",
+        "What is non-negotiable for you?",
+        "How do you want to live?",
+        "What do you want to stand for?"
+      ],
+      "reflection": null,
+      "source_hash": "996911d37d23ce27"
+    },
+    "ce-014": {
+      "title": "Nói nó ra",
+      "description": "Nói ra điều bạn chưa bao giờ nói trước đây. Bạn không cần phải quay lại nó — bạn phải nói nó ra.",
+      "proof_prompt": "Không phải là điều bạn nói — nhưng cảm giác bạn có khi nói nó ra. Và liệu thế giới đã thay đổi chưa.",
+      "steps": [
+        "Xác định điều chưa bao giờ nói trước đây",
+        "Tìm một nơi riêng tư",
+        "Nói nó ra — 3 lần",
+        "Ngồi lại trong vài phút với cảm giác bạn có sau đó"
+      ],
+      "reflection": "Tại sao bạn chưa nói nó cho đến bây giờ?",
+      "source_hash": "19d728c73182ca1d"
+    },
+    "ce-015": {
+      "title": "Tạo điều gì đó với đôi tay bạn",
+      "description": "Mọi thứ — đất sét, giấy, gỗ, thực phẩm, vải. Điều gì đó không tồn tại trước khi bạn tạo ra nó.",
+      "proof_prompt": "Một ảnh của sản phẩm bạn tạo ra. Câu chuyện của nó trong 2 câu.",
+      "steps": [
+        "Chọn một vật liệu từ nhà bạn",
+        "Không lên kế hoạch — để đôi tay bạn đi",
+        "Tạo điều gì đó — bất cứ điều gì",
+        "Lấy ảnh của nó trước khi đánh giá kết quả"
+      ],
+      "reflection": "Bạn cảm thấy điều gì khi tạo ra nó?",
+      "source_hash": "1aebc0ee7f9c8e6c"
+    },
+    "lc-001": {
+      "title": "Tóm tắt cuộc sống thực của bạn",
+      "description": "Không phải là công việc. Những khoảnh khắc định hình bạn. 5 kinh nghiệm thực sự quan trọng trong việc hình thành bạn.",
+      "proof_prompt": "5 kinh nghiệm định hình. Không phải là công việc — những khoảnh khắc của cuộc sống.",
+      "steps": [
+        "Thật sự suy nghĩ về những kinh nghiệm đã thay đổi bạn",
+        "Chọn 5 — không nhất thiết phải là những kinh nghiệm tích cực",
+        "Mô tả những gì bạn đã học được từ mỗi kinh nghiệm",
+        "Đây là kinh nghiệm thực sự của bạn"
+      ],
+      "reflection": "Bạn nhận thấy gì trong 5 kinh nghiệm này?",
+      "source_hash": "c401b01e31759147"
+    },
+    "lc-002": {
+      "title": "Bạn sẽ làm gì khi không sợ hãi?",
+      "description": "Một quyết định bạn luôn trì hoãn. Bạn sẽ làm gì khi không có sợ hãi, không có lý do, không có \"nhưng\"?",
+      "proof_prompt": "Quyết định bị trì hoãn. Bạn sẽ làm gì khi không sợ hãi. Bước đầu tiên bạn có thể thực hiện ngày mai.",
+      "steps": [
+        "Xác định quyết định bị trì hoãn — bạn biết nó là gì",
+        "Viết: bạn sẽ làm gì khi không sợ hãi?",
+        "Xác định bước nhỏ nhất",
+        "Thành thật với Mara rằng bạn sẽ thực hiện nó ngày mai"
+      ],
+      "reflection": "Bạn đang bị gì hạn chế?",
+      "source_hash": "535710bdc0b1051e"
+    },
+    "lc-003": {
+      "title": "Một ngày trong cuộc sống lý tưởng của bạn",
+      "description": "Mô tả chi tiết một ngày hoàn hảo từ tương lai của bạn. Từ khi thức dậy đến khi đi ngủ. Cụ thể và cụ thể.",
+      "proof_prompt": "Ngày lý tưởng của bạn. Giờ giấc cụ thể. Cụ thể.",
+      "steps": [
+        "Write from 06:00 to 23:00",
+        "Be specific — not \"I wake up happy\"",
+        "Include: where you are, with whom, what you do, how you feel",
+        "Don't censor anything you desire"
+      ],
+      "reflection": "Bạn có thể bắt đầu xây dựng yếu tố nào trong ngày này ngay bây giờ?",
+      "source_hash": "277da80c78202975"
+    },
+    "lc-004": {
+      "title": "Kỹ năng khiến bạn sợ hãi",
+      "description": "Kỹ năng nào bạn đã tránh học? Tại sao nó khiến bạn sợ hãi? Nó có thể là bất cứ điều gì — lập trình, vẽ, nhảy múa, nói trước công chúng.",
+      "proof_prompt": "Kỹ năng. Tại sao nó khiến bạn sợ hãi. Bước đầu tiên nhỏ nhất bạn có thể thực hiện hôm nay.",
+      "steps": [
+        "Xác định kỹ năng bạn luôn nghĩ đến nhưng không bao giờ bắt đầu",
+        "Viết tại sao nó thực sự khiến bạn sợ hãi",
+        "Tìm bước nhỏ nhất",
+        "Thực hiện bước đó — ngay hôm nay"
+      ],
+      "reflection": "Điều gì sẽ thay đổi trong cuộc sống của bạn nếu bạn đã thành thạo kỹ năng đó?",
+      "source_hash": "6d4edd6e9126ee4f"
+    },
+    "lc-005": {
+      "title": "Câu chuyện khó khăn",
+      "description": "Câu chuyện bạn đã trì hoãn trong một thời gian dài. Với ai? Về vấn đề gì? Mara chuẩn bị cho bạn nó.",
+      "proof_prompt": "Với ai. Về vấn đề gì. Bạn muốn nói gì chính xác. Bạn sợ gì sẽ xảy ra.",
+      "steps": [
+        "Xác định câu chuyện bị trì hoãn",
+        "Viết chính xác những gì bạn muốn nói",
+        "Viết những gì bạn sợ người kia sẽ nói",
+        "Luyện tập nó với Mara trước khi thực hiện"
+      ],
+      "reflection": "Điều gì sẽ thay đổi nếu bạn đã có cuộc trò chuyện này?",
+      "source_hash": "37f8eca5a7bcc5e7"
+    },
+    "lc-006": {
+      "title": "Tiền và giấc mơ của bạn",
+      "description": "Giá trị của cuộc sống lý tưởng của bạn là bao nhiêu? Tính toán thật. Tháng. Năm. Không sợ hãi bản thân.",
+      "proof_prompt": "Tính toán thực tế. Cuộc sống lý tưởng. Giá trị hàng tháng và hàng năm.",
+      "steps": [
+        "Lấy cuộc sống lý tưởng bạn mô tả",
+        "Tính toán giá trị thực tế hàng tháng",
+        "Tính toán khoảng cách với thu nhập hiện tại",
+        "Xác định 3 cách để giảm khoảng cách"
+      ],
+      "reflection": "Giá trị này cao hơn hay thấp hơn bạn tưởng?",
+      "source_hash": "10117caa61afdb62"
+    },
+    "lc-007": {
+      "title": "Thay đổi nghề nghiệp",
+      "description": "Nếu bạn có thể làm một việc khác ngày mai — điều gì sẽ là? Mara giúp bạn khám phá khả năng thực tế.",
+      "proof_prompt": "Điều bạn sẽ làm. Tại sao bạn không làm nó ngay bây giờ. Điều gì sẽ thay đổi.",
+      "steps": [
+        "Viết: nếu không có rủi ro, điều gì bạn sẽ làm?",
+        "Thực sự nghiên cứu nghề nghiệp đó — 30 phút",
+        "Viết những gì bạn sẽ đạt được và những gì bạn sẽ mất",
+        "Xác định BƯỚC NHỎ NHẤT TỚI NÓ"
+      ],
+      "reflection": "Điều gì giữ bạn ở vị trí hiện tại nhiều hơn — an toàn hay sợ hãi?",
+      "source_hash": "bc84e3d33c8bfccc"
+    },
+    "lc-008": {
+      "title": "Sự tương tác của bạn với thời gian",
+      "description": "Theo dõi một ngày hoàn toàn — chính xác những gì bạn làm, giờ giấc. Honestly. Không tự chê bai.",
+      "proof_prompt": "Sổ tay theo dõi thời gian của bạn. Giờ giấc cụ thể. Sincerity.",
+      "steps": [
+        "In the morning: set a reminder every 2 hours",
+        "Note exactly what you did",
+        "At the end: calculate the % of time per activity",
+        "Identify your biggest \"time killer\""
+      ],
+      "reflection": "Ngày này đã cho bạn biết điều gì về ưu tiên thực sự của bạn?",
+      "source_hash": "6380f31dcf7e82ce"
+    },
+    "lc-009": {
+      "title": "Yêu cầu sự giúp đỡ",
+      "description": "Gọi điện hoặc viết thư cho ai đó và yêu cầu sự giúp đỡ với một điều gì đó thực tế. Không phải là một biểu tượng. Một điều gì đó cụ thể bạn không thể làm được một mình.",
+      "proof_prompt": "Ai bạn nói chuyện với. Điều gì bạn yêu cầu. Bạn cảm thấy thế nào khi yêu cầu. Điều gì xảy ra sau đó.",
+      "steps": [
+        "Xác định điều gì bạn thực sự cần sự giúp đỡ",
+        "Chọn người có thể giúp bạn",
+        "Yêu cầu trực tiếp — không cần xin lỗi thái quá",
+        "Báo cáo trung thực về những gì đã xảy ra"
+      ],
+      "reflection": "Tại sao việc yêu cầu sự giúp đỡ khó hay dễ cho bạn?",
+      "source_hash": "20d0a777cae67bac"
+    },
+    "lc-010": {
+      "title": "Bước đầu tiên",
+      "description": "Điều gì bạn đã trì hoãn trong nhiều tháng hoặc năm. Hôm nay bạn thực hiện BƯỚC ĐẦU TIÊN. Dù nhỏ đến đâu. Không thể nhỏ hơn được.",
+      "proof_prompt": "Điều gì là. Bước bạn thực hiện chính xác. Bước nhỏ đến đâu. Bạn cảm thấy thế nào sau đó.",
+      "steps": [
+        "Xác định điều gì bị trì hoãn — bạn biết nó là gì",
+        "Xác định bước nhỏ nhất",
+        "Thực hiện nó ngay bây giờ — trong khi bạn đang đọc bài này",
+        "Báo cáo chính xác những gì bạn đã làm"
+      ],
+      "reflection": "Bạn cảm thấy thế nào sau bước đầu tiên?",
+      "source_hash": "f6c2bbd0e2401c73"
+    }
+  }
+}

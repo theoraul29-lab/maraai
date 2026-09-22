@@ -1,0 +1,888 @@
+{
+  "lang": "nl",
+  "lang_name": "Dutch",
+  "generated_at": "2026-09-22T01:34:13.616Z",
+  "provider": "ollama",
+  "model": "llama3.1:8b",
+  "missions": {
+    "disc-001": {
+      "title": "Een uur eerder opstaan",
+      "description": "De ochtend is van jou voordat de wereld je nodig heeft. Sta een uur eerder op en gebruik die tijd voor jezelf.",
+      "proof_prompt": "Schrijf wat je deed in die uur en hoe je je voelde.",
+      "steps": [
+        "Zet je wekker een uur eerder",
+        "Weersta de verleiding om te slapen",
+        "Doe iets alleen voor jezelf in die uur"
+      ],
+      "reflection": "Wat ontdekte je over jezelf in de stilte van de ochtend?",
+      "source_hash": "d6467737ce1a50c6"
+    },
+    "disc-002": {
+      "title": "24 uur zonder sociale media",
+      "description": "Een hele dag zonder scrollen. Merk op wat er opkomt als je niet afgeleid bent.",
+      "proof_prompt": "Schermfoto van Schermtijd met 0 minuten.",
+      "steps": [
+        "Verwijder de apps tijdelijk",
+        "Laat je vrienden weten dat je offline bent",
+        "Let op hoe je je voelt als je de neiging hebt om je telefoon te openen"
+      ],
+      "reflection": "Wat deed je met de tijd die je wist te winnen?",
+      "source_hash": "f3f87f060a3e2e6b"
+    },
+    "disc-003": {
+      "title": "7 dagen sporten op een rij",
+      "description": "20 minuten bewegen per dag, 7 dagen achter elkaar. Elke vorm telt.",
+      "proof_prompt": "Foto of schermfoto van je fitness-app op dag 7.",
+      "steps": [
+        "Kies een activiteit die je leuk vindt",
+        "Zet het vast in je kalender",
+        "Mis geen enkele dag"
+      ],
+      "reflection": "Hoe veranderde je energie over de 7 dagen?",
+      "source_hash": "7d4bac8fca5a4ce2"
+    },
+    "creat-001": {
+      "title": "Maak iets met je handen",
+      "description": "Een tekening, een beeld, een foto genomen met overweging. Het proces telt, niet het resultaat.",
+      "proof_prompt": "Foto van wat je maakte.",
+      "steps": [
+        "Kies je materiaal",
+        "Maak het zonder oordeel",
+        "Geniet van het proces"
+      ],
+      "reflection": "Wat drukte je uit zonder het te beseffen?",
+      "source_hash": "11829407037adcad"
+    },
+    "creat-002": {
+      "title": "Schrijf een brief aan je toekomstige zelf",
+      "description": "Schrijf aan de persoon die je over een jaar bent. Vertel ze wat je hoopvol is, wat je vreest, wat je leert.",
+      "proof_prompt": "Plak de brief of een fragment ervan.",
+      "steps": [
+        "Vind 20 minuten stilte",
+        "Schrijf zonder te bewerken",
+        "Seal het en bewaar het voor een jaar"
+      ],
+      "reflection": "Wat zou je het meest willen weten over een jaar?",
+      "source_hash": "5d26efbdf7c61d0f"
+    },
+    "creat-003": {
+      "title": "Fotografeer de schoonheid van het gewone",
+      "description": "Ga 30 minuten wandelen en fotografeer gewone dingen die iets bijzonders hebben.",
+      "proof_prompt": "Deel je mooiste foto.",
+      "steps": [
+        "Ga met geen bestemming",
+        "Kijk alsof je alles voor het eerst ziet",
+        "Fotografeer wat je aandacht trekt"
+      ],
+      "reflection": "Wat ontdekte je dat normaal gesproken onopgemerkt blijft?",
+      "source_hash": "b6f70c8e4530868f"
+    },
+    "life-001": {
+      "title": "Een maaltijd bereiden met overweging",
+      "description": "Bereid iets van scratch, zonder haast. Zijn aanwezig in elke stap.",
+      "proof_prompt": "Foto van de afgeronde maaltijd.",
+      "steps": [
+        "Kies een nieuwe recept",
+        "Koop de ingrediënten bewust",
+        "Bereid zonder telefoon of tv"
+      ],
+      "reflection": "Hoe was het om volledig aanwezig te zijn in de keuken?",
+      "source_hash": "1e779ea46b33a075"
+    },
+    "life-002": {
+      "title": "Bel iemand die je liefhebt voor geen enkel reden",
+      "description": "Geen sms — een echte telefoongesprek. Praat zonder haast.",
+      "proof_prompt": "Schrijf hoe dat gesprek ging.",
+      "steps": [
+        "Denk aan iemand die je al een tijd niet hebt gesproken",
+        "Bel met geen specifieke bedoeling",
+        "Zijn aanwezig in het gesprek"
+      ],
+      "reflection": "Wat gevoelde je van verbondenheid?",
+      "source_hash": "68977c2a1caae963"
+    },
+    "life-003": {
+      "title": "30 minuten in de natuur — zonder telefoon",
+      "description": "Ga naar buiten en neem je telefoon niet mee. Observeer. Luister. Zijn gewoon.",
+      "proof_prompt": "Schrijf wat je observeerde, hoorde of voelde.",
+      "steps": [
+        "Laat je telefoon thuis",
+        "Ga zonder bestemming",
+        "Observeer met al je zintuigen"
+      ],
+      "reflection": "Wanneer voelde je je voor het laatst volledig aanwezig in de natuur?",
+      "source_hash": "17940393f1879b91"
+    },
+    "acc-001": {
+      "title": "Een brief van verzoening aan jezelf",
+      "description": "Schrijf jezelf een brief van verzoening voor iets uit het verleden dat je nog steeds meedraagt.",
+      "proof_prompt": "Schrijf een fragment of hoe je je voelde terwijl je het schreef.",
+      "steps": [
+        "Kies iets uit het verleden dat je nog niet hebt vergeven aan jezelf",
+        "Schrijf alsof je aan een vriend schrijft",
+        "Lees het met vriendelijkheid"
+      ],
+      "reflection": "Wat veranderde in je nadat je het geschreven had?",
+      "source_hash": "862f204791250950"
+    },
+    "acc-002": {
+      "title": "Drie dingen die ik aan mezelf accepteer",
+      "description": "Niet je sterke kanten — dingen die je als tekortkomingen ervaart en waar je voor kiest om ze te accepteren.",
+      "proof_prompt": "Schrijf de drie dingen en waarom je ervoor kiest om ze te accepteren.",
+      "steps": [
+        "Zit 5 minuten in stilte bij jezelf",
+        "Schrijf zonder oordeel",
+        "Lees het hardop"
+      ],
+      "reflection": "Hoe voelde het om deze dingen met vriendelijkheid te zeggen?",
+      "source_hash": "0196c131ed6eb039"
+    },
+    "help-001": {
+      "title": "Doe een onverwacht gebaar voor een vreemde",
+      "description": "Koop een koffie, houd de deur open, zeg iets vriendelijks. Zonder te hopen op iets terug.",
+      "proof_prompt": "Vertel wat er gebeurde en hoe je je voelde.",
+      "steps": [
+        "Blijf attent zijn voor de mensen om je heen vandaag",
+        "Kies een klein maar oprecht gebaar",
+        "Doe het zonder het aan iemand anders te vertellen"
+      ],
+      "reflection": "Wat voelde je bij het geven zonder iets te verwachten?",
+      "source_hash": "b973936c9d2c9b26"
+    },
+    "help-002": {
+      "title": "Luister echt naar iemand",
+      "description": "Vind iemand die gehoord wil worden. Geef geen advies. Luister gewoon.",
+      "proof_prompt": "Hoe was het om te luisteren zonder in te grijpen?",
+      "steps": [
+        "Kies iemand die eruitziet alsof hij/zij iets op zijn/haar hart heeft",
+        "Vraag hoe het met hem/haar gaat en luister",
+        "Weersta de neiging om oplossingen aan te bieden"
+      ],
+      "reflection": "Wat leerde je over deze persoon dat je niet wist?",
+      "source_hash": "58db2a65cf463c0b"
+    },
+    "self-001": {
+      "title": "Wat zijn de waarden die mijn leven leiden?",
+      "description": "Schrijf de eerste 5 waarden zonder te overdenken. Stel jezelf de vraag: leef ik in overeenstemming met ze?",
+      "proof_prompt": "Schrijf de waarden en een reflectie over hoe aanwezig ze zijn.",
+      "steps": [
+        "Schrijf 5 waarden in 2 minuten",
+        "Laat ze niet bewerken, laat ze niet overdenken",
+        "Reflecteer: welke ene is het meest verwaarloosd?"
+      ],
+      "reflection": "Als mijn leven een film was, welke waarde zou de centrale thema zijn?",
+      "source_hash": "d90e8d7e85134d19"
+    },
+    "self-002": {
+      "title": "Wat maakt me gelukkig?",
+      "description": "Niet wat me gelukkig zou moeten maken. Wat maakt ME gelukkig.",
+      "proof_prompt": "Maak een lijst van 10 dingen en kies de belangrijkste.",
+      "steps": [
+        "Schrijf snel 10 dingen die je vreugde geven",
+        "Laat niets weg",
+        "Stel jezelf de vraag: hoe vaak doe ik ze regelmatig?"
+      ],
+      "reflection": "Hoe vaak laat ik mezelf toe om te doen wat me gelukkig maakt?",
+      "source_hash": "2369bde2153a8735"
+    },
+    "hobby-001": {
+      "title": "Probeer iets wat je nog nooit gedaan hebt",
+      "description": "Ga uit je comfortzone, maar doe het zachtmoedig. Geef het tenminste 30 minuten.",
+      "proof_prompt": "Maak een foto tijdens of na de activiteit.",
+      "steps": [
+        "Kies iets compleet nieuws",
+        "Geef het tenminste 30 minuten",
+        "Wees niet te hard voor jezelf als je het de eerste keer niet goed doet"
+      ],
+      "reflection": "Voelde je dat je iets over jezelf ontdekte?",
+      "source_hash": "64fa2bdb6aa849f8"
+    },
+    "hobby-002": {
+      "title": "Herleef een verwaarloosde hobby",
+      "description": "Een hobby die je vroeger leuk vond en waar je mee bent gestopt. Breng hem terug tot leven voor een dag.",
+      "proof_prompt": "Elke vorm van bewijs — foto, tekst, video.",
+      "steps": [
+        "Denk na over wat je vroeger leuk vond",
+        "Reserveer 1 uur voor die hobby",
+        "Let op hoe je je voelt bij het terugkeren"
+      ],
+      "reflection": "Waarom liet je hem vallen? Wat bracht hem terug?",
+      "source_hash": "78d4c33501b8758e"
+    },
+    "daily-001": {
+      "title": "Check in bij jezelf",
+      "description": "Hoe ben je vandaag — echt? 2 minuten eerlijkheid met jezelf.",
+      "proof_prompt": "Schrijf een woord of een zin over hoe je je vandaag voelt.",
+      "steps": [
+        "Zit 2 minuten in stilte bij jezelf",
+        "Zijn volledig eerlijk",
+        "Er is geen verkeerde antwoord"
+      ],
+      "reflection": null,
+      "source_hash": "8db06b2efd9d4f5c"
+    },
+    "daily-002": {
+      "title": "Drie dingen waar ik dankbaar voor ben",
+      "description": "Niet iets algemeens — iets concreets van vandaag.",
+      "proof_prompt": "Schrijf de drie dingen.",
+      "steps": [
+        "Denk na over vandaag",
+        "Kies 3 concrete, specifieke dingen",
+        "Schrijf ze op"
+      ],
+      "reflection": null,
+      "source_hash": "a376b8ca7deb932c"
+    },
+    "mr-001": {
+      "title": "De eerste uur is van jou",
+      "description": "Wakker worden 1 uur eerder. Geen telefoon. Geen nieuws. Geen sociale media. Dit uur is van jou voordat het van de wereld is.",
+      "proof_prompt": "Schrijf 3 woorden over hoe je je voelt in dit uur dat van jou is. Niets meer.",
+      "steps": [
+        "Zet je wekker 1 uur eerder",
+        "Houd je telefoon op vliegtuigmodus tot 9:00",
+        "Zijn aanwezig in de stilte van de ochtend",
+        "Schrijf de 3 woorden aan het einde van de uur"
+      ],
+      "reflection": "Wat ontdekte je over jezelf in de stilte van de ochtend?",
+      "source_hash": "b14d40e7fcedab45"
+    },
+    "mr-002": {
+      "title": "Je lichaam spreekt",
+      "description": "5 minuten bewegen zodra je wakker wordt. Het hoeft niet intens te zijn. Stretchen, dansen, rondlopen in huis. Je lichaam weet wat het nodig heeft.",
+      "proof_prompt": "Fotografeer de plek waar je bewogen hebt. Niet jezelf — de plek. De ochtendlicht.",
+      "steps": [
+        "Zodra je wakker bent, voordat je iets anders doet",
+        "Een liedje opzetten dat je beweegt",
+        "5 minuten bewust bewegen",
+        "Fotografeer de plek aan het einde"
+      ],
+      "reflection": "Wat vertelde je lichaam je in deze 5 minuten?",
+      "source_hash": "7190e100f4eda3eb"
+    },
+    "mr-003": {
+      "title": "De bedoeling van de dag",
+      "description": "Schrijf ÉÉN ding dat je vandaag wilt VOELEN. Niet doen. Niet bereiken. Voelen.",
+      "proof_prompt": "Schrijf ÉÉN woord of een korte zin — je bedoeling voor vandaag.",
+      "steps": [
+        "Zitten in stilte voor 2 minuten",
+        "Vraag jezelf af: wat wil ik vandaag voelen?",
+        "Schrijf de eerste antwoord die komt — analyseer niet",
+        "Lees het hardop uit"
+      ],
+      "reflection": "In de avond — voelde je het? Waarom of waarom niet?",
+      "source_hash": "d86fe34062c23bed"
+    },
+    "mr-004": {
+      "title": "Koffie in stilte",
+      "description": "Drink je eerste koffie of thee zonder telefoon, nieuws, muziek. 10 minuten complete aanwezigheid bij je drankje.",
+      "proof_prompt": "Fotografeer je kopje. Geen filters. Natuurlijk licht.",
+      "steps": [
+        "Maak je favoriete drankje klaar",
+        "Laat je telefoon in een andere kamer",
+        "Zit 10 minuten met alleen je gedachten",
+        "Fotografeer het kopje aan het einde"
+      ],
+      "reflection": "Welke gedachten kwamen op in de stilte?",
+      "source_hash": "60ccf75da0690705"
+    },
+    "mr-005": {
+      "title": "De brief van vandaag",
+      "description": "Schrijf 5 zinnen over hoe je vandaag wilt dat het gaat — alsof het al perfect was gebeurd.",
+      "proof_prompt": "De 5 zinnen. In het verleden, alsof de dag al perfect was geweest.",
+      "steps": [
+        "Sluit je ogen voor 1 minuut",
+        "Stel je voor dat de beste versie van je dag is",
+        "Schrijf 5 zinnen in het verleden: \"Vandaag voelde ik...\"",
+        "Lees ze hardop uit voor je de deur uitgaat"
+      ],
+      "reflection": "In de avond: hoeveel van de 5 zinnen kwamen uit?",
+      "source_hash": "3e4ae04d2e14c371"
+    },
+    "mr-006": {
+      "title": "Concreet dankbaar zijn",
+      "description": "Niet \"Ik ben dankbaar voor mijn familie\". Kies ÉÉN specifieke moment uit gisteren. Een klein, concreet detail.",
+      "proof_prompt": "Beschrijf het specifieke moment. Waar was je? Wat gebeurde er? Hoe voelde je je precies?",
+      "steps": [
+        "Denk aan gisteren",
+        "Identificeer ÉÉN klein maar echt moment",
+        "Beschrijf het in detail — niet generiek",
+        "Voel dankbaarheid voor dat moment"
+      ],
+      "reflection": "Waarom koos je precies dit moment?",
+      "source_hash": "f768efeac00e87d7"
+    },
+    "mr-007": {
+      "title": "Ademhaling",
+      "description": "De 4-7-8-techniek: 4 seconden inademen, 7 seconden vasthouden, 8 seconden uitademen. Herhaal 4 keer.",
+      "proof_prompt": "Beschrijf je staat VOORDAT en je staat NA de oefening.",
+      "steps": [
+        "Zit comfortabel met je rug recht",
+        "Inademen door je neus voor 4 seconden",
+        "Vasthouden voor 7 seconden",
+        "Uitademen door je mond voor 8 seconden",
+        "Herhaal 4 keer"
+      ],
+      "reflection": "Wat veranderde in je lichaam en geest?",
+      "source_hash": "7e05edc1316ae428"
+    },
+    "mr-008": {
+      "title": "Visie van de dag",
+      "description": "Sluit je ogen voor 2 minuten. Stel je voor dat de beste versie van vandaag is. Tekent of schrijf dan wat je zag.",
+      "proof_prompt": "Tekent of schrijf je visie. Enige vorm. Enige kleur. Oordeel niet.",
+      "steps": [
+        "Zit comfortabel en sluit je ogen",
+        "Laat je geest de perfecte dag voorstellen",
+        "Let op de details — kleuren, geluiden, emoties",
+        "Open je ogen en schrijf het op of in tekst direct op papier"
+      ],
+      "reflection": "Welk element van de visie verraste je?",
+      "source_hash": "7402c40780e77929"
+    },
+    "mr-009": {
+      "title": "Eén ding dat me trots maakt",
+      "description": "Niet de to-do-lijst. ÉÉN ding. Als je dat één ding vandaag doet — is de dag een complete success.",
+      "proof_prompt": "In de ochtend: schrijf dat één ding. In de avond: hoe voelde je je na het doen?",
+      "steps": [
+        "In de ochtend: identificeer ÉÉN belangrijk ding",
+        "Schrijf het ergens zichtbaar — op een notitie naast je",
+        "Doe dat ding eerst, voordat je iets anders doet",
+        "In de avond: rapporteer hoe je je voelde"
+      ],
+      "reflection": "Waarom doet dit ding echt iets?",
+      "source_hash": "f2ded89a4e21195f"
+    },
+    "mr-010": {
+      "title": "Mijn mantra voor vandaag",
+      "description": "Eén zin om je vandaag te leiden. Niet een citaat. Van jou. Van wat je nu voelt in dit moment.",
+      "proof_prompt": "Je mantra. Eén zin. Van jou.",
+      "steps": [
+        "Zit even met jezelf",
+        "Wat moet je vandaag horen?",
+        "Schrijf de zin — van jou, niet een citaat",
+        "Herhaal hem 3 keer hardop"
+      ],
+      "reflection": "Hield deze mantra je vandaag bij?",
+      "source_hash": "0b9cb71a2e7a5245"
+    },
+    "iw-001": {
+      "title": "Een brief van vergeving aan mezelf",
+      "description": "Het moeilijkste dat je jezelf nog niet hebt vergeven. Schrijf jezelf een brief alsof je naar een dierbare vriend schreef die een fout maakte.",
+      "proof_prompt": "Je brief. Compleet of fragmentarisch. Mara oordeelt niets.",
+      "steps": [
+        "Vind 30 minuten van complete eenzaamheid",
+        "Identificeer dat ding dat je jezelf nog niet hebt vergeven",
+        "Schrijf alsof je naar een vriend schrijft — met vriendelijkheid",
+        "Lees hem hardop uit, alleen"
+      ],
+      "reflection": "Wat veranderde na het schrijven?",
+      "source_hash": "b2a13524bba0f29b"
+    },
+    "iw-002": {
+      "title": "Je grootste angst",
+      "description": "Schrijf of teken over je grootste angst. Analyseer het niet. Rechtférdig het niet. Beschrijf het gewoon.",
+      "proof_prompt": "Tekst of tekening — wat voelt gemakkelijker voor het uiten van wat je voelt.",
+      "steps": [
+        "Zit 5 minuten met je angst zonder ervandoor te gaan",
+        "Let op waar je het voelt in je lichaam",
+        "Beschrijf het of teken het zonder oordeel",
+        "Geef het een naam"
+      ],
+      "reflection": "Wat gebeurde er toen je oog in oog stond met je angst?",
+      "source_hash": "1a3b61a89d3ae5bc"
+    },
+    "iw-003": {
+      "title": "Wie heeft je het meest gekwetst?",
+      "description": "Niet om te oordelen of wraak te nemen. Om jezelf te begrijpen en te bevrijden. Schrijf zonder te bewerken.",
+      "proof_prompt": "Schrijf vrij. Bewerk niet. Bewimpel niet. Mara leest met complete empathie.",
+      "steps": [
+        "Zorg ervoor dat je alleen bent en veilig bent",
+        "Schrijf zonder je pen/handen van de toetsenbord te tillen",
+        "Bewerk niet, bewimpel niet, oordeel niet",
+        "Eindig met 3 diepe ademhalingen"
+      ],
+      "reflection": "Wat voelde je na het schrijven?",
+      "source_hash": "0dda1691cea09797"
+    },
+    "iw-004": {
+      "title": "De kind in jezelf",
+      "description": "Wat zou je zeggen aan de 7-jarige je die je ooit was? Wat zou ze willen weten? Wat zou haar veiligheid geven?",
+      "proof_prompt": "Een brief aan je jongere zelf. Of een tekening. Of beide.",
+      "steps": [
+        "Find a photo of yourself as a child if you have one",
+        "Look at it for a few minutes",
+        "Write them a letter or draw for them",
+        "What would you have wanted to hear back then?"
+      ],
+      "reflection": null,
+      "source_hash": "8d2c2eddb7e7e3e4"
+    },
+    "iw-005": {
+      "title": "Je masker",
+      "description": "Wat gezicht toon je de wereld toe vs wie ben je echt als niemand kijkt? Beschrijf de verschillen eerlijk.",
+      "proof_prompt": "Tekst of twee tekeningen: het masker en de echte gezicht.",
+      "steps": [
+        "Denk aan de afgelopen week",
+        "Hoe presenteerde je jezelf aan anderen?",
+        "Wie was je toen je alleen was?",
+        "Beschrijf of teken beide versies"
+      ],
+      "reflection": "Hoe groot is de verschillen? Waarom?",
+      "source_hash": "e1472165dfae5fe9"
+    },
+    "iw-006": {
+      "title": "De stem in je hoofd",
+      "description": "Hoe praat je tegen jezelf als niemand luistert? Met vriendelijkheid of met wreedheid? Schrijf 10 dingen die je jezelf regelmatig zegt.",
+      "proof_prompt": "10 dingen die je jezelf zegt. Eerlijk. Precies zoals ze zijn.",
+      "steps": [
+        "Zijn volledig eerlijk — niemand anders leest het",
+        "Schrijf de eerste 10 herhaalde gedachten die je hebt over jezelf",
+        "Markeer elk: vriendelijk of wreed?",
+        "Kies EEN wreed gedachte en herformuleer het met vriendelijkheid"
+      ],
+      "reflection": "Hoe zou je je voelen als iemand tegen een vriend zo praatte als je tegen jezelf?",
+      "source_hash": "32a2479cef87f795"
+    },
+    "iw-007": {
+      "title": "Je grenzen",
+      "description": "Waar zeg je JA als je NOG wil zeggen? Met wie? Wanneer? Waarom geef je jezelf nog steeds in?",
+      "proof_prompt": "3 concrete situaties waarin je JA zei toen je NOG wilde zeggen.",
+      "steps": [
+        "Denk aan de afgelopen maand",
+        "Identificeer 3 echte, concrete situaties",
+        "Voor elk: wat je zei vs wat je wilde zeggen",
+        "Kies één en schrijf hoe het eruit zou hebben gezien als je NOG had gezegd"
+      ],
+      "reflection": "Waarom is het moeilijk voor je om NOG te zeggen in die situaties?",
+      "source_hash": "ed4aa8745a5239f0"
+    },
+    "iw-008": {
+      "title": "Je relatie met geld",
+      "description": "Niet over hoeveel je hebt of niet hebt. Over wat je voelt ten opzichte van geld. Angst? Schuldgevoel? Macht? Onverschilligheid?",
+      "proof_prompt": "Schrijf eerlijk over je relatie met geld. Kindertijd, familie, overtuigingen.",
+      "steps": [
+        "Denk aan je eerste herinnering die met geld te maken heeft",
+        "Wat zeiden je ouders over geld?",
+        "Wat voel je nu als je aan geld denkt?",
+        "Waar denk je dat deze emotie vandaan komt?"
+      ],
+      "reflection": "Wat geloof je over geld dat je wilt veranderen?",
+      "source_hash": "b77cb84900f415f7"
+    },
+    "iw-009": {
+      "title": "Je lichaam — een brief",
+      "description": "Schrijf een brief aan je lichaam. Wat zou je hem zeggen? Wat vertelt hij je? Wat zou je hem danken voor? Wat zou je hem om vergeving vragen voor?",
+      "proof_prompt": "Je brief aan je lichaam. Volledig, eerlijk, van het hart.",
+      "steps": [
+        "Zit een paar minuten in stilte",
+        "Doe een mentale scan van hoofd tot teen",
+        "Wat voel je in elke deel van je lichaam?",
+        "Schrijf de brief — met dankbaarheid en vergeving"
+      ],
+      "reflection": "Wat vertelde je lichaam je in deze brief?",
+      "source_hash": "11265d3635e734d2"
+    },
+    "iw-010": {
+      "title": "Het moment dat je veranderde",
+      "description": "Een gebeurtenis die alles veranderde. Er is een voor en een na. Beschrijf beide.",
+      "proof_prompt": "De geschiedenis van het moment. Voor. De gebeurtenis. Na. Wie je nu bent door het.",
+      "steps": [
+        "Identificeer dat moment — je weet welke het is",
+        "Beschrijf wie je was voor",
+        "Beschrijf wat gebeurde",
+        "Beschrijf wie je nu bent door het"
+      ],
+      "reflection": "Als dat moment niet was gebeurd — wie zou je vandaag zijn?",
+      "source_hash": "69574dbf61af03de"
+    },
+    "iw-011": {
+      "title": "Wat betekent succes voor JOU?",
+      "description": "Niet voor je ouders. Niet voor de maatschappij. Niet voor je vrienden. Voor jou. Nu. Echt.",
+      "proof_prompt": "Definieer je succes. Met geen sociale filter.",
+      "steps": [
+        "Ignoor wat anderen denken",
+        "Schrijf je eigen definitie van succes",
+        "Is het over geld? Tijd? Relaties? Vrijheid? Creativiteit?",
+        "Leef je nu volgens deze definitie?"
+      ],
+      "reflection": "Hoe ver ben je van je echte succes?",
+      "source_hash": "1edc82ed578cef80"
+    },
+    "iw-012": {
+      "title": "Je diepste verlangen",
+      "description": "Wat verlang je het meest? Niet noodzakelijk iets materiëls. Het kan een staat, een connectie, een versie van jezelf zijn.",
+      "proof_prompt": "Tekst of tekening — wat beter uitdrukt dat verlangen.",
+      "steps": [
+        "Zit in complete stilte voor 5 minuten",
+        "Wat voel je dat werkelijk ontbreekt?",
+        "Analyseer niet — voel het",
+        "Uitdruk dat verlangen zonder censuur"
+      ],
+      "reflection": "Hoe lang bestaat dit verlangen al? Wat veroorzaakt het?",
+      "source_hash": "c16f76abbd90d68b"
+    },
+    "iw-013": {
+      "title": "Een brief aan je toekomstige zelf",
+      "description": "Schrijf een brief aan jezelf over 5 jaar. Wat wil je dat ze weten? Wat hoop je? Wat wil je ze nalaten als erfenis?",
+      "proof_prompt": "Dierbaar me, 5 jaar van nu...",
+      "steps": [
+        "Stel je voor dat je jezelf bent over 5 jaar",
+        "Schrijf een eerlijke brief",
+        "Vertel ze wat je hoop is, wat je vreest, wat je voor ze wilt",
+        "Seal het in de app"
+      ],
+      "reflection": "Wat verraste je in wat je schreef?",
+      "source_hash": "8d185e17d0769bbc"
+    },
+    "iw-014": {
+      "title": "Bijlange van tegenslag",
+      "description": "De moeilijkste moment van je leven. Niet de makkelijkste — de HARDEST. Wat leerde je eruit?",
+      "proof_prompt": "Het moment. Wat leerde je eruit. Wie ben je door het.",
+      "steps": [
+        "Identificeer het moeilijkste moment — je weet welk het is",
+        "Schrijf wat er gebeurde zonder dramatiek",
+        "Identificeer 3 dingen die je uit dat moment hebt gekregen",
+        "Geef dank aan dat moment"
+      ],
+      "reflection": "Als dat moment niet was gebeurd — wat zou je niet hebben geweten?",
+      "source_hash": "3ae6df955792a95c"
+    },
+    "iw-015": {
+      "title": "Wie ben je, echt?",
+      "description": "Niet wat je doet. Niet wat je hebt. Niet de rol die je speelt. Wie ben je? Deze vraag heeft geen verkeerde antwoord.",
+      "proof_prompt": "Tekst, tekening, foto collage — alles dat uitdrukt wie je echt bent.",
+      "steps": [
+        "Zit in complete stilte voor 10 minuten",
+        "Vraag jezelf af: wie ben ik?",
+        "Zoek niet naar het \"juiste\" antwoord — er is er geen",
+        "Uitdruk wat je voelt, niet wat je denkt"
+      ],
+      "reflection": "Hoe is het antwoord veranderd vergeleken met een jaar geleden?",
+      "source_hash": "48c9c74b5ce71101"
+    },
+    "ce-001": {
+      "title": "Fotografeer je dag",
+      "description": "Een enkele foto die vertegenwoordigt hoe je je vandaag voelt. Niet perfect. Niet gefilterd. Authentiek.",
+      "proof_prompt": "Je foto van vandaag. Het kan alles zijn.",
+      "steps": [
+        "Rust niet — kijk uit naar het juiste moment",
+        "Fotografeer zonder filter en zonder bewerken",
+        "Het kan een object, een plek, een licht, een schaduw zijn",
+        "Het moet vertegenwoordigen hoe je je voelt — niet hoe je eruitziet"
+      ],
+      "reflection": "Waarom vertegenwoordigt deze foto je dag?",
+      "source_hash": "3ba377f29a79f0d1"
+    },
+    "ce-002": {
+      "title": "Tekenen van je vrees",
+      "description": "Je hoeft geen kunstenaar te zijn. Elk formaat, elk kleur. Geef je vrees een visuele vorm.",
+      "proof_prompt": "Een foto van je tekening. Of hoe \"onprofessioneel\" het ook is.",
+      "steps": [
+        "Neem een blanco vel en tekeninstrumenten",
+        "Denk niet — laat je hand gaan",
+        "Tekenen wat je vrees eruitziet",
+        "Geef het een titel"
+      ],
+      "reflection": "Wat ziet je vrees eruit? Wat verraste je?",
+      "source_hash": "e00ba9b79e689dca"
+    },
+    "ce-003": {
+      "title": "Schrijf een brief aan een vreemde",
+      "description": "Iemand die je niet kent maar voelt dat ze deze woorden nodig heeft. Misschien is het iemand die door wat je zelf hebt meegemaakt.",
+      "proof_prompt": "De complete brief. Het kan anoniem gepubliceerd worden in de gemeenschap.",
+      "steps": [
+        "Denk aan een moeilijk moment in je leven",
+        "Wat zou je hebben gewild om te horen toen?",
+        "Schrijf voor die onbekende persoon",
+        "Je kunt kiezen of je het anoniem publiceert of het bewaart"
+      ],
+      "reflection": "Schrijven voor iemand anders — wat ontdekte je over jezelf?",
+      "source_hash": "e273bf8acd6bd43d"
+    },
+    "ce-004": {
+      "title": "De collage van je droom",
+      "description": "Vind 5 afbeeldingen om je heen — niet uit tijdschriften — die je ideale leven vertegenwoordigen. Fotografeer ze samen.",
+      "proof_prompt": "Een foto van je collage. Of 5 aparte foto's.",
+      "steps": [
+        "Zoek in je huis of in je omgeving",
+        "Vind 5 objecten of afbeeldingen die je ideale leven vertegenwoordigen",
+        "Leg ze uit en fotografeer",
+        "Schrijf 2 woorden voor elk"
+      ],
+      "reflection": "Wat ontdekte je dat werkelijk belangrijk is?",
+      "source_hash": "3a443952bd961229"
+    },
+    "ce-005": {
+      "title": "De muziek van je moment",
+      "description": "Een lied dat precies vertegenwoordigt wat je nu voelt. Niet wat je leuk vindt — wat je voelt. Waarom dit lied?",
+      "proof_prompt": "De titel van het lied en waarom het precies je huidige gevoel vertegenwoordigt.",
+      "steps": [
+        "Zit in stilte voor 2 minuten",
+        "Wat komt spontaan in je op?",
+        "Luister naar het lied een keer helemaal door",
+        "Schrijf waarom dit lied je huidige gevoel vertegenwoordigt"
+      ],
+      "reflection": "Wat zegt je muziekkeuze over je toestand?",
+      "source_hash": "f316307538e7602e"
+    },
+    "ce-006": {
+      "title": "Schrijf een 4-regels dichtje",
+      "description": "Het hoeft niet te rimen. Het hoeft niet perfect te zijn. 4 regels over vandaag, over jou, over wat je voelt.",
+      "proof_prompt": "Je dichtje. 4 regels. Van jou.",
+      "steps": [
+        "Denk niet — schrijf het eerste wat er in je opkomt",
+        "Bewerk het niet nadat je het geschreven hebt",
+        "Oordeel niet of het \"goed\" of niet is",
+        "Lees het hardop"
+      ],
+      "reflection": "Wat verraste je in je eigen dichtje?",
+      "source_hash": "d2f3b39dc2f5419a"
+    },
+    "ce-007": {
+      "title": "Een fotograaf van gewone schoonheid",
+      "description": "Ga 30 minuten naar buiten zonder bestemming. Neem 5 foto's van gewone dingen die iets bijzonders hebben.",
+      "proof_prompt": "De beste 1-3 foto's van je wandeling.",
+      "steps": [
+        "Ga naar buiten zonder bestemming en haast je niet",
+        "Zie alles alsof je het voor de eerste keer ziet",
+        "Neem foto's van alles wat je aandacht trekt",
+        "Geen filters, geen bewerking"
+      ],
+      "reflection": "Wat zag je vandaag dat normaal gesproken onzichtbaar is?",
+      "source_hash": "87a424bb523e69b9"
+    },
+    "ce-008": {
+      "title": "Begin met schrijven van je boek",
+      "description": "De eerste pagina van het boek over je leven. Niet een biografie — het boek. De eerste alinea. Waar je maar wilt beginnen.",
+      "proof_prompt": "De eerste alinea. Je kunt in elke persoon schrijven, uit elke moment van je leven.",
+      "steps": [
+        "Denk niet na — schrijf het eerste wat komt",
+        "Het kan overal beginnen — kindertijd, gisteren, nu",
+        "Schrijf zonder te bewerken voor het eerst",
+        "Lees het en beslis of je het wilt behouden of het opnieuw schrijven"
+      ],
+      "reflection": "Waarom begon je daar?",
+      "source_hash": "11e805bdc509795c"
+    },
+    "ce-009": {
+      "title": "Tekenen waar je wilt zijn",
+      "description": "Visualisatie door middel van kunst. De plek, de mensen, wat je ideale leven eruitziet. Niet perfect — echt.",
+      "proof_prompt": "Een foto van je tekening of collage.",
+      "steps": [
+        "Neem een grote vel papier als je er een hebt",
+        "Teken of plak afbeeldingen",
+        "Inclusief: de plek, de mensen, de activiteiten, de emoties",
+        "Oordeel niet — uitdruk je"
+      ],
+      "reflection": "Welk element van de tekening is het meest belangrijk?",
+      "source_hash": "4e0fbd6d61295ba4"
+    },
+    "ce-010": {
+      "title": "De brief die je nooit hebt gestuurd",
+      "description": "Aan iemand uit je verleden of heden. Alles wat je wilde zeggen en niet zei. Nu kun je het doen.",
+      "proof_prompt": "De complete brief. Jij beslist: stuur hem, bewaar hem privé, of verwijder hem.",
+      "steps": [
+        "Identificeer de persoon en wat je wilde zeggen",
+        "Schrijf zonder na te denken of je hem zal sturen",
+        "Aan het einde heb je 3 opties: stuur, bewaar privé, verwijder",
+        "Of je het nu doet — het is jouw beslissing"
+      ],
+      "reflection": "Wat veranderde er na het schrijven?",
+      "source_hash": "bc17ccb3d762aa0c"
+    },
+    "ce-011": {
+      "title": "Fotograferen van je handen",
+      "description": "Wat vertellen je handen? Wat hebben ze gebouwd? Wat hebben ze vernietigd? Wat hebben ze genezen? Wat hebben ze gecreëerd?",
+      "proof_prompt": "A photo of your hands + a few words about their story.",
+      "steps": [
+        "Look at your hands for a few minutes",
+        "Think about everything they've done",
+        "Photograph them in natural light",
+        "Write 3 sentences about their story"
+      ],
+      "reflection": null,
+      "source_hash": "cf98737e79136c1e"
+    },
+    "ce-012": {
+      "title": "Her-teken je slechte dag",
+      "description": "Neem je meest recente slechte dag. Tekenen of schrijven hoe het eruit zou hebben gezien als het goed was gegaan.",
+      "proof_prompt": "De her-tekende dag — tekst of tekening.",
+      "steps": [
+        "Denk na over een recente slechte dag",
+        "Beschrijf wat er verkeerd ging",
+        "Her-schrijf of her-teken hoe het had kunnen zijn",
+        "Wat had anders moeten gaan?"
+      ],
+      "reflection": "Wat kun je echt controleren over een slechte dag?",
+      "source_hash": "829cce9ab4274531"
+    },
+    "ce-013": {
+      "title": "Je manifest",
+      "description": "5 dingen die je met je hele wezen gelooft. De principes die je leeft of wilt leven.",
+      "proof_prompt": "Je manifest. 5 principes. Van jou.",
+      "steps": [
+        "Denk niet na — schrijf wat komt",
+        "Wat is voor jou niet onderhandelbaar?",
+        "Hoe wil je leven?",
+        "Wat wil je voorstaan?"
+      ],
+      "reflection": "Leef je nu al volgens dit manifest?",
+      "source_hash": "996911d37d23ce27"
+    },
+    "ce-014": {
+      "title": "Zeg het hardop",
+      "description": "Zeg hardop iets wat je nog nooit hebt gezegd. Je hoeft het niet op te nemen — je moet het hardop zeggen.",
+      "proof_prompt": "Niet wat je zei — maar hoe je je voelde toen je het zei. En of de wereld veranderde.",
+      "steps": [
+        "Identificeer dat onuitgesproken ding",
+        "Vind een privéplek",
+        "Zeg het hardop — 3 keer",
+        "Zit een paar minuten na afloop met wat je voelt"
+      ],
+      "reflection": "Waarom heb je het tot nu toe niet gezegd?",
+      "source_hash": "19d728c73182ca1d"
+    },
+    "ce-015": {
+      "title": "Maak iets met je handen",
+      "description": "Alles — klei, papier, hout, voedsel, stof. Iets dat nog niet bestond voordat je het maakte.",
+      "proof_prompt": "Een foto van je creatie. Haar verhaal in 2 zinnen.",
+      "steps": [
+        "Kies een materiaal uit de buurt",
+        "Denk niet na — laat je handen gaan",
+        "Maak iets — iets wat maar moet zijn",
+        "Fotografeer het voordat je het oordeelt"
+      ],
+      "reflection": "Wat voelde je terwijl je aan het maken was?",
+      "source_hash": "1aebc0ee7f9c8e6c"
+    },
+    "lc-001": {
+      "title": "Het samenvatting van je echte leven",
+      "description": "Niet de banen. De momenten die je vormden. 5 ervaringen die echt belangrijk waren bij het vormen van jezelf.",
+      "proof_prompt": "De 5 bepalende ervaringen. Niet banen — levensmomenten.",
+      "steps": [
+        "Denk na over de ervaringen die je veranderden",
+        "Kies 5 — niet noodzakelijkerwijs positieve ervaringen",
+        "Beschrijf wat je bij elke ervaring hebt gekregen",
+        "Dit is je echte ervaring"
+      ],
+      "reflection": "Wat zie je in deze 5 ervaringen?",
+      "source_hash": "c401b01e31759147"
+    },
+    "lc-002": {
+      "title": "Wat zou de moedige versie van jou doen?",
+      "description": "Een beslissing die je steeds uitstelt. Wat zou je versie zonder angst, zonder excuus, zonder 'maar' doen?",
+      "proof_prompt": "De uitgestelde beslissing. Wat de moedige versie zou doen. De eerste kleine stap die je morgen kunt nemen.",
+      "steps": [
+        "Identificeer de uitgestelde beslissing — je weet welke het is",
+        "Schrijf: wat zou je moedige versie doen?",
+        "Identificeer de kleinste mogelijk stap",
+        "Beloof Mara dat je hem morgen zult nemen"
+      ],
+      "reflection": "Wat houdt je echt tegen?",
+      "source_hash": "535710bdc0b1051e"
+    },
+    "lc-003": {
+      "title": "Een dag in jouw ideale leven",
+      "description": "Beschrijf in detail een perfecte dag uit jouw toekomst. Van wakker worden tot slapen gaan. Concreet en specifiek.",
+      "proof_prompt": "Jouw ideale dag. Uur voor uur. Concreet.",
+      "steps": [
+        "Schrijf van 06:00 tot 23:00",
+        "Wees specifiek — niet 'ik word wakker met een glimlach'",
+        "Inclusief: waar je bent, met wie, wat je doet, hoe je je voelt",
+        "Censureer niets wat je wenst"
+      ],
+      "reflection": "Welk element van deze dag kun je nu al aan de gang maken?",
+      "source_hash": "277da80c78202975"
+    },
+    "lc-004": {
+      "title": "De vaardigheid die je angst aanjaagt",
+      "description": "Wat voor vaardigheid heb je altijd gemeden? Waarom angst je dat? Het kan alles zijn — coderen, schilderen, dansen, openbare spreken.",
+      "proof_prompt": "De vaardigheid. Waarom die je angst aanjaagt. Een eerste kleine stap die je vandaag kunt nemen.",
+      "steps": [
+        "Identificeer de vaardigheid die je altijd overweegt maar nooit start",
+        "Schrijf waarom die je echt angst aanjaagt",
+        "Vind de kleinste mogelijk stap",
+        "Neem die stap — vandaag, nu, meteen"
+      ],
+      "reflection": "Wat zou veranderen in jouw leven als je die vaardigheid beheerst?",
+      "source_hash": "6d4edd6e9126ee4f"
+    },
+    "lc-005": {
+      "title": "De moeilijke conversatie",
+      "description": "Een conversatie die je al maanden of jaren uitstelt. Met wie? Over wat? Mara bereidt je erop voor.",
+      "proof_prompt": "Met wie. Over wat. Precies wat je wilt zeggen. Wat je vreest dat de ander zal zeggen.",
+      "steps": [
+        "Identificeer de uitgestelde conversatie",
+        "Schrijf precies wat je wilt zeggen",
+        "Schrijf wat je vreest dat de ander zal zeggen",
+        "Spel eerst de conversatie met Mara af"
+      ],
+      "reflection": "Wat zou veranderen als je deze conversatie had?",
+      "source_hash": "37f8eca5a7bcc5e7"
+    },
+    "lc-006": {
+      "title": "Geld en jouw droom",
+      "description": "Hoeveel kost jouw ideale leven? Bereken het echt. Maandelijks. Jaarlijks. Zonder je angst aan te jagen.",
+      "proof_prompt": "De echte berekening. Jouw ideale leven. Hoeveel het maandelijks en jaarlijks kost.",
+      "steps": [
+        "Neem jouw ideale leven zoals je dat beschreven hebt",
+        "Schat de echte maandelijkse kosten",
+        "Bereken de kloof met jouw huidige inkomen",
+        "Identificeer 3 manieren om de kloof te dichten"
+      ],
+      "reflection": "Is het meer of minder dan je dacht?",
+      "source_hash": "10117caa61afdb62"
+    },
+    "lc-007": {
+      "title": "De carrière-wissel",
+      "description": "Als je morgen iets anders kon doen — wat zou het dan zijn? Mara helpt je om de echte mogelijkheid te onderzoeken.",
+      "proof_prompt": "Wat je zou doen. Waarom je dat nu niet doet. Wat zou veranderen.",
+      "steps": [
+        "Schrijf: als er geen risico's waren, wat zou je dan doen?",
+        "Onderzoek dat beroep — 30 minuten",
+        "Schrijf wat je zou winnen en wat je zou verliezen",
+        "Identificeer EEN kleine stap richting dat beroep"
+      ],
+      "reflection": "Wat houdt je meer vast — zekerheid of angst?",
+      "source_hash": "bc84e3d33c8bfccc"
+    },
+    "lc-008": {
+      "title": "Jouw relatie met de tijd",
+      "description": "Volg een hele dag — precies wat je deed, uur voor uur. Echt. Zonder te verfraaien.",
+      "proof_prompt": "De dagboek van de tijd. Uur voor uur. Echt.",
+      "steps": [
+        "In de ochtend: zet een herinnering om elke 2 uur",
+        "Note precies wat je deed",
+        "Op het einde: bereken de % van de tijd per activiteit",
+        "Identificeer jouw grootste 'tijdverdwaalder'"
+      ],
+      "reflection": "Wat toonde deze dag je over jouw echte prioriteiten?",
+      "source_hash": "6380f31dcf7e82ce"
+    },
+    "lc-009": {
+      "title": "Vraag om hulp",
+      "description": "Bel of schrijf iemand en vraag om hulp met iets concreets. Niet metaforisch. Iets concreets dat je niet alleen kunt doen.",
+      "proof_prompt": "Met wie je gesproken hebt. Wat je gevraagd hebt. Hoe je gevraagd hebt. Wat er gebeurde daarna.",
+      "steps": [
+        "Identificeer iets waar je echt hulp bij nodig hebt",
+        "Kies iemand die je kan helpen",
+        "Vraag direct — zonder te veel excuus",
+        "Rapporteer eerlijk wat er gebeurde"
+      ],
+      "reflection": "Waarom was het moeilijk of makkelijk om te vragen?",
+      "source_hash": "20d0a777cae67bac"
+    },
+    "lc-010": {
+      "title": "De eerste stap",
+      "description": "Dat ding dat je maanden of jaren uitgesteld hebt. Vandaag neem je de EERSTE STAP. Hoe klein ook. Onmogelijk kleiner te maken.",
+      "proof_prompt": "Wat dat ding is. Precies wat je deed. Hoe klein het was. Hoe je je voelde daarna.",
+      "steps": [
+        "Identificeer de uitgestelde dingen — je weet welke het is",
+        "Identificeer de kleinste mogelijk stap",
+        "Doe het nu — terwijl je dit leest",
+        "Rapporteer precies wat je deed"
+      ],
+      "reflection": "Hoe voelde je je na de eerste stap?",
+      "source_hash": "f6c2bbd0e2401c73"
+    }
+  }
+}

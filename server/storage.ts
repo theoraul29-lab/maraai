@@ -1869,7 +1869,12 @@ export class DatabaseStorage implements IStorage {
   // --- FB-style user posts (Phase 2 P0 — You) ------------------------------
 
   async createUserPost(input: InsertUserPost): Promise<UserPost> {
-    const [row] = await db.insert(userPosts).values(input).returning();
+    // The column's own DEFAULT (sql`CURRENT_TIMESTAMP`) is broken for this
+    // integer/mode:'timestamp' column — SQLite's CURRENT_TIMESTAMP returns a
+    // text datetime string, not unix-epoch seconds, so any insert that
+    // relies on it ends up stored/read back as epoch 0 ("1/1/1970"). Setting
+    // it explicitly here sidesteps the bad default without a migration.
+    const [row] = await db.insert(userPosts).values({ ...input, createdAt: new Date() }).returning();
     return row;
   }
 

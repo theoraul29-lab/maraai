@@ -54,7 +54,7 @@ const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6';
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'llama3.1:8b';
 const OLLAMA_BASE_URL = (process.env.OLLAMA_BASE_URL || 'http://localhost:11434').replace(/\/+$/, '');
 const MAX_TOKENS = Number(process.env.ANTHROPIC_MAX_TOKENS) || 8192;
-const CHUNK = 10;
+const CHUNK = Number(process.env.TRANSLATE_CHUNK) || 10;
 
 // Derived identically to missionContentHash() in server/missions/content.ts so
 // the seed loader can detect when a bundle is stale versus missions.json.

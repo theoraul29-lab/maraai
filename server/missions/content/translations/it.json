@@ -1,0 +1,888 @@
+{
+  "lang": "it",
+  "lang_name": "Italian",
+  "generated_at": "2026-09-22T01:23:05.997Z",
+  "provider": "ollama",
+  "model": "llama3.1:8b",
+  "missions": {
+    "disc-001": {
+      "title": "Svegliati un'ora prima",
+      "description": "La mattina appartiene a te prima che appartenga al mondo. Svegliati un'ora prima e utilizza quell'ora solo per te stesso.",
+      "proof_prompt": "Scrivi cosa hai fatto in quell'ora e come ti sei sentito.",
+      "steps": [
+        "Imposta l'allarme un'ora prima",
+        "Resisti all'urgenza di addormentarti",
+        "Fai qualcosa solo per te in quell'ora"
+      ],
+      "reflection": "Cosa hai scoperto su te stesso nella quiete della mattina?",
+      "source_hash": "d6467737ce1a50c6"
+    },
+    "disc-002": {
+      "title": "24 ore senza social media",
+      "description": "Un giorno intero senza scorrere. Nota cosa compare quando non sei distratto.",
+      "proof_prompt": "Screenshot di Screen Time che mostra 0 minuti.",
+      "steps": [
+        "Elimina temporaneamente le app",
+        "Avvisa i tuoi amici che sei offline",
+        "Nota cosa ti senti quando hai l'urgenza di aprire il telefono"
+      ],
+      "reflection": "Cosa hai fatto con il tempo che hai guadagnato?",
+      "source_hash": "f3f87f060a3e2e6b"
+    },
+    "disc-003": {
+      "title": "7 giorni di esercizio di seguito",
+      "description": "20 minuti di movimento al giorno, 7 giorni di seguito. Qualsiasi tipo conta.",
+      "proof_prompt": "Foto o screenshot dal tuo app di fitness al giorno 7.",
+      "steps": [
+        "Scegli un'attività che ti piace",
+        "Agginalo fermamente nel tuo calendario",
+        "Non perdi un solo giorno"
+      ],
+      "reflection": "Come è cambiata la tua energia nei 7 giorni?",
+      "source_hash": "7d4bac8fca5a4ce2"
+    },
+    "creat-001": {
+      "title": "Crea qualcosa con le tue mani",
+      "description": "Un disegno, una scultura, una foto presa con intenzione. Il processo conta, non il risultato.",
+      "proof_prompt": "Foto di cosa hai creato.",
+      "steps": [
+        "Scegli il materiale",
+        "Crea senza giudicare",
+        "Goditi il processo"
+      ],
+      "reflection": "Cosa hai espresso senza accorgertene?",
+      "source_hash": "11829407037adcad"
+    },
+    "creat-002": {
+      "title": "Scrivi una lettera al tuo futuro te stesso",
+      "description": "Scrivi alla persona che sarai in 1 anno. Dille cosa speravi, cosa temevi, cosa stavi imparando.",
+      "proof_prompt": "Incolla la lettera o un frammento di essa.",
+      "steps": [
+        "Trova 20 minuti di quiete",
+        "Scrivi senza correggere",
+        "Sigilla e conservala per 1 anno"
+      ],
+      "reflection": "Cosa vorresti più sapere in 1 anno?",
+      "source_hash": "5d26efbdf7c61d0f"
+    },
+    "creat-003": {
+      "title": "Fotografa la bellezza dell'ordinario",
+      "description": "Esci per 30 minuti e fotografa cose ordinarie che hanno qualcosa di speciale.",
+      "proof_prompt": "Condividi la tua foto più bella.",
+      "steps": [
+        "Esci senza destinazione prefissa",
+        "Guarda come se stessi vedendo tutto per la prima volta",
+        "Fotografa quello che ti attira l'occhio"
+      ],
+      "reflection": "Cosa hai notato che di solito passa inosservato?",
+      "source_hash": "b6f70c8e4530868f"
+    },
+    "life-001": {
+      "title": "Un pasto cucinato con intenzione",
+      "description": "Cucina qualcosa da zero, senza affrettarti. Sii presente in ogni passo.",
+      "proof_prompt": "Foto del pasto finito.",
+      "steps": [
+        "Scegli una nuova ricetta",
+        "Acquista gli ingredienti con attenzione",
+        "Cucina senza telefono o TV"
+      ],
+      "reflection": "Come è stato essere completamente presente in cucina?",
+      "source_hash": "1e779ea46b33a075"
+    },
+    "life-002": {
+      "title": "Chiama qualcuno che ti ama senza motivo",
+      "description": "Non un messaggio — una chiamata reale. Parla senza affrettarti.",
+      "proof_prompt": "Scrivi come andò quella conversazione.",
+      "steps": [
+        "Pensa a qualcuno con cui non hai parlato da un po'",
+        "Chiama senza scopo specifico",
+        "Sii presente nella conversazione"
+      ],
+      "reflection": "Cosa hai sentito in quel momento?",
+      "source_hash": "68977c2a1caae963"
+    },
+    "life-003": {
+      "title": "30 minuti in natura — senza telefono",
+      "description": "Esci e lascia a casa il telefono. Osserva. Ascolta. Sii.",
+      "proof_prompt": "Scrivi cosa hai osservato, sentito o provato.",
+      "steps": [
+        "Lascia a casa il telefono",
+        "Esci senza destinazione",
+        "Osserva con tutti i sensi"
+      ],
+      "reflection": "Quando hai sentito di essere completamente presente in natura?",
+      "source_hash": "17940393f1879b91"
+    },
+    "acc-001": {
+      "title": "Una lettera di perdono a te stesso",
+      "description": "Scriviti una lettera di perdono per qualcosa del passato che ancora porti con te.",
+      "proof_prompt": "Scrivi un frammento o come ti sei sentito scrivendola.",
+      "steps": [
+        "Scegli qualcosa del passato per cui non ti sei perdonato",
+        "Scrivi come se stessi scrivendo a un amico",
+        "Leggila con gentilezza"
+      ],
+      "reflection": "Cosa è cambiato in te dopo averla scritta?",
+      "source_hash": "862f204791250950"
+    },
+    "acc-002": {
+      "title": "3 cose che accetto su di me",
+      "description": "Non le tue qualità — cose che vedi come difetti e scegli di accettarle.",
+      "proof_prompt": "Scrivi le 3 cose e perché le scegli di accettare.",
+      "steps": [
+        "Siediti in silenzio per 5 minuti",
+        "Scrivi senza giudicare",
+        "Leggilo ad alta voce"
+      ],
+      "reflection": "Come ti è sembrato dire queste cose con gentilezza?",
+      "source_hash": "0196c131ed6eb039"
+    },
+    "help-001": {
+      "title": "Fai un gesto inaspettato per un estraneo",
+      "description": "Compra un caffè, apri la porta, dice qualcosa di gentile. Senza sperare nulla in cambio.",
+      "proof_prompt": "Racconta cosa è successo e come ti sei sentito.",
+      "steps": [
+        "Resta attento a quelli che ti circondano oggi",
+        "Scegli un piccolo ma sincero gesto",
+        "Fallo senza menzionarlo a nessun altro"
+      ],
+      "reflection": "Cosa ti sei sentito dare senza aspettarti nulla?",
+      "source_hash": "b973936c9d2c9b26"
+    },
+    "help-002": {
+      "title": "Ascolta veramente qualcuno",
+      "description": "Trova qualcuno che ha bisogno di essere ascoltato. Non dare consigli. Ascolta solo.",
+      "proof_prompt": "Come è stato ascoltare senza intervenire?",
+      "steps": [
+        "Scegli qualcuno che sembra avere qualcosa in mente",
+        "Domanda come sta e ascolta",
+        "Resisti all'urgenza di offrire soluzioni"
+      ],
+      "reflection": "Cosa hai imparato su questa persona di cui non sapevi?",
+      "source_hash": "58db2a65cf463c0b"
+    },
+    "self-001": {
+      "title": "Quali valori guidano la tua vita?",
+      "description": "Scrivi i primi 5 valori senza pensarci troppo. Chiediti: li stai vivendo?",
+      "proof_prompt": "Scrivi i valori e una riflessione su come siano presenti.",
+      "steps": [
+        "Scrivi 5 valori in 2 minuti",
+        "Non editare, non pensarci troppo",
+        "Rifletti: quale è stato più trascurato?"
+      ],
+      "reflection": "Se la tua vita fosse un film, quale valore sarebbe il tema centrale?",
+      "source_hash": "d90e8d7e85134d19"
+    },
+    "self-002": {
+      "title": "Cosa ti fa felice?",
+      "description": "Non cosa dovrebbe farti felice. Cosa ti fa felice tu.",
+      "proof_prompt": "Elencare 10 cose e scegliere la più importante.",
+      "steps": [
+        "Scrivi velocemente 10 cose che ti danno gioia",
+        "Non censurare nulla",
+        "Chiediti: quanti di loro fai regolarmente?"
+      ],
+      "reflection": "Quante volte ti permetti di fare cosa ti fa felice?",
+      "source_hash": "2369bde2153a8735"
+    },
+    "hobby-001": {
+      "title": "Prova qualcosa che non hai mai fatto prima",
+      "description": "Esci dalla tua zona di comfort, gentilmente. Dàle almeno 30 minuti.",
+      "proof_prompt": "Fotografa durante o dopo l'attività.",
+      "steps": [
+        "Scegli qualcosa completamente nuovo",
+        "Dàle almeno 30 minuti",
+        "Non giudicarti se non sei bravo subito"
+      ],
+      "reflection": "Ti sei sentito scoprire qualcosa su te stesso?",
+      "source_hash": "64fa2bdb6aa849f8"
+    },
+    "hobby-002": {
+      "title": "Rivivi un hobby abbandonato",
+      "description": "Qualcosa che una volta amavi e hai lasciato andare. Portalo nuovamente alla vita per un giorno.",
+      "proof_prompt": "Qualsiasi prova — foto, testo, video.",
+      "steps": [
+        "Pensa a cosa amavi da bambino",
+        "Assegna 1h a quel hobby",
+        "Nota come ti senti tornando a esso"
+      ],
+      "reflection": "Perché l'hai abbandonato? Cosa ti ha riportato?",
+      "source_hash": "78d4c33501b8758e"
+    },
+    "daily-001": {
+      "title": "Controlla con te stesso",
+      "description": "Come stai oggi — davvero? 2 minuti di sincerità con te stesso.",
+      "proof_prompt": "Scrivi una parola o una frase su come ti senti oggi.",
+      "steps": [
+        "Siediti con te stesso per 2 minuti",
+        "Sii completamente onesto",
+        "Non c'è risposta sbagliata"
+      ],
+      "reflection": null,
+      "source_hash": "8db06b2efd9d4f5c"
+    },
+    "daily-002": {
+      "title": "3 cose per cui sei grato",
+      "description": "Non qualcosa di generico — qualcosa di specifico di oggi.",
+      "proof_prompt": "Scrivi le 3 cose.",
+      "steps": [
+        "Pensa a oggi",
+        "Scegli 3 cose concrete e specifiche",
+        "Scrivila"
+      ],
+      "reflection": null,
+      "source_hash": "a376b8ca7deb932c"
+    },
+    "mr-001": {
+      "title": "L'ora iniziale è tua",
+      "description": "Alzati 1 ora prima. Nessun telefono. Nessuna notizia. Nessuna rete sociale. Quest'ora è tua prima che appartenga al mondo.",
+      "proof_prompt": "Scrivi 3 parole su come ti senti in quest'ora che è tua. Nulla di più.",
+      "steps": [
+        "Imposta l'allarme 1 ora prima",
+        "Mantieni il telefono in modalità volo fino alle 9:00",
+        "Sii presente nel silenzio della mattina",
+        "Scrivi le 3 parole alla fine dell'ora"
+      ],
+      "reflection": "Cosa hai scoperto su te stesso nel silenzio della mattina?",
+      "source_hash": "b14d40e7fcedab45"
+    },
+    "mr-002": {
+      "title": "Il tuo corpo parla",
+      "description": "5 minuti di movimento appena svegliato. Non deve essere intenso. Stira, balla, cammina per casa. Il tuo corpo sa cosa gli serve.",
+      "proof_prompt": "Fotografa il luogo dove hai movuto. Non te stesso — il luogo. La luce del mattino.",
+      "steps": [
+        "Subito dopo svegliarsi, prima di qualsiasi altra cosa",
+        "Mettilo su una canzone che ti fa muovere",
+        "5 minuti di movimento consapevole",
+        "Fotografa il luogo alla fine"
+      ],
+      "reflection": "Cosa ti ha detto il tuo corpo in questi 5 minuti?",
+      "source_hash": "7190e100f4eda3eb"
+    },
+    "mr-003": {
+      "title": "L'intenzione della giornata",
+      "description": "Scrivi UNA sola cosa che vuoi SENTIRE oggi. Non fare. Non raggiungere. Sentire.",
+      "proof_prompt": "Scrivi UNA sola parola o una breve frase — l'intenzione per oggi.",
+      "steps": [
+        "Siediti in silenzio per 2 minuti",
+        "Domandati: cosa vuoi sentire oggi?",
+        "Scrivi la prima risposta che viene — non analizzare",
+        "Leggilo ad alta voce"
+      ],
+      "reflection": "La sera — hai sentito? Perché o perché no?",
+      "source_hash": "d86fe34062c23bed"
+    },
+    "mr-004": {
+      "title": "Caffè in silenzio",
+      "description": "Bevi il tuo primo caffè o tè senza telefono, notizie, musica. 10 minuti di completa presenza con il tuo drink.",
+      "proof_prompt": "Fotografa il tuo bicchiere. Senza filtri. Luce naturale.",
+      "steps": [
+        "Prepara il tuo drink preferito",
+        "Lascia il tuo telefono in un'altra stanza",
+        "Siediti per 10 minuti con solo i tuoi pensieri",
+        "Fotografa il bicchiere alla fine"
+      ],
+      "reflection": "Cosa ti è venuto in mente nel silenzio?",
+      "source_hash": "60ccf75da0690705"
+    },
+    "mr-005": {
+      "title": "La lettera di oggi",
+      "description": "Scrivi 5 frasi su come vuoi che vada oggi — come se fosse già accaduto perfettamente.",
+      "proof_prompt": "Le 5 frasi. Nel passato, come se il giorno fosse stato perfetto.",
+      "steps": [
+        "Chiudi gli occhi per 1 minuto",
+        "Imagina la versione migliore del tuo giorno",
+        "Scrivi 5 frasi nel passato: \"Oggi ho sentito...\"",
+        "Leggile ad alta voce prima di uscire di casa"
+      ],
+      "reflection": "La sera: quante delle 5 frasi sono state vere?",
+      "source_hash": "3e4ae04d2e14c371"
+    },
+    "mr-006": {
+      "title": "La gratitudine concreta",
+      "description": "Non \"Sono grato per la mia famiglia\". Scegli UN momento specifico di ieri. Un piccolo dettaglio concreto.",
+      "proof_prompt": "Descrivi il momento specifico. Dove eri? Cosa è successo? Come hai esattamente sentito?",
+      "steps": [
+        "Pensa a ieri",
+        "Identifica UN piccolo ma reale momento",
+        "Descrivilo in dettaglio — non genericamente",
+        "Sentisci gratitudine per quel momento"
+      ],
+      "reflection": "Perché hai scelto proprio quel momento?",
+      "source_hash": "f768efeac00e87d7"
+    },
+    "mr-007": {
+      "title": "Respirazione",
+      "description": "La tecnica 4-7-8: inala per 4 secondi, tieni il respiro per 7 secondi, espira per 8 secondi. Ripeti 4 volte.",
+      "proof_prompt": "Descrivi il tuo stato PRIMA e il tuo stato DOPPIA.",
+      "steps": [
+        "Siediti comodamente con la schiena dritta",
+        "Inala attraverso il naso per 4 secondi",
+        "Tieni il respiro per 7 secondi",
+        "Espirare attraverso la bocca per 8 secondi",
+        "Ripeti 4 volte"
+      ],
+      "reflection": "Cosa è cambiato nel tuo corpo e nella tua mente?",
+      "source_hash": "7e05edc1316ae428"
+    },
+    "mr-008": {
+      "title": "La visione della giornata",
+      "description": "Chiudi gli occhi per 2 minuti. Immagina la versione migliore di oggi. Poi disegna o scrivi cosa hai visto.",
+      "proof_prompt": "Disegna o scrivi la tua visione. Qualsiasi forma. Qualsiasi colore. Non giudicare.",
+      "steps": [
+        "Siediti comodamente e chiudi gli occhi",
+        "Lascia che la tua mente immagini il giorno perfetto",
+        "Nota i dettagli — colori, suoni, emozioni",
+        "Apri gli occhi e mettilo sulla carta o nel testo subito dopo"
+      ],
+      "reflection": "Quale elemento della visione ti ha sorpreso?",
+      "source_hash": "7402c40780e77929"
+    },
+    "mr-009": {
+      "title": "Una cosa che mi farebbe orgoglio",
+      "description": "Non la lista delle cose da fare. UNA sola cosa. Se fai solo questa oggi — il giorno è un completo successo.",
+      "proof_prompt": "La mattina: scrivi quella cosa. La sera: come ti sei sentito dopo averla fatta?",
+      "steps": [
+        "La mattina: identifica UNA sola cosa importante",
+        "Scrivila in un posto visibile — su un foglio accanto a te",
+        "Fai quella cosa per prima, prima di qualsiasi altra cosa",
+        "La sera: riferisci come ti sei sentito"
+      ],
+      "reflection": "Perché questa cosa è davvero importante?",
+      "source_hash": "f2ded89a4e21195f"
+    },
+    "mr-010": {
+      "title": "Il mio mantra per oggi",
+      "description": "Una frase per guidarti oggi. Non una citazione. La tua. Da ciò che senti in questo momento.",
+      "proof_prompt": "Il tuo mantra. Una frase. La tua.",
+      "steps": [
+        "Siediti con te stesso per 1 minuto",
+        "Cosa ti serve sentire oggi?",
+        "Scrivi la frase — la tua, non una citazione",
+        "Ripetila 3 volte ad alta voce"
+      ],
+      "reflection": "Ha aiutato questo mantra oggi?",
+      "source_hash": "0b9cb71a2e7a5245"
+    },
+    "iw-001": {
+      "title": "Una lettera di perdono a te stesso",
+      "description": "La cosa più difficile che non ti sei perdonato. Scriviti una lettera come se stessi scrivendo a un caro amico che ha fatto un errore.",
+      "proof_prompt": "La tua lettera. Completa o frammentata. Mara giudica nulla.",
+      "steps": [
+        "Trova 30 minuti di completa solitudine",
+        "Identifica quella cosa che non ti sei perdonato",
+        "Scrivi come se stessi scrivendo a un amico — con gentilezza",
+        "Leggila ad alta voce, da solo"
+      ],
+      "reflection": "Cosa è cambiato dopo averlo scritto?",
+      "source_hash": "b2a13524bba0f29b"
+    },
+    "iw-002": {
+      "title": "Il tuo più grande timore",
+      "description": "Scrivi o disegna il tuo più grande timore. Non analizzarlo. Non giustificalo. Descrivilo semplicemente.",
+      "proof_prompt": "Testo o disegno — quello che ti senti più facile per esprimere ciò che provi.",
+      "steps": [
+        "Siediti con il tuo timore per 5 minuti senza scappare da esso",
+        "Nota dove lo senti nel tuo corpo",
+        "Descrivilo o disegnalo senza giudicare",
+        "Dagli un nome"
+      ],
+      "reflection": "Cosa è successo quando hai affrontato il tuo timore?",
+      "source_hash": "1a3b61a89d3ae5bc"
+    },
+    "iw-003": {
+      "title": "Chi ti ha fatto più male?",
+      "description": "Non per giudicare o per prendere vendetta. Per capire e liberarti. Scrivi senza editare.",
+      "proof_prompt": "Scrivi liberamente. Non editare. Non censurare. Mara legge con completa empatia.",
+      "steps": [
+        "Assicurati di essere solo e al sicuro",
+        "Scrivi senza sollevare la penna o le mani dalla tastiera",
+        "Non editare, non censurare, non giudicare",
+        "Infine, prendi 3 respiri profondi"
+      ],
+      "reflection": "Cosa hai sentito dopo aver scritto?",
+      "source_hash": "0dda1691cea09797"
+    },
+    "iw-004": {
+      "title": "Il bambino dentro di te",
+      "description": "Cosa diresti al bambino che eri 7 anni fa? Cosa vorrebbero sapere? Cosa vorrebbero sentirsi sicuri?",
+      "proof_prompt": "Una lettera al tuo bambino più giovane. O un disegno. O entrambi.",
+      "steps": [
+        "Trova una foto di te da bambino se ne hai una",
+        "Guardala per alcuni minuti",
+        "Scrivili una lettera o disegnagli per lui",
+        "Cosa avresti voluto sentire allora?"
+      ],
+      "reflection": "Cosa ha sentito quel bambino quando ha letto la tua lettera?",
+      "source_hash": "8d2c2eddb7e7e3e4"
+    },
+    "iw-005": {
+      "title": "La tua maschera",
+      "description": "Qual è il volto che mostri al mondo vs chi sei veramente quando nessuno ti guarda? Descrivi la differenza onestamente.",
+      "proof_prompt": "Testo o due disegni: la maschera e il volto reale.",
+      "steps": [
+        "Pensa ai ultimi 7 giorni",
+        "Come ti sei presentato agli altri?",
+        "Chi eri quando eri solo?",
+        "Descrivi o disegna entrambe le versioni"
+      ],
+      "reflection": "Quanto grande è la differenza? Perché?",
+      "source_hash": "e1472165dfae5fe9"
+    },
+    "iw-006": {
+      "title": "La voce nella tua testa",
+      "description": "Come ti parli quando nessuno ti ascolta? Con gentilezza o con crudeltà? Scrivi 10 cose che ti dici regolarmente.",
+      "proof_prompt": "10 cose che ti dici. Onestamente. Esattamente come sono.",
+      "steps": [
+        "Sii completamente onesto — nessuno altro leggerà",
+        "Scrivi i primi 10 pensieri ricorrenti che hai su te stesso",
+        "Marca ciascuno: gentile o crudele?",
+        "Scegli UN pensiero crudele e riscrivilo con gentilezza"
+      ],
+      "reflection": "Se qualcuno parlasse a un amico in modo in cui ti parli a te stesso — come ti sentiresti?",
+      "source_hash": "32a2479cef87f795"
+    },
+    "iw-007": {
+      "title": "I tuoi confini",
+      "description": "Dove dici SI quando vuoi dire NO? Con chi? Quando? Perché continui a cedere?",
+      "proof_prompt": "3 situazioni concrete in cui hai detto SI quando volevi dire NO.",
+      "steps": [
+        "Pensa ai ultimi 30 giorni",
+        "Identifica 3 situazioni reali e concrete",
+        "Per ciascuna: cosa hai detto vs cosa volevi dire",
+        "Scegli una e scrivi come sarebbe apparsa se avessi detto NO"
+      ],
+      "reflection": "Perché è difficile per te dire NO in quelle situazioni?",
+      "source_hash": "ed4aa8745a5239f0"
+    },
+    "iw-008": {
+      "title": "La tua relazione con il denaro",
+      "description": "Non riguarda quanto hai o non hai. Riguarda CIÒ CHE SENTI verso il denaro. Paura? Vergogna? Potere? Indifferenza?",
+      "proof_prompt": "Scrivi onestamente sulla tua relazione con il denaro. Infanzia, famiglia, credenze.",
+      "steps": [
+        "Pensa alla tua prima memoria coinvolgente denaro",
+        "Cosa dicevano i tuoi genitori sul denaro?",
+        "Cosa senti ora quando pensi al denaro?",
+        "Da dove pensi che venga questa emozione?"
+      ],
+      "reflection": "Cosa credenza sul denaro vuoi cambiare?",
+      "source_hash": "b77cb84900f415f7"
+    },
+    "iw-009": {
+      "title": "Il tuo corpo — una lettera",
+      "description": "Scrivi una lettera al tuo corpo. Cosa gli diresti? Cosa ti dice? Cosa vorresti ringraziarlo per? Cosa vorresti scusarti per?",
+      "proof_prompt": "La tua lettera al tuo corpo. Completa, onesta, dal cuore.",
+      "steps": [
+        "Siediti in silenzio per alcuni minuti",
+        "Fai uno scorrimento mentale da capo a piedi",
+        "Cosa senti in ogni parte del tuo corpo?",
+        "Scrivi la lettera — con gratitudine e perdonare"
+      ],
+      "reflection": "Cosa ti ha detto il tuo corpo in questa lettera?",
+      "source_hash": "11265d3635e734d2"
+    },
+    "iw-010": {
+      "title": "Il momento che ti ha cambiato",
+      "description": "Un evento che ha cambiato tutto. C'è un prima e un dopo. Descrivi entrambi.",
+      "proof_prompt": "La storia di quel momento. Prima. L'evento. Dopo. Chi sei ora a causa di esso.",
+      "steps": [
+        "Identifica quel momento — sai quale è",
+        "Descrivi chi eri prima",
+        "Descrivi cosa è successo",
+        "Descrivi chi sei ora a causa di esso"
+      ],
+      "reflection": "Se quel momento non fosse successo — chi sarebbe tu oggi?",
+      "source_hash": "69574dbf61af03de"
+    },
+    "iw-011": {
+      "title": "Cosa significa il successo PER TE?",
+      "description": "Non per i tuoi genitori. Non per la società. Non per i tuoi amici. Per te. Ora. Reale.",
+      "proof_prompt": "Definisci il tuo successo. Senza filtro sociale.",
+      "steps": [
+        "Ignora completamente cosa pensano gli altri",
+        "Scrivi la tua definizione di successo",
+        "È per soldi? Tempo? Relazioni? Libertà? Creatività?",
+        "Vivi secondo questa definizione ora?"
+      ],
+      "reflection": "Quanto sei lontano dal tuo vero successo?",
+      "source_hash": "1edc82ed578cef80"
+    },
+    "iw-012": {
+      "title": "Il tuo più profondo desiderio",
+      "description": "Cosa desideri di più? Non necessariamente qualcosa di materiale. Può essere uno stato, una connessione, una versione di te stesso.",
+      "proof_prompt": "Testo o disegno — quello che esprime meglio il tuo desiderio.",
+      "steps": [
+        "Siediti in completa silenzio per 5 minuti",
+        "Cosa ti senti mancare veramente?",
+        "Non analizzare — sentilo",
+        "Esprimi quel desiderio senza censurarlo"
+      ],
+      "reflection": "Da quanto tempo esiste questo desiderio? Cosa lo crea?",
+      "source_hash": "c16f76abbd90d68b"
+    },
+    "iw-013": {
+      "title": "Una lettera al tuo futuro te stesso",
+      "description": "Scrivi una lettera a te stesso dopo 5 anni. Cosa vorresti che sappiano? Cosa speri? Cosa lasci loro come eredità?",
+      "proof_prompt": "Cara me, 5 anni da ora...",
+      "steps": [
+        "Immagina di essere te stesso dopo 5 anni",
+        "Scrivila loro una lettera onesta",
+        "Dille cosa spero, cosa temi, cosa vorresti per loro",
+        "Sigrala nell'app"
+      ],
+      "reflection": "Cosa ti ha sorpreso in quello che hai scritto?",
+      "source_hash": "8d185e17d0769bbc"
+    },
+    "iw-014": {
+      "title": "La gratitudine per l'adversità",
+      "description": "Il momento più difficile della tua vita. Non il più facile — il più difficile. Cosa ti ha insegnato?",
+      "proof_prompt": "Il momento. Cosa ti ha insegnato. Chi sei a causa di esso.",
+      "steps": [
+        "Identifica il momento più difficile — lo sai qual è",
+        "Scrivi cosa è successo senza drammatizzare",
+        "Identifica 3 cose che hai guadagnato da quel momento",
+        "Dai grazie a quel momento"
+      ],
+      "reflection": "Se quel momento non fosse accaduto — cosa non avresti saputo?",
+      "source_hash": "3ae6df955792a95c"
+    },
+    "iw-015": {
+      "title": "Chi sei, veramente?",
+      "description": "Non cosa fai. Non cosa hai. Non il ruolo che giochi. Chi sei? Questa domanda non ha risposta sbagliata.",
+      "proof_prompt": "Testo, disegno, collage di foto — qualunque cosa esprima chi sei veramente.",
+      "steps": [
+        "Siediti in completa silenzio per 10 minuti",
+        "Preghi te stesso: chi sono io?",
+        "Non cercare la risposta 'corretta' — non c'è una risposta corretta",
+        "Esprimi ciò che senti, non ciò che pensi"
+      ],
+      "reflection": "Come è cambiata la risposta rispetto a un anno fa?",
+      "source_hash": "48c9c74b5ce71101"
+    },
+    "ce-001": {
+      "title": "Fotografa il tuo giorno",
+      "description": "Una sola foto per rappresentare come ti senti oggi. Non perfetta. Non filtrata. Autentica.",
+      "proof_prompt": "La tua foto di oggi. Può essere qualsiasi cosa.",
+      "steps": [
+        "Non affrettarti — cerca il momento giusto",
+        "Fotografa senza filtro e senza editing",
+        "Può essere un oggetto, un luogo, una luce, un'ombra",
+        "Deve rappresentare come ti senti — non come ti vedi"
+      ],
+      "reflection": "Perché questa immagine rappresenta il tuo giorno?",
+      "source_hash": "3ba377f29a79f0d1"
+    },
+    "ce-002": {
+      "title": "Disegna la tua paura",
+      "description": "Non devi essere un artista. Qualsiasi forma, qualsiasi colore. Dà una forma visiva alla tua paura.",
+      "proof_prompt": "Una foto del tuo disegno. Non importa quanto 'improponibile' è.",
+      "steps": [
+        "Prendi una pagina bianca e strumenti per disegnare",
+        "Non pianificare — lascia andare la mano",
+        "Disegna come ti senti la paura",
+        "Dale un titolo"
+      ],
+      "reflection": "Come si presenta la tua paura? Cosa ti ha sorpreso?",
+      "source_hash": "e00ba9b79e689dca"
+    },
+    "ce-003": {
+      "title": "Scrivi una lettera a un estraneo",
+      "description": "Qualcuno che non conosci ma senti che ha bisogno di queste parole. Forse è qualcuno che sta passando attraverso ciò che tu hai passato.",
+      "proof_prompt": "La lettera completa. Può essere pubblicata anonimamente nella comunità.",
+      "steps": [
+        "Pensa a un momento difficile della tua vita",
+        "Cosa avresti voluto sentire allora?",
+        "Scrivi per quella persona sconosciuta",
+        "Puoi scegliere se pubblicarla anonimamente o tenerla per te"
+      ],
+      "reflection": "Scrivendo per qualcun altro — cosa hai scoperto su te stesso?",
+      "source_hash": "e273bf8acd6bd43d"
+    },
+    "ce-004": {
+      "title": "La collana del tuo sogno",
+      "description": "Trova 5 immagini intorno a te — non da riviste — che rappresentano la tua vita ideale. Fotografiliele insieme.",
+      "proof_prompt": "Una foto della tua collana. O 5 foto separate.",
+      "steps": [
+        "Cerca in casa o intorno a te",
+        "Trova 5 oggetti o immagini che rappresentano il tuo sogno",
+        "Ordinali e fotografi",
+        "Scrivi 2 parole per ciascuna"
+      ],
+      "reflection": "Cosa hai scoperto che conta veramente?",
+      "source_hash": "3a443952bd961229"
+    },
+    "ce-005": {
+      "title": "La musica del tuo momento",
+      "description": "Una canzone che rappresenta esattamente come ti senti in questo momento. Non cosa ti piace — come ti senti. Perché questa canzone?",
+      "proof_prompt": "Il titolo della canzone e perché rappresenta esattamente come ti senti ora.",
+      "steps": [
+        "Siediti in silenzio per 2 minuti",
+        "Cosa ti viene in mente spontaneamente?",
+        "Ascolta tutta la canzone, da inizio a fine",
+        "Scrivi perché questa canzone rappresenta oggi"
+      ],
+      "reflection": "Cosa dice la tua scelta musicale sul tuo stato?",
+      "source_hash": "f316307538e7602e"
+    },
+    "ce-006": {
+      "title": "Scrivi un poema a 4 righe",
+      "description": "Non deve essere perfetto. Non deve essere in rima. 4 righe su oggi, su te, su come ti senti.",
+      "proof_prompt": "Il tuo poema. 4 righe. Tuo.",
+      "steps": [
+        "Non pensare — scrivi la prima cosa che ti viene",
+        "Non editare dopo aver scritto",
+        "Non giudicare se è 'buono' o no",
+        "Leggilo ad alta voce"
+      ],
+      "reflection": "Cosa ti ha sorpreso nel tuo poema?",
+      "source_hash": "d2f3b39dc2f5419a"
+    },
+    "ce-007": {
+      "title": "Cattura la bellezza ordinaria",
+      "description": "Esci per 30 minuti senza destinazione. Fotografa 5 cose ordinarie che hanno qualcosa di speciale in loro.",
+      "proof_prompt": "Le migliori 1-3 foto dalla tua passeggiata.",
+      "steps": [
+        "Esci senza destinazione e senza fretta",
+        "Guarda le cose come se le stessi vedendo per la prima volta",
+        "Fotografa quello che ti colpisce",
+        "Nessuna filtri, nessuna modifica"
+      ],
+      "reflection": "Che cosa hai visto oggi che di solito rimane nascosto?",
+      "source_hash": "87a424bb523e69b9"
+    },
+    "ce-008": {
+      "title": "Scrivi l'inizio del tuo libro",
+      "description": "La prima pagina del libro sulla tua vita. Non la biografia — il libro. Il primo paragrafo. Dove vuoi che inizi.",
+      "proof_prompt": "Il primo paragrafo. Puoi scrivere in qualsiasi persona, da qualsiasi momento della tua vita.",
+      "steps": [
+        "Non pianificare — scrivi la prima cosa che ti viene in mente",
+        "Può iniziare da qualsiasi parte — infanzia, ieri, ora",
+        "Scrivi senza modificare la prima volta",
+        "Leggilo e decidi se mantenerlo o riscriverlo"
+      ],
+      "reflection": "Perché hai scelto di iniziare lì?",
+      "source_hash": "11e805bdc509795c"
+    },
+    "ce-009": {
+      "title": "Disegna dove vuoi essere",
+      "description": "La visualizzazione attraverso l'arte. Il posto, le persone, cosa la tua vita ideale sembra. Non perfetta — reale.",
+      "proof_prompt": "Una foto del tuo disegno o collage.",
+      "steps": [
+        "Prendi un grande foglio se ne hai uno",
+        "Disegna o incolla immagini",
+        "Includi: il posto, le persone, le attività, le emozioni",
+        "Non giudicare — esprimiti"
+      ],
+      "reflection": "Quale elemento del disegno è il più importante?",
+      "source_hash": "4e0fbd6d61295ba4"
+    },
+    "ce-010": {
+      "title": "La lettera che non hai mai inviata",
+      "description": "A qualcuno del tuo passato o presente. Tutto quello che volevi dire e non hai detto. Ora puoi.",
+      "proof_prompt": "La lettera completa. Decidi: inviarla, mantenerla privata, cancellarla.",
+      "steps": [
+        "Identifica la persona e quello che volevi dire",
+        "Scrivi senza pensare se lo invierai",
+        "Al termine hai 3 opzioni: inviarla, mantenerla privata, cancellarla",
+        "Qualeunque scelta fai — è la tua decisione"
+      ],
+      "reflection": "Che cosa è cambiato dopo averla scritta?",
+      "source_hash": "bc17ccb3d762aa0c"
+    },
+    "ce-011": {
+      "title": "Fotografa le tue mani",
+      "description": "Che cosa raccontano le tue mani? Che cosa hanno costruito? Che cosa hanno distrutto? Che cosa hanno guarito? Che cosa hanno creato?",
+      "proof_prompt": "A photo of your hands + a few words about their story.",
+      "steps": [
+        "Look at your hands for a few minutes",
+        "Think about everything they've done",
+        "Photograph them in natural light",
+        "Write 3 sentences about their story"
+      ],
+      "reflection": null,
+      "source_hash": "cf98737e79136c1e"
+    },
+    "ce-012": {
+      "title": "Ridisegna il tuo giorno brutto",
+      "description": "Prendi il tuo giorno più brutto di recente. Disegna o scrivi come sarebbe stato se fosse andato bene.",
+      "proof_prompt": "Il tuo giorno ridisegnato — testo o disegno.",
+      "steps": [
+        "Pensa a un giorno brutto di recente",
+        "Descrivi cosa è andato storto",
+        "Riscrivi o ridisegna come sarebbe potuto essere",
+        "Cosa avrebbe dovuto essere diverso?"
+      ],
+      "reflection": "Che cosa puoi controllare effettivamente di un giorno brutto?",
+      "source_hash": "829cce9ab4274531"
+    },
+    "ce-013": {
+      "title": "Il tuo manifesto",
+      "description": "5 cose che credi con tutta la tua essenza. I principi che vivi o vuoi vivere.",
+      "proof_prompt": "Il tuo manifesto. 5 principi. Tu.",
+      "steps": [
+        "Non pensare troppo — scrivi quello che ti viene in mente",
+        "Cosa è non negoziabile per te?",
+        "Come vuoi vivere?",
+        "Cosa vuoi rappresentare?"
+      ],
+      "reflection": "Stai vivendo per questo manifesto ora?",
+      "source_hash": "996911d37d23ce27"
+    },
+    "ce-014": {
+      "title": "Dillo ad alta voce",
+      "description": "Dillo ad alta voce qualcosa che non hai mai detto prima. Non devi registrarlo — devi DIRLO.",
+      "proof_prompt": "Non quello che hai detto — ma come ti sei sentito quando l'hai detto. E se il mondo è cambiato.",
+      "steps": [
+        "Identifica quella cosa non detta",
+        "Trova un posto privato",
+        "Dillo ad alta voce — 3 volte",
+        "Siedi per alcuni minuti con quello che ti senti dopo"
+      ],
+      "reflection": "Perché non l'hai detto fino a ora?",
+      "source_hash": "19d728c73182ca1d"
+    },
+    "ce-015": {
+      "title": "Crea qualcosa con le tue mani",
+      "description": "Qualsiasi cosa — argilla, carta, legno, cibo, tessuto. Qualcosa che non esisteva prima che tu lo creassi.",
+      "proof_prompt": "Una foto della tua creazione. La sua storia in 2 frasi.",
+      "steps": [
+        "Scegli un materiale dalla casa",
+        "Non pianificare — lascia che le tue mani vadano",
+        "Crea qualcosa — qualsiasi cosa",
+        "Fotografa prima di giudicare il risultato"
+      ],
+      "reflection": "Che cosa hai sentito mentre creavi?",
+      "source_hash": "1aebc0ee7f9c8e6c"
+    },
+    "lc-001": {
+      "title": "Il tuo curriculum reale",
+      "description": "Non i lavori. I momenti che ti hanno definito. 5 esperienze che hanno davvero contato nella tua formazione.",
+      "proof_prompt": "Le 5 esperienze decisive. Non i lavori — i momenti della vita.",
+      "steps": [
+        "Pensa alle esperienze che ti hanno cambiato",
+        "Scegli 5 — non necessariamente positive",
+        "Descrivi cosa hai guadagnato da ogni esperienza",
+        "Questo è il tuo vero esperienza"
+      ],
+      "reflection": "Che schema noti in queste 5 esperienze?",
+      "source_hash": "c401b01e31759147"
+    },
+    "lc-002": {
+      "title": "Cosa farebbe la tua versione coraggiosa?",
+      "description": "Una decisione che continui a rimandare. Cosa farebbe la tua versione senza paura, senza scuse, senza \"ma\"?",
+      "proof_prompt": "La decisione rimandata. Cosa farebbe la tua versione coraggiosa. Il primo piccolo passo che puoi fare domani.",
+      "steps": [
+        "Identify the postponed decision — you know which one it is",
+        "Write: what would your fearless version do?",
+        "Identify the smallest possible step",
+        "Commit to Mara that you'll take it tomorrow"
+      ],
+      "reflection": "Cosa ti tiene veramente indietro?",
+      "source_hash": "535710bdc0b1051e"
+    },
+    "lc-003": {
+      "title": "Una giornata nella tua vita ideale",
+      "description": "Descrivi in dettaglio una giornata perfetta dal tuo futuro. Dal risveglio al sonno. Concreto e specifico.",
+      "proof_prompt": "La tua giornata ideale. Ora per ora. Concreto.",
+      "steps": [
+        "Write from 06:00 to 23:00",
+        "Be specific — not \"I wake up happy\"",
+        "Include: where you are, with whom, what you do, how you feel",
+        "Don't censor anything you desire"
+      ],
+      "reflection": "Quale elemento di questa giornata puoi iniziare a costruire adesso?",
+      "source_hash": "277da80c78202975"
+    },
+    "lc-004": {
+      "title": "La competenza che ti spaventa",
+      "description": "Qual è la competenza che hai evitato di imparare? Perché ti spaventa? Può essere qualsiasi cosa — programmazione, pittura, danza, pubblico discorso.",
+      "proof_prompt": "La competenza. Perché ti spaventa. Il primo piccolo passo che puoi fare oggi.",
+      "steps": [
+        "Identifica la competenza che pensi ma non inizi mai",
+        "Scrivi perché ti spaventa veramente",
+        "Trova il passo più piccolo possibile",
+        "Fallo ora — oggi, subito"
+      ],
+      "reflection": "Cosa cambierebbe nella tua vita se la imparassi?",
+      "source_hash": "6d4edd6e9126ee4f"
+    },
+    "lc-005": {
+      "title": "La conversazione difficile",
+      "description": "Una conversazione che hai evitato per molto tempo. Con chi? Di cosa? Mara ti prepara per essa.",
+      "proof_prompt": "Con chi. Di cosa. Esattamente cosa vuoi dire. Cosa temi che succeda.",
+      "steps": [
+        "Identifica la conversazione evitata",
+        "Scrivi esattamente cosa vuoi dire",
+        "Scrivi cosa temi che l'altra persona dica",
+        "Riprodudila con Mara prima di tutto"
+      ],
+      "reflection": "Cosa cambierebbe se avessi questa conversazione?",
+      "source_hash": "37f8eca5a7bcc5e7"
+    },
+    "lc-006": {
+      "title": "Denaro e il tuo sogno",
+      "description": "Quanto costa la tua vita ideale? Calcolalo per davvero. Mensile. Annuale. Senza spaventarti.",
+      "proof_prompt": "Il calcolo reale. La vita ideale. Quanto costa mensilmente e annualmente.",
+      "steps": [
+        "Prendi la vita ideale che hai descritta",
+        "Stima il costo mensile reale",
+        "Calcola la differenza rispetto al tuo reddito attuale",
+        "Identifica 3 modi per colmare la differenza"
+      ],
+      "reflection": "È più o meno di quanto pensavi?",
+      "source_hash": "10117caa61afdb62"
+    },
+    "lc-007": {
+      "title": "La carriera cambia",
+      "description": "Se potessi fare qualcos'altro domani — cosa sarebbe? Mara ti aiuta a esplorare la vera possibilità.",
+      "proof_prompt": "Cosa faresti. Perché non lo fai ora. Cosa dovrebbe cambiare.",
+      "steps": [
+        "Scrivi: se non ci fossero rischi, cosa farei?",
+        "Ricerca effettivamente quella carriera — 30 minuti",
+        "Scrivi cosa guadagnerei e cosa perderei",
+        "Identifica UN piccolo passo verso di essa"
+      ],
+      "reflection": "Cosa ti tiene nella tua posizione attuale più — sicurezza o paura?",
+      "source_hash": "bc84e3d33c8bfccc"
+    },
+    "lc-008": {
+      "title": "La tua relazione con il tempo",
+      "description": "Segna una giornata intera — esattamente cosa hai fatto, ora per ora. Onesto. Senza esagerare.",
+      "proof_prompt": "Il tuo diario del tempo. Ora per ora. Onesto.",
+      "steps": [
+        "In the morning: set a reminder every 2 hours",
+        "Note exactly what you did",
+        "At the end: calculate the % of time per activity",
+        "Identify your biggest \"time killer\""
+      ],
+      "reflection": "Cosa ha mostrato questa giornata sulle tue vere priorità?",
+      "source_hash": "6380f31dcf7e82ce"
+    },
+    "lc-009": {
+      "title": "Chiedi aiuto",
+      "description": "Chiama o scrivi a qualcuno e chiedi aiuto con qualcosa di reale. Non metaforico. Qualcosa di concreto che non puoi fare da solo.",
+      "proof_prompt": "A chi hai parlato. Cosa hai chiesto. Come ti sei sentito chiedendo. Cosa è successo dopo.",
+      "steps": [
+        "Identifica qualcosa di cui hai veramente bisogno aiuto",
+        "Scegli una persona che può aiutarti",
+        "Chiedi direttamente — senza troppe scuse",
+        "Rapporta onestamente cosa è successo"
+      ],
+      "reflection": "Perché ti è stato difficile o facile chiedere?",
+      "source_hash": "20d0a777cae67bac"
+    },
+    "lc-010": {
+      "title": "Il primo passo",
+      "description": "Quella cosa che hai rimandato per mesi o anni. Oggi prendi IL PRIMO PASSO. Per quanto piccolo. Impossibile farlo più piccolo.",
+      "proof_prompt": "Cosa è. Quale passo hai fatto esattamente. Quanto piccolo era. Come ti sei sentito dopo.",
+      "steps": [
+        "Identify the postponed thing — you know which one it is",
+        "Identify the smallest possible step",
+        "Do it now — while you're reading this",
+        "Report exactly what you did"
+      ],
+      "reflection": "Come ti sei sentito dopo il primo passo?",
+      "source_hash": "f6c2bbd0e2401c73"
+    }
+  }
+}

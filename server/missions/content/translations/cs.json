@@ -1,0 +1,888 @@
+{
+  "lang": "cs",
+  "lang_name": "Czech",
+  "generated_at": "2026-09-22T01:58:53.571Z",
+  "provider": "ollama",
+  "model": "llama3.1:8b",
+  "missions": {
+    "disc-001": {
+      "title": "Ráno si 1 hodinu",
+      "description": "Ráno patří tobě předtím, než patří světu. Probud si se o hodinu dříve a využij si této hodiny jen pro sebe.",
+      "proof_prompt": "Napiš, co jsi udělal v té hodině a jak jsi se cítil.",
+      "steps": [
+        "Nastav si budík o hodinu dříve",
+        "Odolaj si pomoct si spát",
+        "Uděl si něco jen pro sebe v té hodině"
+      ],
+      "reflection": "Co jsi zjistil o sobě v tichu rána?",
+      "source_hash": "d6467737ce1a50c6"
+    },
+    "disc-002": {
+      "title": "24 hodin bez sociálních médií",
+      "description": "Celý den bez procházení. Pozor, co se objeví, když jsi nebudíš rozptýlen.",
+      "proof_prompt": "Zdokumentuj screenshot z Screen Time, který ukazuje 0 minut.",
+      "steps": [
+        "Dočasně smaž aplikace",
+        "Pouč své přátele, že jsi offline",
+        "Pozor, co se cítíš, když máš chuť otevřít telefon"
+      ],
+      "reflection": "Co jsi udělal s časem, který jsi získal?",
+      "source_hash": "f3f87f060a3e2e6b"
+    },
+    "disc-003": {
+      "title": "7 dní cvičení po sobě",
+      "description": "20 minut pohybu denně, 7 dní po sobě. Cokoliv se počítá.",
+      "proof_prompt": "Zdokumentuj fotku nebo screenshot z fitness aplikace na 7. den.",
+      "steps": [
+        "Vyber aktivitu, která tě baví",
+        "Nastav ji pevně do svého kalendáře",
+        "Nech si ji neuniknout"
+      ],
+      "reflection": "Jak se změnilo tvé energii po 7 dnech?",
+      "source_hash": "7d4bac8fca5a4ce2"
+    },
+    "creat-001": {
+      "title": "Vytvoř něco vlastníma rukama",
+      "description": "Kresba, socha, foto pořízena s úmyslem. Proces má důležitost, ne výsledek.",
+      "proof_prompt": "Zdokumentuj, co jsi vytvořil.",
+      "steps": [
+        "Vyber materiál",
+        "Vytvoř to bez soudů",
+        "Uděl si z něj radost"
+      ],
+      "reflection": "Co jsi vyjádřil bez vědomí?",
+      "source_hash": "11829407037adcad"
+    },
+    "creat-002": {
+      "title": "Napiš dopis svému budoucímu já",
+      "description": "Napiš dopis osobě, která budeš v 1 roce. Řekni jim, co si přejíš, co se bojíš, co se učíš.",
+      "proof_prompt": "Zdokumentuj dopis nebo jeho část.",
+      "steps": [
+        "Najdi si 20 minut ticha",
+        "Napiš bez editování",
+        "Sej si ho a ulož si ho na 1 rok"
+      ],
+      "reflection": "Co bys nejraději chtěl vědět za rok?",
+      "source_hash": "5d26efbdf7c61d0f"
+    },
+    "creat-003": {
+      "title": "Fotografovej krásu všednosti",
+      "description": "Pojď si 30 minut projít a fotografovej věci, které mají něco zvláštního.",
+      "proof_prompt": "Zdokumentuj svou nejkrásnější fotku.",
+      "steps": [
+        "Pojď si bez určitého cíle",
+        "Pohledávej, jako bys viděl všechno poprvé",
+        "Fotografovej, co tě zaujme"
+      ],
+      "reflection": "Co jsi poznamenala, co obvykle zůstává neviditelné?",
+      "source_hash": "b6f70c8e4530868f"
+    },
+    "life-001": {
+      "title": "Jídlo vařené s úmyslem",
+      "description": "Vař něco z nuly, bez urychlení. Budiž přítomný v každé fázi.",
+      "proof_prompt": "Zdokumentuj hotové jídlo.",
+      "steps": [
+        "Vyber si novou recepturu",
+        "Koup si ingredience s úmyslem",
+        "Vař bez telefonu nebo televize"
+      ],
+      "reflection": "Jak to bylo být plně přítomný v kuchyni?",
+      "source_hash": "1e779ea46b33a075"
+    },
+    "life-002": {
+      "title": "Zavolej někomu, koho miluješ, jen proto",
+      "description": "Ne text, ale skutečný hovor. Hovor bez urychlení.",
+      "proof_prompt": "Zdokumentuj, jak se hovor vyvinul.",
+      "steps": [
+        "Pouč si někoho, koho jsi dlouho neviděl",
+        "Zavolej bez konkrétního důvodu",
+        "Budiž přítomný v hovoru"
+      ],
+      "reflection": "Co jsi cítil?",
+      "source_hash": "68977c2a1caae963"
+    },
+    "life-003": {
+      "title": "30 minut v přírodě — bez telefonu",
+      "description": "Pojď si ven a zanechej si telefon doma. Pozoruj, poslouchej, buď jen tak.",
+      "proof_prompt": "Zdokumentuj, co jsi pozoroval, slyšel nebo cítil.",
+      "steps": [
+        "Zanechej si telefon doma",
+        "Pojď si bez cíle",
+        "Pozoruj s všemi smysly"
+      ],
+      "reflection": "Kdy jsi naposledy cítil, že jsi plně přítomný v přírodě?",
+      "source_hash": "17940393f1879b91"
+    },
+    "acc-001": {
+      "title": "Dopis sebekritiky",
+      "description": "Napiš si dopis sebekritiky za něco z minulosti, co stále nosíš.",
+      "proof_prompt": "Zdokumentuj část nebo jak se cítil, když jsi ho napsal.",
+      "steps": [
+        "Vyber si něco z minulosti, co jsi si nezapomněl odpustit",
+        "Napiš, jako bys napsal kamarádovi",
+        "Čti si ho s lítostí"
+      ],
+      "reflection": "Co se změnilo v tobě po tom, co jsi ho napsal?",
+      "source_hash": "862f204791250950"
+    },
+    "acc-002": {
+      "title": "3 věci, které o sobě přijímám",
+      "description": "Ne vaše síly — věci, které vidíte jako nedostatky a vyberete je dobrovolně.",
+      "proof_prompt": "Napište 3 věci a proč je vyberete.",
+      "steps": [
+        "Seďte sami s sebou v tichu po 5 minutách",
+        "Napište bez soudů",
+        "Čtěte to nahlas"
+      ],
+      "reflection": "Jak se vám to líbilo říkat tyto věci s laskavostí?",
+      "source_hash": "0196c131ed6eb039"
+    },
+    "help-001": {
+      "title": "Uděláte něco nečekaného pro cizího člověka",
+      "description": "Kupujte si kávu, otevřete dveře, řekněte něco laskavého. Bez očekávání nic jiného.",
+      "proof_prompt": "Rámcem, co se stalo a jak jste se cítili.",
+      "steps": [
+        "Bude se vám dařit být pozorní k těm kolem vás dnes",
+        "Vyberte si malé, ale upřímné gesto",
+        "Udělejte to bez toho, abyste o tom mluvili s nikým jiným"
+      ],
+      "reflection": "Co jste cítili, když jste dávali bez očekávání nic jiného?",
+      "source_hash": "b973936c9d2c9b26"
+    },
+    "help-002": {
+      "title": "Skutečně poslouchejte někomu",
+      "description": "Najděte si někoho, kdo potřebuje být slyšen. Neposkytněte rady. Jen poslouchejte.",
+      "proof_prompt": "Jak to bylo poslouchat bez vstupu do hry?",
+      "steps": [
+        "Vyberte si někoho, kdo vypadá, že má něco na srdci",
+        "Zeptejte se, jak se máte a poslouchejte",
+        "Odmítte nabízet řešení"
+      ],
+      "reflection": "Co jste se naučili o této osobě, o které jste nevěděli?",
+      "source_hash": "58db2a65cf463c0b"
+    },
+    "self-001": {
+      "title": "Co vás vede ve vašem životě?",
+      "description": "Napište první 5 hodnot bez přemýšlení. Zeptejte se sami sebe: žijete podle nich?",
+      "proof_prompt": "Napište hodnoty a odrazový můstek, jak jsou přítomné.",
+      "steps": [
+        "Napište 5 hodnot za 2 minuty",
+        "Needitujte, nepřemýšlejte",
+        "Zrcadlíte se: která z nich je nejméně zanedbána?"
+      ],
+      "reflection": "Pokud by váš život byl film, která hodnota by byla centrálním tématem?",
+      "source_hash": "d90e8d7e85134d19"
+    },
+    "self-002": {
+      "title": "Co vás dělá šťastným?",
+      "description": "Ne co by vás mělo dělat šťastným. Co vás skutečně dělá šťastným.",
+      "proof_prompt": "Seznamte si 10 věcí a vyberte si nejvýznamnější.",
+      "steps": [
+        "Rychle napište 10 věcí, které vás dělají šťastnými",
+        "Nezakazujte si nic",
+        "Zeptejte se sami sebe: kolik z nich děláte pravidelně?"
+      ],
+      "reflection": "Kolikrát vám dovolíte dělat, co vás dělá šťastnými?",
+      "source_hash": "2369bde2153a8735"
+    },
+    "hobby-001": {
+      "title": "Zkuste něco, co jste nikdy nezkoušeli",
+      "description": "Vystupte z vaší komfortní zóny, ale opatrně. Udělejte to alespoň 30 minut.",
+      "proof_prompt": "Fotografie během nebo po aktivitě.",
+      "steps": [
+        "Vyberte si něco zcela nového",
+        "Dělejte to alespoň 30 minut",
+        "Nežertujte sami sebe, pokud jste to poprvé neuměli"
+      ],
+      "reflection": "Cítili jste, že jste něco o sobě objevili?",
+      "source_hash": "64fa2bdb6aa849f8"
+    },
+    "hobby-002": {
+      "title": "Obnovení opuštěného koníčka",
+      "description": "Něco, co jste jednou milovali a opustili. Přiveďte to zpět do života na jeden den.",
+      "proof_prompt": "Kterákoli důkaz — fotografie, text, video.",
+      "steps": [
+        "Pomyslete si, co jste milovali jako děti",
+        "Zajistěte si 1 hodinu pro to koníček",
+        "Pozorujte, jak se vám bude líbit, když se vrátíte k němu"
+      ],
+      "reflection": "Proč jste ho opustili? Co ho přivedlo zpět?",
+      "source_hash": "78d4c33501b8758e"
+    },
+    "daily-001": {
+      "title": "Zkontrolujte se s sebou",
+      "description": "Jak se máte dnes — opravdu? 2 minuty upřímnosti s sebou.",
+      "proof_prompt": "Napište slovo nebo větu o tom, jak se máte dnes.",
+      "steps": [
+        "Seďte sami s sebou po 2 minutách",
+        "Budete úplně upřímní",
+        "Není špatný odpověď"
+      ],
+      "reflection": null,
+      "source_hash": "8db06b2efd9d4f5c"
+    },
+    "daily-002": {
+      "title": "3 věci, které jste vděčni",
+      "description": "Ne něco obecného — něco konkrétního z dneška.",
+      "proof_prompt": "Napište 3 věci.",
+      "steps": [
+        "Pomyslete si na dnešek",
+        "Vyberte si 3 konkrétní, konkrétní věci",
+        "Napište je do poznámek"
+      ],
+      "reflection": null,
+      "source_hash": "a376b8ca7deb932c"
+    },
+    "mr-001": {
+      "title": "První hodina patří vám",
+      "description": "Probudte se o 1 hodinu dříve. Bez telefonu. Bez zpráv. Bez sociálních médií. První hodina patří vám předtím, než patří světu.",
+      "proof_prompt": "Napište 3 slova o tom, jak se cítíte v této hodině vaší. Nic víc.",
+      "steps": [
+        "Nastavte si budík o 1 hodinu dříve",
+        "Dostatečně udržíte telefon v letu vzduchu do 9:00",
+        "Budete přítomni v tichu rána",
+        "Napište 3 slova na konci hodiny"
+      ],
+      "reflection": "Co jste se naučili o sobě v tichu rána?",
+      "source_hash": "b14d40e7fcedab45"
+    },
+    "mr-002": {
+      "title": "Co říká vaše tělo",
+      "description": "5 minut pohybu hned po probuzení. Nemusí to být intenzivní. Roztažení, tanec, procházka kolem domu. Vaše tělo ví, co potřebuje.",
+      "proof_prompt": "Fotografujte místo, kde jste se pohybovali. Ne sami sebe — místo. Ranní světlo.",
+      "steps": [
+        "Hned po probuzení, před vším ostatním",
+        "Nahrajte si píseň, která vás dělá pohybovat",
+        "5 minut vědomého pohybu",
+        "Fotografujte místo na konci"
+      ],
+      "reflection": "Co vám vaše tělo řeklo v těchto 5 minutách?",
+      "source_hash": "7190e100f4eda3eb"
+    },
+    "mr-003": {
+      "title": "Úmysl dne",
+      "description": "Napište SI jeden jediný pocit, kterého chcete dnes pocítit. Ne něco udělat. Ne dosáhnout. Pocítit.",
+      "proof_prompt": "Napište SI jeden jediný slovo nebo krátkou větu — váš úmysl pro dnešek.",
+      "steps": [
+        "Sedněte si v tichu po 2 minutách",
+        "Zeptejte se sami sebe: co chcete dnes pocítit?",
+        "Napište první odpověď, která přijde — ne analyzujte",
+        "Čtěte si ji nahlas"
+      ],
+      "reflection": "Ve večerní době — jste pocítili to? Proč nebo proč ne?",
+      "source_hash": "d86fe34062c23bed"
+    },
+    "mr-004": {
+      "title": "Káva v tichu",
+      "description": "Pijte si první kávu nebo čaj bez telefonu, bez zpráv, bez hudby. 10 minut naprostého přítomnosti s vámi.",
+      "proof_prompt": "Fotografujte váš hrnek. Bez filtrů. Přírodní světlo.",
+      "steps": [
+        "Připravte si svou oblíbenou nápoj",
+        "Zanechte si telefon v jiném pokoji",
+        "Sedněte si po 10 minutách s pouze vašimi myšlenkami",
+        "Fotografujte hrnek na konci"
+      ],
+      "reflection": "Jaké myšlenky se objevily v tichu?",
+      "source_hash": "60ccf75da0690705"
+    },
+    "mr-005": {
+      "title": "Dnesní dopis",
+      "description": "Napište 5 vět o tom, jak chcete dnešní den dopadnout — jako by se to stalo dokonalě.",
+      "proof_prompt": "5 vět. V minulém čase, jako by den byl dokonalý.",
+      "steps": [
+        "Zavřete si oči po 1 minutě",
+        "Představte si nejlepší verzi dne",
+        "Napište 5 vět v minulém čase: \"Dnes jsem cítil...\"",
+        "Čtěte si je nahlas předtím, než odcházíte z domu"
+      ],
+      "reflection": "Ve večerní době: kolik z 5 vět se stalo skutečností?",
+      "source_hash": "3e4ae04d2e14c371"
+    },
+    "mr-006": {
+      "title": "Konkrétní vděčnost",
+      "description": "Ne \"Jsem vděčný za svou rodinu\". Vyberte SI jeden konkrétní okamžik z včerejška. Malý, konkrétní podrobný detail.",
+      "proof_prompt": "Popište konkrétní okamžik. Kde jste byli? Co se stalo? Jak přesně jste se cítili?",
+      "steps": [
+        "Pomyslete na včerejšek",
+        "Identifikujte SI jeden malý ale skutečný okamžik",
+        "Popište ho podrobně — ne obecně",
+        "Cítíte vděčnost za ten okamžik"
+      ],
+      "reflection": "Proč jste vybrali právě tento okamžik?",
+      "source_hash": "f768efeac00e87d7"
+    },
+    "mr-007": {
+      "title": "Dýchání",
+      "description": "Technika 4-7-8: dýchejte 4 sekundy, držte dech 7 sekund, vydechujte 8 sekund. Opakujte 4krát.",
+      "proof_prompt": "Popište váš stav PŘED a váš stav PO.",
+      "steps": [
+        "Sedněte si pohodlně s rovnou zadní stranou",
+        "Dýchejte 4 sekundy skrz nos",
+        "Držte dech 7 sekund",
+        "Vydechujte 8 sekund skrz ústa",
+        "Opakujte 4krát"
+      ],
+      "reflection": "Co se změnilo v vašem těle a mysli?",
+      "source_hash": "7e05edc1316ae428"
+    },
+    "mr-008": {
+      "title": "Vize dne",
+      "description": "Zavřete si oči po 2 minutách. Představte si nejlepší verzi dne. Potom nákres nebo napište, co jste viděli.",
+      "proof_prompt": "Nákres nebo napište vaši vizi. Jakékoli formy. Jakékoli barvy. Ne soudíte.",
+      "steps": [
+        "Sedněte si pohodlně a zavřete si oči",
+        "Pomyslete si na dokonalý den",
+        "Pozorujte detaily — barvy, zvuky, emoce",
+        "Otevřete si oči a napište to hned na papír nebo do textu"
+      ],
+      "reflection": "Který prvek vaší vize vás překvapil?",
+      "source_hash": "7402c40780e77929"
+    },
+    "mr-009": {
+      "title": "Jedna věc, která by mě měla být hrdá",
+      "description": "Ne seznam úkolů. Jedna věc. Pokud dnes uděláte pouze to, je den naprostý úspěch.",
+      "proof_prompt": "Ráno: napište si tu jednu věc. Ve večerní době: jak jste se cítili po jejím dokončení?",
+      "steps": [
+        "Ráno: identifikujte SI jednu důležitou věc",
+        "Napište ji někde viditelně — vedle sebe",
+        "Udělejte tu věc první, před vším ostatním",
+        "Ve večerní době: hlásíte, jak jste se cítili"
+      ],
+      "reflection": "Proč tato věc skutečně má význam?",
+      "source_hash": "f2ded89a4e21195f"
+    },
+    "mr-010": {
+      "title": "Můj mantra pro dnešek",
+      "description": "Jedna věta, která vás bude dnes vodit. Ne citát. Vaše. Z toho, co cítíte právě teď, v tomto okamžiku.",
+      "proof_prompt": "Vaše mantra. Jedna věta. Vaše.",
+      "steps": [
+        "Sedněte si s sebou po 1 minutě",
+        "Co potřebujete slyšet dnes?",
+        "Napište větu — vaše, ne citát",
+        "Opakujte ji 3krát nahlas"
+      ],
+      "reflection": "Mohl vám tento mantra pomoci dnes?",
+      "source_hash": "0b9cb71a2e7a5245"
+    },
+    "iw-001": {
+      "title": "Dopis sebekritiky",
+      "description": "To nejsložitější, co jste si nezapomněli odpustit sami sobě. Napište si dopis jako byste psali k milému příteli, který udělal chybu.",
+      "proof_prompt": "Vaše dopis. Úplný nebo roztržený. Mara nic nejudikuje.",
+      "steps": [
+        "Najděte si 30 minut naprosté samoty",
+        "Identifikujte to, co jste si nezapomněli odpustit sami sobě",
+        "Napište jako k příteli — s laskavostí",
+        "Čtěte si ho nahlas, sami sebou"
+      ],
+      "reflection": "Co se změnilo po tom, co jste napsali?",
+      "source_hash": "b2a13524bba0f29b"
+    },
+    "iw-002": {
+      "title": "Vaše největší strach",
+      "description": "Napište nebo nakreslete o svém největší strachu. Neanalyzujte ho. Nezadůvodněte ho. Popište ho pouze.",
+      "proof_prompt": "Text nebo kresba — cokoliv vám bude snazší pro vyjádření svých pocitů.",
+      "steps": [
+        "Sedněte si s ním 5 minut bez útěku od něj",
+        "Pozor, kde ho cítíte v těle",
+        "Popište ho nebo nakreslete bez soudů",
+        "Dávejte mu jméno"
+      ],
+      "reflection": "Co se stalo, když jste se s ním tváří v tvář postavili?",
+      "source_hash": "1a3b61a89d3ae5bc"
+    },
+    "iw-003": {
+      "title": "Kdo vás nejvíce zranil?",
+      "description": "Nezadávejte soud nebo pomstou. Chcete-li se pochopit a osvobodit. Napište bez úprav.",
+      "proof_prompt": "Píšíte volně. Bez úprav. Bez cenzury. Mara čte s úplnou empatií.",
+      "steps": [
+        "Zajistěte si, že jste sami a v bezpečí",
+        "Píšíte bez odložení pera/ruce od klávesnice",
+        "Neupravujte, neuměňujte, nejudgejte",
+        "Na konci si vezměte 3 hluboké dýchání"
+      ],
+      "reflection": "Co jste cítili po tom, co jste napsali?",
+      "source_hash": "0dda1691cea09797"
+    },
+    "iw-004": {
+      "title": "Dítě uvnitř vás",
+      "description": "Co byste řekli dítěti, které jste kdysi byli? Co by chtělo vědět? Co by vás učinilo bezpečnými?",
+      "proof_prompt": "Dopis k vašemu mladšímu já. Nebo kresba. Nebo obě.",
+      "steps": [
+        "Najděte si fotografii sebe jako dítěte, pokud máte jednu",
+        "Pouze na ni chvíli podívejte",
+        "Napište jim dopis nebo nakreslete jim",
+        "Co byste chtěli slyšet zpět tehdy?"
+      ],
+      "reflection": "Co cítilo dítě, když četlo váš dopis?",
+      "source_hash": "8d2c2eddb7e7e3e4"
+    },
+    "iw-005": {
+      "title": "Vaše maska",
+      "description": "Jakou tvář předvádíte světu vs kdo jste ve skutečnosti, když nikdo nevidí? Popište rozdíl upřímně.",
+      "proof_prompt": "Text nebo dvě kresby: maska a skutečná tvář.",
+      "steps": [
+        "Pomyslete na poslední týden",
+        "Jak jste se předváděli ostatním?",
+        "Koho jste byli sami?",
+        "Popište nebo nakreslete obě verze"
+      ],
+      "reflection": "Jak velký je rozdíl? Proč?",
+      "source_hash": "e1472165dfae5fe9"
+    },
+    "iw-006": {
+      "title": "Hlas v hlavě",
+      "description": "Jak mluvíte k sobě, když nikdo neposlouchá? S laskavostí nebo s krutostí? Napište 10 věcí, které vám pravidelně říkáte.",
+      "proof_prompt": "10 věcí, které vám říkáte. Upřímně. Vždycky tak, jak jsou.",
+      "steps": [
+        "Budete úplně upřímní — nikdo jiný nebude číst",
+        "Napište první 10 pravidelných myšlenek, které máte o sobě",
+        "Značíte každou: laskavá nebo krutá?",
+        "Vyberte jednu krutou myšlenku a napište ji s laskavostí"
+      ],
+      "reflection": "Jak byste se cítili, kdyby někdo mluvil k příteli tak, jak mluvíte k sobě?",
+      "source_hash": "32a2479cef87f795"
+    },
+    "iw-007": {
+      "title": "Vaše hranice",
+      "description": "Kde říkáte ANO, když chcete říci NE? S kým? Kdy? Proč stále dáváte přednost?",
+      "proof_prompt": "3 konkrétní situace, kdy jste řekli ANO, když jste chtěli říci NE.",
+      "steps": [
+        "Pomyslete na poslední měsíc",
+        "Identifikujte 3 reálné, konkrétní situace",
+        "Pro každou: co jste řekli vs co jste chtěli říci",
+        "Vyberte jednu a napište, jak by to vypadalo, kdyby jste řekli NE"
+      ],
+      "reflection": "Proč je pro vás těžké říci NE v těch situacích?",
+      "source_hash": "ed4aa8745a5239f0"
+    },
+    "iw-008": {
+      "title": "Vaše vztah k penězům",
+      "description": "Ne o tom, kolik máte nebo nemáte. O tom, co cítíte k penězům. Strach? Pochyby? Moc? Nezájem?",
+      "proof_prompt": "Napište upřímně o vašem vztahu k penězům. Dětství, rodina, názory.",
+      "steps": [
+        "Pomyslete na první vzpomínku, která se týká peněz",
+        "Co říkali vaši rodiče o penězích?",
+        "Co cítíte nyní, když si myslíte na peníze?",
+        "Kde podle vás toto pocity pochází?"
+      ],
+      "reflection": "Co byste chtěli změnit o vašem přesvědčení o penězích?",
+      "source_hash": "b77cb84900f415f7"
+    },
+    "iw-009": {
+      "title": "Vaše tělo — dopis",
+      "description": "Napište dopis svému tělu. Co byste mu řekli? Co vám řekne? Co byste mu chtěli za to děkovat? Co byste mu chtěli za to omlouvat?",
+      "proof_prompt": "Dopis svému tělu. Plný, upřímný, z srdce.",
+      "steps": [
+        "Sedněte si v tichu pár minut",
+        "Provedete si vnitřní sken od hlavy po patu",
+        "Co cítíte v každé části vašeho těla?",
+        "Napište dopis — s vděčností a omluvou"
+      ],
+      "reflection": "Co vám řeklo vaše tělo v tomto dopise?",
+      "source_hash": "11265d3635e734d2"
+    },
+    "iw-010": {
+      "title": "Moment, který změnil vás",
+      "description": "Událost, která změnila všechno. Je tam před a po. Popište obě.",
+      "proof_prompt": "Příběh o tom momentu. Předtím. Událost. Po. Kdo jste nyní proto, že se to stalo.",
+      "steps": [
+        "Identifikujte ten moment — víte, který to je",
+        "Popište, kdo jste předtím",
+        "Popište, co se stalo",
+        "Popište, kdo jste nyní proto, že se to stalo"
+      ],
+      "reflection": "Pokud by se ten moment nestal — kdo byste byli dnes?",
+      "source_hash": "69574dbf61af03de"
+    },
+    "iw-011": {
+      "title": "Co znamená pro vás úspěch?",
+      "description": "Ne pro vaše rodiče. Ne pro společnost. Ne pro vaše přátele. Pro vás. Teď. Skutečný.",
+      "proof_prompt": "Definujte úspěch. Bez sociálního filtru.",
+      "steps": [
+        "Zapomeňte na to, co si myslí ostatní",
+        "Napište vlastní definici úspěchu",
+        "Je to o penězích? Čas? Vztahy? Svobodě? Kreativitě?",
+        "Žijete podle této definice teď?"
+      ],
+      "reflection": "Jak daleko jste od svého skutečného úspěchu?",
+      "source_hash": "1edc82ed578cef80"
+    },
+    "iw-012": {
+      "title": "Tvoje nejhlubší touha",
+      "description": "Co tě nejvíce táhne? Ne nutně něco materiálního. Může to být stav, spojení, verze sebe sama.",
+      "proof_prompt": "Text nebo kresba — co lépe vyjadřuje tvoji touhu.",
+      "steps": [
+        "Sedni v naprostém tichu po 5 minutách",
+        "Co si myslíš, že skutečně chybí?",
+        "Nedávej se do analyzování — cítit to, co chybí",
+        "Vyjdi z toho, co chybí, bez cenzury"
+      ],
+      "reflection": "Jak dlouho existuje tato touha? Co ji vyvolává?",
+      "source_hash": "c16f76abbd90d68b"
+    },
+    "iw-013": {
+      "title": "Dopis tvému budoucímu já",
+      "description": "Napiš dopis sobě 5 let od teď. Co bys jim chtěl říct? Co bys jim chtěl? Co bys jim chtěl zanechat jako dědictví?",
+      "proof_prompt": "Milý mě, 5 let od teď...",
+      "steps": [
+        "Představit si, že jsi já 5 let od teď",
+        "Napiš jim upřímný dopis",
+        "Řekni jim, co doufáš, co se bojíš, co jim chceš",
+        "Sejdi ho v aplikaci"
+      ],
+      "reflection": "Co tě překvapilo v tom, co jsi napsal?",
+      "source_hash": "8d185e17d0769bbc"
+    },
+    "iw-014": {
+      "title": "Děkuji za nepříjemnosti",
+      "description": "Nejtvrdší okamžik tvého života. Ne nejtěžší — nejTVRDŠÍ. Co jsi z něho naučil?",
+      "proof_prompt": "Moment. Co jsi z něho naučil. Kdo jsi proto, že jsi z něho vyšel.",
+      "steps": [
+        "Identifikuj nejtvrdší okamžik — víš, který to je",
+        "Napiš, co se stalo, aniž bys dramatizoval",
+        "Identifikuj 3 věci, které jsi získal z tohoto okamžiku",
+        "Děkuji za tento okamžik"
+      ],
+      "reflection": "Pokud by se tento okamžik nestal — co bys nevěděl?",
+      "source_hash": "3ae6df955792a95c"
+    },
+    "iw-015": {
+      "title": "Kdo jsi, opravdu?",
+      "description": "Ne co děláš. Ne co máš. Ne roli, kterou hraješ. Kdo jsi? Toto otázka nemá špatný odpověď.",
+      "proof_prompt": "Text, kresba, fotokompozice — cokoli vyjadřuje, kdo jsi opravdu.",
+      "steps": [
+        "Sedni v naprostém tichu po 10 minutách",
+        "Zeptej se sama: kdo jsem?",
+        "Nedávej se do hledání správné odpovědi — není ji",
+        "Vyjdi z toho, co cítíš, ne z toho, co myslíš"
+      ],
+      "reflection": "Jak se změnilo tvé odpověď oproti před rokem?",
+      "source_hash": "48c9c74b5ce71101"
+    },
+    "ce-001": {
+      "title": "Fotografovej svůj den",
+      "description": "Jedna fotografie, která představuje, jak se dnes cítíš. Ne perfektní. Ne filtrovaná. Autentická.",
+      "proof_prompt": "Tvoje fotografie dneška. Může to být cokoli.",
+      "steps": [
+        "Nedávej se do spěchu — hledaj správnou chvíli",
+        "Fotografovej bez filtru a bez editace",
+        "Může to být objekt, místo, světlo, stín",
+        "Měla by reprezentovat, jak se cítíš — ne jak vypadáš"
+      ],
+      "reflection": "Proč tato fotografie představuje tvůj den?",
+      "source_hash": "3ba377f29a79f0d1"
+    },
+    "ce-002": {
+      "title": "Kresli své strachy",
+      "description": "Ne musíš být umělec. Jakékoli tvary, jakékoli barvy. Dávej svému strachu vizuální podobu.",
+      "proof_prompt": "Fotografie tvé kresby. Nezáleží na tom, jak „neprofesionální“ je.",
+      "steps": [
+        "Zavři prázdnou listinu a kreslířské nástroje",
+        "Nedávej se do plánování — dej ruce volno",
+        "Kresli, jak vypadá tvůj strach",
+        "Dávej mu název"
+      ],
+      "reflection": "Jak vypadá tvůj strach? Co tě překvapilo?",
+      "source_hash": "e00ba9b79e689dca"
+    },
+    "ce-003": {
+      "title": "Napiš dopis neznámému člověku",
+      "description": "Kdo jsi nezná, ale máš pocit, že potřebuje tyto slova. Možná je to někdo, kdo prochází, co jsi prošel ty.",
+      "proof_prompt": "Dopis v plné délce. Může být publikován anonymně ve společenství.",
+      "steps": [
+        "Pomysli na tvrdý okamžik v tvém životě",
+        "Co bys chtěl slyšet v té chvíli?",
+        "Napiš pro toho neznámého člověka",
+        "Můžeš si vybrat, zda dopis publikuješ anonymně nebo si ho uchovejš"
+      ],
+      "reflection": "Napsání pro někoho jiného — co jsi o sobě zjistil?",
+      "source_hash": "e273bf8acd6bd43d"
+    },
+    "ce-004": {
+      "title": "Koláž tvé snů",
+      "description": "Najdi 5 obrázků kolem sebe — ne z časopisů — které představují tvůj ideální život. Fotografovej je dohromady.",
+      "proof_prompt": "Fotografie tvé koláže. Nebo 5 samostatných fotografií.",
+      "steps": [
+        "Hledaj doma nebo v okolí",
+        "Najdi 5 objektů nebo obrázků, které představují tvůj ideální život",
+        "Uspořádej je a fotografovej",
+        "Napiš 2 slova pro každé"
+      ],
+      "reflection": "Co jsi zjistil, co skutečně má smysl?",
+      "source_hash": "3a443952bd961229"
+    },
+    "ce-005": {
+      "title": "Hudba tvého okamžiku",
+      "description": "Píseň, která přesně reprezentuje, jak se dnes cítíš. Ne co si líbíš — co cítíš.",
+      "proof_prompt": "Název písně a proč ji reprezentuje přesně, jak se dnes cítíš.",
+      "steps": [
+        "Sedni v naprostém tichu po 2 minutách",
+        "Co se vám vybaví spontánně?",
+        "Poslouchej ji jednou, celou",
+        "Napiš, proč ji reprezentuje dnešní den"
+      ],
+      "reflection": "Co tvůj výběr hudby říká o tvém stavu?",
+      "source_hash": "f316307538e7602e"
+    },
+    "ce-006": {
+      "title": "Napiš 4-verší básničku",
+      "description": "Ne musí být v rytmu. Ne musí být dokonalá. 4 verší o dnešním dni, o tobě, o tom, jak se cítíš.",
+      "proof_prompt": "Tvoje básnička. 4 verší. Tvá.",
+      "steps": [
+        "Nedávej se do přemýšlení — napiš první, co se vám vybaví",
+        "Ne edituj po napsání",
+        "Ne soud, zda je „dobrá“ nebo ne",
+        "Čti ji nahlas"
+      ],
+      "reflection": "Co tě překvapilo v vlastní básničce?",
+      "source_hash": "d2f3b39dc2f5419a"
+    },
+    "ce-007": {
+      "title": "Zfotografovejte obyčejnou krásu",
+      "description": "Vyjděte ven po 30 minutách bez cíle. Zfotografujte 5 věcí, které mají něco zvláštního o sobě.",
+      "proof_prompt": "Nejlepší 1-3 fotografie z vaší procházky.",
+      "steps": [
+        "Vyjděte ven bez cíle a bez spěchu",
+        "Pohledněte, jako byste všechno poprvé viděli",
+        "Zfotografujte to, co vás zaujme",
+        "Žádné filtry, žádné úpravy"
+      ],
+      "reflection": "Co jste dnes viděli, co obvykle zůstává neviditelné?",
+      "source_hash": "87a424bb523e69b9"
+    },
+    "ce-008": {
+      "title": "Napište začátek vašeho knihy",
+      "description": "První stránka knihy o vašem životě. Nebiografie – kniha. První odstavec. Kdekoli chcete, aby začal.",
+      "proof_prompt": "První odstavec. Můžete psát v jakékoli osobě, z jakékoli chvíle vašeho života.",
+      "steps": [
+        "Nepřipravujte se – napište první věc, co se vám vybaví",
+        "Může začínat kdekoli – dětství, včera, teď",
+        "Píšte bez úpravy prvního času",
+        "Čtěte si to a rozhodněte se, zda si ho zachováte nebo ho přepracujete"
+      ],
+      "reflection": "Proč jste vybrali začátek tam?",
+      "source_hash": "11e805bdc509795c"
+    },
+    "ce-009": {
+      "title": "Nakreslete, kde chcete být",
+      "description": "Vizualizace skrze umění. Místo, lidé, co vaše ideální život vypadá. Neperfektní – realistické.",
+      "proof_prompt": "Fotografie vaší kresby nebo koláže.",
+      "steps": [
+        "Vezměte si velký papír, pokud máte jeden",
+        "Nakreslete nebo vkládejte obrázky",
+        "Zahrňte: místo, lidi, aktivity, emoce",
+        "Nedělejte si starosti – vyjadřujte si to"
+      ],
+      "reflection": "Který prvek vaší kresby je nejvýznamnější?",
+      "source_hash": "4e0fbd6d61295ba4"
+    },
+    "ce-010": {
+      "title": "Dopis, který jste nikdy neposlali",
+      "description": "Kdekoli z vašeho minulosti nebo současnosti. Všechno, co jste chtěli říci a neřekli. Teď můžete.",
+      "proof_prompt": "Dopis v plné délce. Vyberte si: poslat, uložit soukromý, smazat.",
+      "steps": [
+        "Identifikujte osobu a co jste chtěli říci",
+        "Píšte bez ohledu na to, zda ho budete poslat",
+        "Na konci máte 3 možnosti: poslat, uložit soukromý, smazat",
+        "Kteroukoli volbu máte – je vaše rozhodnutí"
+      ],
+      "reflection": "Co se změnilo po tom, co jste ho napsali?",
+      "source_hash": "bc17ccb3d762aa0c"
+    },
+    "ce-011": {
+      "title": "Zfotografovejte své ruce",
+      "description": "Co vaše ruce vypráví? Co jste s nimi postavili? Co jste s nimi zničili? Co jste s nimi uzdravili? Co jste s nimi vytvořili?",
+      "proof_prompt": "Fotografie vašich rukou + několik slov o jejich příběhu.",
+      "steps": [
+        "Pohledněte na ruce po několik minut",
+        "Pomyslete na všechno, co jste s nimi udělali",
+        "Zfotografujte je v přirozeném světle",
+        "Napište 3 věty o jejich příběhu"
+      ],
+      "reflection": "Co jste zjistili o sobě, když jste se dívali na své ruce?",
+      "source_hash": "cf98737e79136c1e"
+    },
+    "ce-012": {
+      "title": "Znovu nakreslete špatný den",
+      "description": "Znovu nakreslete nebo napište, jak by ten špatný den mohl vypadat, kdyby šel dobře.",
+      "proof_prompt": "Znovu nakreslený den – text nebo kresba.",
+      "steps": [
+        "Pomyslete na nedávný špatný den",
+        "Popište, co šlo špatně",
+        "Znovu nakreslete nebo napište, jak by to mohlo vypadat, kdyby šel dobře",
+        "Co by mělo být jinak?"
+      ],
+      "reflection": "Co můžete o špatném dni vlastně ovládat?",
+      "source_hash": "829cce9ab4274531"
+    },
+    "ce-013": {
+      "title": "Vaše manifest",
+      "description": "5 věcí, které věříte s celým svým já. Zásady, které žijete nebo chcete žít.",
+      "proof_prompt": "Vaše manifest. 5 zásad. Vaše.",
+      "steps": [
+        "Nepřemýšlejte příliš – napište to, co se vám vybaví",
+        "Co je pro vás neúprosné?",
+        "Jak chcete žít?",
+        "Co chcete stát za?"
+      ],
+      "reflection": "Žijete podle tohoto manifestu teď?",
+      "source_hash": "996911d37d23ce27"
+    },
+    "ce-014": {
+      "title": "Řekněte to nahlas",
+      "description": "Řekněte nahlas něco, co jste nikdy neřekli. Nemusíte ho nahrát – musíte to říct.",
+      "proof_prompt": "Ne to, co jste řekli – ale jak jste se cítili, když jste to řekli. A zda se svět změnil.",
+      "steps": [
+        "Identifikujte to, co jste nikdy neřekli",
+        "Najděte si soukromé místo",
+        "Řekněte to nahlas – 3x",
+        "Sedněte si po několik minut s tím, co se cítíte později"
+      ],
+      "reflection": "Proč jste ho až dosud neřekli?",
+      "source_hash": "19d728c73182ca1d"
+    },
+    "ce-015": {
+      "title": "Vytvořte něco svými rukama",
+      "description": "Cokoliv – hlína, papír, dřevo, jídlo, tkanina. Něco, co neexistovalo předtím, než jste ho vytvořili.",
+      "proof_prompt": "Fotografie vaší tvorby. Příběh o dvou větách.",
+      "steps": [
+        "Vyberte si materiál z domu",
+        "Nedělejte si starosti – dejte ruce volně",
+        "Vytvořte něco – cokoliv",
+        "Fotografujte ho předtím, než ho budete hodnotit"
+      ],
+      "reflection": "Co jste cítili, zatímco jste tvořili?",
+      "source_hash": "1aebc0ee7f9c8e6c"
+    },
+    "lc-001": {
+      "title": "Rámcový přehled vašeho skutečného života",
+      "description": "Nejobs. Momenty, které vás definují. 5 zkušeností, které vám skutečně pomohly v tvorbě vašeho já.",
+      "proof_prompt": "5 definujících zkušeností. Nejobs – životní momenty.",
+      "steps": [
+        "Pomyslete na zkušenosti, které vás změnily",
+        "Vyberte si 5 – ne nutně pozitivní",
+        "Popište, co jste z každé získali",
+        "Toto je vaše skutečná zkušenost"
+      ],
+      "reflection": "Co je vám patrné v těchto 5 zkušenostech?",
+      "source_hash": "c401b01e31759147"
+    },
+    "lc-002": {
+      "title": "Co by odvážná verze tebe udělala?",
+      "description": "Rozhodnutí, které stále odkládáš. Co by tvůj verze bez strachu, bez omluv, bez \"ale\" udělala?",
+      "proof_prompt": "Zpožděné rozhodnutí. Co by odvážná verze udělala. První malý krok, který můžeš udělat zítra.",
+      "steps": [
+        "Identifikuj zpožděné rozhodnutí — víš, které to je",
+        "Napiš: co by tvůj bezstrachový verze udělala?",
+        "Identifikuj nejmenší možné krok",
+        "Zavážeš se Marii, že zítra ho uděláš"
+      ],
+      "reflection": "Co tě opravdu brání?",
+      "source_hash": "535710bdc0b1051e"
+    },
+    "lc-003": {
+      "title": "Den v tvém ideálním životě",
+      "description": "Popiš detailně dokonalý den z tvého budoucího života. Od probuzení do spánku. Konkrétní a specifický.",
+      "proof_prompt": "Tvůj ideální den. Hodina po hodině. Konkrétní.",
+      "steps": [
+        "Write from 06:00 to 23:00",
+        "Be specific — not \"I wake up happy\"",
+        "Include: where you are, with whom, what you do, how you feel",
+        "Don't censor anything you desire"
+      ],
+      "reflection": "Který prvek tohoto dne můžeš začít budovat hned teď?",
+      "source_hash": "277da80c78202975"
+    },
+    "lc-004": {
+      "title": "Dozvědět se dovednost, která tě děsí",
+      "description": "Co dovednost jsi nikdy nenaučil? Proč tě děsí? Může to být cokoli — programování, malování, tanec, veřejná řeč.",
+      "proof_prompt": "Dovednost. Proč tě děsí. První malý krok, který můžeš udělat dnes.",
+      "steps": [
+        "Identifikuj dovednost, o které přemýšlíš, ale nikdy nenaučil",
+        "Napiš proč ji skutečně děsí",
+        "Najdi nejmenší možné krok",
+        "Zkuste ho udělat — dnes, hned teď"
+      ],
+      "reflection": "Co by se změnilo v tvém životě, kdyby jsi ji ovládl?",
+      "source_hash": "6d4edd6e9126ee4f"
+    },
+    "lc-005": {
+      "title": "Těžká konverzace",
+      "description": "Konverzace, kterou dlouho odkládáš. S kým? O co? Mara tě připravuje na ni.",
+      "proof_prompt": "S kým. O co. To, co přesně chcete říct. To, co se bojíš, že se stane.",
+      "steps": [
+        "Identifikuj odloženou konverzaci",
+        "Napiš přesně to, co chcete říct",
+        "Napiš, co se bojíš, že řekne druhý člověk",
+        "Zkus ji zahrát s Marií předem"
+      ],
+      "reflection": "Co by se změnilo, kdyby ji mělaš?",
+      "source_hash": "37f8eca5a7bcc5e7"
+    },
+    "lc-006": {
+      "title": "Peníze a tvůj sen",
+      "description": "Kolik stojí tvůj ideální život? Pojďme to spočítat vážně. Měsíčně. Ročně. Bez strachu.",
+      "proof_prompt": "Skutečné spočítání. Ideální život. Kolik stojí měsíčně a ročně.",
+      "steps": [
+        "Zajmi se ideálním životem, který popsal",
+        "Odhadněte skutečné měsíční náklady",
+        "Spočtěte rozdíl proti tvému současnému příjmu",
+        "Identifikujte 3 způsoby, jak zúžit mezery"
+      ],
+      "reflection": "Je to více nebo méně, než jsi si myslel?",
+      "source_hash": "10117caa61afdb62"
+    },
+    "lc-007": {
+      "title": "Změna kariéry",
+      "description": "Co bys udělal zítra, kdyby sis mohl? Mara ti pomůže prozkoumat skutečnou možnost.",
+      "proof_prompt": "Co bys udělal. Proč to neuděláš teď. Co by se muselo změnit.",
+      "steps": [
+        "Napiš: co bys udělal, kdybych sis mohl?",
+        "Skutečně si to prohlédni — 30 minut",
+        "Napiš, co bys získal a co bys ztratil",
+        "Identifikuj jeden malý krok směrem k němu"
+      ],
+      "reflection": "Co tě drží v tvém současném místě více — bezpečnost nebo strach?",
+      "source_hash": "bc84e3d33c8bfccc"
+    },
+    "lc-008": {
+      "title": "Tvůj vztah k času",
+      "description": "Zachyť celý den — přesně to, co jsi udělal, hodinu po hodině. Honestně. Bez přehánění.",
+      "proof_prompt": "Den časového deníku. Hodina po hodině. Honestní.",
+      "steps": [
+        "In the morning: set a reminder every 2 hours",
+        "Note exactly what you did",
+        "At the end: calculate the % of time per activity",
+        "Identify your biggest \"time killer\""
+      ],
+      "reflection": "Co tento den ukázal o tvých skutečných prioritách?",
+      "source_hash": "6380f31dcf7e82ce"
+    },
+    "lc-009": {
+      "title": "Zeptej se na pomoc",
+      "description": "Zavolej nebo napiš někomu a zeptej se na pomoc s něčím skutečným. Ne metaforickým. Něčím konkrétním, co nemůžeš udělat sám.",
+      "proof_prompt": "S kým jsi mluvil. Co jsi zeptal. Jak se cítil, že se zeptal. Co se stalo potom.",
+      "steps": [
+        "Identify something you truly need help with",
+        "Choose a person who can help",
+        "Ask directly — without excessive apologies",
+        "Report honestly what happened"
+      ],
+      "reflection": "Proč ti bylo těžké nebo snadné se zeptat?",
+      "source_hash": "20d0a777cae67bac"
+    },
+    "lc-010": {
+      "title": "První krok",
+      "description": "To, co jsi odkládal měsíce nebo roky. Dnes vezmeš PRVNÍ KROK. Jakýkoli malý. Nemůžeš ho udělat menší.",
+      "proof_prompt": "Co je to. Co jsi udělal přesně. Jak malý to bylo. Jak se cítil po něm.",
+      "steps": [
+        "Identifikuj odkládanou věc — víš, která to je",
+        "Identifikuj nejmenší možné krok",
+        "Zkuste to udělat teď — zatímco čtete tohle",
+        "Zpracuj přesně to, co jsi udělal"
+      ],
+      "reflection": "Jak se cítil po prvním kroku?",
+      "source_hash": "f6c2bbd0e2401c73"
+    }
+  }
+}
