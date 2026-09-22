@@ -327,25 +327,29 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
               <div
                 className="profile-pic"
                 style={{
-                  backgroundImage: profile.avatar && profile.avatar.startsWith('http') ? `url(${profile.avatar})` : undefined,
-                  backgroundColor: !profile.avatar || !profile.avatar.startsWith('http') ? profile.avatar : undefined,
+                  // profile.avatar is either a real (relative, e.g.
+                  // /uploads/images/...) photo URL or empty — it's never a
+                  // CSS color value, unlike what the previous
+                  // startsWith('http') check assumed. That check treated
+                  // every real photo here as "not a URL" (this app's
+                  // uploads are relative paths, not absolute), rendering
+                  // the raw path as garbled fallback text instead of the
+                  // actual image.
+                  backgroundImage: profile.avatar ? `url(${profile.avatar})` : undefined,
+                  backgroundColor: !profile.avatar ? '#a855f7' : undefined,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
-                  fontSize: profile.avatar && !profile.avatar.startsWith('http') ? '48px' : '0',
+                  fontSize: !profile.avatar ? '48px' : '0',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  cursor: profile.avatar && profile.avatar.startsWith('http') ? 'pointer' : undefined,
+                  cursor: profile.avatar ? 'pointer' : undefined,
                 }}
-                onClick={
-                  profile.avatar && profile.avatar.startsWith('http')
-                    ? () => setLightboxUrl(profile.avatar)
-                    : undefined
-                }
-                role={profile.avatar && profile.avatar.startsWith('http') ? 'button' : undefined}
-                aria-label={profile.avatar && profile.avatar.startsWith('http') ? t('userProfile.viewPhoto', 'View profile photo') : undefined}
+                onClick={profile.avatar ? () => setLightboxUrl(profile.avatar) : undefined}
+                role={profile.avatar ? 'button' : undefined}
+                aria-label={profile.avatar ? t('userProfile.viewPhoto', 'View profile photo') : undefined}
               >
-                {profile.avatar && !profile.avatar.startsWith('http') && profile.avatar}
+                {!profile.avatar && profile.name.charAt(0).toUpperCase()}
               </div>
               {profile.isSelf && (
                 <label className="avatar-upload-badge" onClick={(e) => e.stopPropagation()}>
