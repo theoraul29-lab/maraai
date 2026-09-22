@@ -278,18 +278,35 @@ const ReelCard: React.FC<ReelCardProps> = ({
     : '';
   const isNativeVideo = !youTubeId && !isExternalTikTok && reel.url !== '#';
 
-  // Stable iframe src — only depends on youTubeId, so the iframe never
-  // reloads when the `muted` or `isActive` props change. Playback and
-  // mute state are controlled post-mount via the YouTube IFrame API
-  // (postMessage). `enablejsapi=1` + `origin=...` is required for the
-  // player to accept those commands.
+  // All cards in the feed mount together up front (only the *iframe inside*
+  // an active card is conditionally rendered — see the JSX below), so a
+  // plain `useRef(muted)` here would capture whatever `muted` was back at
+  // initial feed load for every card, not the preference at the moment each
+  // one actually becomes active. Keep it synced on every render instead, so
+  // iframeSrc (which only recomputes on isActive transitions, further down)
+  // always reads the *current* value when a card is about to actually
+  // create its iframe.
+  const mutedRef = useRef(muted);
+  mutedRef.current = muted;
+
+  // Recomputes only when this card's iframe is about to be (re)created —
+  // i.e. on youTubeId/isActive changes — never while it's already mounted
+  // and playing, so live mute toggling can't cause a mid-playback reload.
+  // Baking the *current* mute preference into the URL at that moment means
+  // a video the user has already unmuted once plays with sound immediately
+  // on every later card, with no postMessage round-trip needed. Browsers
+  // that already granted this page an autoplay-with-sound exception (which
+  // they do once the user has interacted with a video here) honor mute=0
+  // on subsequent embeds fine. `enablejsapi=1` + `origin=...` is required
+  // for the player to accept postMessage commands (used for live toggling
+  // and play/pause while active — see the effects below).
   const iframeSrc = useMemo(() => {
-    if (!youTubeId) return '';
+    if (!youTubeId || !isActive) return '';
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
     const params = new URLSearchParams({
       enablejsapi: '1',
       autoplay: '1',
-      mute: '1', // start muted to satisfy browser autoplay policy
+      mute: mutedRef.current ? '1' : '0',
       loop: '1',
       playlist: youTubeId,
       controls: '0',
@@ -299,7 +316,7 @@ const ReelCard: React.FC<ReelCardProps> = ({
     });
     if (origin) params.set('origin', origin);
     return `https://www.youtube.com/embed/${youTubeId}?${params.toString()}`;
-  }, [youTubeId]);
+  }, [youTubeId, isActive]);
 
   // Drive play/pause via IFrame API for YouTube, and via <video> ref for
   // native video. Both respect isActive + local paused state, without
@@ -324,11 +341,43 @@ const ReelCard: React.FC<ReelCardProps> = ({
   }, [isActive, paused, youTubeId]);
 
   // Apply mute state to YouTube iframe without reloading. Native <video>
-  // already binds `muted` via the attribute, so React handles it.
+  // already binds `muted` via the attribute, so React handles it. This only
+  // reaches a player that's already alive and listening — see the onReady
+  // listener below for the moment right after a fresh mount, when the
+  // player isn't listening yet and a command sent here would be silently
+  // dropped.
   useEffect(() => {
     if (!youTubeId) return;
     postYouTubeCommand(iframeRef.current, muted ? 'mute' : 'unMute');
   }, [muted, youTubeId]);
+
+  // Defensive backstop: the `mute` URL param (iframeSrc above) already
+  // bakes in the right initial state for a freshly-mounted card, but if a
+  // browser's autoplay policy silently forces it muted anyway, this
+  // re-asserts the actual current mute preference the instant the YouTube
+  // player confirms — via its own `onReady` postMessage — that it's
+  // actually listening. Sending the same command earlier than this point
+  // (e.g. immediately on mount) is exactly what caused every card after
+  // the first to lose the user's unmute choice: the player's message
+  // listener isn't registered yet on a just-created iframe, so the command
+  // arrives and is dropped with nothing to receive it.
+  useEffect(() => {
+    if (!youTubeId || !isActive) return;
+    const handleMessage = (event: MessageEvent) => {
+      if (event.source !== iframeRef.current?.contentWindow) return;
+      let data: any;
+      try {
+        data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+      } catch {
+        return;
+      }
+      if (data?.event === 'onReady') {
+        postYouTubeCommand(iframeRef.current, muted ? 'mute' : 'unMute');
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [youTubeId, isActive, muted]);
 
   const handleTap = useCallback(() => {
     const now = Date.now();
