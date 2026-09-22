@@ -328,7 +328,7 @@ const ReelsComponent: React.FC = () => {
   const filteredReels = filterTag ? reels.filter(r => r.tags.some(t => t.toLowerCase() === filterTag.toLowerCase()) || r.topic === filterTag) : reels;
 
   return (
-    <div className="reels-container orbit-ambient" data-module="reels">
+    <div className={`reels-container orbit-ambient${activeMode === 'feed' ? ' reels-container--feed' : ''}`} data-module="reels">
       {/* Header */}
       <div className="reels-header orbit-header">
         <h1><FilmStrip size={22} weight="bold" style={{ verticalAlign: 'middle', marginRight: 6 }} />{t('reels.headerTitle', 'SPARKS')}</h1>
@@ -340,7 +340,13 @@ const ReelsComponent: React.FC = () => {
         </div>
       </div>
 
-      <OrbNavStrip current="reels" />
+      {/* Redundant with the top Nav + mobile bottom nav, and on phones this
+          plus the header below was eating so much height that the actual
+          full-screen video card (and everything overlaid on it — creator
+          name, Follow, title, tags) got squeezed into a sliver, causing
+          every overlay line to visually stack on top of the others. Feed
+          mode drops it entirely; Create/My Sparks/Stats keep it. */}
+      {activeMode !== 'feed' && <OrbNavStrip current="reels" />}
 
       {error && (
         <div style={{ background: 'rgba(255,34,34,0.15)', border: '1px solid rgba(255,34,34,0.4)', borderRadius: '8px', padding: '10px 14px', margin: '8px 16px', color:'#ff6b6b', fontSize:'13px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>

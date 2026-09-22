@@ -1213,3 +1213,52 @@
 }
 .reel-comment-submit:hover { opacity: 0.88; transform: translateY(-1px); }
 .reel-comment-submit:disabled { opacity: 0.5; cursor: default; transform: none; }
+
+/* ===== Feed mode: compact chrome so the video card gets real screen space =====
+   The video area used to lose a header+tags stack far taller than the
+   `.tiktok-feed { height: calc(100vh - 160px) }` estimate accounted for
+   (page padding + a 2.5rem title + a 4-button row + the orb nav strip +
+   the tag bar easily topped 300-400px), leaving the actual video card too
+   short for its own overlaid text (creator name, Follow, title,
+   description, tags) to fit without stacking on top of itself. */
+.reels-container--feed {
+  padding: 0;
+}
+.reels-container--feed .reels-header {
+  margin-bottom: 0;
+  padding: 8px 12px;
+  border-bottom: none;
+  gap: 8px;
+}
+.reels-container--feed .reels-header h1 {
+  font-size: 1.15rem;
+  display: flex;
+  align-items: center;
+}
+.reels-container--feed .header-btn {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+.reels-container--feed .tiktok-feed {
+  height: calc(100vh - 96px);
+  height: calc(100dvh - 96px);
+}
+@media (max-width: 767px) {
+  .reels-container--feed .reels-header {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    align-items: center;
+  }
+  .reels-container--feed .reels-header h1 {
+    flex-shrink: 0;
+  }
+  .reels-container--feed .reels-header-actions {
+    flex-wrap: nowrap;
+    flex-shrink: 0;
+  }
+  .reels-container--feed .tiktok-feed {
+    height: calc(100vh - 88px - 68px - env(safe-area-inset-bottom, 0px));
+    height: calc(100dvh - 88px - 68px - env(safe-area-inset-bottom, 0px));
+  }
+}
