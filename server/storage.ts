@@ -459,7 +459,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createVideo(video: InsertVideo): Promise<Video> {
-    const [created] = await db.insert(videos).values(video).returning();
+    // Same broken column default as userPosts.createdAt (see createUserPost)
+    // — videos.createdAt is integer/mode:'timestamp' but defaults to
+    // sql`CURRENT_TIMESTAMP`, which SQLite returns as a text datetime, not
+    // unix-epoch seconds. Set explicitly to avoid epoch-0 rows.
+    const [created] = await db.insert(videos).values({ ...video, createdAt: new Date() }).returning();
     return created;
   }
 

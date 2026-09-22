@@ -44,6 +44,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
   });
   const [userPosts, setUserPosts] = useState<any[]>([]);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
   useEffect(() => {
     loadProfile();
@@ -114,8 +115,8 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
 
       // Load user posts from the existing /api/profile/:id/posts endpoint.
       const postsResponse = await fetch(`/api/profile/${userId}/posts`, { credentials: 'include' });
-      const posts = await postsResponse.json();
-      setUserPosts(Array.isArray(posts) ? posts : []);
+      const postsData = await postsResponse.json();
+      setUserPosts(Array.isArray(postsData?.items) ? postsData.items : []);
     } catch (error) {
       console.error('Error loading profile:', error);
     } finally {
@@ -299,12 +300,16 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
             style={{
               backgroundImage: profile.banner ? `url(${profile.banner})` : undefined,
               background: !profile.banner
-                ? 'linear-gradient(135deg, #FF3333 0%, #000000 100%)'
+                ? 'linear-gradient(135deg, #1a1a2e 0%, #0f0f1a 100%)'
                 : undefined,
+              cursor: profile.banner ? 'pointer' : undefined,
             }}
+            onClick={profile.banner ? () => setLightboxUrl(profile.banner!) : undefined}
+            role={profile.banner ? 'button' : undefined}
+            aria-label={profile.banner ? t('userProfile.viewCover', 'View cover photo') : undefined}
           >
             {profile.isSelf && (
-              <label className="banner-upload-btn">
+              <label className="banner-upload-btn" onClick={(e) => e.stopPropagation()}>
                 <input
                   type="file"
                   accept="image/*"
@@ -330,12 +335,20 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  cursor: profile.avatar && profile.avatar.startsWith('http') ? 'pointer' : undefined,
                 }}
+                onClick={
+                  profile.avatar && profile.avatar.startsWith('http')
+                    ? () => setLightboxUrl(profile.avatar)
+                    : undefined
+                }
+                role={profile.avatar && profile.avatar.startsWith('http') ? 'button' : undefined}
+                aria-label={profile.avatar && profile.avatar.startsWith('http') ? t('userProfile.viewPhoto', 'View profile photo') : undefined}
               >
                 {profile.avatar && !profile.avatar.startsWith('http') && profile.avatar}
               </div>
               {profile.isSelf && (
-                <label className="avatar-upload-badge">
+                <label className="avatar-upload-badge" onClick={(e) => e.stopPropagation()}>
                   <input
                     type="file"
                     accept="image/*"
@@ -498,9 +511,18 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
               userPosts.map((post: any) => (
                 <div key={post.id} className="profile-post-card">
                   <p>{post.content}</p>
+                  {post.imageUrl && (
+                    <img
+                      className="profile-post-image"
+                      src={post.imageUrl}
+                      alt=""
+                      onClick={() => setLightboxUrl(post.imageUrl)}
+                      style={{ cursor: 'pointer' }}
+                    />
+                  )}
                   <div className="post-engagement">
-                    <span>❤️ {post.likes}</span>
-                    <span>💬 {post.comments}</span>
+                    <span>❤️ {post.likeCount ?? 0}</span>
+                    <span>💬 {post.commentCount ?? 0}</span>
                     <ShareButton
                       sourceModule="post"
                       sourceId={post.id}
@@ -515,6 +537,19 @@ const UserProfile: React.FC<UserProfileProps> = ({ userId, onClose }) => {
           </div>
         </div>
       </div>
+
+      {lightboxUrl && (
+        <div className="profile-lightbox" onClick={() => setLightboxUrl(null)}>
+          <button
+            className="profile-lightbox-close"
+            onClick={(e) => { e.stopPropagation(); setLightboxUrl(null); }}
+            aria-label={t('userProfile.close', 'Close')}
+          >
+            ✕
+          </button>
+          <img className="profile-lightbox-img" src={lightboxUrl} alt="" onClick={(e) => e.stopPropagation()} />
+        </div>
+      )}
     </div>
   );
 };

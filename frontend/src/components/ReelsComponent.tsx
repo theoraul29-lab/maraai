@@ -88,6 +88,13 @@ const ReelsComponent: React.FC = () => {
       let feedItems: Reel[] = [];
       if (Array.isArray(data)) {
         feedItems = data;
+      } else if (Array.isArray(data.items)) {
+        // /api/reels/feed's real shape ({ items: [...] }) — the other
+        // branches below are legacy shapes from the old /api/mara-feed
+        // endpoint this replaced; none of them ever matched the new
+        // endpoint's response, so the feed silently rendered "no sparks
+        // found" for every viewer since that migration.
+        feedItems = data.items;
       } else if (data.categories) {
         feedItems = data.categories.flatMap((cat: any) => cat.videos || []);
       } else if (data.videos) {
