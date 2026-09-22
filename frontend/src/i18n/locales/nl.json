@@ -776,7 +776,7 @@
     "proofPlaceholder": "Schrijf hier je bewijs...",
     "reflectionPlaceholder": "Optioneel, maar krachtig...",
     "analyzing": "Mara analyseert je antwoord...",
-    "submitProof": "Bewijs indienen → +{{xp}} XP",
+    "submitProof": "Bewijs indienen",
     "howToTitle": "Hoe doe je dit:",
     "reflectLabel": "💭 Je zult reflecteren: ",
     "accept": "Missie accepteren 🚀",
@@ -835,7 +835,7 @@
     "inProgress": "Bezig",
     "proofPlaceholderDetailed": "Schrijf wat je deed, wat je voelde, wat je realiseerde...",
     "reflectionPrefix": "Reflectie: ",
-    "submitProofXp": "📤 Indienen (+{{xp}} XP)",
+    "submitProofXp": "📤 Indienen",
     "newMission": "Nieuwe missie →",
     "yourMissions": "Je missies",
     "completedFreeLabel": "{{count}} voltooid · eerste 10 gratis",
@@ -929,7 +929,7 @@
     "copied": "Tekst gekopieerd naar klembord!"
   },
   "p2p": {
-    "badgeTitle": "Bijdragen aan Mara: {{tasks}} taken, {{xp}} XP",
+    "badgeTitle": "Bijdragen aan Mara: {{tasks}} taken",
     "contributing": "Bijdragen aan Mara 🟢"
   },
   "share": {
@@ -941,7 +941,7 @@
     "tiktokHint": "kopiëren + openen",
     "instagramMsg": "Link gekopieerd! Open Instagram en plak. 📸",
     "tiktokMsg": "Link gekopieerd! Open TikTok en plak. 🎵",
-    "successMsg": "Gedeeld! +25 XP 🎉",
+    "successMsg": "Gedeeld! 🎉",
     "errorMsg": "Delen mislukt. Probeer opnieuw.",
     "recentlyShared": "Onlangs al gedeeld.",
     "platforms": {
@@ -1118,7 +1118,7 @@
     "tagsPlaceholder2": "motivatie, lifestyle, tips...",
     "shareDestinations": "Delen naar:",
     "shareToReelsLabel": "🎬 Sparks Feed (+50 XP)",
-    "shareToYouLabel": "👤 Jouw Profiel (Jij) (+{{xp}} XP)",
+    "shareToYouLabel": "👤 Jouw Profiel (Jij)",
     "estimatedXP": "⚡ Geschat: +{{xp}} XP",
     "publishBtn": "🚀 Publiceren",
     "publishingBtn": "Publiceren...",

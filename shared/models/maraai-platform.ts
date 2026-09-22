@@ -154,7 +154,7 @@ export const p2pTasks = sqliteTable(
     status: text('status').default('pending').notNull(),
     /** p2p_nodes.node_id that accepted this task. */
     assignedNode: text('assigned_node'),
-    /** userId of the node owner (for credit/XP award). */
+    /** userId of the node owner (for credit award). */
     assignedUserId: text('assigned_user_id'),
     /** Canonical task owner used for guarded result submission. */
     claimedBy: text('claimed_by'),

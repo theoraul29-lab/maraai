@@ -776,7 +776,7 @@
     "proofPlaceholder": "여기에 증거를 작성하세요...",
     "reflectionPlaceholder": "선택사항이지만 강력한 방법...",
     "analyzing": "Mara가 당신의 답변을 분석 중입니다...",
-    "submitProof": "증거 제출 → +{{xp}} XP",
+    "submitProof": "증거 제출",
     "howToTitle": "방법:",
     "reflectLabel": "💭 당신은 반영하게 됩니다: ",
     "accept": "미션 수락 🚀",
@@ -835,7 +835,7 @@
     "inProgress": "진행 중",
     "proofPlaceholderDetailed": "당신이 한 일, 느낀 감정, 깨달은 점을 작성하세요...",
     "reflectionPrefix": "성찰: ",
-    "submitProofXp": "📤 제출 (+{{xp}} XP)",
+    "submitProofXp": "📤 제출",
     "newMission": "새 미션 →",
     "yourMissions": "당신의 미션",
     "completedFreeLabel": "{{count}}개 완료 · 처음 10개 무료",
@@ -929,7 +929,7 @@
     "copied": "클립보드에 복사되었습니다!"
   },
   "p2p": {
-    "badgeTitle": "Mara 기여: {{tasks}} 개 미션, {{xp}} XP",
+    "badgeTitle": "Mara 기여: {{tasks}} 개 미션",
     "contributing": "Mara에 기여하기 🟢"
   },
   "share": {
@@ -941,7 +941,7 @@
     "tiktokHint": "복사 + 열기",
     "instagramMsg": "링크가 복사되었어요! Instagram을 열고 붙여넣기하세요. 📸",
     "tiktokMsg": "링크가 복사되었어요! TikTok을 열고 붙여넣기하세요. 🎵",
-    "successMsg": "공유 완료! +25 XP 🎉",
+    "successMsg": "공유 완료! 🎉",
     "errorMsg": "공유 실패. 다시 시도해주세요.",
     "recentlyShared": "최근에 이미 공유했습니다.",
     "platforms": {
@@ -1118,7 +1118,7 @@
     "tagsPlaceholder2": "동기부여, 라이프스타일, 팁...",
     "shareDestinations": "공유 대상:",
     "shareToReelsLabel": "🎬 Sparks 피드 (+50 XP)",
-    "shareToYouLabel": "👤 내 프로필 (본인) (+{{xp}} XP)",
+    "shareToYouLabel": "👤 내 프로필 (본인)",
     "estimatedXP": "⚡ 예상: +{{xp}} XP",
     "publishBtn": "🚀 게시",
     "publishingBtn": "게시 중...",

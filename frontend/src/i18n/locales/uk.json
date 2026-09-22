@@ -776,7 +776,7 @@
     "proofPlaceholder": "Напиши свій звіт тут...",
     "reflectionPlaceholder": "Необов'язково, але потужно...",
     "analyzing": "Mara аналізує твою відповідь...",
-    "submitProof": "Надіслати звіт → +{{xp}} XP",
+    "submitProof": "Надіслати звіт",
     "howToTitle": "Як це зробити:",
     "reflectLabel": "💭 Ти поміркуєш: ",
     "accept": "Прийняти місію 🚀",
@@ -835,7 +835,7 @@
     "inProgress": "В процесі",
     "proofPlaceholderDetailed": "Напиши, що ти зробив(ла), відчув(ла), усвідомив(ла)...",
     "reflectionPrefix": "Рефлексія: ",
-    "submitProofXp": "📤 Надіслати (+{{xp}} XP)",
+    "submitProofXp": "📤 Надіслати",
     "newMission": "Нова місія →",
     "yourMissions": "Твої місії",
     "completedFreeLabel": "{{count}} виконано · перші 10 безкоштовно",
@@ -929,7 +929,7 @@
     "copied": "Текст скопійовано в буфер обміну!"
   },
   "p2p": {
-    "badgeTitle": "Внесок у Mara: {{tasks}} завдань, {{xp}} XP",
+    "badgeTitle": "Внесок у Mara: {{tasks}} завдань",
     "contributing": "Внесок у Mara 🟢"
   },
   "share": {
@@ -941,7 +941,7 @@
     "tiktokHint": "скопіювати + відкрити",
     "instagramMsg": "Посилання скопійовано! Відкрий Instagram та встав. 📸",
     "tiktokMsg": "Посилання скопійовано! Відкрий TikTok та встав. 🎵",
-    "successMsg": "Поділився! +25 XP 🎉",
+    "successMsg": "Поділився! 🎉",
     "errorMsg": "Помилка. Спробуй ще раз.",
     "recentlyShared": "Нещодавно вже ділився.",
     "platforms": {
@@ -1118,7 +1118,7 @@
     "tagsPlaceholder2": "мотивація, лайфстайл, поради...",
     "shareDestinations": "Поділитися на:",
     "shareToReelsLabel": "🎬 Стрічка Sparks (+50 XP)",
-    "shareToYouLabel": "👤 Твій профіль (You) (+{{xp}} XP)",
+    "shareToYouLabel": "👤 Твій профіль (You)",
     "estimatedXP": "⚡ Орієнтовно: +{{xp}} XP",
     "publishBtn": "🚀 Опублікувати",
     "publishingBtn": "Публікація...",

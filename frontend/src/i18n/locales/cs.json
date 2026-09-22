@@ -776,7 +776,7 @@
     "proofPlaceholder": "Napište svůj důkaz sem...",
     "reflectionPlaceholder": "Volitelné, ale mocné...",
     "analyzing": "Mara analyzuje vaši odpověď...",
-    "submitProof": "Odeslat důkaz → +{{xp}} XP",
+    "submitProof": "Odeslat důkaz",
     "howToTitle": "Jak to udělat:",
     "reflectLabel": "💭 Budete se zamýšlet: ",
     "accept": "Přijmout misi 🚀",
@@ -835,7 +835,7 @@
     "inProgress": "Probíhá",
     "proofPlaceholderDetailed": "Napište, co jste dělali, co jste cítili, co jste si uvědomili...",
     "reflectionPrefix": "Reflexe: ",
-    "submitProofXp": "📤 Odeslat (+{{xp}} XP)",
+    "submitProofXp": "📤 Odeslat",
     "newMission": "Nová mise →",
     "yourMissions": "Vaše mise",
     "completedFreeLabel": "{{count}} dokončeno · prvních 10 zdarma",
@@ -929,7 +929,7 @@
     "copied": "Text zkopírován do schránky!"
   },
   "p2p": {
-    "badgeTitle": "Přispívání do Mara: {{tasks}} úkolů, {{xp}} XP",
+    "badgeTitle": "Přispívání do Mara: {{tasks}} úkolů",
     "contributing": "Přispívání do Mara 🟢"
   },
   "share": {
@@ -941,7 +941,7 @@
     "tiktokHint": "Kopírovat + Otevřít",
     "instagramMsg": "Odkaz zkopírován! Otevři Instagram a vlož. 📸",
     "tiktokMsg": "Odkaz zkopírován! Otevři TikTok a vlož. 🎵",
-    "successMsg": "Sdíleno! +25 XP 🎉",
+    "successMsg": "Sdíleno! 🎉",
     "errorMsg": "Sdílení se nezdařilo. Zkus znovu.",
     "recentlyShared": "Již jsi sdílel nedávno.",
     "platforms": {
@@ -1118,7 +1118,7 @@
     "tagsPlaceholder2": "motivace, životní styl, tipy...",
     "shareDestinations": "Sdílet na:",
     "shareToReelsLabel": "🎬 Feed Sparks (+50 XP)",
-    "shareToYouLabel": "👤 Váš profil (Vy) (+{{xp}} XP)",
+    "shareToYouLabel": "👤 Váš profil (Vy)",
     "estimatedXP": "⚡ Odhadovaně: +{{xp}} XP",
     "publishBtn": "🚀 Publikovat",
     "publishingBtn": "Publikování...",

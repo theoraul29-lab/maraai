@@ -1,38 +1,5 @@
 /* YOU PROFILE - HOLOGRAPHIC DESIGN */
 
-/* ── XP row in identity ──────────────────────────────────────── */
-.you-fb-xp-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 8px;
-  flex-wrap: wrap;
-}
-.you-fb-xp-badge {
-  background: linear-gradient(135deg, #7c3aed, #a855f7);
-  color: #fff;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 999px;
-  flex-shrink: 0;
-}
-.you-fb-xp-bar-wrap { flex: 1; min-width: 80px; max-width: 160px; }
-.you-fb-xp-bar {
-  height: 5px;
-  background: rgba(168,85,247,.15);
-  border-radius: 3px;
-  overflow: hidden;
-}
-.you-fb-xp-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #7c3aed, #a855f7);
-  border-radius: 3px;
-  transition: width .4s ease;
-}
-.you-fb-xp-val { font-size: 12px; color: #94a3b8; }
-.you-fb-streak { font-size: 12px; color: #f59e0b; }
-
 /* ── Tier badge ──────────────────────────────────────────────── */
 .you-fb-tier-badge {
   display: inline-block;

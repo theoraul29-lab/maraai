@@ -117,13 +117,14 @@ export function isLaunched(now: Date = new Date()): boolean {
 
 /**
  * Returnează numărul de useri activi în ultimele 24h.
- * Citește user_xp.last_activity_at (Unix timestamp în secunde).
+ * Citește chat_messages.created_at (Unix timestamp în secunde) — același
+ * semnal de activitate folosit de control-overview.ts pentru active7d.
  */
 function countActiveUsers(): number {
   try {
     const cutoff = Math.floor(Date.now() / 1000) - 24 * 60 * 60;
     const row = rawSqlite
-      .prepare('SELECT COUNT(DISTINCT user_id) AS c FROM user_xp WHERE last_activity_at >= ?')
+      .prepare('SELECT COUNT(DISTINCT user_id) AS c FROM chat_messages WHERE created_at >= ?')
       .get(cutoff) as { c: number } | undefined;
     return row?.c ?? 0;
   } catch {

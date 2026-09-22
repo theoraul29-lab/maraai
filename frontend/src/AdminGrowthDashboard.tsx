@@ -18,7 +18,6 @@ interface CohortRow {
 interface TopReferrer {
   userId: string;
   referralCount: number;
-  xpEarned: number;
 }
 
 interface GrowthData {
@@ -174,7 +173,7 @@ export default function AdminGrowthDashboard() {
         ) : (
           <table className="agd-table">
             <thead>
-              <tr><th>#</th><th>User ID</th><th>Referrals</th><th>XP câștigat</th></tr>
+              <tr><th>#</th><th>User ID</th><th>Referrals</th></tr>
             </thead>
             <tbody>
               {data.topReferrers.map((r, i) => (
@@ -182,7 +181,6 @@ export default function AdminGrowthDashboard() {
                   <td>{i + 1}</td>
                   <td className="agd-mono">{r.userId.slice(0, 12)}…</td>
                   <td>{r.referralCount}</td>
-                  <td>+{r.xpEarned} XP</td>
                 </tr>
               ))}
             </tbody>

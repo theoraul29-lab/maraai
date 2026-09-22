@@ -776,7 +776,7 @@
     "proofPlaceholder": "Écris ta preuve ici...",
     "reflectionPlaceholder": "Optionnel, mais puissant...",
     "analyzing": "Mara analyse ta réponse...",
-    "submitProof": "Soumettre la preuve → +{{xp}} XP",
+    "submitProof": "Soumettre la preuve",
     "howToTitle": "Comment faire :",
     "reflectLabel": "💭 Tu vas réfléchir : ",
     "accept": "Accepter la mission 🚀",
@@ -835,7 +835,7 @@
     "inProgress": "En cours",
     "proofPlaceholderDetailed": "Écris ce que tu as fait, ressenti, réalisé...",
     "reflectionPrefix": "Réflexion : ",
-    "submitProofXp": "📤 Soumettre (+{{xp}} XP)",
+    "submitProofXp": "📤 Soumettre",
     "newMission": "Nouvelle mission →",
     "yourMissions": "Tes missions",
     "completedFreeLabel": "{{count}} terminées · 10 premières gratuites",
@@ -929,7 +929,7 @@
     "copied": "Texte copié dans le presse-papiers !"
   },
   "p2p": {
-    "badgeTitle": "Contribution à Mara : {{tasks}} tâches, {{xp}} XP",
+    "badgeTitle": "Contribution à Mara : {{tasks}} tâches",
     "contributing": "Contribution à Mara 🟢"
   },
   "share": {
@@ -941,7 +941,7 @@
     "tiktokHint": "copier + ouvrir",
     "instagramMsg": "Lien copié ! Ouvre Instagram et colle. 📸",
     "tiktokMsg": "Lien copié ! Ouvre TikTok et colle. 🎵",
-    "successMsg": "Partagé ! +25 XP 🎉",
+    "successMsg": "Partagé ! 🎉",
     "errorMsg": "Erreur de partage. Réessaie.",
     "recentlyShared": "Déjà partagé récemment.",
     "platforms": {
@@ -1118,7 +1118,7 @@
     "tagsPlaceholder2": "motivation, lifestyle, astuces...",
     "shareDestinations": "Partager sur :",
     "shareToReelsLabel": "🎬 Feed Sparks (+50 XP)",
-    "shareToYouLabel": "👤 Ton profil (You) (+{{xp}} XP)",
+    "shareToYouLabel": "👤 Ton profil (You)",
     "estimatedXP": "⚡ Estimé : +{{xp}} XP",
     "publishBtn": "🚀 Publier",
     "publishingBtn": "Publication...",

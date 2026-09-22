@@ -9,10 +9,10 @@ import { loadTranslationBundles } from './content-translations.js';
 // admin's deactivation of a mission survives a re-seed.
 const insertMission = rawSqlite.prepare(`
   INSERT INTO missions (
-    id, title, description, pillar, difficulty, xp_reward,
+    id, title, description, pillar, difficulty,
     proof_type, proof_prompt, steps, reflection, is_active, is_daily
   ) VALUES (
-    @id, @title, @description, @pillar, @difficulty, @xp_reward,
+    @id, @title, @description, @pillar, @difficulty,
     @proof_type, @proof_prompt, @steps, @reflection, 1, @is_daily
   )
   ON CONFLICT(id) DO UPDATE SET
@@ -20,7 +20,6 @@ const insertMission = rawSqlite.prepare(`
     description = excluded.description,
     pillar = excluded.pillar,
     difficulty = excluded.difficulty,
-    xp_reward = excluded.xp_reward,
     proof_type = excluded.proof_type,
     proof_prompt = excluded.proof_prompt,
     steps = excluded.steps,
@@ -63,7 +62,6 @@ export function seedMissions(): void {
         description: m.description,
         pillar: m.pillar,
         difficulty: m.difficulty,
-        xp_reward: m.xp_reward,
         proof_type: m.proof_type,
         proof_prompt: m.proof_prompt,
         steps: m.steps_json,

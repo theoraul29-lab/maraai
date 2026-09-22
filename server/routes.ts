@@ -146,7 +146,7 @@ import { registerShareRoutes } from './share/routes.js';
 import { registerBillingApi } from './billing/api.js';
 import { registerProgramBillingApi } from './billing/programs-api.js';
 import { callAgent, isBrainAgentEnabled } from './lib/anthropic-agents.js';
-import { getUserXP, getPersonality } from './missions/engine.js';
+import { getPersonality } from './missions/engine.js';
 import multer from 'multer';
 // pdf-parse v1 is CommonJS-only — load via createRequire to avoid ESM default-export issues
 import { createRequire } from 'module';
@@ -598,7 +598,6 @@ export async function registerRoutes(
   app.post('/api/creator/post-reel', requireAuth, videoModule.creatorPostReel);
   app.get('/api/creator/analytics', requireAuth, videoModule.creatorAnalytics);
   app.delete('/api/creator/videos/:id', requireAuth, videoModule.deleteCreatorVideo);
-  app.get('/api/creator/creator-xp', requireAuth, creatorsModule.getCreatorXP);
   app.post('/api/creator/share-to-you', requireAuth, creatorsModule.shareToYou);
   app.get('/api/creator/my-comments', requireAuth, creatorsModule.getMyComments);
   app.get('/api/creator/growth-path', requireAuth, creatorsModule.getGrowthPath);
@@ -2289,7 +2288,6 @@ ${languageInstruction}`;
     }
     const userId: string = req.user?.uid;
     try {
-      const xp = getUserXP(userId);
       const personality = getPersonality(userId);
       const completed = (rawSqlite.prepare(
         `SELECT m.title, m.pillar, m.difficulty FROM user_missions um
@@ -2311,9 +2309,6 @@ ${languageInstruction}`;
 
       const userContext = `<user_context>
 ${JSON.stringify({
-  xp: xp.xp,
-  level: xp.level,
-  streak: xp.streak,
   personality: personality ?? null,
   completedMissions: completed,
   skippedMissions: skipped,
@@ -2332,7 +2327,7 @@ ${JSON.stringify({
         { systemExtra: userContext, maxTokens: 3000 },
       );
 
-      res.json({ reply, userContext: { xp, level: xp.level, streak: xp.streak } });
+      res.json({ reply });
     } catch (err) {
       console.error('[agent/brain]', err);
       res.status(500).json({ error: 'Brain agent failed' });

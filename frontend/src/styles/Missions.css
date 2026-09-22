@@ -72,45 +72,6 @@
   z-index: 20;
   flex-shrink: 0;
 }
-.missions-xp-strip {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-}
-.missions-level-badge {
-  background: linear-gradient(135deg, #7c3aed, #a855f7);
-  color: #fff;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 999px;
-  white-space: nowrap;
-}
-.missions-xp-bar {
-  flex: 1;
-  height: 5px;
-  background: rgba(168,85,247,0.15);
-  border-radius: 3px;
-  overflow: hidden;
-}
-.missions-xp-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #7c3aed, #a855f7);
-  border-radius: 3px;
-  transition: width 0.4s ease;
-}
-.missions-xp-num {
-  font-size: 11px;
-  color: #94a3b8;
-  white-space: nowrap;
-}
-.missions-streak-badge {
-  font-size: 12px;
-  color: #f59e0b;
-  white-space: nowrap;
-}
-
 /* ── Tab bar ─────────────────────────────────────────────── */
 .missions-tabs {
   display: flex;
@@ -511,17 +472,6 @@
   color: #94a3b8;
 }
 .mara-steps li { margin-bottom: 4px; }
-
-.mara-xp-badge {
-  display: inline-block;
-  background: linear-gradient(135deg, #7c3aed, #a855f7);
-  color: #fff;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 3px 10px;
-  border-radius: 999px;
-  margin: 4px 0 12px;
-}
 
 .mara-completed-note {
   background: rgba(34,197,94,0.1);
@@ -1121,7 +1071,7 @@
 .enroll-modal-actions { display: flex; gap: 10px; }
 
 /* ── Journal ─────────────────────────────────────────────── */
-.journal-root, .book-root, .leaderboard-root, .community-root {
+.journal-root, .book-root, .community-root {
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -1248,34 +1198,6 @@
 .book-page:last-child { border-bottom: none; }
 .book-page-number { font-size: 11px; color: #64748b; margin-bottom: 4px; }
 .book-page-content { font-size: 13px; color: #cbd5e1; line-height: 1.7; }
-
-/* ── Leaderboard ─────────────────────────────────────────── */
-.leaderboard-list { display: flex; flex-direction: column; gap: 6px; }
-.leaderboard-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: rgba(168,85,247,0.06);
-  border: 1px solid rgba(168,85,247,0.12);
-  border-radius: 12px;
-  padding: 10px 14px;
-}
-.leaderboard-row--top1 { border-color: rgba(255,215,0,0.3); background: rgba(255,215,0,0.06); }
-.leaderboard-row--top2 { border-color: rgba(192,192,192,0.3); background: rgba(192,192,192,0.05); }
-.leaderboard-row--top3 { border-color: rgba(205,127,50,0.3); background: rgba(205,127,50,0.05); }
-.leaderboard-rank { font-size: 18px; min-width: 28px; }
-.leaderboard-avatar { width: 36px; height: 36px; border-radius: 50%; overflow: hidden; flex-shrink: 0; }
-.leaderboard-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.leaderboard-avatar-fallback {
-  width: 100%; height: 100%;
-  background: linear-gradient(135deg, #7c3aed, #a855f7);
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 700; color: #fff; font-size: 15px;
-}
-.leaderboard-info { flex: 1; }
-.leaderboard-name { font-size: 14px; font-weight: 600; color: #f0e6ff; }
-.leaderboard-meta { font-size: 11px; color: #64748b; }
-.leaderboard-xp { font-size: 14px; font-weight: 700; color: #a855f7; }
 
 /* ── Mobile ──────────────────────────────────────────────── */
 @media (max-width: 720px) {
@@ -1428,7 +1350,6 @@
   .programs-root,
   .journal-root,
   .book-root,
-  .leaderboard-root,
   .community-root {
     padding-bottom: max(16px, env(safe-area-inset-bottom));
   }
@@ -1448,7 +1369,6 @@
   .programs-root,
   .journal-root,
   .book-root,
-  .leaderboard-root,
   .community-root {
     padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px));
   }

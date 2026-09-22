@@ -776,7 +776,7 @@
     "proofPlaceholder": "Napiši svoj dokaz ovdje...",
     "reflectionPlaceholder": "Opciono, ali moćno...",
     "analyzing": "Mara analizira tvoj odgovor...",
-    "submitProof": "Pošalji dokaz → +{{xp}} XP",
+    "submitProof": "Pošalji dokaz",
     "howToTitle": "Kako to učiniti:",
     "reflectLabel": "💭 Razmišljaće:",
     "accept": "Prihvati misiju 🚀",
@@ -835,7 +835,7 @@
     "inProgress": "U tijeku",
     "proofPlaceholderDetailed": "Napiši što si napravio, što si osjećao, što si shvatio...",
     "reflectionPrefix": "Refleksija: ",
-    "submitProofXp": "📤 Pošalji (+{{xp}} XP)",
+    "submitProofXp": "📤 Pošalji",
     "newMission": "Nova misija →",
     "yourMissions": "Vaše misije",
     "completedFreeLabel": "{{count}} dovršenih · prvih 10 besplatnih",
@@ -929,7 +929,7 @@
     "copied": "Tekst kopiran u međuspremnik!"
   },
   "p2p": {
-    "badgeTitle": "Doprinos Mara: {{tasks}} zadataka, {{xp}} XP",
+    "badgeTitle": "Doprinos Mara: {{tasks}} zadataka",
     "contributing": "Doprinos Mara 🟢"
   },
   "share": {
@@ -941,7 +941,7 @@
     "tiktokHint": "kopiraj + otvori",
     "instagramMsg": "Veza kopirana! Otvori Instagram i zalijepi. 📸",
     "tiktokMsg": "Veza kopirana! Otvori TikTok i zalijepi. 🎵",
-    "successMsg": "Podijeljeno! +25 XP 🎉",
+    "successMsg": "Podijeljeno! 🎉",
     "errorMsg": "Dijeljenje nije uspjelo. Pokušaj ponovno.",
     "recentlyShared": "Već si dijeljio nedavno.",
     "platforms": {
@@ -1118,7 +1118,7 @@
     "tagsPlaceholder2": "motivacija, stil života, savjeti...",
     "shareDestinations": "Podijeli na:",
     "shareToReelsLabel": "🎬 Sparks Feed (+50 XP)",
-    "shareToYouLabel": "👤 Vaš Profil (Vi) (+{{xp}} XP)",
+    "shareToYouLabel": "👤 Vaš Profil (Vi)",
     "estimatedXP": "⚡ Procijenjeno: +{{xp}} XP",
     "publishBtn": "🚀 Objavi",
     "publishingBtn": "Objavljivanje...",

@@ -39,7 +39,6 @@ interface Comment {
   videoId: number; videoTitle: string;
   userName: string | null; userAvatar: string | null;
 }
-interface XPData { xp: number; level: number; streak: number; }
 interface GrowthPath {
   followers: number;
   isCreator: boolean;
@@ -129,7 +128,6 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
   const [analytics, setAnalytics] = useState<Analytics>({ totalReels: 0, totalViews: 0, totalLikes: 0, followers: 0, engagementRate: 0, thisMonth: 0 });
   const [articles, setArticles] = useState<Article[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
-  const [creatorXP, setCreatorXP] = useState<XPData>({ xp: 0, level: 1, streak: 0 });
   const [growthPath, setGrowthPath] = useState<GrowthPath | null>(null);
   const [profile, setProfile] = useState<ProfileData>({ displayName: '', bio: '', location: '', website: '' });
   const [postStatus, setPostStatus] = useState({ canPost: true, postsToday: 0, maxDaily: 5 });
@@ -213,11 +211,10 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
     setLoading(true);
     setError('');
     try {
-      const [analyticsRes, videosRes, statusRes, xpRes, profileRes, growthRes] = await Promise.all([
+      const [analyticsRes, videosRes, statusRes, profileRes, growthRes] = await Promise.all([
         axios.get(`${API_URL}/api/creator/analytics`, { withCredentials: true }).catch(() => ({ data: null })),
         axios.get(`${API_URL}/api/creator/my-videos`, { withCredentials: true }).catch(() => ({ data: [] })),
         axios.get(`${API_URL}/api/creator/post-status`, { withCredentials: true }).catch(() => ({ data: { canPost: true, postsToday: 0, maxDaily: 5 } })),
-        axios.get(`${API_URL}/api/creator/creator-xp`, { withCredentials: true }).catch(() => ({ data: { xp: 0, level: 1, streak: 0 } })),
         axios.get(`${API_URL}/api/profile/me`, { withCredentials: true }).catch(() => ({ data: null })),
         axios.get(`${API_URL}/api/creator/growth-path`, { withCredentials: true }).catch(() => ({ data: null })),
       ]);
@@ -235,7 +232,6 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
       }
       setVideos(Array.isArray(videosRes.data) ? videosRes.data : []);
       if (statusRes.data) setPostStatus(statusRes.data);
-      if (xpRes.data) setCreatorXP(xpRes.data);
       if (growthRes.data) setGrowthPath(growthRes.data);
       if (profileRes.data?.user) {
         const u = profileRes.data.user;
@@ -288,20 +284,6 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
     setTimeout(() => setSuccess(''), 3500);
   };
 
-  const estimatedXP = () => {
-    if (createType === 'reel') {
-      if (shareToReels && shareToYou) return 60;
-      if (shareToReels) return 50;
-      if (shareToYou) return 30;
-    }
-    if (createType === 'photo') return shareToYou ? 30 : 0;
-    if (createType === 'article') {
-      const base = articleType === 'public' ? 40 : 80;
-      return base + (shareToYou ? 30 : 0);
-    }
-    return 0;
-  };
-
   // ─── Upload Reel ──────────────────────────────────────────────────────────
   const handleUpload = async () => {
     if (!uploadTitle.trim()) { setError('Title is required.'); return; }
@@ -313,7 +295,7 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
         title: uploadTitle, url: uploadUrl, description: uploadDesc,
         tags: uploadTags.split(',').map(t => t.trim()).filter(Boolean),
       }, { withCredentials: true });
-      showSuccess('Spark published! +50 XP');
+      showSuccess('Spark published!');
       setUploadTitle(''); setUploadDesc(''); setUploadUrl(''); setUploadTags('');
       if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl);
       setVideoFile(null); setVideoPreviewUrl('');
@@ -335,7 +317,6 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
 
     setCreating(true); setError('');
     let videoId: number | null = null;
-    let xpTotal = 0;
 
     try {
       if (createType === 'reel' && shareToReels) {
@@ -344,7 +325,6 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
           tags: createTags.split(',').map(t => t.trim()).filter(Boolean),
         }, { withCredentials: true });
         videoId = res.data?.id ?? null;
-        xpTotal += 50;
       }
 
       if (createType === 'article') {
@@ -358,21 +338,18 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
             sourceKind: 'writers',
             sourceId: res.data?.id ?? null,
           }, { withCredentials: true });
-          xpTotal += 30;
         }
-        xpTotal += articleType === 'public' ? 40 : 80;
       } else if (shareToYou) {
-        const xpRes = await axios.post(`${API_URL}/api/creator/share-to-you`, {
+        await axios.post(`${API_URL}/api/creator/share-to-you`, {
           content: createType === 'reel'
             ? `🎬 Spark nou: ${createTitle}${createContent ? ' — ' + createContent : ''}`
             : `🖼️ ${createTitle || 'Post nou'}${createContent ? ': ' + createContent : ''}`,
           sourceKind: createType === 'reel' ? 'reel' : null,
           sourceId: videoId,
         }, { withCredentials: true });
-        xpTotal += xpRes.data?.xpGained ?? 30;
       }
 
-      showSuccess(t('creator.publishedXpEarned', 'Published! +{{xp}} XP earned', { xp: xpTotal }));
+      showSuccess(t('creator.published', 'Published!'));
       setCreateTitle(''); setCreateContent(''); setCreateTags(''); setCreateUrl('');
       if (createFilePreview) URL.revokeObjectURL(createFilePreview);
       setCreateFile(null); setCreateFilePreview('');
@@ -604,9 +581,6 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
       <div className="creator-header orbit-header">
         <div className="creator-header-left">
           <h1 className="creator-title">CREATOR</h1>
-          {creatorXP.xp > 0 && (
-            <span className="creator-xp-badge">⚡ {formatNum(creatorXP.xp)} XP · Lv {creatorXP.level}</span>
-          )}
         </div>
         <button onClick={onClose} className="creator-close-btn"><PhX size={18} /></button>
       </div>
@@ -664,23 +638,9 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
                 <div className="creator-stat-value">{analytics.followers}</div>
                 <div className="creator-stat-label">{t('creator.followers')}</div>
               </div>
-              <div className="creator-stat-card creator-stat-xp">
-                <div className="creator-stat-value">⚡ {formatNum(creatorXP.xp)}</div>
-                <div className="creator-stat-label">{t('creatorExtra.xpCreatorLvl', { level: creatorXP.level })}</div>
-              </div>
               <div className="creator-stat-card">
                 <div className="creator-stat-value">{analytics.engagementRate.toFixed(1)}%</div>
                 <div className="creator-stat-label">{t('creator.engagement')}</div>
-              </div>
-            </div>
-
-            <div className="creator-xp-bar-wrap">
-              <div className="creator-xp-bar-label">
-                <span>{t('creatorExtra.xpProgressLabel', { current: creatorXP.xp % 1000, total: 1000 })}</span>
-                <span>{t('creatorExtra.levelArrow', { from: creatorXP.level, to: creatorXP.level + 1 })}</span>
-              </div>
-              <div className="creator-xp-bar-track">
-                <div className="creator-xp-bar-fill" style={{ width: `${(creatorXP.xp % 1000) / 10}%` }} />
               </div>
             </div>
 
@@ -895,11 +855,8 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
                 )}
                 <label className="creator-checkbox-label">
                   <input type="checkbox" checked={shareToYou} onChange={e => setShareToYou(e.target.checked)} />
-                  <span>{t('creatorExtra.shareToYouLabel', { xp: createType === 'reel' && shareToReels ? 10 : 30 })}</span>
+                  <span>{t('creatorExtra.shareToYouLabel', 'Share to my profile')}</span>
                 </label>
-              </div>
-              <div className="creator-xp-preview">
-                {t('creatorExtra.estimatedXP', { xp: estimatedXP() })}
               </div>
             </div>
 
@@ -1064,33 +1021,6 @@ export const Creator: React.FC<Props> = ({ onClose }) => {
           return (
             <>
               <h3 className="creator-section-title">{t('creatorExtra.earningsTitle')}</h3>
-              <div className="creator-xp-card">
-                <div className="creator-xp-card-label">{t('creatorExtra.xpEarnedLabel')}</div>
-                <div className="creator-xp-card-value">⚡ {formatNum(creatorXP.xp)} XP</div>
-                <div className="creator-xp-card-level">{t('creatorExtra.levelStreakInfo', { level: creatorXP.level, streak: creatorXP.streak })}</div>
-                <div className="creator-xp-bar-track" style={{ marginTop: 12 }}>
-                  <div className="creator-xp-bar-fill" style={{ width: `${(creatorXP.xp % 1000) / 10}%` }} />
-                </div>
-                <div className="creator-xp-bar-label" style={{ marginTop: 4 }}>
-                  <span>{t('creatorExtra.xpForNextLevel', { current: creatorXP.xp % 1000, next: creatorXP.level + 1 })}</span>
-                </div>
-              </div>
-
-              <div className="creator-earnings-xp-table">
-                <h4 className="creator-section-subtitle">{t('creatorExtra.howToEarnTitle')}</h4>
-                {[
-                  { action: t('creatorExtra.xpActionReel'), xp: '+50 XP' },
-                  { action: t('creatorExtra.xpActionShare'), xp: '+30 XP' },
-                  { action: t('creatorExtra.xpActionBoth'), xp: '+60 XP' },
-                  { action: t('creatorExtra.xpActionPublic'), xp: '+40 XP' },
-                  { action: t('creatorExtra.xpActionPaid'), xp: '+80 XP' },
-                ].map(row => (
-                  <div key={row.action} className="creator-earnings-row">
-                    <span className="creator-earnings-action">{row.action}</span>
-                    <span className="creator-earnings-xp">{row.xp}</span>
-                  </div>
-                ))}
-              </div>
 
               {!launched ? (
                 <div className="creator-launch-lock">

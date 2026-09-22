@@ -793,7 +793,6 @@ export const missions = pgTable('missions', {
   description: text('description').notNull(),
   pillar: text('pillar').notNull(),
   difficulty: text('difficulty').notNull(),
-  xpReward: integer('xp_reward').notNull(),
   proofType: text('proof_type').notNull(),
   proofPrompt: text('proof_prompt').notNull(),
   steps: text('steps').default('[]').notNull(),
@@ -815,15 +814,6 @@ export const userMissions = pgTable('user_missions', {
   maraFeedback: text('mara_feedback'),
   startedAt: integer('started_at', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
   completedAt: integer('completed_at', { mode: 'timestamp' }),
-});
-
-export const userXp = pgTable('user_xp', {
-  userId: text('user_id').primaryKey(),
-  xp: integer('xp').default(0).notNull(),
-  level: integer('level').default(1).notNull(),
-  streak: integer('streak').default(0).notNull(),
-  lastActivityAt: integer('last_activity_at', { mode: 'timestamp' }),
-  updatedAt: integer('updated_at', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 
 export const missionEvents = pgTable('mission_events', {
@@ -855,13 +845,11 @@ export const missionShares = pgTable('mission_shares', {
   caption: text('caption'),
   mediaUrl: text('media_url'),
   platform: text('platform').notNull(),
-  xpAwarded: integer('xp_awarded').default(50).notNull(),
   createdAt: integer('created_at', { mode: 'timestamp' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 
 export type Mission = typeof missions.$inferSelect;
 export type UserMission = typeof userMissions.$inferSelect;
-export type UserXp = typeof userXp.$inferSelect;
 export type UserPersonality = typeof userPersonality.$inferSelect;
 
 // === SECURITY — Honeypot + Auto-Blacklist ===

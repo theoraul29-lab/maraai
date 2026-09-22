@@ -762,11 +762,10 @@ export function hardDeleteAccountData(userId: string): void {
     ['push_subscriptions',         'user_id'],
     // --- feedback / support ---
     ['user_feedback',              'user_id'],
-    // --- missions / XP ---
+    // --- missions ---
     ['mission_shares',             'user_id'],
     ['mission_events',             'user_id'],
     ['user_missions',              'user_id'],
-    ['user_xp',                    'user_id'],
     ['user_personality',           'user_id'],
     // --- preferences / history ---
     ['user_preferences',           'user_id'],

@@ -13,7 +13,7 @@ import './ShareButton.css';
 // All translation keys live under `share.*` in the locale JSON files. The
 // component never assumes a specific module name; it just posts the
 // (sourceModule, sourceId, targetPlatform) tuple to the universal `/api/share`
-// endpoint which the backend then attributes + awards XP for.
+// endpoint which the backend then attributes.
 
 export type ShareModule = 'mission' | 'reel' | 'post' | 'profile' | 'article';
 
@@ -60,7 +60,6 @@ type ShareResponse = {
   ok?: boolean;
   shareUrl?: string;
   externalLink?: string | null;
-  xpAwarded?: number;
   message?: string;
   recentlyShared?: boolean;
 };
@@ -163,12 +162,12 @@ export default function ShareButton(props: ShareButtonProps) {
         await copyToClipboard(data.shareUrl);
         setFeedback(t('share.copied', 'Link copied! 🔗'));
       } else if (platform === 'hellomara' || platform === 'you') {
-        setFeedback(t('share.successMsg', 'Shared! +25 XP 🎉'));
+        setFeedback(t('share.successMsg', 'Shared! 🎉'));
       } else if (link) {
         window.open(link, '_blank', 'noopener,noreferrer');
-        setFeedback(t('share.successMsg', 'Shared! +25 XP 🎉'));
+        setFeedback(t('share.successMsg', 'Shared! 🎉'));
       } else {
-        setFeedback(t('share.successMsg', 'Shared! +25 XP 🎉'));
+        setFeedback(t('share.successMsg', 'Shared! 🎉'));
       }
       setOpen(false);
     } catch (err) {

@@ -9,7 +9,6 @@ import {
   shareMission,
   shareMissionAsSpark,
   getCommunityFeed,
-  getUserXP,
   getPersonality,
   saveOnboarding,
   translateMissions,
@@ -83,7 +82,7 @@ export function registerMissionRoutes(app: Express, requireAuth: any, requireRea
              LEFT JOIN user_missions um ON m.id = um.mission_id AND um.user_id = ?
              WHERE m.is_active = 1 AND m.is_daily = 0 AND m.pillar = ?
                AND (m.owner_user_id IS NULL OR m.owner_user_id = ?)
-             ORDER BY m.xp_reward ASC`,
+             ORDER BY m.created_at ASC`,
           )
           .all(userId, pillar, userId)
       : rawSqlite
@@ -94,7 +93,7 @@ export function registerMissionRoutes(app: Express, requireAuth: any, requireRea
              LEFT JOIN user_missions um ON m.id = um.mission_id AND um.user_id = ?
              WHERE m.is_active = 1 AND m.is_daily = 0
                AND (m.owner_user_id IS NULL OR m.owner_user_id = ?)
-             ORDER BY m.xp_reward ASC`,
+             ORDER BY m.created_at ASC`,
           )
           .all(userId, userId);
 
@@ -105,7 +104,7 @@ export function registerMissionRoutes(app: Express, requireAuth: any, requireRea
     }));
 
     const translated = await translateMissions(withLocked, lang);
-    res.json({ missions: translated, userXp: getUserXP(userId) });
+    res.json({ missions: translated });
   });
 
   app.get('/api/missions/daily', requireAuth, async (req: any, res: any) => {
@@ -157,8 +156,8 @@ export function registerMissionRoutes(app: Express, requireAuth: any, requireRea
   });
 
   // Distinct from /api/missions/share above (which only records a share
-  // event + XP) — this one actually creates a Spark from the completed
-  // mission's proof + Mara's feedback. See shareMissionAsSpark() doc comment.
+  // event) — this one actually creates a Spark from the completed mission's
+  // proof + Mara's feedback. See shareMissionAsSpark() doc comment.
   app.post('/api/missions/:userMissionId/share-as-spark', requireRealUser, missionWriteRateLimit, async (req: any, res: any) => {
     const userId = getUserId(req);
     const result = await shareMissionAsSpark(userId, req.params.userMissionId);
@@ -190,7 +189,6 @@ export function registerMissionRoutes(app: Express, requireAuth: any, requireRea
 
   app.get('/api/missions/stats', requireAuth, (req: any, res: any) => {
     const userId = getUserId(req);
-    const xp = getUserXP(userId);
     const row = rawSqlite
       .prepare("SELECT COUNT(*) as cnt FROM user_missions WHERE user_id = ? AND status = 'completed'")
       .get(userId) as { cnt: number } | undefined;
@@ -203,42 +201,7 @@ export function registerMissionRoutes(app: Express, requireAuth: any, requireRea
          GROUP BY m.pillar`,
       )
       .all(userId);
-    res.json({ xp, completed, byPillar });
-  });
-
-  app.get('/api/missions/leaderboard', publicReadRateLimit, (_req: any, res: any) => {
-    const rows = rawSqlite
-      .prepare(
-        `SELECT ux.user_id, ux.xp, ux.level, ux.streak,
-                COALESCE(u.display_name, u.first_name, u.name, 'Anonymous') as display_name,
-                u.profile_image_url
-         FROM user_xp ux
-         LEFT JOIN users u ON u.id = ux.user_id
-         ORDER BY ux.xp DESC
-         LIMIT 20`,
-      )
-      .all() as Array<{
-        user_id: string; xp: number; level: number; streak: number;
-        display_name: string; profile_image_url: string | null;
-      }>;
-    const completed_counts = rawSqlite
-      .prepare(
-        `SELECT user_id, COUNT(*) as cnt FROM user_missions
-         WHERE status = 'completed' GROUP BY user_id`,
-      )
-      .all() as Array<{ user_id: string; cnt: number }>;
-    const countMap = new Map(completed_counts.map(r => [r.user_id, r.cnt]));
-    const leaderboard = rows.map((r, i) => ({
-      rank: i + 1,
-      userId: r.user_id,
-      displayName: r.display_name,
-      profileImageUrl: r.profile_image_url,
-      xp: r.xp,
-      level: r.level,
-      streak: r.streak,
-      missionsCompleted: countMap.get(r.user_id) ?? 0,
-    }));
-    res.json({ leaderboard });
+    res.json({ completed, byPillar });
   });
 
   app.post('/api/missions/feedback', requireRealUser, (req: any, res: any) => {

@@ -242,7 +242,7 @@ export function registerMaraAIRoutes(
     }
   });
 
-  /** POST /api/p2p/submit-result — browser node submits computed result + earns XP/credits. */
+  /** POST /api/p2p/submit-result — browser node submits computed result + earns credits. */
   app.post('/api/p2p/submit-result', requireAuth, requireConsent('backgroundNode'), async (req: AuthedReq, res: Response) => {
     const parsed = submitResultSchema.safeParse(req.body ?? {});
     if (!parsed.success) return res.status(400).json({ message: 'Invalid result.', errors: parsed.error.flatten() });

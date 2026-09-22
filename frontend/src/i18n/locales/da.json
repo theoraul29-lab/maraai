@@ -776,7 +776,7 @@
     "proofPlaceholder": "Skriv dit bevis her...",
     "reflectionPlaceholder": "Valgfrit, men kraftfuldt...",
     "analyzing": "Mara analyserer dit svar...",
-    "submitProof": "Indsend bevis → +{{xp}} XP",
+    "submitProof": "Indsend bevis",
     "howToTitle": "Sådan gør du det:",
     "reflectLabel": "💭 Du vil reflektere: ",
     "accept": "Accepter mission 🚀",
@@ -835,7 +835,7 @@
     "inProgress": "I gang",
     "proofPlaceholderDetailed": "Skriv hvad du gjorde, hvad du følte, hvad du indså...",
     "reflectionPrefix": "Refleksion: ",
-    "submitProofXp": "📤 Indsend (+{{xp}} XP)",
+    "submitProofXp": "📤 Indsend",
     "newMission": "Nyt mission →",
     "yourMissions": "Dine missions",
     "completedFreeLabel": "{{count}} gennemført · første 10 gratis",
@@ -929,7 +929,7 @@
     "copied": "Tekst kopieret!"
   },
   "p2p": {
-    "badgeTitle": "Bidrager til Mara: {{tasks}} opgaver, {{xp}} XP",
+    "badgeTitle": "Bidrager til Mara: {{tasks}} opgaver",
     "contributing": "Bidrager til Mara 🟢"
   },
   "share": {
@@ -941,7 +941,7 @@
     "tiktokHint": "kopier + åbn",
     "instagramMsg": "Link kopieret! Åbn Instagram og indsæt. 📸",
     "tiktokMsg": "Link kopieret! Åbn TikTok og indsæt. 🎵",
-    "successMsg": "Delt! +25 XP 🎉",
+    "successMsg": "Delt! 🎉",
     "errorMsg": "Deling mislykkedes. Prøv igen.",
     "recentlyShared": "Allerede delt for nylig.",
     "platforms": {
@@ -1118,7 +1118,7 @@
     "tagsPlaceholder2": "motivation, livsstil, tips...",
     "shareDestinations": "Del til:",
     "shareToReelsLabel": "🎬 Sparks Feed (+50 XP)",
-    "shareToYouLabel": "👤 Din profil (Du) (+{{xp}} XP)",
+    "shareToYouLabel": "👤 Din profil (Du)",
     "estimatedXP": "⚡ Estimeret: +{{xp}} XP",
     "publishBtn": "🚀 Publicer",
     "publishingBtn": "Publicerer...",

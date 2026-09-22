@@ -122,7 +122,6 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'timeline' | 'about' | 'friends' | 'photos' | 'videos' | 'stats'>('timeline');
   const [missionStats, setMissionStats] = useState<{
-    xp: number; level: number; streak: number;
     completed: number; byPillar: Array<{ pillar: string; cnt: number }>;
   } | null>(null);
 
@@ -276,13 +275,10 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
   }, [profile?.user.id, fetchPosts]);
 
   useEffect(() => {
-    axios.get<{ xp: { xp: number; level: number; streak: number }; completed: number; byPillar: any[] }>(
+    axios.get<{ completed: number; byPillar: any[] }>(
       `${API_URL}/api/missions/stats`, { withCredentials: true }
     ).then(r => {
       setMissionStats({
-        xp: r.data.xp.xp,
-        level: r.data.xp.level,
-        streak: r.data.xp.streak,
         completed: r.data.completed,
         byPillar: r.data.byPillar ?? [],
       });
@@ -680,20 +676,6 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
             <span><strong>{profile?.followerCount ?? 0}</strong> {t('you.followersLabel', 'followers')}</span>
             <span><strong>{profile?.followingCount ?? 0}</strong> {t('you.following', 'following')}</span>
           </div>
-          {missionStats && (
-            <div className="you-fb-xp-row">
-              <span className="you-fb-xp-badge">{t('missions.levelShort')} {missionStats.level}</span>
-              <div className="you-fb-xp-bar-wrap">
-                <div className="you-fb-xp-bar">
-                  <div className="you-fb-xp-fill" style={{ width: `${(missionStats.xp % 1000) / 10}%` }} />
-                </div>
-              </div>
-              <span className="you-fb-xp-val">{missionStats.xp} XP</span>
-              {missionStats.streak > 0 && (
-                <span className="you-fb-streak">🔥 {missionStats.streak}z</span>
-              )}
-            </div>
-          )}
           {user?.tier === 'vip' && (
             <div className="you-fb-tier-badge you-fb-tier-vip">
               👑 VIP
@@ -1160,20 +1142,8 @@ const YouProfile: React.FC<YouProfileProps> = ({ userName = 'User' }) => {
             <>
               <div className="you-fb-stats-grid">
                 <div className="you-fb-stat-card">
-                  <div className="you-fb-stat-value">{missionStats.level}</div>
-                  <div className="you-fb-stat-label">{t('you.statLevel', 'Level')}</div>
-                </div>
-                <div className="you-fb-stat-card">
-                  <div className="you-fb-stat-value">{missionStats.xp.toLocaleString()}</div>
-                  <div className="you-fb-stat-label">{t('you.statXp', 'Total XP')}</div>
-                </div>
-                <div className="you-fb-stat-card">
                   <div className="you-fb-stat-value">{missionStats.completed}</div>
                   <div className="you-fb-stat-label">{t('you.statMissions', 'Missions completed')}</div>
-                </div>
-                <div className="you-fb-stat-card">
-                  <div className="you-fb-stat-value">{missionStats.streak > 0 ? `🔥 ${missionStats.streak}` : '—'}</div>
-                  <div className="you-fb-stat-label">{t('you.statStreak', 'Streak (days)')}</div>
                 </div>
               </div>
               {missionStats.byPillar.length > 0 && (

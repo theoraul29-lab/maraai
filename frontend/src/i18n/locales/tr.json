@@ -776,7 +776,7 @@
     "proofPlaceholder": "Kanıtınızı buraya yazın...",
     "reflectionPlaceholder": "İsteğe bağlı, ama çok etkili...",
     "analyzing": "Mara sizin cevabınızı analiz ediyor...",
-    "submitProof": "Kanıt Gönder → +{{xp}} XP",
+    "submitProof": "Kanıt Gönder",
     "howToTitle": "Bunu nasıl yapacaksınız:",
     "reflectLabel": "💭 Siz şu konuda düşüneceksiniz: ",
     "accept": "Görevi kabul et 🚀",
@@ -835,7 +835,7 @@
     "inProgress": "Devam ediyor",
     "proofPlaceholderDetailed": "Ne yaptığını, ne hissettiğini, ne fark ettiğini yaz...",
     "reflectionPrefix": "Düşünce: ",
-    "submitProofXp": "📤 Gönder (+{{xp}} XP)",
+    "submitProofXp": "📤 Gönder",
     "newMission": "Yeni görev →",
     "yourMissions": "Senin görevlerin",
     "completedFreeLabel": "{{count}} tamamlandı · ilk 10 ücretsiz",
@@ -929,7 +929,7 @@
     "copied": "Metni panoya kopyaladım!"
   },
   "p2p": {
-    "badgeTitle": "Mara'ya katkı: {{tasks}} görev, {{xp}} XP",
+    "badgeTitle": "Mara'ya katkı: {{tasks}} görev",
     "contributing": "Mara'ya katkı 🟢"
   },
   "share": {
@@ -941,7 +941,7 @@
     "tiktokHint": "kopyala + aç",
     "instagramMsg": "Bağlantı kopyalandı! Instagram'ı aç ve yapıştır. 📸",
     "tiktokMsg": "Bağlantı kopyalandı! TikTok'u aç ve yapıştır. 🎵",
-    "successMsg": "Paylaşıldı! +25 XP 🎉",
+    "successMsg": "Paylaşıldı! 🎉",
     "errorMsg": "Paylaşım başarısız oldu. Tekrar dene.",
     "recentlyShared": "Yakın zamanda zaten paylaşılmış.",
     "platforms": {
@@ -1118,7 +1118,7 @@
     "tagsPlaceholder2": "motivasyon, yaşam tarzı, ipuçları...",
     "shareDestinations": "Şuraya paylaş:",
     "shareToReelsLabel": "🎬 Sparks Akışı (+50 XP)",
-    "shareToYouLabel": "👤 Profilim (Sen) (+{{xp}} XP)",
+    "shareToYouLabel": "👤 Profilim (Sen)",
     "estimatedXP": "⚡ Tahmini: +{{xp}} XP",
     "publishBtn": "🚀 Yayınla",
     "publishingBtn": "Yayınlanıyor...",

@@ -361,7 +361,7 @@ const GUIDE_SECTIONS = [
     name: 'MISSIONS',
     path: '/missions',
     descKey: 'onboarding.guide.missions.desc',
-    descDefault: 'Missions and XP — complete daily challenges, earn experience and climb the leaderboard.',
+    descDefault: 'Missions — complete daily challenges and build the life you want, one habit at a time.',
   },
 ];
 

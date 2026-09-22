@@ -776,7 +776,7 @@
     "proofPlaceholder": "اكتب دليلك هنا...",
     "reflectionPlaceholder": "اختياري، لكنه قوي...",
     "analyzing": "مارا تحلل إجابتك...",
-    "submitProof": "إرسال الدليل → +{{xp}} XP",
+    "submitProof": "إرسال الدليل",
     "howToTitle": "كيف تفعل ذلك:",
     "reflectLabel": "💭 ستتأمل: ",
     "accept": "قبول المهمة 🚀",
@@ -835,7 +835,7 @@
     "inProgress": "قيد التنفيذ",
     "proofPlaceholderDetailed": "اكتب ما فعلته، شعرت به، أدركته...",
     "reflectionPrefix": "تأمل: ",
-    "submitProofXp": "📤 إرسال (+{{xp}} XP)",
+    "submitProofXp": "📤 إرسال",
     "newMission": "مهمة جديدة →",
     "yourMissions": "مهامك",
     "completedFreeLabel": "{{count}} مكتملة · أول 10 مجاناً",
@@ -929,7 +929,7 @@
     "copied": "تم نسخ النص إلى الحافظة!"
   },
   "p2p": {
-    "badgeTitle": "المساهمة في Mara: {{tasks}} مهمة، {{xp}} XP",
+    "badgeTitle": "المساهمة في Mara: {{tasks}} مهمة",
     "contributing": "مساهمة في Mara 🟢"
   },
   "share": {
@@ -941,7 +941,7 @@
     "tiktokHint": "نسخ + فتح",
     "instagramMsg": "تم نسخ الرابط! افتح Instagram والصق. 📸",
     "tiktokMsg": "تم نسخ الرابط! افتح TikTok والصق. 🎵",
-    "successMsg": "تمت المشاركة! +25 XP 🎉",
+    "successMsg": "تمت المشاركة! 🎉",
     "errorMsg": "خطأ في المشاركة. حاول مرة أخرى.",
     "recentlyShared": "شاركت مؤخراً.",
     "platforms": {
@@ -1118,7 +1118,7 @@
     "tagsPlaceholder2": "تحفيز، أسلوب حياة، نصائح...",
     "shareDestinations": "مشاركة على:",
     "shareToReelsLabel": "🎬 خلاصة Sparks (+50 XP)",
-    "shareToYouLabel": "👤 ملفك (You) (+{{xp}} XP)",
+    "shareToYouLabel": "👤 ملفك (You)",
     "estimatedXP": "⚡ تقدير: +{{xp}} XP",
     "publishBtn": "🚀 نشر",
     "publishingBtn": "جارٍ النشر...",

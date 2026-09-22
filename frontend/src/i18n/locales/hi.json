@@ -776,7 +776,7 @@
     "proofPlaceholder": "यहां अपना प्रमाण लिखें...",
     "reflectionPlaceholder": "वैकल्पिक, लेकिन शक्तिशाली...",
     "analyzing": "Mara आपका जवाब विश्लेषण कर रही है...",
-    "submitProof": "प्रमाण जमा करें → +{{xp}} XP",
+    "submitProof": "प्रमाण जमा करें",
     "howToTitle": "कैसे करें:",
     "reflectLabel": "💭 आप विचार करेंगे: ",
     "accept": "मिशन स्वीकार करें 🚀",
@@ -835,7 +835,7 @@
     "inProgress": "चल रहा है",
     "proofPlaceholderDetailed": "लिखें क्या किया, महसूस किया, समझा...",
     "reflectionPrefix": "विचार: ",
-    "submitProofXp": "📤 जमा करें (+{{xp}} XP)",
+    "submitProofXp": "📤 जमा करें",
     "newMission": "नया मिशन →",
     "yourMissions": "आपके मिशन",
     "completedFreeLabel": "{{count}} पूरे · पहले 10 मुफ्त",
@@ -929,7 +929,7 @@
     "copied": "टेक्स्ट क्लिपबोर्ड में कॉपी हो गया!"
   },
   "p2p": {
-    "badgeTitle": "Mara में योगदान: {{tasks}} कार्य, {{xp}} XP",
+    "badgeTitle": "Mara में योगदान: {{tasks}} कार्य",
     "contributing": "Mara में योगदान 🟢"
   },
   "share": {
@@ -941,7 +941,7 @@
     "tiktokHint": "कॉपी + खोलें",
     "instagramMsg": "लिंक कॉपी हो गया! Instagram खोलें और पेस्ट करें। 📸",
     "tiktokMsg": "लिंक कॉपी हो गया! TikTok खोलें और पेस्ट करें। 🎵",
-    "successMsg": "साझा किया! +25 XP 🎉",
+    "successMsg": "साझा किया! 🎉",
     "errorMsg": "साझा करने में त्रुटि। फिर प्रयास करें।",
     "recentlyShared": "हाल ही में साझा किया।",
     "platforms": {
@@ -1118,7 +1118,7 @@
     "tagsPlaceholder2": "प्रेरणा, लाइफस्टाइल, सुझाव...",
     "shareDestinations": "यहां साझा करें:",
     "shareToReelsLabel": "🎬 Sparks फ़ीड (+50 XP)",
-    "shareToYouLabel": "👤 आपका प्रोफ़ाइल (You) (+{{xp}} XP)",
+    "shareToYouLabel": "👤 आपका प्रोफ़ाइल (You)",
     "estimatedXP": "⚡ अनुमानित: +{{xp}} XP",
     "publishBtn": "🚀 प्रकाशित करें",
     "publishingBtn": "प्रकाशित हो रहा है...",

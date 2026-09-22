@@ -775,7 +775,7 @@
       "writers": { "desc": "Secțiunea scriitori — publică articole, cumpără conținut premium, construiește o audiență." },
       "creators": { "desc": "Secțiunea creatori — gestionează videoclipuri, urmăritori și monetizare." },
       "vip": { "desc": "Beneficii premium — acces la funcții avansate. Disponibil după lansarea oficială." },
-      "missions": { "desc": "Misiuni și XP — completează provocări zilnice, câștigă experiență și urcă în clasament." }
+      "missions": { "desc": "Misiuni — completează provocări zilnice și construiește viața pe care ți-o dorești, obicei cu obicei." }
     },
     "welcomeTitle": "Welcome to Mara",
     "welcomeSubtitle": "Privacy-first hybrid AI",
@@ -873,7 +873,7 @@
     "proofPlaceholder": "Scrie dovada ta aici...",
     "reflectionPlaceholder": "Opțional, dar puternic...",
     "analyzing": "Mara analizează răspunsul tău...",
-    "submitProof": "Trimite dovada → +{{xp}} XP",
+    "submitProof": "Trimite dovada",
     "howToTitle": "Cum să faci asta:",
     "reflectLabel": "💭 Vei reflecta: ",
     "accept": "Acceptă misiunea 🚀",
@@ -933,7 +933,7 @@
     "inProgress": "În desfășurare",
     "proofPlaceholderDetailed": "Scrie ce ai făcut, ce ai simțit, ce ai realizat...",
     "reflectionPrefix": "Reflecție: ",
-    "submitProofXp": "📤 Trimite (+{{xp}} XP)",
+    "submitProofXp": "📤 Trimite",
     "newMission": "Misiune nouă →",
     "shareAsSpark": "Distribuie ca Spark",
     "sparkSharing": "Se distribuie...",
@@ -1035,7 +1035,7 @@
     "copied": "Textul a fost copiat în clipboard!"
   },
   "p2p": {
-    "badgeTitle": "Contribui la Mara: {{tasks}} sarcini, {{xp}} XP",
+    "badgeTitle": "Contribui la Mara: {{tasks}} sarcini",
     "contributing": "Contribui la Mara 🟢",
     "networkTitle": "Rețea P2P",
     "activeNodes": "{{count}} noduri active",
@@ -1053,7 +1053,7 @@
     "tiktokHint": "copiază + deschide",
     "instagramMsg": "Link copiat! Deschide Instagram și lipește. 📸",
     "tiktokMsg": "Link copiat! Deschide TikTok și lipește. 🎵",
-    "successMsg": "Distribuit! +25 XP 🎉",
+    "successMsg": "Distribuit! 🎉",
     "errorMsg": "Eroare la distribuire. Încearcă din nou.",
     "recentlyShared": "Deja distribuit recent.",
     "platforms": {
@@ -1370,7 +1370,7 @@
     "tagsPlaceholder2": "motivație, lifestyle, sfaturi...",
     "shareDestinations": "Distribuie la:",
     "shareToReelsLabel": "🎬 Feed Sparks (+50 XP)",
-    "shareToYouLabel": "👤 Profilul tău (You) (+{{xp}} XP)",
+    "shareToYouLabel": "👤 Profilul tău (You)",
     "estimatedXP": "⚡ Estimat: +{{xp}} XP",
     "publishBtn": "🚀 Publică",
     "publishingBtn": "Se publică...",

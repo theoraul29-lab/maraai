@@ -42,16 +42,6 @@
   margin: 0;
 }
 
-.creator-xp-badge {
-  background: rgba(255, 107, 0, 0.15);
-  border: 1px solid rgba(255, 107, 0, 0.4);
-  color: #ff6b00;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 20px;
-  white-space: nowrap;
-}
 
 .creator-close-btn {
   background: none; border: none;
@@ -162,19 +152,10 @@
   border-radius: 8px; padding: 14px;
   text-align: center;
 }
-.creator-stat-card.creator-stat-xp {
-  border-color: rgba(255, 107, 0, 0.5);
-  background: rgba(255, 107, 0, 0.12);
-}
 .creator-stat-value { font-size: 18px; font-weight: 800; color: #ff6b00; margin-bottom: 4px; }
 .creator-stat-label { font-size: 11px; color: #888; font-weight: 500; }
 
-/* ── XP Bar ──────────────────────────────────────────────────────────────── */
-.creator-xp-bar-wrap { display: flex; flex-direction: column; gap: 4px; }
-.creator-xp-bar-label {
-  display: flex; justify-content: space-between;
-  font-size: 11px; color: #888;
-}
+/* ── XP Bar (reused by Growth Path's follower-progress bar) ─────────────── */
 .creator-xp-bar-track {
   height: 8px; background: rgba(255,255,255,0.08);
   border-radius: 4px; overflow: hidden;
@@ -361,10 +342,6 @@
   font-size: 13px; color: #ccc; cursor: pointer;
 }
 .creator-checkbox-label input[type="checkbox"] { accent-color: #ff6b00; width: 16px; height: 16px; }
-.creator-xp-preview {
-  margin-top: 10px; font-size: 13px; color: #aaa;
-}
-.creator-xp-preview strong { color: #ff6b00; }
 
 /* ── List View ───────────────────────────────────────────────────────────── */
 .creator-list { display: flex; flex-direction: column; gap: 8px; }
@@ -444,24 +421,6 @@
 .creator-top-views { font-size: 11px; color: #888; min-width: 36px; text-align: right; }
 
 /* ── Earnings / Launch Lock ──────────────────────────────────────────────── */
-.creator-xp-card {
-  background: rgba(255, 107, 0, 0.1);
-  border: 1px solid rgba(255, 107, 0, 0.4);
-  border-radius: 10px; padding: 20px; text-align: center;
-}
-.creator-xp-card-label { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
-.creator-xp-card-value { font-size: 28px; font-weight: 800; color: #ff6b00; margin: 8px 0 4px; }
-.creator-xp-card-level { font-size: 12px; color: #ccc; }
-
-.creator-earnings-xp-table { background: rgba(255,107,0,0.05); border: 1px solid rgba(255,107,0,0.15); border-radius: 8px; overflow: hidden; }
-.creator-earnings-row {
-  display: flex; justify-content: space-between; padding: 10px 14px;
-  border-bottom: 1px solid rgba(255,107,0,0.1); font-size: 12px;
-}
-.creator-earnings-row:last-child { border-bottom: none; }
-.creator-earnings-action { color: #ccc; }
-.creator-earnings-xp { color: #ff6b00; font-weight: 700; }
-
 .creator-launch-lock {
   background: rgba(255, 107, 0, 0.06);
   border: 1px dashed rgba(255, 107, 0, 0.4);

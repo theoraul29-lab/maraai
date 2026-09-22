@@ -251,7 +251,7 @@ function OverviewTab({ stats }: { stats: DashboardOverview | null }) {
         <StatCard icon="⏳" label={t('admin.pendingOrders')} value={stats.revenue.pendingOrders} color="#f87171" />
         <StatCard icon="🔔" label={t('admin.notificationsToday')} value={stats.notifications.today} sub={`${stats.notifications.total} total`} color="#38bdf8" />
         <StatCard icon="📱" label="PWA Installs" value={stats.pwa.installs} color="#a78bfa" />
-        <StatCard icon="🎯" label={t('admin.missionsCompleted')} value={stats.missions.completed} sub={`${stats.missions.totalXP} XP total`} color="#34d399" />
+        <StatCard icon="🎯" label={t('admin.missionsCompleted')} value={stats.missions.completed} color="#34d399" />
         <StatCard icon="🧠" label={t('admin.brainLogsToday')} value={stats.brain.logsToday} color="#fb923c" />
       </div>
 

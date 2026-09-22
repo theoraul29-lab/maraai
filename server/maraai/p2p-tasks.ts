@@ -2,7 +2,7 @@
 //
 // Browser nodes (idle users) poll GET /api/p2p/get-task, run lightweight JS
 // computation in a Web Worker, POST the result to /api/p2p/submit-result and
-// earn 10 XP + 1 Mara Credit per completed task.
+// earn 1 Mara Credit per completed task.
 //
 // Task types and what the browser actually computes:
 //   maraAnalysis      — aggregate engagement stats from a provided data slice
@@ -20,7 +20,7 @@
 import { randomUUID } from 'crypto';
 import { and, desc, eq, lt, sql } from 'drizzle-orm';
 import { db } from '../db.js';
-import { p2pTasks, userXp, type P2PTask, type P2PTaskType } from '../../shared/schema.js';
+import { p2pTasks, type P2PTask, type P2PTaskType } from '../../shared/schema.js';
 import { awardCredits, CREDIT_AMOUNTS, CREDIT_REASONS } from './credits.js';
 import { logActivity } from './activity.js';
 import {
@@ -28,8 +28,6 @@ import {
   completeTaskAtomically,
 } from '../modules/p2p-compute.js';
 
-// XP awarded per completed browser task.
-const XP_PER_TASK = 10;
 // Seconds before an assigned-but-unsubmitted task is recycled.
 const TASK_TIMEOUT_SEC = 300;
 
@@ -145,33 +143,31 @@ export type SubmitResultInput = {
 
 export type SubmitResultOutput = {
   ok: boolean;
-  xpGained: number;
   creditsGained: number;
-  newXp: number;
   newCredits: number;
   message: string;
 };
 
 /**
- * Validate and persist a task result, then award XP + credits to the node owner.
+ * Validate and persist a task result, then award credits to the node owner.
  */
 export async function submitTaskResult(input: SubmitResultInput): Promise<SubmitResultOutput> {
   const task = (
     await db.select().from(p2pTasks).where(eq(p2pTasks.id, input.taskId)).limit(1)
   )[0];
 
-  if (!task) return { ok: false, xpGained: 0, creditsGained: 0, newXp: 0, newCredits: 0, message: 'Task not found.' };
+  if (!task) return { ok: false, creditsGained: 0, newCredits: 0, message:'Task not found.' };
   if (!['running', 'assigned'].includes(task.status)) {
-    return { ok: false, xpGained: 0, creditsGained: 0, newXp: 0, newCredits: 0, message: 'Task already completed or not assigned.' };
+    return { ok: false, creditsGained: 0, newCredits: 0, message:'Task already completed or not assigned.' };
   }
-  if (task.assignedNode !== input.nodeId) return { ok: false, xpGained: 0, creditsGained: 0, newXp: 0, newCredits: 0, message: 'Task assigned to a different node.' };
+  if (task.assignedNode !== input.nodeId) return { ok: false, creditsGained: 0, newCredits: 0, message:'Task assigned to a different node.' };
   if ((task.claimedBy ?? task.assignedUserId) !== input.userId) {
-    return { ok: false, xpGained: 0, creditsGained: 0, newXp: 0, newCredits: 0, message: 'Task belongs to a different user.' };
+    return { ok: false, creditsGained: 0, newCredits: 0, message:'Task belongs to a different user.' };
   }
 
   // Validate result is non-empty.
   if (!input.result || Object.keys(input.result).length === 0) {
-    return { ok: false, xpGained: 0, creditsGained: 0, newXp: 0, newCredits: 0, message: 'Empty result.' };
+    return { ok: false, creditsGained: 0, newCredits: 0, message:'Empty result.' };
   }
 
   const updated = completeTaskAtomically({
@@ -181,30 +177,7 @@ export async function submitTaskResult(input: SubmitResultInput): Promise<Submit
     resultJson: JSON.stringify(input.result),
   });
   if (!updated) {
-    return { ok: false, xpGained: 0, creditsGained: 0, newXp: 0, newCredits: 0, message: 'Task claim is no longer valid.' };
-  }
-
-  const now = new Date();
-
-  // Award XP — upsert userXp row.
-  const xpRow = (await db.select().from(userXp).where(eq(userXp.userId, input.userId)).limit(1))[0];
-  const currentXp = xpRow?.xp ?? 0;
-  const newXpTotal = currentXp + XP_PER_TASK;
-  const newLevel = Math.floor(newXpTotal / 1000) + 1;
-
-  if (xpRow) {
-    await db
-      .update(userXp)
-      .set({ xp: newXpTotal, level: newLevel, lastActivityAt: now })
-      .where(eq(userXp.userId, input.userId));
-  } else {
-    await db.insert(userXp).values({
-      userId: input.userId,
-      xp: newXpTotal,
-      level: newLevel,
-      streak: 0,
-      lastActivityAt: now,
-    });
+    return { ok: false, creditsGained: 0, newCredits: 0, message:'Task claim is no longer valid.' };
   }
 
   // Award credits (idempotent via taskId as key).
@@ -219,7 +192,6 @@ export async function submitTaskResult(input: SubmitResultInput): Promise<Submit
   await logActivity(input.userId, 'p2p.browser_task.completed', {
     taskId: input.taskId,
     taskType: task.type,
-    xpGained: XP_PER_TASK,
     creditsGained: CREDIT_AMOUNTS.p2pBrowserTask,
   });
 
@@ -239,11 +211,9 @@ export async function submitTaskResult(input: SubmitResultInput): Promise<Submit
 
   return {
     ok: true,
-    xpGained: XP_PER_TASK,
     creditsGained: CREDIT_AMOUNTS.p2pBrowserTask,
-    newXp: newXpTotal,
     newCredits: creditResult.balance,
-    message: `+${XP_PER_TASK} XP și +${CREDIT_AMOUNTS.p2pBrowserTask} credit Mara! 🌳`,
+    message: `+${CREDIT_AMOUNTS.p2pBrowserTask} credit Mara! 🌳`,
   };
 }
 
@@ -255,7 +225,7 @@ export type P2PAdminStats = {
   tasksCompletedToday: number;
   tasksCompletedTotal: number;
   estimatedApiSavingsUsd: number;
-  topContributors: Array<{ userId: string; tasksCompleted: number; xpEarned: number }>;
+  topContributors: Array<{ userId: string; tasksCompleted: number }>;
 };
 
 const ANTHROPIC_COST_PER_TASK_USD = 0.002; // approx cost of a small Claude call
@@ -293,7 +263,6 @@ export async function getAdminStats(activeNodeCount: number): Promise<P2PAdminSt
     .map((r) => ({
       userId: r.userId!,
       tasksCompleted: r.cnt,
-      xpEarned: r.cnt * XP_PER_TASK,
     }));
 
   return {

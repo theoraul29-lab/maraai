@@ -776,7 +776,7 @@
     "proofPlaceholder": "Írja ide a bizonyítékot...",
     "reflectionPlaceholder": "Opcionális, de hatásos...",
     "analyzing": "Mara elemzi a válaszod...",
-    "submitProof": "Bizonyíték beküldése → +{{xp}} XP",
+    "submitProof": "Bizonyíték beküldése",
     "howToTitle": "Így csináld:",
     "reflectLabel": "💭 Majd elgondolkodsz: ",
     "accept": "Küldetés elfogadása 🚀",
@@ -835,7 +835,7 @@
     "inProgress": "Folyamatban",
     "proofPlaceholderDetailed": "Írd le, mit csináltál, mit éreztél, mit értél meg...",
     "reflectionPrefix": "Reflexió: ",
-    "submitProofXp": "📤 Beküldés (+{{xp}} XP)",
+    "submitProofXp": "📤 Beküldés",
     "newMission": "Új misszió →",
     "yourMissions": "A te misszióid",
     "completedFreeLabel": "{{count}} befejezett · első 10 ingyenes",
@@ -929,7 +929,7 @@
     "copied": "Szöveg vágólapra másolva!"
   },
   "p2p": {
-    "badgeTitle": "Hozzájárulás a Mara-hoz: {{tasks}} feladat, {{xp}} XP",
+    "badgeTitle": "Hozzájárulás a Mara-hoz: {{tasks}} feladat",
     "contributing": "Hozzájárulás a Mara-hoz 🟢"
   },
   "share": {
@@ -941,7 +941,7 @@
     "tiktokHint": "másolás + megnyitás",
     "instagramMsg": "Link másolva! Nyisd meg az Instagramot és illeszd be. 📸",
     "tiktokMsg": "Link másolva! Nyisd meg a TikTok-ot és illeszd be. 🎵",
-    "successMsg": "Megosztva! +25 XP 🎉",
+    "successMsg": "Megosztva! 🎉",
     "errorMsg": "Megosztás sikertelen. Próbáld újra.",
     "recentlyShared": "Már nemrég megosztottad.",
     "platforms": {
@@ -1118,7 +1118,7 @@
     "tagsPlaceholder2": "motiváció, életmód, tippek...",
     "shareDestinations": "Megosztás:",
     "shareToReelsLabel": "🎬 Sparks Feed (+50 XP)",
-    "shareToYouLabel": "👤 A te profilod (Te) (+{{xp}} XP)",
+    "shareToYouLabel": "👤 A te profilod (Te)",
     "estimatedXP": "⚡ Becsült: +{{xp}} XP",
     "publishBtn": "🚀 Közzététel",
     "publishingBtn": "Közzététel alatt...",

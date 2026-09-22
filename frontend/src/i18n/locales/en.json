@@ -775,7 +775,7 @@
       "writers": { "desc": "Writers section — publish articles, buy premium content, build an audience." },
       "creators": { "desc": "Creators section — manage videos, followers and monetization." },
       "vip": { "desc": "Premium benefits — access to advanced features. Available after official launch." },
-      "missions": { "desc": "Missions and XP — complete daily challenges, earn experience and climb the leaderboard." }
+      "missions": { "desc": "Missions — complete daily challenges and build the life you want, one habit at a time." }
     },
     "welcomeTitle": "Welcome to Mara",
     "welcomeSubtitle": "Privacy-first hybrid AI",
@@ -873,7 +873,7 @@
     "proofPlaceholder": "Write your proof here...",
     "reflectionPlaceholder": "Optional, but powerful...",
     "analyzing": "Mara is analyzing your answer...",
-    "submitProof": "Submit proof → +{{xp}} XP",
+    "submitProof": "Submit proof",
     "howToTitle": "How to do this:",
     "reflectLabel": "💭 You will reflect: ",
     "accept": "Accept Mission 🚀",
@@ -933,7 +933,7 @@
     "inProgress": "In progress",
     "proofPlaceholderDetailed": "Write what you did, what you felt, what you realized...",
     "reflectionPrefix": "Reflection: ",
-    "submitProofXp": "📤 Submit (+{{xp}} XP)",
+    "submitProofXp": "📤 Submit",
     "newMission": "New mission →",
     "shareAsSpark": "Share as Spark",
     "sparkSharing": "Sharing...",
@@ -1035,7 +1035,7 @@
     "copied": "Text copied to clipboard!"
   },
   "p2p": {
-    "badgeTitle": "Contributing to Mara: {{tasks}} tasks, {{xp}} XP",
+    "badgeTitle": "Contributing to Mara: {{tasks}} tasks",
     "contributing": "Contributing to Mara 🟢",
     "networkTitle": "P2P Network",
     "activeNodes": "{{count}} active nodes",
@@ -1053,7 +1053,7 @@
     "tiktokHint": "copy + open",
     "instagramMsg": "Link copied! Open Instagram and paste. 📸",
     "tiktokMsg": "Link copied! Open TikTok and paste. 🎵",
-    "successMsg": "Shared! +25 XP 🎉",
+    "successMsg": "Shared! 🎉",
     "errorMsg": "Share failed. Try again.",
     "recentlyShared": "Already shared recently.",
     "platforms": {
@@ -1370,7 +1370,7 @@
     "tagsPlaceholder2": "motivation, lifestyle, tips...",
     "shareDestinations": "Share to:",
     "shareToReelsLabel": "🎬 Sparks Feed (+50 XP)",
-    "shareToYouLabel": "👤 Your Profile (You) (+{{xp}} XP)",
+    "shareToYouLabel": "👤 Your Profile (You)",
     "estimatedXP": "⚡ Estimated: +{{xp}} XP",
     "publishBtn": "🚀 Publish",
     "publishingBtn": "Publishing...",

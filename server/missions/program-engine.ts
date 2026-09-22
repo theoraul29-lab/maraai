@@ -4,7 +4,7 @@ import { PROGRAM_CATALOGUE, type ProgramId } from '../billing/plans.js';
 import { hasFeature } from '../billing/features.js';
 import { hasPurchasedProgram as hasPurchasedProgramItem } from '../billing/programs.js';
 import { storage } from '../storage.js';
-import { translateMissions, addXP, normalizeLang } from './engine.js';
+import { translateMissions, normalizeLang } from './engine.js';
 
 // ─── PROGRAM ACCESS ───────────────────────────────────────────────────────────
 
@@ -379,7 +379,7 @@ export async function getDayMission(
   let dayMission = rawSqlite
     .prepare(
       `SELECT pdm.*, m.title, m.description, m.pillar, m.difficulty,
-              m.xp_reward, m.proof_type, m.proof_prompt, m.steps, m.reflection
+              m.proof_type, m.proof_prompt, m.steps, m.reflection
        FROM program_day_missions pdm
        LEFT JOIN missions m ON m.id = pdm.mission_id
        WHERE pdm.enrollment_id = ? AND pdm.day_number = ?`,
@@ -397,7 +397,7 @@ export async function getDayMission(
     dayMission = rawSqlite
       .prepare(
         `SELECT pdm.*, m.title, m.description, m.pillar, m.difficulty,
-                m.xp_reward, m.proof_type, m.proof_prompt, m.steps, m.reflection
+                m.proof_type, m.proof_prompt, m.steps, m.reflection
          FROM program_day_missions pdm
          LEFT JOIN missions m ON m.id = pdm.mission_id
          WHERE pdm.enrollment_id = ? AND pdm.day_number = ?`,
@@ -438,7 +438,6 @@ export async function getDayMission(
           intent: dayMission.intent,
           pillar: dayMission.pillar,
           difficulty: dayMission.difficulty,
-          xpReward: dayMission.xp_reward ?? 100,
           proofType: dayMission.proof_type ?? 'text',
           steps: dayMission.custom_steps
             ? JSON.parse(dayMission.custom_steps)
@@ -511,7 +510,6 @@ export async function completeProgramDay(
   success: boolean;
   maraJournalPage?: string;
   maraFeedback?: string;
-  xpGained?: number;
   newDay?: number;
   programCompleted?: boolean;
   streakMessage?: string;
@@ -572,14 +570,13 @@ export async function completeProgramDay(
 
   const longestStreak = Math.max(newStreak, enrollment.longest_streak ?? 0);
   const programCompleted = newDay > enrollment.duration_days;
-  const xpGained = dayMission.mission.xpReward ?? 100;
 
   // Single transaction: the journal insert is the concurrency guard. A UNIQUE
   // index on (user_id, program_enrollment_id, day_number) makes the day's
   // completion atomic, so two near-simultaneous submits (the alreadyDone SELECT
-  // above is racy because it runs before/outside the write) can't both insert,
-  // double-advance the day, or double-award XP. INSERT OR IGNORE → changes===0
-  // means the day was already completed; we abort without advancing or awarding.
+  // above is racy because it runs before/outside the write) can't both insert
+  // or double-advance the day. INSERT OR IGNORE → changes===0 means the day
+  // was already completed; we abort without advancing.
   const completed = rawSqlite.transaction((): boolean => {
     const info = rawSqlite
       .prepare(
@@ -639,7 +636,6 @@ export async function completeProgramDay(
         enrollmentId,
       );
 
-    addXP(userId, xpGained);
     return true;
   })();
 
@@ -723,13 +719,12 @@ export async function completeProgramDay(
     success: true,
     maraJournalPage: journalData.journalPage,
     maraFeedback: journalData.maraFeedback,
-    xpGained,
     newDay,
     programCompleted,
     streakMessage: getStreakMessage(newStreak, proofLang),
     message: programCompleted
       ? `🎉 Program "${enrollment.program_name}" completed!`
-      : `+${xpGained} XP · Day ${enrollment.current_day} done!`,
+      : `Day ${enrollment.current_day} done!`,
   };
 }
 

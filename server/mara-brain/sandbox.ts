@@ -5,7 +5,7 @@
  *
  * ── ALLOWED ────────────────────────────────────────────────────────────────────
  * READ  : users, missions, chat_history, experiments, user_missions,
- *         user_xp, user_preferences, mara_knowledge_base, mara_brain_session,
+ *         user_preferences, mara_knowledge_base, mara_brain_session,
  *         ai_usage_log, brain_decisions
  * WRITE : mara_growth_experiments (status → proposed only),
  *         mara_knowledge_base, mara_brain_session,
@@ -27,7 +27,7 @@ import { rawSqlite } from '../db.js';
 
 const CRITICAL_TABLES_NO_DELETE = [
   'users', 'missions', 'user_missions', 'chat_history',
-  'user_preferences', 'user_xp', 'sessions',
+  'user_preferences', 'sessions',
 ];
 
 const CRITICAL_TABLES_NO_UPDATE_COLS = new Map<string, string[]>([

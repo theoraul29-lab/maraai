@@ -3,9 +3,8 @@
 // Why this file exists
 // --------------------
 // Before the audit, every module (missions, reels, posts, articles, profiles)
-// owned its own `share` POST. Each one had a slightly different XP rule, a
-// different dedup window, and a different URL builder, which made it hard to
-// reason about the total XP a user could earn per day and which platforms
+// owned its own `share` POST. Each one had a different dedup window and a
+// different URL builder, which made it hard to reason about which platforms
 // were actually wired up.
 //
 // `/api/share` is the single source of truth. It:
@@ -13,10 +12,8 @@
 //   2. Builds the platform-specific external URL when applicable
 //      (X intent, WhatsApp wa.me, Telegram t.me, copy-link, …)
 //   3. Inserts a row in `content_shares` with all attribution columns
-//   4. Awards a flat +25 XP through the missions XP system (which already
-//      handles streak multipliers atomically)
-//   5. Refuses duplicate (user, source, platform) tuples within the last hour
-//      so a user can't farm XP by mashing the same button.
+//   4. Refuses duplicate (user, source, platform) tuples within the last hour
+//      so a user can't spam the same button.
 //
 // The handler intentionally does NOT post to external networks itself — those
 // platforms either don't expose a public "share for me" API (Instagram /
@@ -26,7 +23,6 @@
 import type { Express, Request, Response } from 'express';
 import { randomUUID } from 'crypto';
 import { rawSqlite } from '../db.js';
-import { addXP } from '../missions/engine.js';
 
 type AuthedReq = Request & { user?: { uid: string } };
 
@@ -49,7 +45,6 @@ const VALID_PLATFORMS = new Set([
   'link',       // copy to clipboard
 ]);
 
-const SHARE_XP_REWARD = 25;
 const DEDUP_WINDOW_SEC = 60 * 60; // 1 hour
 
 // Resolve the canonical app origin so the share URLs work regardless of where
@@ -173,8 +168,8 @@ export function registerShareRoutes(
     rawSqlite.prepare(`
       INSERT INTO content_shares
         (id, user_id, source_module, source_id, source_type,
-         target_module, target_platform, caption, share_url, xp_awarded, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, unixepoch())
+         target_module, target_platform, caption, share_url, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, unixepoch())
     `).run(
       id,
       userId,
@@ -185,27 +180,13 @@ export function registerShareRoutes(
       platform,
       caption,
       shareUrl,
-      SHARE_XP_REWARD,
     );
-
-    let xpResult: { xp: number; level: number; leveledUp: boolean; gained: number } | null = null;
-    try {
-      xpResult = addXP(userId, SHARE_XP_REWARD);
-    } catch (err) {
-      // Don't fail the share if the XP table is unreachable — log and return
-      // the URL anyway so the user still gets the link in their clipboard.
-      console.error('[share] addXP failed:', err);
-    }
 
     return res.json({
       ok: true,
       id,
       shareUrl,
       externalLink: link,
-      xpAwarded: xpResult ? xpResult.gained : 0,
-      xp: xpResult?.xp ?? null,
-      level: xpResult?.level ?? null,
-      leveledUp: xpResult?.leveledUp ?? false,
     });
   });
 
@@ -216,7 +197,7 @@ export function registerShareRoutes(
     const rows = rawSqlite.prepare(`
       SELECT id, source_module AS sourceModule, source_id AS sourceId,
              target_platform AS targetPlatform, caption, share_url AS shareUrl,
-             xp_awarded AS xpAwarded, created_at AS createdAt
+             created_at AS createdAt
         FROM content_shares
        WHERE user_id = ?
        ORDER BY created_at DESC

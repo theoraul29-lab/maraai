@@ -6,8 +6,8 @@
 //   → { type: 'stop' }                    — user returned, stop immediately
 //
 // The worker posts back:
-//   ← { type: 'status', contributing: boolean, xpEarned: number, tasksCompleted: number }
-//   ← { type: 'reward', xpGained: number, creditsGained: number, message: string }
+//   ← { type: 'status', contributing: boolean, creditsEarned: number, tasksCompleted: number }
+//   ← { type: 'reward', creditsGained: number, message: string }
 //   ← { type: 'error', message: string }
 
 type WorkerInMessage =
@@ -15,14 +15,14 @@ type WorkerInMessage =
   | { type: 'stop' };
 
 type WorkerOutMessage =
-  | { type: 'status'; contributing: boolean; xpEarned: number; tasksCompleted: number }
-  | { type: 'reward'; xpGained: number; creditsGained: number; message: string }
+  | { type: 'status'; contributing: boolean; creditsEarned: number; tasksCompleted: number }
+  | { type: 'reward'; creditsGained: number; message: string }
   | { type: 'error'; message: string };
 
 let running = false;
 let nodeId = '';
 let apiBase = '';
-let totalXp = 0;
+let totalCredits = 0;
 let totalTasks = 0;
 
 // Poll interval between task requests (ms).
@@ -45,7 +45,7 @@ self.onmessage = (e: MessageEvent<WorkerInMessage>) => {
 };
 
 function postStatus(contributing: boolean): void {
-  const out: WorkerOutMessage = { type: 'status', contributing, xpEarned: totalXp, tasksCompleted: totalTasks };
+  const out: WorkerOutMessage = { type: 'status', contributing, creditsEarned: totalCredits, tasksCompleted: totalTasks };
   self.postMessage(out);
 }
 
@@ -89,14 +89,13 @@ async function processOneTask(): Promise<void> {
   });
   if (!submitRes.ok) return;
 
-  const out = await submitRes.json() as { ok: boolean; xpGained: number; creditsGained: number; message: string };
+  const out = await submitRes.json() as { ok: boolean; creditsGained: number; message: string };
   if (out.ok) {
-    totalXp += out.xpGained;
+    totalCredits += out.creditsGained;
     totalTasks += 1;
     postStatus(true);
     const reward: WorkerOutMessage = {
       type: 'reward',
-      xpGained: out.xpGained,
       creditsGained: out.creditsGained,
       message: out.message,
     };

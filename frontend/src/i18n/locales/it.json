@@ -776,7 +776,7 @@
     "proofPlaceholder": "Scrivi la tua prova qui...",
     "reflectionPlaceholder": "Facoltativo, ma potente...",
     "analyzing": "Mara sta analizzando la tua risposta...",
-    "submitProof": "Invia prova → +{{xp}} XP",
+    "submitProof": "Invia prova",
     "howToTitle": "Come fare:",
     "reflectLabel": "💭 Rifletterai: ",
     "accept": "Accetta missione 🚀",
@@ -835,7 +835,7 @@
     "inProgress": "In corso",
     "proofPlaceholderDetailed": "Scrivi cosa hai fatto, cosa hai provato, cosa hai capito...",
     "reflectionPrefix": "Riflessione: ",
-    "submitProofXp": "📤 Invia (+{{xp}} XP)",
+    "submitProofXp": "📤 Invia",
     "newMission": "Nuova missione →",
     "yourMissions": "Le tue missioni",
     "completedFreeLabel": "{{count}} completate · prime 10 gratuite",
@@ -929,7 +929,7 @@
     "copied": "Testo copiato negli appunti!"
   },
   "p2p": {
-    "badgeTitle": "Contribuire a Mara: {{tasks}} attività, {{xp}} XP",
+    "badgeTitle": "Contribuire a Mara: {{tasks}} attività",
     "contributing": "Contribuire a Mara 🟢"
   },
   "share": {
@@ -941,7 +941,7 @@
     "tiktokHint": "copia + apri",
     "instagramMsg": "Link copiato! Apri Instagram e incolla. 📸",
     "tiktokMsg": "Link copiato! Apri TikTok e incolla. 🎵",
-    "successMsg": "Condiviso! +25 XP 🎉",
+    "successMsg": "Condiviso! 🎉",
     "errorMsg": "Condivisione fallita. Riprova.",
     "recentlyShared": "Già condiviso di recente.",
     "platforms": {
@@ -1118,7 +1118,7 @@
     "tagsPlaceholder2": "motivazione, lifestyle, consigli...",
     "shareDestinations": "Condividi su:",
     "shareToReelsLabel": "🎬 Feed Sparks (+50 XP)",
-    "shareToYouLabel": "👤 Tuo Profilo (Tu) (+{{xp}} XP)",
+    "shareToYouLabel": "👤 Tuo Profilo (Tu)",
     "estimatedXP": "⚡ Stima: +{{xp}} XP",
     "publishBtn": "🚀 Pubblica",
     "publishingBtn": "Pubblicazione in corso...",

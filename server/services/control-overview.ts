@@ -7,7 +7,7 @@ export interface ControlOverview {
   revenue: { total: number; thisMonth: number; pendingOrders: number };
   notifications: { total: number; today: number };
   pwa: { installs: number };
-  missions: { completed: number; totalXP: number };
+  missions: { completed: number };
   aiRoutes: Array<Record<string, unknown>>;
   system: { uptimeSeconds: number; memoryMB: number; totalMemoryMB: number; nodeVersion: string };
   brain: { lastLog: Record<string, unknown> | null; logsToday: number };
@@ -35,7 +35,6 @@ export function readControlOverview(): ControlOverview {
   const notifToday = sqlGet<{ cnt: number }>('SELECT COUNT(*) as cnt FROM notifications WHERE created_at>unixepoch()-86400')?.cnt ?? 0;
   const pwaInstalls = sqlGet<{ cnt: number }>('SELECT COUNT(*) as cnt FROM push_subscriptions')?.cnt ?? 0;
   const missionsComp = sqlGet<{ cnt: number }>('SELECT COUNT(*) as cnt FROM user_missions WHERE status="completed"')?.cnt ?? 0;
-  const totalXP = sqlGet<{ total: number }>('SELECT COALESCE(SUM(xp),0) as total FROM user_xp')?.total ?? 0;
   const aiRoutes = sqlAll<Record<string, unknown>>('SELECT route, COUNT(*) as cnt, AVG(latency_ms) as avg_latency, SUM(CASE WHEN success=1 THEN 1 ELSE 0 END) as successes FROM ai_route_log WHERE created_at>unixepoch()-86400 GROUP BY route');
   const lastBrainLog = sqlGet<Record<string, unknown>>('SELECT message, level, created_at FROM brain_logs ORDER BY created_at DESC LIMIT 1');
   const brainToday = sqlGet<{ cnt: number }>('SELECT COUNT(*) as cnt FROM brain_logs WHERE created_at>unixepoch()-86400')?.cnt ?? 0;
@@ -46,7 +45,7 @@ export function readControlOverview(): ControlOverview {
     revenue: { total: totalRevenue, thisMonth: revenueMonth, pendingOrders },
     notifications: { total: notifTotal, today: notifToday },
     pwa: { installs: pwaInstalls },
-    missions: { completed: missionsComp, totalXP },
+    missions: { completed: missionsComp },
     aiRoutes,
     system: {
       uptimeSeconds: process.uptime(),

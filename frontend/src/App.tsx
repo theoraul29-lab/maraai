@@ -222,6 +222,11 @@ function App() {
   // belong on that page anymore, same reasoning as excluding it from Control
   // Center above.
   const isYouRoute = location.pathname === '/you';
+  // Sparks (/reels) is a fullscreen swipeable video feed — the floating
+  // widget has no room there and its fixed positioning collided with the
+  // feed's own bottom action rail (like/comment/follow), so it's hidden on
+  // this route entirely rather than repositioned.
+  const isReelsRoute = location.pathname === '/reels';
   // Creator Panel and Writers Hub used to hide Nav too (their own full-
   // viewport overlay CSS, now normal document flow like every other
   // module) — that made them navigation dead-ends: no direct way to reach
@@ -273,7 +278,7 @@ function App() {
             </Suspense>
           </ErrorBoundary>
           {/* Mara Chat Widget - appears on all pages */}
-          {!isControlCenterRoute && !isYouRoute && <ErrorBoundary level="component">
+          {!isControlCenterRoute && !isYouRoute && !isReelsRoute && <ErrorBoundary level="component">
             <MaraChatWidget />
           </ErrorBoundary>}
           {/* P2P background compute badge — visible only when actively contributing */}

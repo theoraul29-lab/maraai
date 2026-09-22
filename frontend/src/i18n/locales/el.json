@@ -776,7 +776,7 @@
     "proofPlaceholder": "Γράψτε την απόδειξή σας εδώ...",
     "reflectionPlaceholder": "Προαιρετικό, αλλά ισχυρό...",
     "analyzing": "Το MARA αναλύει την απάντησή σας...",
-    "submitProof": "Υποβολή απόδειξης → +{{xp}} XP",
+    "submitProof": "Υποβολή απόδειξης",
     "howToTitle": "Πώς να το κάνετε:",
     "reflectLabel": "💭 Θα αναλογιστείτε: ",
     "accept": "Αποδοχή αποστολής 🚀",
@@ -835,7 +835,7 @@
     "inProgress": "Σε εξέλιξη",
     "proofPlaceholderDetailed": "Γράψτε τι κάνατε, τι νιώσατε, τι συνειδητοποιήσατε...",
     "reflectionPrefix": "Αντανάκλαση: ",
-    "submitProofXp": "📤 Υποβολή (+{{xp}} XP)",
+    "submitProofXp": "📤 Υποβολή",
     "newMission": "Νέο mission →",
     "yourMissions": "Τα missions σας",
     "completedFreeLabel": "{{count}} ολοκληρωθέντα · πρώτα 10 δωρεάν",
@@ -929,7 +929,7 @@
     "copied": "Το κείμενο αντιγράφηκε!"
   },
   "p2p": {
-    "badgeTitle": "Συνεισφορά στο Mara: {{tasks}} αποστολές, {{xp}} XP",
+    "badgeTitle": "Συνεισφορά στο Mara: {{tasks}} αποστολές",
     "contributing": "Συνεισφορά στο Mara 🟢"
   },
   "share": {
@@ -941,7 +941,7 @@
     "tiktokHint": "αντιγραφή + άνοιγμα",
     "instagramMsg": "Σύνδεσμος αντιγράφηκε! Άνοιξε το Instagram και επικόλλησε. 📸",
     "tiktokMsg": "Σύνδεσμος αντιγράφηκε! Άνοιξε το TikTok και επικόλλησε. 🎵",
-    "successMsg": "Κοινοποιήθηκε! +25 XP 🎉",
+    "successMsg": "Κοινοποιήθηκε! 🎉",
     "errorMsg": "Η κοινοποίηση απέτυχε. Προσπάθησε ξανά.",
     "recentlyShared": "Ήδη κοινοποιήθηκε πρόσφατα.",
     "platforms": {
@@ -1118,7 +1118,7 @@
     "tagsPlaceholder2": "κίνητρο, τρόπος ζωής, συμβουλές...",
     "shareDestinations": "Κοινοποίηση σε:",
     "shareToReelsLabel": "🎬 Spark Feed (+50 XP)",
-    "shareToYouLabel": "👤 Το προφίλ σας (Εσείς) (+{{xp}} XP)",
+    "shareToYouLabel": "👤 Το προφίλ σας (Εσείς)",
     "estimatedXP": "⚡ Εκτιμώμενο: +{{xp}} XP",
     "publishBtn": "🚀 Δημοσίευση",
     "publishingBtn": "Δημοσίευση...",

@@ -776,7 +776,7 @@
     "proofPlaceholder": "在此写下你的证明...",
     "reflectionPlaceholder": "可选，但很有力...",
     "analyzing": "Mara 正在分析你的回答...",
-    "submitProof": "提交证明 → +{{xp}} XP",
+    "submitProof": "提交证明",
     "howToTitle": "如何操作：",
     "reflectLabel": "💭 你将反思：",
     "accept": "接受任务 🚀",
@@ -835,7 +835,7 @@
     "inProgress": "进行中",
     "proofPlaceholderDetailed": "写下您做了什么、感受到了什么、意识到了什么...",
     "reflectionPrefix": "反思：",
-    "submitProofXp": "📤 提交 (+{{xp}} XP)",
+    "submitProofXp": "📤 提交",
     "newMission": "新任务 →",
     "yourMissions": "您的任务",
     "completedFreeLabel": "{{count}} 已完成 · 前10个免费",
@@ -929,7 +929,7 @@
     "copied": "已复制到剪贴板!"
   },
   "p2p": {
-    "badgeTitle": "为Mara做贡献: {{tasks}}个任务，{{xp}} XP",
+    "badgeTitle": "为Mara做贡献: {{tasks}}个任务",
     "contributing": "为Mara做贡献 🟢"
   },
   "share": {
@@ -941,7 +941,7 @@
     "tiktokHint": "复制并打开",
     "instagramMsg": "链接已复制！打开Instagram并粘贴。📸",
     "tiktokMsg": "链接已复制！打开TikTok并粘贴。🎵",
-    "successMsg": "已分享! +25 XP 🎉",
+    "successMsg": "已分享! 🎉",
     "errorMsg": "分享失败。请重试。",
     "recentlyShared": "最近已分享过。",
     "platforms": {
@@ -1118,7 +1118,7 @@
     "tagsPlaceholder2": "动力，生活方式，技巧...",
     "shareDestinations": "分享到：",
     "shareToReelsLabel": "🎬 Sparks 信息流（+50 XP）",
-    "shareToYouLabel": "👤 你的个人资料（你）(+{{xp}} XP)",
+    "shareToYouLabel": "👤 你的个人资料（你）",
     "estimatedXP": "⚡ 预计：+{{xp}} XP",
     "publishBtn": "🚀 发布",
     "publishingBtn": "发布中...",

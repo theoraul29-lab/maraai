@@ -378,7 +378,7 @@ export const externalLinkRateLimit = createUserRateLimit({
   windowMs: ONE_HOUR,
 });
 
-// --- Public read endpoints (community, leaderboard) -------------------------
+// --- Public read endpoints (community, programs) -----------------------------
 // Unauthenticated IP-based limit to prevent scraping.
 export const publicReadRateLimit = createIPRateLimit({
   name: 'public:read',

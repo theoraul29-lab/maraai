@@ -5,7 +5,6 @@
     "description": "The morning belongs to you before it belongs to the world. Wake up an hour earlier and use that time just for yourself.",
     "pillar": "discipline",
     "difficulty": "medium",
-    "xp_reward": 200,
     "proof_type": "text",
     "proof_prompt": "Write what you did in that hour and how you felt.",
     "steps": [
@@ -22,7 +21,6 @@
     "description": "A whole day without scrolling. Notice what shows up when you're no longer distracted.",
     "pillar": "discipline",
     "difficulty": "medium",
-    "xp_reward": 250,
     "proof_type": "screenshot",
     "proof_prompt": "Screenshot of Screen Time showing 0 minutes.",
     "steps": [
@@ -39,7 +37,6 @@
     "description": "20 minutes of movement a day, 7 days straight. Any kind counts.",
     "pillar": "discipline",
     "difficulty": "deep",
-    "xp_reward": 500,
     "proof_type": "photo",
     "proof_prompt": "Photo or screenshot from your fitness app on day 7.",
     "steps": [
@@ -56,7 +53,6 @@
     "description": "A drawing, a sculpture, a photo taken with intention. The process matters, not the result.",
     "pillar": "creativity",
     "difficulty": "gentle",
-    "xp_reward": 150,
     "proof_type": "photo",
     "proof_prompt": "Photo of what you created.",
     "steps": [
@@ -73,7 +69,6 @@
     "description": "Write to the person you'll be in 1 year. Tell them what you hope for, what you fear, what you're learning.",
     "pillar": "creativity",
     "difficulty": "gentle",
-    "xp_reward": 200,
     "proof_type": "text",
     "proof_prompt": "Paste the letter or a fragment of it.",
     "steps": [
@@ -90,7 +85,6 @@
     "description": "Walk for 30 minutes and photograph ordinary things that have something special about them.",
     "pillar": "creativity",
     "difficulty": "gentle",
-    "xp_reward": 120,
     "proof_type": "photo",
     "proof_prompt": "Post your most beautiful photo.",
     "steps": [
@@ -107,7 +101,6 @@
     "description": "Cook something from scratch, without rushing. Be present in every step.",
     "pillar": "life",
     "difficulty": "gentle",
-    "xp_reward": 130,
     "proof_type": "photo",
     "proof_prompt": "Photo of the finished meal.",
     "steps": [
@@ -124,7 +117,6 @@
     "description": "Not a text — a real call. Talk without rushing.",
     "pillar": "life",
     "difficulty": "gentle",
-    "xp_reward": 100,
     "proof_type": "text",
     "proof_prompt": "Write how that conversation went.",
     "steps": [
@@ -141,7 +133,6 @@
     "description": "Go outside and leave your phone at home. Observe. Listen. Just be.",
     "pillar": "life",
     "difficulty": "gentle",
-    "xp_reward": 150,
     "proof_type": "text",
     "proof_prompt": "Write what you observed, heard, or felt.",
     "steps": [
@@ -158,7 +149,6 @@
     "description": "Write yourself a letter of forgiveness for something from the past that you still carry.",
     "pillar": "acceptance",
     "difficulty": "deep",
-    "xp_reward": 400,
     "proof_type": "text",
     "proof_prompt": "Write a fragment or how you felt writing it.",
     "steps": [
@@ -175,7 +165,6 @@
     "description": "Not your strengths — things you see as flaws and choose to accept.",
     "pillar": "acceptance",
     "difficulty": "medium",
-    "xp_reward": 200,
     "proof_type": "text",
     "proof_prompt": "Write the 3 things and why you choose to accept them.",
     "steps": [
@@ -192,7 +181,6 @@
     "description": "Buy a coffee, hold the door, say something kind. Without hoping for anything in return.",
     "pillar": "helping",
     "difficulty": "gentle",
-    "xp_reward": 150,
     "proof_type": "text",
     "proof_prompt": "Tell what happened and how you felt.",
     "steps": [
@@ -209,7 +197,6 @@
     "description": "Find someone who needs to be heard. Don't give advice. Just listen.",
     "pillar": "helping",
     "difficulty": "medium",
-    "xp_reward": 200,
     "proof_type": "text",
     "proof_prompt": "How was it to listen without stepping in?",
     "steps": [
@@ -226,7 +213,6 @@
     "description": "Write the first 5 values without overthinking. Ask yourself: are you living by them?",
     "pillar": "self",
     "difficulty": "medium",
-    "xp_reward": 250,
     "proof_type": "text",
     "proof_prompt": "Write the values and a reflection on how present they are.",
     "steps": [
@@ -243,7 +229,6 @@
     "description": "Not what should make you happy. What makes YOU happy.",
     "pillar": "self",
     "difficulty": "deep",
-    "xp_reward": 300,
     "proof_type": "text",
     "proof_prompt": "List 10 things and choose the most important one.",
     "steps": [
@@ -260,7 +245,6 @@
     "description": "Step out of your comfort zone, gently. Give it at least 30 minutes.",
     "pillar": "hobby",
     "difficulty": "medium",
-    "xp_reward": 300,
     "proof_type": "photo",
     "proof_prompt": "Photo during or after the activity.",
     "steps": [
@@ -277,7 +261,6 @@
     "description": "Something you once loved and let slip away. Bring it back to life for a day.",
     "pillar": "hobby",
     "difficulty": "gentle",
-    "xp_reward": 200,
     "proof_type": "any",
     "proof_prompt": "Any proof — photo, text, video.",
     "steps": [
@@ -294,7 +277,6 @@
     "description": "How are you today — really? 2 minutes of honesty with yourself.",
     "pillar": "self",
     "difficulty": "gentle",
-    "xp_reward": 30,
     "proof_type": "text",
     "proof_prompt": "Write a word or a sentence about how you are today.",
     "steps": [
@@ -311,7 +293,6 @@
     "description": "Not something generic — something specific from today.",
     "pillar": "acceptance",
     "difficulty": "gentle",
-    "xp_reward": 40,
     "proof_type": "text",
     "proof_prompt": "Write the 3 things.",
     "steps": [
@@ -328,7 +309,6 @@
     "description": "Wake up 1 hour earlier. No phone. No news. No social media. This hour belongs to you before it belongs to the world.",
     "pillar": "discipline",
     "difficulty": "medium",
-    "xp_reward": 150,
     "proof_type": "text",
     "proof_prompt": "Write 3 words about how you feel in this hour of yours. Nothing more.",
     "steps": [
@@ -346,7 +326,6 @@
     "description": "5 minutes of movement when you wake up. It doesn't have to be intense. Stretching, dancing, walking around the house. Your body knows what it needs.",
     "pillar": "life",
     "difficulty": "gentle",
-    "xp_reward": 100,
     "proof_type": "photo",
     "proof_prompt": "Photograph the place where you moved. Not yourself — the place. The morning light.",
     "steps": [
@@ -364,7 +343,6 @@
     "description": "Write ONE single thing you want to FEEL today. Not to do. Not to achieve. To FEEL.",
     "pillar": "self",
     "difficulty": "gentle",
-    "xp_reward": 80,
     "proof_type": "text",
     "proof_prompt": "Write ONE single word or a short sentence — your intention for today.",
     "steps": [
@@ -382,7 +360,6 @@
     "description": "Drink your first coffee or tea with no phone, no news, no music. 10 minutes of complete presence with your drink.",
     "pillar": "life",
     "difficulty": "gentle",
-    "xp_reward": 80,
     "proof_type": "photo",
     "proof_prompt": "Photograph your cup. No filters. Natural light.",
     "steps": [
@@ -400,7 +377,6 @@
     "description": "Write 5 sentences about how you want today to go — as if it had already happened perfectly.",
     "pillar": "self",
     "difficulty": "gentle",
-    "xp_reward": 100,
     "proof_type": "text",
     "proof_prompt": "The 5 sentences. In the past tense, as if the day had been perfect.",
     "steps": [
@@ -418,7 +394,6 @@
     "description": "Not \"I'm grateful for my family\". Choose ONE specific moment from yesterday. A small, concrete detail.",
     "pillar": "acceptance",
     "difficulty": "gentle",
-    "xp_reward": 80,
     "proof_type": "text",
     "proof_prompt": "Describe the specific moment. Where were you? What happened? How exactly did you feel?",
     "steps": [
@@ -436,7 +411,6 @@
     "description": "The 4-7-8 technique: inhale for 4 seconds, hold for 7 seconds, exhale for 8 seconds. Repeat 4 times.",
     "pillar": "acceptance",
     "difficulty": "gentle",
-    "xp_reward": 60,
     "proof_type": "text",
     "proof_prompt": "Describe your state BEFORE and your state AFTER.",
     "steps": [
@@ -455,7 +429,6 @@
     "description": "Close your eyes for 2 minutes. Imagine the best version of today. Then draw or write what you saw.",
     "pillar": "creativity",
     "difficulty": "gentle",
-    "xp_reward": 120,
     "proof_type": "any",
     "proof_prompt": "Draw or write your vision. Any form. Any color. Don't judge.",
     "steps": [
@@ -473,7 +446,6 @@
     "description": "Not the to-do list. ONE single thing. If you do only this today — the day is a complete success.",
     "pillar": "discipline",
     "difficulty": "gentle",
-    "xp_reward": 100,
     "proof_type": "text",
     "proof_prompt": "In the morning: write that one thing. In the evening: how did you feel after doing it?",
     "steps": [
@@ -491,7 +463,6 @@
     "description": "A single sentence to guide you today. Not a quote. Yours. From what you feel right now, in this moment.",
     "pillar": "self",
     "difficulty": "gentle",
-    "xp_reward": 80,
     "proof_type": "text",
     "proof_prompt": "Your mantra. One sentence. Yours.",
     "steps": [
@@ -509,7 +480,6 @@
     "description": "The hardest thing you haven't forgiven yourself for. Write yourself a letter as if you were writing to a dear friend who made a mistake.",
     "pillar": "acceptance",
     "difficulty": "deep",
-    "xp_reward": 500,
     "proof_type": "text",
     "proof_prompt": "Your letter. Complete or fragmented. Mara judges nothing.",
     "steps": [
@@ -527,7 +497,6 @@
     "description": "Write or draw about your greatest fear. Don't analyze it. Don't justify it. Just describe it.",
     "pillar": "acceptance",
     "difficulty": "deep",
-    "xp_reward": 400,
     "proof_type": "any",
     "proof_prompt": "Text or drawing — whichever feels easier for expressing what you feel.",
     "steps": [
@@ -545,7 +514,6 @@
     "description": "Not to judge or take revenge. To understand and free yourself. Write without editing.",
     "pillar": "acceptance",
     "difficulty": "deep",
-    "xp_reward": 500,
     "proof_type": "text",
     "proof_prompt": "Write freely. Don't edit. Don't censor. Mara reads with complete empathy.",
     "steps": [
@@ -563,7 +531,6 @@
     "description": "What would you say to the 7-year-old you once were? What would they want to know? What would make them feel safe?",
     "pillar": "acceptance",
     "difficulty": "deep",
-    "xp_reward": 450,
     "proof_type": "any",
     "proof_prompt": "A letter to your younger self. Or a drawing. Or both.",
     "steps": [
@@ -581,7 +548,6 @@
     "description": "What face do you show the world vs who you really are when no one is watching? Describe the difference honestly.",
     "pillar": "self",
     "difficulty": "deep",
-    "xp_reward": 400,
     "proof_type": "any",
     "proof_prompt": "Text or two drawings: the mask and the real face.",
     "steps": [
@@ -599,7 +565,6 @@
     "description": "How do you talk to yourself when no one is listening? With kindness or with cruelty? Write 10 things you regularly tell yourself.",
     "pillar": "self",
     "difficulty": "medium",
-    "xp_reward": 300,
     "proof_type": "text",
     "proof_prompt": "10 things you tell yourself. Honestly. Exactly as they are.",
     "steps": [
@@ -617,7 +582,6 @@
     "description": "Where do you say YES when you want to say NO? With whom? When? Why do you keep giving in?",
     "pillar": "self",
     "difficulty": "medium",
-    "xp_reward": 350,
     "proof_type": "text",
     "proof_prompt": "3 concrete situations where you said YES when you wanted to say NO.",
     "steps": [
@@ -635,7 +599,6 @@
     "description": "Not about how much you have or don't have. About WHAT YOU FEEL toward money. Fear? Shame? Power? Indifference?",
     "pillar": "self",
     "difficulty": "medium",
-    "xp_reward": 300,
     "proof_type": "text",
     "proof_prompt": "Write honestly about your relationship with money. Childhood, family, beliefs.",
     "steps": [
@@ -653,7 +616,6 @@
     "description": "Write a letter to your body. What would you tell it? What does it tell you? What would you thank it for? What would you apologize for?",
     "pillar": "acceptance",
     "difficulty": "deep",
-    "xp_reward": 450,
     "proof_type": "text",
     "proof_prompt": "Your letter to your body. Complete, honest, from the heart.",
     "steps": [
@@ -671,7 +633,6 @@
     "description": "An event that changed everything. There's a before and an after. Describe both.",
     "pillar": "self",
     "difficulty": "deep",
-    "xp_reward": 500,
     "proof_type": "text",
     "proof_prompt": "The story of the moment. Before. The event. After. Who you are now because of it.",
     "steps": [
@@ -689,7 +650,6 @@
     "description": "Not for your parents. Not for society. Not for your friends. For you. Now. Real.",
     "pillar": "self",
     "difficulty": "medium",
-    "xp_reward": 300,
     "proof_type": "text",
     "proof_prompt": "Define your success. With no social filter.",
     "steps": [
@@ -707,7 +667,6 @@
     "description": "What do you long for most? Not necessarily something material. It can be a state, a connection, a version of yourself.",
     "pillar": "self",
     "difficulty": "deep",
-    "xp_reward": 400,
     "proof_type": "any",
     "proof_prompt": "Text or drawing — whichever better expresses that longing.",
     "steps": [
@@ -725,7 +684,6 @@
     "description": "Write a letter to yourself 5 years from now. What do you want them to know? What do you hope for? What do you leave them as a legacy?",
     "pillar": "self",
     "difficulty": "medium",
-    "xp_reward": 350,
     "proof_type": "text",
     "proof_prompt": "Dear me, 5 years from now...",
     "steps": [
@@ -743,7 +701,6 @@
     "description": "The hardest moment of your life. Not the easiest — the HARDEST. What did it teach you?",
     "pillar": "acceptance",
     "difficulty": "deep",
-    "xp_reward": 500,
     "proof_type": "text",
     "proof_prompt": "The moment. What it taught you. Who you are because of it.",
     "steps": [
@@ -761,7 +718,6 @@
     "description": "Not what you do. Not what you have. Not the role you play. Who are you? This question has no wrong answer.",
     "pillar": "self",
     "difficulty": "deep",
-    "xp_reward": 600,
     "proof_type": "any",
     "proof_prompt": "Text, drawing, photo collage — anything that expresses who you really are.",
     "steps": [
@@ -779,7 +735,6 @@
     "description": "A single photo to represent how you feel today. Not perfect. Not filtered. Authentic.",
     "pillar": "creativity",
     "difficulty": "gentle",
-    "xp_reward": 100,
     "proof_type": "photo",
     "proof_prompt": "Your photo of today. It can be anything.",
     "steps": [
@@ -797,7 +752,6 @@
     "description": "You don't have to be an artist. Any shape, any color. Give your fear a visual form.",
     "pillar": "creativity",
     "difficulty": "medium",
-    "xp_reward": 250,
     "proof_type": "photo",
     "proof_prompt": "A photo of your drawing. No matter how \"unprofessional\" it is.",
     "steps": [
@@ -815,7 +769,6 @@
     "description": "Someone you don't know but sense needs these words. Maybe it's someone going through what you went through.",
     "pillar": "helping",
     "difficulty": "medium",
-    "xp_reward": 300,
     "proof_type": "text",
     "proof_prompt": "The complete letter. It can be published anonymously in the community.",
     "steps": [
@@ -833,7 +786,6 @@
     "description": "Find 5 images around you — not from magazines — that represent your ideal life. Photograph them together.",
     "pillar": "creativity",
     "difficulty": "gentle",
-    "xp_reward": 200,
     "proof_type": "photo",
     "proof_prompt": "A photo of your collage. Or 5 separate photos.",
     "steps": [
@@ -851,7 +803,6 @@
     "description": "A song that represents exactly what you feel right now. Not what you like — what you FEEL. Why this song?",
     "pillar": "creativity",
     "difficulty": "gentle",
-    "xp_reward": 150,
     "proof_type": "text",
     "proof_prompt": "The song title and why it represents exactly what you feel now.",
     "steps": [
@@ -869,7 +820,6 @@
     "description": "It doesn't have to rhyme. It doesn't have to be perfect. 4 lines about today, about you, about what you feel.",
     "pillar": "creativity",
     "difficulty": "gentle",
-    "xp_reward": 200,
     "proof_type": "text",
     "proof_prompt": "Your poem. 4 lines. Yours.",
     "steps": [
@@ -887,7 +837,6 @@
     "description": "Go out for 30 minutes with no destination. Photograph 5 ordinary things that have something special about them.",
     "pillar": "creativity",
     "difficulty": "gentle",
-    "xp_reward": 150,
     "proof_type": "photo",
     "proof_prompt": "The best 1-3 photos from your walk.",
     "steps": [
@@ -905,7 +854,6 @@
     "description": "The first page of the book about your life. Not the biography — the book. The first paragraph. Wherever you want it to begin.",
     "pillar": "creativity",
     "difficulty": "medium",
-    "xp_reward": 350,
     "proof_type": "text",
     "proof_prompt": "The first paragraph. You can write in any person, from any moment of your life.",
     "steps": [
@@ -923,7 +871,6 @@
     "description": "Visualization through art. The place, the people, what your ideal life looks like. Not perfect — real.",
     "pillar": "creativity",
     "difficulty": "gentle",
-    "xp_reward": 200,
     "proof_type": "photo",
     "proof_prompt": "A photo of your drawing or collage.",
     "steps": [
@@ -941,7 +888,6 @@
     "description": "To someone from your past or present. Everything you wanted to say and didn't. Now you can.",
     "pillar": "acceptance",
     "difficulty": "deep",
-    "xp_reward": 450,
     "proof_type": "text",
     "proof_prompt": "The complete letter. You decide: send it, keep it, or delete it.",
     "steps": [
@@ -959,7 +905,6 @@
     "description": "What do your hands tell? What have they built? What have they destroyed? What have they healed? What have they created?",
     "pillar": "creativity",
     "difficulty": "gentle",
-    "xp_reward": 150,
     "proof_type": "photo",
     "proof_prompt": "A photo of your hands + a few words about their story.",
     "steps": [
@@ -977,7 +922,6 @@
     "description": "Take your most recent bad day. Draw or write how it would have looked if it had gone well.",
     "pillar": "creativity",
     "difficulty": "medium",
-    "xp_reward": 250,
     "proof_type": "any",
     "proof_prompt": "The redrawn day — text or drawing.",
     "steps": [
@@ -995,7 +939,6 @@
     "description": "5 things you believe with your whole being. The principles you live by or want to live by.",
     "pillar": "self",
     "difficulty": "medium",
-    "xp_reward": 400,
     "proof_type": "text",
     "proof_prompt": "Your manifesto. 5 principles. Yours.",
     "steps": [
@@ -1013,7 +956,6 @@
     "description": "Say out loud something you've never said before. You don't have to record it — you have to SAY it.",
     "pillar": "self",
     "difficulty": "deep",
-    "xp_reward": 400,
     "proof_type": "text",
     "proof_prompt": "Not what you said — but how you felt when you said it. And whether the world changed.",
     "steps": [
@@ -1031,7 +973,6 @@
     "description": "Anything — clay, paper, wood, food, fabric. Something that didn't exist before you made it.",
     "pillar": "creativity",
     "difficulty": "gentle",
-    "xp_reward": 300,
     "proof_type": "photo",
     "proof_prompt": "A photo of your creation. Its story in 2 sentences.",
     "steps": [
@@ -1049,7 +990,6 @@
     "description": "Not the jobs. The moments that defined you. 5 experiences that truly mattered in shaping you.",
     "pillar": "self",
     "difficulty": "medium",
-    "xp_reward": 350,
     "proof_type": "text",
     "proof_prompt": "The 5 defining experiences. Not jobs — life moments.",
     "steps": [
@@ -1067,7 +1007,6 @@
     "description": "A decision you keep putting off. What would your version with no fear, no excuses, no \"but\" do?",
     "pillar": "discipline",
     "difficulty": "medium",
-    "xp_reward": 300,
     "proof_type": "text",
     "proof_prompt": "The postponed decision. What the brave version would do. The first small step you can take tomorrow.",
     "steps": [
@@ -1085,7 +1024,6 @@
     "description": "Describe in detail a perfect day from your future. From waking up to going to sleep. Concrete and specific.",
     "pillar": "self",
     "difficulty": "medium",
-    "xp_reward": 300,
     "proof_type": "text",
     "proof_prompt": "Your ideal day. Hour by hour. Concrete.",
     "steps": [
@@ -1103,7 +1041,6 @@
     "description": "What skill have you avoided learning? Why does it scare you? It can be anything — coding, painting, dancing, public speaking.",
     "pillar": "hobby",
     "difficulty": "medium",
-    "xp_reward": 300,
     "proof_type": "text",
     "proof_prompt": "The skill. Why it scares you. A first small step you can take today.",
     "steps": [
@@ -1121,7 +1058,6 @@
     "description": "A conversation you've been avoiding for a long time. With whom? About what? Mara prepares you for it.",
     "pillar": "helping",
     "difficulty": "deep",
-    "xp_reward": 450,
     "proof_type": "text",
     "proof_prompt": "With whom. About what. What exactly you want to say. What you fear will happen.",
     "steps": [
@@ -1139,7 +1075,6 @@
     "description": "How much does your ideal life cost? Calculate it for real. Monthly. Yearly. Without scaring yourself.",
     "pillar": "self",
     "difficulty": "medium",
-    "xp_reward": 350,
     "proof_type": "text",
     "proof_prompt": "The real calculation. The ideal life. How much it costs monthly and yearly.",
     "steps": [
@@ -1157,7 +1092,6 @@
     "description": "If you could do something else tomorrow — what would it be? Mara helps you explore the real possibility.",
     "pillar": "self",
     "difficulty": "deep",
-    "xp_reward": 500,
     "proof_type": "text",
     "proof_prompt": "What you would do. Why you don't do it now. What would need to change.",
     "steps": [
@@ -1175,7 +1109,6 @@
     "description": "Track a whole day — exactly what you did, hour by hour. Honestly. Without embellishing.",
     "pillar": "discipline",
     "difficulty": "medium",
-    "xp_reward": 300,
     "proof_type": "text",
     "proof_prompt": "The day's time journal. Hour by hour. Honest.",
     "steps": [
@@ -1193,7 +1126,6 @@
     "description": "Call or write to someone and ask for help with something real. Not metaphorical. Something concrete you can't do alone.",
     "pillar": "helping",
     "difficulty": "medium",
-    "xp_reward": 400,
     "proof_type": "text",
     "proof_prompt": "Who you talked to. What you asked for. How you felt asking. What happened after.",
     "steps": [
@@ -1211,7 +1143,6 @@
     "description": "That thing you've been putting off for months or years. Today you take the FIRST STEP. However small. Impossible to make smaller.",
     "pillar": "discipline",
     "difficulty": "medium",
-    "xp_reward": 500,
     "proof_type": "text",
     "proof_prompt": "What the thing is. What step you took exactly. How small it was. How you felt after.",
     "steps": [

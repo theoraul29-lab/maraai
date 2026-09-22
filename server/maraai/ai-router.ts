@@ -15,7 +15,7 @@
 
 import { getMaraResponse } from '../ai.js';
 import { isLLMConfigured } from '../llm.js';
-import { db, rawSqlite } from '../db.js';
+import { db } from '../db.js';
 import { aiRouteLog, type AiRoute } from '../../shared/schema.js';
 import { tryLocalAI } from './local-ai.js';
 import { getConsent } from './consent.js';
@@ -56,11 +56,6 @@ function buildSupportAgentContext(userId: string, lang?: string | null): string 
   const parts: string[] = [];
 
   try {
-    const xp = rawSqlite.prepare('SELECT xp, level, streak FROM user_xp WHERE user_id = ? LIMIT 1').get(userId) as
-      | { xp: number; level: number; streak: number }
-      | undefined;
-    if (xp) parts.push(`User stats: XP=${xp.xp}, Level=${xp.level}, Streak=${xp.streak} days`);
-
     // Rich mission context: active missions with details + completed summary.
     // getMissionContextForMara() reads from the translation cache (sync, fast).
     const missionCtx = getMissionContextForMara(userId, lang ?? undefined);

@@ -691,3 +691,14 @@
     right: max(20px, env(safe-area-inset-right));
   }
 }
+
+/* MobileBottomNav is a fixed ~68px bar pinned to the viewport bottom on
+   every page below 768px (see MobileBottomNav.css), sitting above this
+   button's z-index. Without clearing it, the button's `bottom: 20px`
+   placed most of it underneath the nav bar, leaving only a sliver visible
+   above it. Comes after the safe-area block above so it wins the cascade. */
+@media (max-width: 768px) {
+  .mara-chat-button {
+    bottom: calc(68px + 12px + env(safe-area-inset-bottom, 0px));
+  }
+}

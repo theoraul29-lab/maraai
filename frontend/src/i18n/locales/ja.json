@@ -776,7 +776,7 @@
     "proofPlaceholder": "ここに証拠を書いてください...",
     "reflectionPlaceholder": "任意ですが、効果的です...",
     "analyzing": "Maraがあなたの回答を分析中...",
-    "submitProof": "証拠を提出 → +{{xp}} XP",
+    "submitProof": "証拠を提出",
     "howToTitle": "やり方：",
     "reflectLabel": "💭 振り返ります： ",
     "accept": "ミッションを受け入れる 🚀",
@@ -835,7 +835,7 @@
     "inProgress": "進行中",
     "proofPlaceholderDetailed": "何をしたか、感じたか、気づいたかを書いてください...",
     "reflectionPrefix": "振り返り: ",
-    "submitProofXp": "📤 提出 (+{{xp}} XP)",
+    "submitProofXp": "📤 提出",
     "newMission": "新しいミッション →",
     "yourMissions": "あなたのミッション",
     "completedFreeLabel": "{{count}} 完了 · 最初の10は無料",
@@ -929,7 +929,7 @@
     "copied": "テキストをクリップボードにコピーしました！"
   },
   "p2p": {
-    "badgeTitle": "Mara への貢献: {{tasks}} タスク、{{xp}} XP",
+    "badgeTitle": "Mara への貢献: {{tasks}} タスク",
     "contributing": "Mara に貢献中 🟢"
   },
   "share": {
@@ -941,7 +941,7 @@
     "tiktokHint": "コピー + 開く",
     "instagramMsg": "リンクをコピーしました！Instagramを開いて貼り付けてください。 📸",
     "tiktokMsg": "リンクをコピーしました！TikTokを開いて貼り付けてください。 🎵",
-    "successMsg": "シェアしました！ +25 XP 🎉",
+    "successMsg": "シェアしました！ 🎉",
     "errorMsg": "シェアエラー。もう一度お試しください。",
     "recentlyShared": "最近すでにシェアしました。",
     "platforms": {
@@ -1118,7 +1118,7 @@
     "tagsPlaceholder2": "モチベーション、ライフスタイル、ヒント...",
     "shareDestinations": "シェア先:",
     "shareToReelsLabel": "🎬 Sparks フィード (+50 XP)",
-    "shareToYouLabel": "👤 あなたのプロフィール (You) (+{{xp}} XP)",
+    "shareToYouLabel": "👤 あなたのプロフィール (You)",
     "estimatedXP": "⚡ 予測: +{{xp}} XP",
     "publishBtn": "🚀 公開",
     "publishingBtn": "公開中...",

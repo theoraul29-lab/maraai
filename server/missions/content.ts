@@ -28,7 +28,6 @@ const missionSchema = z.object({
   description: z.string().min(1),
   pillar: z.enum(PILLARS),
   difficulty: z.enum(DIFFICULTIES),
-  xp_reward: z.number().int().nonnegative(),
   proof_type: z.enum(PROOF_TYPES),
   proof_prompt: z.string().min(1),
   steps: z.array(z.string().min(1)),

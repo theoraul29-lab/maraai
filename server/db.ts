@@ -300,7 +300,6 @@ sqlite.exec(`
     description TEXT NOT NULL,
     pillar TEXT NOT NULL,
     difficulty TEXT NOT NULL DEFAULT 'gentle',
-    xp_reward INTEGER NOT NULL DEFAULT 100,
     proof_type TEXT NOT NULL DEFAULT 'text',
     proof_prompt TEXT NOT NULL DEFAULT 'Cum te-ai simțit?',
     steps TEXT DEFAULT '[]',
@@ -322,14 +321,6 @@ sqlite.exec(`
     mara_feedback TEXT,
     started_at INTEGER DEFAULT (unixepoch()),
     completed_at INTEGER
-  );
-  CREATE TABLE IF NOT EXISTS user_xp (
-    user_id TEXT PRIMARY KEY,
-    xp INTEGER DEFAULT 0,
-    level INTEGER DEFAULT 1,
-    streak INTEGER DEFAULT 0,
-    last_activity_at INTEGER,
-    updated_at INTEGER DEFAULT (unixepoch())
   );
   CREATE TABLE IF NOT EXISTS mission_events (
     id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
@@ -358,7 +349,6 @@ sqlite.exec(`
     caption TEXT,
     media_url TEXT,
     platform TEXT NOT NULL,
-    xp_awarded INTEGER DEFAULT 50,
     created_at INTEGER DEFAULT (unixepoch())
   );
   CREATE INDEX IF NOT EXISTS idx_user_missions_user ON user_missions(user_id);
@@ -379,7 +369,6 @@ sqlite.exec(`
     target_platform TEXT,
     caption TEXT,
     share_url TEXT,
-    xp_awarded INTEGER DEFAULT 25,
     created_at INTEGER DEFAULT (unixepoch())
   );
 `);
@@ -403,6 +392,17 @@ sqlite.exec(`
 // Add implementation_notes and outcome_metrics columns if they don't exist
 try { sqlite.exec(`ALTER TABLE mara_growth_experiments ADD COLUMN implementation_notes TEXT`); } catch { /* already exists */ }
 try { sqlite.exec(`ALTER TABLE mara_growth_experiments ADD COLUMN outcome_metrics TEXT`); } catch { /* already exists */ }
+
+// XP rewards removed platform-wide: the CREATE TABLE/COLUMN statements above
+// already stopped creating these on a fresh DB, but an already-deployed
+// production DB still has them from before — drop them here so it converges.
+// better-sqlite3's bundled SQLite (3.35+) supports DROP COLUMN; each is
+// independently idempotent since a rerun just hits "no such column/table".
+try { sqlite.exec(`DROP TABLE IF EXISTS user_xp`); } catch { /* already gone */ }
+try { sqlite.exec(`ALTER TABLE missions DROP COLUMN xp_reward`); } catch { /* already gone, or table doesn't exist yet */ }
+try { sqlite.exec(`ALTER TABLE mission_shares DROP COLUMN xp_awarded`); } catch { /* already gone, or table doesn't exist yet */ }
+try { sqlite.exec(`ALTER TABLE content_shares DROP COLUMN xp_awarded`); } catch { /* already gone, or table doesn't exist yet */ }
+try { sqlite.exec(`ALTER TABLE referrals DROP COLUMN xp_awarded`); } catch { /* already gone, or table doesn't exist yet */ }
 
 // FIX 2 (from main): per-user toxicity state persisted across restarts.
 // FIX 4 (from main): mara_knowledge_base indexes.
@@ -654,7 +654,7 @@ sqlite.exec(`
 
   -- P2P Background Compute: tasks dispatched to idle browser nodes.
   -- Browser nodes poll GET /api/p2p/get-task, run lightweight JS computation,
-  -- POST result to /api/p2p/submit-result, and earn XP + credits.
+  -- POST result to /api/p2p/submit-result, and earn credits.
   CREATE TABLE IF NOT EXISTS p2p_tasks (
     id TEXT PRIMARY KEY,
     type TEXT NOT NULL CHECK(type IN ('maraAnalysis','missionGeneration','contentProcessing','knowledgeBase')),
@@ -690,7 +690,6 @@ sqlite.exec(`
     referrer_id TEXT NOT NULL,
     referred_user_id TEXT NOT NULL UNIQUE,
     code TEXT NOT NULL,
-    xp_awarded INTEGER DEFAULT 0,
     created_at INTEGER DEFAULT (unixepoch())
   );
   CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON referrals(referrer_id);

@@ -776,7 +776,7 @@
     "proofPlaceholder": "เขียนหลักฐานของคุณที่นี่...",
     "reflectionPlaceholder": "ทางเลือก แต่มีประสิทธิภาพ...",
     "analyzing": "Mara กำลังวิเคราะห์คำตอบของคุณ...",
-    "submitProof": "ส่งหลักฐาน → +{{xp}} XP",
+    "submitProof": "ส่งหลักฐาน",
     "howToTitle": "วิธีการทำสิ่งนี้:",
     "reflectLabel": "💭 คุณจะสะท้อนความคิด: ",
     "accept": "ยอมรับภารกิจ 🚀",
@@ -835,7 +835,7 @@
     "inProgress": "กำลังดำเนินการ",
     "proofPlaceholderDetailed": "เขียนสิ่งที่คุณทำ สิ่งที่คุณรู้สึก สิ่งที่คุณตระหนัก...",
     "reflectionPrefix": "การสะท้อนคิด: ",
-    "submitProofXp": "📤 ส่ง (+{{xp}} XP)",
+    "submitProofXp": "📤 ส่ง",
     "newMission": "ภารกิจใหม่ →",
     "yourMissions": "ภารกิจของคุณ",
     "completedFreeLabel": "{{count}} สำเร็จ · 10 รายการแรกฟรี",
@@ -929,7 +929,7 @@
     "copied": "คัดลอกไปยังคลิปบอร์ดแล้ว!"
   },
   "p2p": {
-    "badgeTitle": "มีส่วนช่วย Mara: {{tasks}} ภารกิจ {{xp}} XP",
+    "badgeTitle": "มีส่วนช่วย Mara: {{tasks}} ภารกิจ",
     "contributing": "มีส่วนช่วย Mara 🟢"
   },
   "share": {
@@ -941,7 +941,7 @@
     "tiktokHint": "คัดลอก + เปิด",
     "instagramMsg": "คัดลอกลิงก์แล้ว! เปิด Instagram และวาง 📸",
     "tiktokMsg": "คัดลอกลิงก์แล้ว! เปิด TikTok และวาง 🎵",
-    "successMsg": "แชร์สำเร็จ! +25 XP 🎉",
+    "successMsg": "แชร์สำเร็จ! 🎉",
     "errorMsg": "การแชร์ล้มเหลว ลองอีกครั้ง",
     "recentlyShared": "แชร์ไปแล้วเมื่อเร็ว ๆ นี้",
     "platforms": {
@@ -1118,7 +1118,7 @@
     "tagsPlaceholder2": "แรงบันดาลใจ วิถีชีวิต เคล็ดลับ...",
     "shareDestinations": "แชร์ไปยัง:",
     "shareToReelsLabel": "🎬 Sparks Feed (+50 XP)",
-    "shareToYouLabel": "👤 โปรไฟล์ของคุณ (คุณ) (+{{xp}} XP)",
+    "shareToYouLabel": "👤 โปรไฟล์ของคุณ (คุณ)",
     "estimatedXP": "⚡ โดยประมาณ: +{{xp}} XP",
     "publishBtn": "🚀 เผยแพร่",
     "publishingBtn": "กำลังเผยแพร่...",

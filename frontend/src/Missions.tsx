@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from './contexts/AuthContext';
 import { usePreviewStatus } from './hooks/usePreviewStatus';
 import {
-  Target, Books, NotePencil, BookOpen, UsersThree, Trophy,
-  Lock, CheckCircle, ArrowLeft, Fire,
+  Target, Books, NotePencil, BookOpen, UsersThree,
+  Lock, CheckCircle, ArrowLeft,
 } from '@phosphor-icons/react';
 import ShareButton from './components/ShareButton';
 import PayPalProgramButton from './components/PayPalProgramButton';
@@ -37,7 +37,6 @@ interface Mission {
   description: string;
   pillar: string;
   difficulty: string;
-  xp_reward: number;
   proof_type: string;
   proof_prompt: string;
   steps: string;
@@ -45,12 +44,6 @@ interface Mission {
   user_status?: string | null;
   user_mission_id?: string | null;
   mara_feedback?: string | null;
-}
-
-interface UserXp {
-  xp: number;
-  level: number;
-  streak: number;
 }
 
 interface Program {
@@ -90,7 +83,6 @@ interface DayMissionData {
     proofPrompt: string;
     intent: string;
     proofType: string;
-    xpReward: number;
     steps: string[];
     reflection: string;
     isAiGenerated: boolean;
@@ -124,19 +116,8 @@ interface Book {
 }
 
 type View = 'list' | 'onboarding';
-type Tab = 'missions' | 'programs' | 'journal' | 'book' | 'community' | 'leaderboard';
+type Tab = 'missions' | 'programs' | 'journal' | 'book' | 'community';
 type ChatPhase = 'idle' | 'preview' | 'active' | 'reviewing' | 'done' | 'locked';
-
-interface LeaderboardEntry {
-  rank: number;
-  userId: string;
-  displayName: string;
-  profileImageUrl: string | null;
-  xp: number;
-  level: number;
-  streak: number;
-  missionsCompleted: number;
-}
 
 function apiFetch(path: string, opts: RequestInit = {}) {
   return fetch(`${API}${path}`, { credentials: 'include', ...opts });
@@ -419,7 +400,6 @@ export default function Missions() {
   const [missions, setMissions] = useState<Mission[]>([]);
   const [dailyMissions, setDailyMissions] = useState<Mission[]>([]);
   const [activeMission, setActiveMission] = useState<Mission | null>(null);
-  const [userXp, setUserXp] = useState<UserXp>({ xp: 0, level: 1, streak: 0 });
   const [selectedPillar, setSelectedPillar] = useState<string>('all');
   const [loading, setLoading] = useState(false);
   const PROOF_STORAGE_KEY = `mara_proof_draft_${user?.id ?? 'anon'}`;
@@ -428,7 +408,7 @@ export default function Missions() {
   });
   const [reflectionText, setReflectionText] = useState('');
   const [completionResult, setCompletionResult] = useState<{
-    maraFeedback: string; message: string; leveledUp: boolean; userMissionId?: string | null;
+    maraFeedback: string; message: string; userMissionId?: string | null;
   } | null>(null);
   const [sparkShared, setSparkShared] = useState(false);
   const [sparkSharing, setSparkSharing] = useState(false);
@@ -450,8 +430,8 @@ export default function Missions() {
     }
   }, []);
 
-  // Distinct from ShareButton above (which only records a share event +
-  // XP) — this actually posts the proof photo/video to the public Sparks
+  // Distinct from ShareButton above (which only records a share event)
+  // — this actually posts the proof photo/video to the public Sparks
   // feed, with Mara's own feedback from this completion attached. Only
   // offered when the proof had a photo/video (see the disabled check at the
   // call site) — a text-only proof has nothing visual to post.
@@ -487,8 +467,6 @@ export default function Missions() {
   const [books, setBooks] = useState<Book[]>([]);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [communityFeed, setCommunityFeed] = useState<any[]>([]);
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
   const [statsDetailed, setStatsDetailed] = useState<{
     completed: number; byPillar: Array<{ pillar: string; cnt: number }>;
   } | null>(null);
@@ -506,11 +484,10 @@ export default function Missions() {
       const langQ = `lang=${encodeURIComponent(i18n.language)}`;
       const pillarQ = selectedPillar !== 'all' ? `?pillar=${selectedPillar}&${langQ}` : `?${langQ}`;
       const [data, daily] = await Promise.all([
-        apiFetchJson<{ missions: Mission[]; userXp: UserXp }>(`/api/missions${pillarQ}`),
+        apiFetchJson<{ missions: Mission[] }>(`/api/missions${pillarQ}`),
         apiFetchJson<{ missions: Mission[] }>(`/api/missions/daily?${langQ}`),
       ]);
       setMissions(data.missions);
-      setUserXp(data.userXp);
       setDailyMissions(daily.missions);
     } catch {
       setError(t('missions.errorLoad'));
@@ -572,14 +549,6 @@ export default function Missions() {
     } catch {}
   }
 
-  async function loadLeaderboard() {
-    setLeaderboardLoading(true);
-    try {
-      const r = await apiFetchJson<{ leaderboard: LeaderboardEntry[] }>('/api/missions/leaderboard');
-      setLeaderboard(r.leaderboard ?? []);
-    } catch {} finally { setLeaderboardLoading(false); }
-  }
-
   async function loadStatsDetailed() {
     if (!isAuthenticated) return;
     try {
@@ -637,7 +606,6 @@ export default function Missions() {
 
   useEffect(() => {
     if (!isAuthenticated) return;
-    if (activeTab === 'leaderboard') loadLeaderboard();
     if (activeTab === 'journal') loadJournal();
     if (activeTab === 'book') loadBooks();
     if (activeTab === 'community') loadCommunity();
@@ -683,7 +651,7 @@ export default function Missions() {
     setChatPhase('reviewing');
     try {
       const result = await apiFetchJson<{
-        success: boolean; maraFeedback: string; message: string; leveledUp: boolean; userMissionId?: string | null;
+        success: boolean; maraFeedback: string; message: string; userMissionId?: string | null;
       }>(`/api/missions/${activeMission.id}/proof`, {
         method: 'POST',
         body: JSON.stringify({ text: proofText, reflectionAnswer: reflectionText || undefined, lang: i18n.language }),
@@ -782,15 +750,12 @@ export default function Missions() {
     return orderedMissions[idx - 1]?.user_status !== 'completed';
   };
 
-  const xpProgress = (userXp.xp % 1000) / 1000 * 100;
-
   const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
     { key: 'missions',    label: t('missions.tabMissions'),    icon: <Target size={15} /> },
     { key: 'programs',    label: t('missions.tabPrograms'),    icon: <Books size={15} /> },
     { key: 'journal',     label: t('missions.tabJournal'),     icon: <NotePencil size={15} /> },
     { key: 'book',        label: t('missions.tabBook'),        icon: <BookOpen size={15} /> },
     { key: 'community',   label: t('missions.tabCommunity'),   icon: <UsersThree size={15} /> },
-    { key: 'leaderboard', label: t('missions.tabLeaderboard'), icon: <Trophy size={15} /> },
   ];
 
   // ── auth wall ─────────────────────────────────────────────────────────────
@@ -875,14 +840,6 @@ export default function Missions() {
       {/* Compact header */}
       <div className="missions-header-v4 orbit-header">
         <button className="missions-back-btn" onClick={() => navigate('/')} style={{ display:'flex', alignItems:'center', gap:5 }}><ArrowLeft size={15} />{t('missions.backHome')}</button>
-        <div className="missions-xp-strip">
-          <span className="missions-level-badge">Lvl {userXp.level}</span>
-          <div className="missions-xp-bar">
-            <div className="missions-xp-fill" style={{ width: `${xpProgress}%` }} />
-          </div>
-          <span className="missions-xp-num">{userXp.xp} XP</span>
-          {userXp.streak > 0 && <span className="missions-streak-badge" style={{ display:'inline-flex', alignItems:'center', gap:3 }}><Fire size={13} weight="fill" />{userXp.streak}</span>}
-        </div>
       </div>
 
       <OrbNavStrip current="missions" />
@@ -984,7 +941,6 @@ export default function Missions() {
                       ) : null;
                     } catch { return null; }
                   })()}
-                  <div className="mara-xp-badge">+{activeMission.xp_reward} XP</div>
                   {activeMission.user_status === 'completed' ? (
                     <div className="mara-completed-note">
                       <span>{t('missions.missionCompleted')}</span>
@@ -1034,7 +990,7 @@ export default function Missions() {
                     )}
                     <div className="mara-input-actions">
                       <button className="mara-cta-btn" onClick={handleSubmitProof} disabled={!proofText.trim()}>
-                        {t('missions.submitProofXp', { xp: activeMission.xp_reward })}
+                        {t('missions.submitProofXp')}
                       </button>
                       <button className="mara-btn-ghost" onClick={() => setChatPhase('preview')}>
                         {t('missions.back')}
@@ -1058,7 +1014,7 @@ export default function Missions() {
               {chatPhase === 'done' && completionResult && (
                 <div className="mara-done-area">
                   <div className="mara-bubble mara-bubble--mara mara-bubble--celebration">
-                    <div className="mara-done-icon">{completionResult.leveledUp ? '🎉' : '✅'}</div>
+                    <div className="mara-done-icon">✅</div>
                     <p className="mara-done-message">{completionResult.message}</p>
                     <p className="mara-done-feedback">
                       "{completionResult.maraFeedback}"
@@ -1367,10 +1323,9 @@ export default function Missions() {
                     {programResult && completingEnrollment === enrollment.id && (
                       <div className="program-result">
                         <div className="program-result-page">{programResult.maraJournalPage}</div>
-                        <div className="program-result-xp">
-                          +{programResult.xpGained} XP
-                          {programResult.streakMessage && ` · ${programResult.streakMessage}`}
-                        </div>
+                        {programResult.streakMessage && (
+                          <div className="program-result-xp">{programResult.streakMessage}</div>
+                        )}
                         {programResult.programCompleted && (
                           <div className="program-completed">
                             {t('missions.bookReady')}
@@ -1597,44 +1552,6 @@ export default function Missions() {
       )}
 
       {/* ── LEADERBOARD TAB ───────────────────────────────────────────────── */}
-      {activeTab === 'leaderboard' && (
-        <div className="leaderboard-root">
-          <div className="journal-header">
-            <h2>{t('missions.leaderboardTitle')}</h2>
-            <p>{t('missions.leaderboardSubtitle')}</p>
-          </div>
-          {leaderboardLoading ? (
-            <div className="missions-loading"><div className="missions-spinner" /></div>
-          ) : leaderboard.length === 0 ? (
-            <div className="missions-empty"><p>{t('missions.leaderboardEmpty')}</p></div>
-          ) : (
-            <div className="leaderboard-list">
-              {leaderboard.map((entry) => (
-                <div key={entry.userId} className={`leaderboard-row ${entry.rank <= 3 ? `leaderboard-row--top${entry.rank}` : ''}`}>
-                  <div className="leaderboard-rank">
-                    {entry.rank === 1 ? '🥇' : entry.rank === 2 ? '🥈' : entry.rank === 3 ? '🥉' : `#${entry.rank}`}
-                  </div>
-                  <div className="leaderboard-avatar">
-                    {entry.profileImageUrl
-                      ? <img src={entry.profileImageUrl} alt="" />
-                      : <div className="leaderboard-avatar-fallback">{(entry.displayName || '?')[0].toUpperCase()}</div>
-                    }
-                  </div>
-                  <div className="leaderboard-info">
-                    <div className="leaderboard-name">{entry.displayName}</div>
-                    <div className="leaderboard-meta">
-                      {t('missions.levelShort')} {entry.level} · {t('missions.missionsCompleted', { count: entry.missionsCompleted })}
-                      {entry.streak > 0 && <> · <Fire size={13} weight="fill" style={{ color: '#f97316', verticalAlign: 'middle' }} /> {entry.streak}z</>}
-                    </div>
-                  </div>
-                  <div className="leaderboard-xp">{entry.xp.toLocaleString()} XP</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
       {/* ── COMMUNITY TAB ─────────────────────────────────────────────────── */}
       {activeTab === 'community' && (
         <div className="community-root">

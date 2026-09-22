@@ -32,7 +32,7 @@
 import type { Request, Response } from 'express';
 import type { IStorage } from '../storage.js';
 import { hasFeature, type FeatureKey } from '../billing/features.js';
-import { getUserXP, addXP, suggestMission } from '../missions/engine.js';
+import { suggestMission } from '../missions/engine.js';
 import { rawSqlite } from '../db.js';
 
 let deps: {
@@ -305,13 +305,6 @@ export const adminUpdatePayout = requireAdmin(async (req, res) => {
   res.json(updated);
 });
 
-// --- Creator XP & Share endpoints -------------------------------------------
-
-export const getCreatorXP = requireAuth(async (_req, res, userId) => {
-  const xp = getUserXP(userId);
-  res.json(xp);
-});
-
 // --- Creator Growth Path -----------------------------------------------------
 //
 // Deliberately NOT behind the `gate('creator.*', …)` wrapper: that wrapper
@@ -395,11 +388,7 @@ export const shareToYou = requireAuth(async (req, res, userId) => {
     sourceKind: ['writers', 'missions', 'reel'].includes(sourceKind) ? sourceKind : null,
     sourceId: typeof sourceId === 'number' ? sourceId : null,
   });
-  // If also shared to Reels (sourceKind='reel'), award 10 XP (reel already gave 50, total=60).
-  // Otherwise award 30 XP for sharing only to You.
-  const xpAmount = sourceKind === 'reel' ? 10 : 30;
-  try { addXP(userId, xpAmount); } catch {}
-  res.json({ success: true, xpGained: xpAmount });
+  res.json({ success: true });
 });
 
 export const getMyComments = requireAuth(async (req, res, userId) => {

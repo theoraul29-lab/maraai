@@ -3,7 +3,6 @@ import { storage } from '../storage.js';
 import { route as routeAi } from '../maraai/ai-router.js';
 import { checkRateLimit } from '../rate-limit.js';
 import { callAgent, isSupportAgentEnabled, type AgentMessage } from '../lib/anthropic-agents.js';
-import { getUserXP } from '../missions/engine.js';
 import { rawSqlite } from '../db.js';
 
 const PRE_LAUNCH_MSG_LIMIT = 20;
@@ -81,7 +80,6 @@ export async function sendChatMessage(req: Request, res: Response) {
     if (isSupportAgentEnabled()) {
       const t0 = Date.now();
       try {
-        const xp = getUserXP(userId);
         const activeMissions = (rawSqlite.prepare(
           `SELECT m.title, m.pillar, um.status FROM user_missions um
            JOIN missions m ON m.id = um.mission_id
@@ -95,9 +93,6 @@ export async function sendChatMessage(req: Request, res: Response) {
 
         const userCtx = `<user_context>
 ${JSON.stringify({
-  xp: xp.xp,
-  level: xp.level,
-  streak: xp.streak,
   language: language || prefs?.language || 'ro',
   activeMissions: activeMissions.map(m => m.title),
   enrolledProgram: enrollment ? `${enrollment.name} (day ${enrollment.current_day})` : null,

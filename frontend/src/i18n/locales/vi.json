@@ -776,7 +776,7 @@
     "proofPlaceholder": "Viết bằng chứng của bạn ở đây...",
     "reflectionPlaceholder": "Không bắt buộc, nhưng rất hiệu quả...",
     "analyzing": "Mara đang phân tích câu trả lời của bạn...",
-    "submitProof": "Gửi bằng chứng → +{{xp}} XP",
+    "submitProof": "Gửi bằng chứng",
     "howToTitle": "Cách thực hiện:",
     "reflectLabel": "💭 Bạn sẽ suy ngẫm: ",
     "accept": "Chấp nhận nhiệm vụ 🚀",
@@ -835,7 +835,7 @@
     "inProgress": "Đang thực hiện",
     "proofPlaceholderDetailed": "Viết những gì bạn đã làm, những gì bạn cảm thấy, những gì bạn nhận ra...",
     "reflectionPrefix": "Suy ngẫm: ",
-    "submitProofXp": "📤 Gửi (+{{xp}} XP)",
+    "submitProofXp": "📤 Gửi",
     "newMission": "Nhiệm vụ mới →",
     "yourMissions": "Nhiệm vụ của bạn",
     "completedFreeLabel": "{{count}} hoàn thành · 10 cái đầu tiên miễn phí",
@@ -929,7 +929,7 @@
     "copied": "Đã sao chép vào clipboard!"
   },
   "p2p": {
-    "badgeTitle": "Đóng góp cho Mara: {{tasks}} nhiệm vụ, {{xp}} XP",
+    "badgeTitle": "Đóng góp cho Mara: {{tasks}} nhiệm vụ",
     "contributing": "Đóng góp cho Mara 🟢"
   },
   "share": {
@@ -941,7 +941,7 @@
     "tiktokHint": "sao chép + mở",
     "instagramMsg": "Đã sao chép liên kết! Mở Instagram và dán. 📸",
     "tiktokMsg": "Đã sao chép liên kết! Mở TikTok và dán. 🎵",
-    "successMsg": "Đã chia sẻ! +25 XP 🎉",
+    "successMsg": "Đã chia sẻ! 🎉",
     "errorMsg": "Chia sẻ không thành công. Thử lại.",
     "recentlyShared": "Đã chia sẻ gần đây.",
     "platforms": {
@@ -1118,7 +1118,7 @@
     "tagsPlaceholder2": "động lực, lối sống, mẹo...",
     "shareDestinations": "Chia sẻ tới:",
     "shareToReelsLabel": "🎬 Luồng Sparks (+50 XP)",
-    "shareToYouLabel": "👤 Hồ sơ của Bạn (Bạn) (+{{xp}} XP)",
+    "shareToYouLabel": "👤 Hồ sơ của Bạn (Bạn)",
     "estimatedXP": "⚡ Ước tính: +{{xp}} XP",
     "publishBtn": "🚀 Xuất bản",
     "publishingBtn": "Đang xuất bản...",

@@ -25,8 +25,8 @@ const NODE_ID_KEY = 'mara_p2p_node_id';
 const API = import.meta.env.PROD ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:5000');
 
 type WorkerMsg =
-  | { type: 'status'; contributing: boolean; xpEarned: number; tasksCompleted: number }
-  | { type: 'reward'; xpGained: number; creditsGained: number; message: string }
+  | { type: 'status'; contributing: boolean; creditsEarned: number; tasksCompleted: number }
+  | { type: 'reward'; creditsGained: number; message: string }
   | { type: 'error'; message: string };
 
 function getOrCreateNodeId(): string {
@@ -72,7 +72,7 @@ export default function P2PContributingBadge({ backgroundNodeEnabled }: Props) {
   const workerRef = useRef<Worker | null>(null);
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [contributing, setContributing] = useState(false);
-  const [xpEarned, setXpEarned] = useState(0);
+  const [creditsEarned, setCreditsEarned] = useState(0);
   const [tasksCompleted, setTasksCompleted] = useState(0);
   const [lastReward, setLastReward] = useState<string | null>(null);
   const [visible, setVisible] = useState(false);
@@ -95,7 +95,7 @@ export default function P2PContributingBadge({ backgroundNodeEnabled }: Props) {
         const msg = e.data;
         if (msg.type === 'status') {
           setContributing(msg.contributing);
-          setXpEarned(msg.xpEarned);
+          setCreditsEarned(msg.creditsEarned);
           setTasksCompleted(msg.tasksCompleted);
           setVisible(msg.contributing);
         } else if (msg.type === 'reward') {
@@ -153,11 +153,11 @@ export default function P2PContributingBadge({ backgroundNodeEnabled }: Props) {
   return (
     <>
       {visible && (
-        <div className="p2p-badge" title={t('p2p.badgeTitle', { tasks: tasksCompleted, xp: xpEarned })}>
+        <div className="p2p-badge" title={t('p2p.badgeTitle', { tasks: tasksCompleted })}>
           <span className="p2p-badge-dot" />
           <span className="p2p-badge-text">{t('p2p.contributing')}</span>
           {tasksCompleted > 0 && (
-            <span className="p2p-badge-xp">+{xpEarned} XP</span>
+            <span className="p2p-badge-credits">🌳 {creditsEarned}</span>
           )}
         </div>
       )}
