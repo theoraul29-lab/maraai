@@ -3,7 +3,7 @@ import { seedDefaultObjective } from '../mara-core/objective.js';
 import { seedMissions, seedMissionTranslations } from '../missions/seed.js';
 import { warmTranslationCache } from '../missions/engine.js';
 import { seedSparksRebrandKnowledge } from './knowledge-seed.js';
-import { fixMalformedYouTubeVideoUrls } from './fix-video-urls.js';
+import { fixMalformedYouTubeVideoUrls, flagVideosWithUnplayableUrls } from './fix-video-urls.js';
 
 export async function runBootstrapSeeders(): Promise<void> {
   try {
@@ -43,5 +43,11 @@ export async function runBootstrapSeeders(): Promise<void> {
     fixMalformedYouTubeVideoUrls();
   } catch (err) {
     console.error('[bootstrap] youtube URL fix failed (continuing):', err);
+  }
+
+  try {
+    flagVideosWithUnplayableUrls();
+  } catch (err) {
+    console.error('[bootstrap] unplayable-video flag failed (continuing):', err);
   }
 }

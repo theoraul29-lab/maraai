@@ -33,3 +33,43 @@ export function fixMalformedYouTubeVideoUrls(): void {
   tx(rows);
   console.log(`[bootstrap] Fixed ${rows.length} malformed youtube: video URLs`);
 }
+
+// Some seeded videos point at hosts the player can never actually load —
+// neither a real YouTube URL, a direct video file, nor one of the sample
+// hosts allow-listed in server/index.ts's media-src CSP (see fix above for
+// how the youtube: shorthand ones specifically broke). Rather than keep
+// shipping those into the "approved" feed as permanently-blank cards with
+// no visible explanation, flag them out of rotation until someone gives
+// them a real URL. Idempotent: only ever touches rows still 'approved'
+// with a bad host, so a manually-approved fix later isn't re-flagged.
+const ALLOWED_VIDEO_HOSTS = [
+  'youtube.com',
+  'youtu.be',
+  'tiktok.com',
+  'commondatastorage.googleapis.com',
+  'test-videos.co.uk',
+];
+
+export function flagVideosWithUnplayableUrls(): void {
+  const rows = rawSqlite
+    .prepare(`SELECT id, url, file_key FROM videos WHERE moderation_status = 'approved'`)
+    .all() as { id: number; url: string; file_key: string | null }[];
+
+  const bad = rows.filter((r) => {
+    if (r.file_key) return false; // uploaded file — served from our own storage, always fine
+    try {
+      const host = new URL(r.url).hostname.replace(/^www\./, '');
+      return !ALLOWED_VIDEO_HOSTS.some((allowed) => host === allowed || host.endsWith(`.${allowed}`));
+    } catch {
+      return true; // not even a parseable URL
+    }
+  });
+  if (bad.length === 0) return;
+
+  const update = rawSqlite.prepare(`UPDATE videos SET moderation_status = 'pending' WHERE id = ?`);
+  const tx = rawSqlite.transaction((items: typeof bad) => {
+    for (const row of items) update.run(row.id);
+  });
+  tx(bad);
+  console.log(`[bootstrap] Flagged ${bad.length} videos with unplayable URLs out of the feed:`, bad.map((b) => b.id).join(', '));
+}

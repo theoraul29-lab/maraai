@@ -63,7 +63,13 @@ app.use(
         // silent CSP block identical to the SW-reset-script incident, so this
         // errs toward allowing rather than debugging that again blind.
         'connect-src': ["'self'", 'https://stt.hellomara.net', 'https://tts.hellomara.net', 'https://fonts.googleapis.com', 'https://fonts.gstatic.com', 'https://www.tiktok.com'],
-        'media-src': ["'self'", 'blob:'],
+        // Several seeded demo Sparks point at well-known public sample-video
+        // hosts (Google's GTV sample bucket, test-videos.co.uk) rather than
+        // an uploaded file — media-src 'self' blob: silently blocked all of
+        // them (confirmed live via DevTools CSP violations), showing as a
+        // blank player with no error at all since the browser just refuses
+        // to load the <video> src.
+        'media-src': ["'self'", 'blob:', 'https://commondatastorage.googleapis.com', 'https://test-videos.co.uk'],
         // Helmet's default img-src is 'self' data: — silently blocks any
         // externally-hosted image. Confirmed live (DevTools CSP violations):
         // this broke Public Library book covers (gutenberg.org) and, likely
