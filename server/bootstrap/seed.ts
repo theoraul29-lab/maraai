@@ -4,6 +4,7 @@ import { seedMissions, seedMissionTranslations } from '../missions/seed.js';
 import { warmTranslationCache } from '../missions/engine.js';
 import { seedSparksRebrandKnowledge } from './knowledge-seed.js';
 import { fixMalformedYouTubeVideoUrls, flagVideosWithUnplayableUrls } from './fix-video-urls.js';
+import { fixWikisourceCacheTitles } from './fix-wikisource-cache.js';
 
 export async function runBootstrapSeeders(): Promise<void> {
   try {
@@ -49,5 +50,11 @@ export async function runBootstrapSeeders(): Promise<void> {
     flagVideosWithUnplayableUrls();
   } catch (err) {
     console.error('[bootstrap] unplayable-video flag failed (continuing):', err);
+  }
+
+  try {
+    fixWikisourceCacheTitles();
+  } catch (err) {
+    console.error('[bootstrap] Wikisource cache title fix failed (continuing):', err);
   }
 }

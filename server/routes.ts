@@ -579,6 +579,7 @@ export async function registerRoutes(
   // API, a book's text is fetched from Gutenberg once and cached locally on
   // first read. See server/modules/library.ts for the caching architecture.
   app.get('/api/library/search', libraryModule.searchLibrary);
+  app.get('/api/library/curated/ro-classics', libraryModule.getCuratedRomanianClassics);
   app.get('/api/library/mine', requireAuth, libraryModule.listMyLibraryBooks);
   app.get('/api/library/:id/read', libraryModule.readLibraryBook);
   app.post('/api/library/:id/save', requireAuth, libraryModule.saveBookToLibrary);

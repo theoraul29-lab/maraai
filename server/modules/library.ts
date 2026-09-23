@@ -35,6 +35,233 @@ const TEXT_FETCH_TIMEOUT_MS = 40_000;
 // but were rejected from Railway's outbound IP until this header was added.
 const FETCH_HEADERS = { 'User-Agent': 'MaraAI-PublicLibrary/1.0 (+https://hellomara.net; contact: info@hellomara.net)' };
 
+// --- Wikisource (Romanian public-domain texts) -------------------------------
+//
+// Gutenberg's own Romanian-language catalog is tiny (5 books, confirmed
+// live) — Wikisource's Romanian project (a Wikimedia sister site to
+// Wikipedia, same MediaWiki API, same "anyone can add sources, but content
+// is community-reviewed" model) is the actual real source of Romanian
+// classics: 975+ hits just searching "Eminescu". Reuses every existing
+// piece of this module (cache table, reader, save/progress) unchanged —
+// the only new thing is a second search+fetch path feeding the same shapes.
+//
+// ID collision: Wikisource pageids and Gutenberg book ids are both small
+// plain integers from unrelated numbering spaces, and library_books_cache
+// uses a single `id` primary key. Rather than widen that key (touches the
+// cache table, user_library_books, and every frontend type that treats a
+// book id as a bare number), Wikisource ids are exposed to the rest of the
+// app offset by a billion — comfortably outside Gutenberg's current catalog
+// size (~75k). isWikisourceId()/toWikisourcePageId() are the only two
+// places that ever need to know this.
+const WIKISOURCE_ID_OFFSET = 1_000_000_000;
+const WIKISOURCE_API = 'https://ro.wikisource.org/w/api.php';
+const WIKISOURCE_CONTENT_DOMAINS = ['ro.wikisource.org'];
+const WIKISOURCE_PAGE_SIZE = 20;
+
+function isWikisourceId(id: number): boolean {
+  return id >= WIKISOURCE_ID_OFFSET;
+}
+function toWikisourcePageId(id: number): number {
+  return id - WIKISOURCE_ID_OFFSET;
+}
+
+// A handful of hand-verified classics (real pageids, checked live against
+// the API — not guessed) for the "Clasici români" curated shelf. Wikisource
+// has no Gutendex-style download_count to derive "popular" from, so this is
+// curated by hand instead of computed.
+const CURATED_RO_CLASSICS: Array<{ pageId: number; title: string; author: string }> = [
+  { pageId: 2356, title: 'Luceafărul', author: 'Mihai Eminescu' },
+  { pageId: 2519, title: 'Scrisoarea III', author: 'Mihai Eminescu' },
+  { pageId: 2305, title: 'Ce te legeni...', author: 'Mihai Eminescu' },
+  { pageId: 1405, title: 'Amintiri din copilărie', author: 'Ion Creangă' },
+  { pageId: 1378, title: 'O scrisoare pierdută', author: 'Ion Luca Caragiale' },
+  { pageId: 1443, title: 'Moara cu noroc', author: 'Ioan Slavici' },
+];
+
+interface WikisourceSearchResult { pageid: number; title: string; wordcount: number }
+
+// Wikisource page titles conventionally use a trailing "(...)" for
+// disambiguation — usually the author ("Dorința (Eminescu)"), but sometimes
+// a year/edition ("Poesii (1888-1894)") or even a quoted line of the poem
+// itself, for titles common enough to need distinguishing another way.
+// Confirmed against a live 'ro' search: both of the latter cases show up
+// often enough to be worth filtering rather than mislabeling as "author".
+// A real name is short and starts every word with a capital letter — a rough
+// but effective filter against both false-positive shapes above.
+function looksLikeAuthorName(candidate: string): boolean {
+  if (/\d/.test(candidate)) return false; // years/date ranges
+  const words = candidate.split(/\s+/).filter(Boolean);
+  if (words.length === 0 || words.length > 4) return false; // a poem-line fragment runs longer
+  return words.every((w) => /^[A-ZȘȚĂÂÎ]/.test(w));
+}
+
+function parseWikisourceTitle(rawTitle: string): { title: string; author: string | null } {
+  const match = rawTitle.match(/^(.*)\(([^()]+)\)\s*$/);
+  if (!match) return { title: rawTitle, author: null };
+  const title = match[1].trim();
+  const candidate = match[2].trim();
+  return { title, author: looksLikeAuthorName(candidate) ? candidate : null };
+}
+
+async function wikisourceFetch(params: Record<string, string>): Promise<any> {
+  const url = `${WIKISOURCE_API}?${new URLSearchParams({ format: 'json', ...params }).toString()}`;
+  const resp = await fetch(url, { headers: FETCH_HEADERS, signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+  if (!resp.ok) throw new Error(`Wikisource returned ${resp.status}`);
+  return resp.json();
+}
+
+async function searchWikisource(query: string, page: number): Promise<{ count: number; hasNext: boolean; books: LibrarySearchResult[] }> {
+  const offset = (page - 1) * WIKISOURCE_PAGE_SIZE;
+  const data = await wikisourceFetch({
+    action: 'query',
+    list: 'search',
+    srsearch: query || 'domeniul public',
+    srlimit: String(WIKISOURCE_PAGE_SIZE),
+    sroffset: String(offset),
+    srnamespace: '0', // main article namespace only — excludes Talk:/Category:/User: pages
+  });
+  const results: WikisourceSearchResult[] = data.query?.search ?? [];
+  const totalHits: number = data.query?.searchinfo?.totalhits ?? results.length;
+  const books = results.map((r) => {
+    const { title, author } = parseWikisourceTitle(r.title);
+    return {
+      id: WIKISOURCE_ID_OFFSET + r.pageid,
+      title,
+      authors: author ? [author] : [],
+      languages: ['ro'],
+      subjects: [] as string[],
+      coverUrl: null as string | null,
+      downloadCount: 0,
+    };
+  });
+  return { count: totalHits, hasNext: Boolean(data.continue), books };
+}
+
+/**
+ * Removes the first element starting at `openTag` (e.g. a `<div ...>` whose
+ * class list matched something we want gone) through its true matching
+ * close tag, tracking nesting depth — a regex alone can't do this correctly
+ * since Wikisource's header/nav boxes are several divs deep and a
+ * non-greedy `[\s\S]*?</div>` just matches the *nearest* closing div, not
+ * the one that actually balances the one we started at (confirmed live:
+ * that's exactly why the previous version of this function left the whole
+ * byline/sister-projects header block in the actual reading text).
+ */
+function removeBalancedElement(html: string, startIndex: number, tagName: string): string {
+  const openRe = new RegExp(`<${tagName}\\b`, 'gi');
+  const closeRe = new RegExp(`</${tagName}>`, 'gi');
+  openRe.lastIndex = startIndex;
+  closeRe.lastIndex = startIndex;
+  let depth = 0;
+  let cursor = startIndex;
+  while (true) {
+    openRe.lastIndex = cursor;
+    closeRe.lastIndex = cursor;
+    const nextOpen = openRe.exec(html);
+    const nextClose = closeRe.exec(html);
+    if (!nextClose) return html; // malformed/truncated — bail out, leave html untouched
+    if (nextOpen && nextOpen.index < nextClose.index) {
+      depth++;
+      cursor = nextOpen.index + nextOpen[0].length;
+    } else {
+      depth--;
+      cursor = nextClose.index + nextClose[0].length;
+      if (depth === 0) return html.slice(0, startIndex) + html.slice(cursor);
+    }
+  }
+}
+
+/** Finds and removes every top-level element whose class attribute contains `className`. */
+function removeElementsByClass(html: string, tagName: string, className: string): string {
+  const classRe = new RegExp(`<${tagName}\\b[^>]*\\bclass="[^"]*\\b${className}\\b[^"]*"`, 'i');
+  let result = html;
+  for (let guard = 0; guard < 20; guard++) {
+    const match = classRe.exec(result);
+    if (!match) break;
+    result = removeBalancedElement(result, match.index, tagName);
+  }
+  return result;
+}
+
+/**
+ * Wikisource's rendered HTML carries far more page "furniture" than
+ * Gutenberg's — a byline/sister-projects header block, editorial notes,
+ * category boxes — none of which belongs in reading text. Strip the known
+ * wrapper elements first (balanced, nesting-aware — see above), then fall
+ * through to the same generic tag-stripping stripHtmlToText already does
+ * for Gutenberg's HTML fallback.
+ */
+function stripWikisourceHtmlToText(html: string): string {
+  let withoutChrome = html
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '');
+  withoutChrome = removeElementsByClass(withoutChrome, 'div', 'ws-header');
+  withoutChrome = removeElementsByClass(withoutChrome, 'div', 'ws-noexport');
+  return stripHtmlToText(withoutChrome);
+}
+
+async function fetchAndCacheWikisourceBook(id: number): Promise<CachedBook> {
+  const pageId = toWikisourcePageId(id);
+  const data = await wikisourceFetch({ action: 'parse', pageid: String(pageId), prop: 'text' });
+  if (data.error) throw new Error(data.error.info || 'Book not found');
+  const rawHtml: string = data.parse?.text?.['*'] ?? '';
+  // The plain `title` field is always clean text; `displaytitle` (not
+  // requested here) can carry HTML formatting spans for pages with
+  // stylized titles — confirmed live: that HTML leaked straight into the
+  // book's title, and broke the "(Author)" parse that depends on the
+  // string actually ending in a plain ")".
+  const rawTitle: string = data.parse?.title ?? 'Untitled';
+  if (!rawHtml) throw new Error('Downloaded book text was empty');
+
+  // Validate the content URL's host the same way Gutenberg content is —
+  // defence-in-depth even though this specific request always targets the
+  // fixed WIKISOURCE_API constant above, not a URL taken from the response.
+  await assertSafeExternalUrl(`https://ro.wikisource.org/wiki/Special:Redirect/page/${pageId}`, WIKISOURCE_CONTENT_DOMAINS);
+
+  const { title, author } = parseWikisourceTitle(rawTitle);
+  let content = stripWikisourceHtmlToText(rawHtml);
+  if (!content) throw new Error('Downloaded book text was empty');
+
+  const wordCount = content.split(/\s+/).filter(Boolean).length;
+  const fetchedAt = Math.floor(Date.now() / 1000);
+  const record = {
+    id,
+    title,
+    authors: JSON.stringify(author ? [author] : []),
+    languages: JSON.stringify(['ro']),
+    subjects: JSON.stringify([]),
+    coverUrl: null,
+    content,
+    contentFormat: 'text',
+    wordCount,
+    fetchedAt,
+  };
+  rawSqlite.prepare(`
+    INSERT INTO library_books_cache (id, title, authors, languages, subjects, cover_url, content, content_format, word_count, fetched_at)
+    VALUES (@id, @title, @authors, @languages, @subjects, @coverUrl, @content, @contentFormat, @wordCount, @fetchedAt)
+    ON CONFLICT(id) DO UPDATE SET
+      title=excluded.title, authors=excluded.authors, languages=excluded.languages, subjects=excluded.subjects,
+      cover_url=excluded.cover_url, content=excluded.content, content_format=excluded.content_format,
+      word_count=excluded.word_count, fetched_at=excluded.fetched_at
+  `).run(record);
+
+  return getCachedBook(id)!;
+}
+
+export async function getCuratedRomanianClassics(req: any, res: any) {
+  res.json({
+    books: CURATED_RO_CLASSICS.map((c) => ({
+      id: WIKISOURCE_ID_OFFSET + c.pageId,
+      title: c.title,
+      authors: [c.author],
+      languages: ['ro'],
+      subjects: [] as string[],
+      coverUrl: null as string | null,
+      downloadCount: 0,
+    })),
+  });
+}
+
 interface GutendexPerson { name: string; birth_year: number | null; death_year: number | null }
 interface GutendexBook {
   id: number;
@@ -59,7 +286,17 @@ interface CachedBook {
   fetchedAt: number;
 }
 
-function normalizeSearchResult(b: GutendexBook) {
+export interface LibrarySearchResult {
+  id: number;
+  title: string;
+  authors: string[];
+  languages: string[];
+  subjects: string[];
+  coverUrl: string | null;
+  downloadCount: number;
+}
+
+function normalizeSearchResult(b: GutendexBook): LibrarySearchResult {
   return {
     id: b.id,
     title: b.title,
@@ -83,21 +320,52 @@ export async function searchLibrary(req: any, res: any) {
   if (lang) params.set('languages', lang);
   params.set('page', String(page));
 
-  try {
+  // Gutenberg's own Romanian catalog is 5 books (confirmed live) — for a
+  // Romanian search, merge in Wikisource's much larger catalog alongside it
+  // rather than showing an almost-empty result set. Not a unified pagination
+  // across two independent APIs (real complexity, not worth it for what's
+  // fundamentally a content-gap fix) — page 1 shows both sources together,
+  // "next" just keeps paging whichever source(s) still have more.
+  //
+  // Each source is caught independently (confirmed live: Gutendex times out
+  // often enough from this network that a single combined try/catch would
+  // have thrown away a perfectly good Wikisource result every time it did) —
+  // only fail the whole request if BOTH sources come back empty.
+  const wikisourcePromise = lang === 'ro'
+    ? searchWikisource(q, page).catch((err) => {
+        console.error('[library] Wikisource search failed (continuing with Gutenberg only):', err);
+        return null;
+      })
+    : Promise.resolve(null);
+
+  const gutenbergPromise = (async () => {
     const resp = await fetch(`${GUTENDEX_BASE}?${params.toString()}`, { headers: FETCH_HEADERS, signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
     if (!resp.ok) throw new Error(`Gutendex returned ${resp.status}`);
-    const data = await resp.json() as { count: number; next: string | null; previous: string | null; results: GutendexBook[] };
-    res.json({
-      count: data.count,
-      hasNext: Boolean(data.next),
-      hasPrevious: Boolean(data.previous),
-      page,
-      books: data.results.map(normalizeSearchResult),
-    });
-  } catch (err) {
-    console.error('[library] search failed:', err);
+    return resp.json() as Promise<{ count: number; next: string | null; previous: string | null; results: GutendexBook[] }>;
+  })().catch((err) => {
+    console.error('[library] Gutendex search failed (continuing with Wikisource only, if any):', err);
+    return null;
+  });
+
+  const [data, wikisourceResult] = await Promise.all([gutenbergPromise, wikisourcePromise]);
+
+  if (!data && !wikisourceResult) {
     res.status(502).json({ error: 'Public library search is temporarily unavailable. Try again shortly.' });
+    return;
   }
+
+  const gutenbergBooks = data ? data.results.map(normalizeSearchResult) : [];
+  const books = wikisourceResult ? [...wikisourceResult.books, ...gutenbergBooks] : gutenbergBooks;
+  const count = (data?.count ?? 0) + (wikisourceResult?.count ?? 0);
+  const hasNext = Boolean(data?.next) || Boolean(wikisourceResult?.hasNext);
+
+  res.json({
+    count,
+    hasNext,
+    hasPrevious: page > 1,
+    page,
+    books,
+  });
 }
 
 /**
@@ -215,7 +483,7 @@ export async function readLibraryBook(req: any, res: any) {
     let book = getCachedBook(id);
     let cached = Boolean(book);
     if (!book) {
-      book = await fetchAndCacheBook(id);
+      book = isWikisourceId(id) ? await fetchAndCacheWikisourceBook(id) : await fetchAndCacheBook(id);
       cached = false;
     }
 

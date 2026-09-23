@@ -406,6 +406,7 @@
     "classicsLoading": "Searching…",
     "classicsLoadError": "The public library is temporarily unavailable. Try again shortly.",
     "classicsRoHint": "Only a few Romanian-language titles are available through this source right now — more Romanian books are being added separately.",
+    "classicsRoShelfTitle": "Romanian classics",
     "classicsReadBtn": "Read",
     "classicsBack": "Back to library",
     "classicsBy": "by",

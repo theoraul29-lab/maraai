@@ -1239,6 +1239,17 @@ const PublicLibraryTab: React.FC = () => {
   const [myLibraryLoading, setMyLibraryLoading] = useState(false);
   const [showMyLibrary, setShowMyLibrary] = useState(false);
 
+  // "Clasici români" curated shelf — a handful of hand-picked Wikisource
+  // classics, shown up front regardless of the active language filter so
+  // the library doesn't look empty/generic on first open. Independent of
+  // the search results below; fetched once.
+  const [curatedRo, setCuratedRo] = useState<LibraryBook[]>([]);
+  useEffect(() => {
+    axios.get(`${API_URL}/api/library/curated/ro-classics`, { timeout: LIBRARY_SEARCH_TIMEOUT_MS })
+      .then((res) => setCuratedRo(Array.isArray(res.data?.books) ? res.data.books : []))
+      .catch(() => { /* silent — the shelf just doesn't render */ });
+  }, []);
+
   const fetchMyLibrary = useCallback(async () => {
     if (!user) { setMyLibrary([]); return; }
     setMyLibraryLoading(true);
@@ -1585,6 +1596,26 @@ const PublicLibraryTab: React.FC = () => {
             )}
           </div>
           <span className="library-continue-arrow">→</span>
+        </div>
+      )}
+
+      {curatedRo.length > 0 && (
+        <div className="library-shelf">
+          <h3 className="library-shelf-title">📚 {t('writers.classicsRoShelfTitle', 'Clasici români')}</h3>
+          <div className="library-shelf-row">
+            {curatedRo.map((book) => (
+              <div key={book.id} role="button" tabIndex={0} className="library-shelf-card"
+                onClick={() => openBookReader(book.id)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openBookReader(book.id); } }}
+              >
+                <div className="library-shelf-cover">
+                  <span className="library-card-cover-fallback">📖</span>
+                </div>
+                <span className="library-shelf-card-title">{book.title}</span>
+                {book.authors.length > 0 && <span className="library-shelf-card-author">{book.authors.join(', ')}</span>}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
