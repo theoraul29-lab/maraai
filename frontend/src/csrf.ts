@@ -26,6 +26,12 @@ const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 let cachedToken: string | null = null;
 let inflight: Promise<string | null> | null = null;
+// Bumped by clearCsrfToken() on every login/signup/logout. Lets an
+// in-flight fetch that started under the PREVIOUS session (e.g. some
+// component's mount-time call, still pending when login rotates the
+// session) detect it's been superseded and skip writing its now-stale
+// result into `cachedToken` when it finally resolves — see getCsrfToken().
+let generation = 0;
 
 async function fetchCsrfTokenFromServer(): Promise<string | null> {
   try {
@@ -46,8 +52,12 @@ async function fetchCsrfTokenFromServer(): Promise<string | null> {
 export async function getCsrfToken(): Promise<string | null> {
   if (cachedToken) return cachedToken;
   if (!inflight) {
+    const myGeneration = generation;
     inflight = fetchCsrfTokenFromServer().then((tok) => {
-      cachedToken = tok;
+      // A clearCsrfToken() call (session rotation) since this fetch
+      // started means a newer fetch already owns `cachedToken` — don't
+      // clobber it with this now-stale result.
+      if (myGeneration === generation) cachedToken = tok;
       inflight = null;
       return tok;
     });
@@ -58,6 +68,7 @@ export async function getCsrfToken(): Promise<string | null> {
 export function clearCsrfToken(): void {
   cachedToken = null;
   inflight = null;
+  generation++;
 }
 
 export function setCsrfToken(tok: string | null): void {
