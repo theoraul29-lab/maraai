@@ -1423,8 +1423,14 @@
 }
 .library-copy-btn:hover { background: rgba(139, 92, 246, 0.15); border-color: #8b5cf6; }
 
-.library-save-btn {
+.library-reading-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-top: 10px;
+}
+
+.library-save-btn {
   background: transparent;
   border: 1px solid #3a2a55;
   color: #d9c9ff;
@@ -1439,6 +1445,28 @@
 .library-save-btn:hover:not(:disabled) { background: rgba(139, 92, 246, 0.15); border-color: #8b5cf6; }
 .library-save-btn--active { background: rgba(139, 92, 246, 0.3); border-color: #8b5cf6; color: #fff; }
 .library-save-btn:disabled { opacity: 0.6; cursor: progress; }
+
+.library-listen-btn {
+  background: transparent;
+  border: 1px solid #3a2a55;
+  color: #d9c9ff;
+  padding: 7px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 700;
+  font-family: inherit;
+  transition: background 0.15s, border-color 0.15s;
+  opacity: 0.6;
+}
+.library-listen-btn:hover { background: rgba(139, 92, 246, 0.15); border-color: #8b5cf6; opacity: 0.85; }
+.library-listen-btn--active { opacity: 1; border-color: #8b5cf6; }
+.library-listen-message {
+  margin-top: 6px;
+  color: #a8a8bb;
+  font-size: 12px;
+  font-style: italic;
+}
 
 .library-open-loading, .library-open-error {
   max-width: 560px;

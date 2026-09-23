@@ -86,6 +86,10 @@ export default function MaraControlCenter() {
   const [anthropicKeyMessage, setAnthropicKeyMessage] = useState<string | null>(null);
   const [monetizationActive, setMonetizationActive] = useState<boolean | null>(null);
   const [monetizationMessage, setMonetizationMessage] = useState<string | null>(null);
+  const [voiceKeyInput, setVoiceKeyInput] = useState('');
+  const [voiceKeyMessage, setVoiceKeyMessage] = useState<string | null>(null);
+  const [libraryTtsActive, setLibraryTtsActive] = useState<boolean | null>(null);
+  const [libraryTtsMessage, setLibraryTtsMessage] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -110,6 +114,7 @@ export default function MaraControlCenter() {
         ['railway', getJson<RailwayStatusSnapshot>('/api/control/railway/status')],
         ['security', getJson<SecuritySnapshot>('/api/control/security')],
         ['monetization', getJson<{ active: boolean }>('/api/creator/monetization-status')],
+        ['libraryTts', getJson<{ active: boolean }>('/api/library/tts-status')],
       ] as const;
       const results = await Promise.allSettled(requests.map(([, request]) => request));
       if (!active) return;
@@ -133,6 +138,7 @@ export default function MaraControlCenter() {
         railway: RailwayStatusSnapshot;
         security: SecuritySnapshot;
         monetization: { active: boolean };
+        libraryTts: { active: boolean };
       }>(requests.map(([name]) => name), results);
       if (values.overview) setDashboard(values.overview);
       if (values.brain) { setBrain(values.brain.brain); setProvider(values.brain.ai); }
@@ -156,6 +162,7 @@ export default function MaraControlCenter() {
       if (values.railway) setRailwayStatus(values.railway);
       if (values.security) setSecurity(values.security);
       if (values.monetization) setMonetizationActive(values.monetization.active);
+      if (values.libraryTts) setLibraryTtsActive(values.libraryTts.active);
       setError(failures.length ? `Unavailable: ${failures.join(', ')}` : null);
       setUpdatedAt(new Date());
     };
@@ -340,6 +347,65 @@ export default function MaraControlCenter() {
       setAnthropicKeyMessage('Cleared. Running on Ollama only until a key is added again.');
     } catch (cause) {
       setAnthropicKeyMessage(cause instanceof Error ? cause.message : 'Failed to clear Anthropic key');
+    } finally {
+      setTaskBusy(null);
+    }
+  }
+
+  async function saveVoiceKey() {
+    const apiKey = voiceKeyInput.trim();
+    if (!apiKey) return;
+    setTaskBusy('voice-key');
+    setVoiceKeyMessage(null);
+    try {
+      const response = await fetch('/api/control/integrations/voice', {
+        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apiKey }),
+      });
+      const data = await response.json() as { integrations?: IntegrationStatus[]; error?: string };
+      if (!response.ok) throw new Error(data.error ?? `Save returned ${response.status}`);
+      if (data.integrations) setIntegrations(data.integrations);
+      setVoiceKeyInput('');
+      setVoiceKeyMessage('Saved. Still off — activate below when ready.');
+    } catch (cause) {
+      setVoiceKeyMessage(cause instanceof Error ? cause.message : 'Failed to save voice key');
+    } finally {
+      setTaskBusy(null);
+    }
+  }
+
+  async function clearVoiceKey() {
+    setTaskBusy('voice-key');
+    setVoiceKeyMessage(null);
+    try {
+      const response = await fetch('/api/control/integrations/voice', { method: 'DELETE', credentials: 'include' });
+      const data = await response.json() as { integrations?: IntegrationStatus[]; error?: string };
+      if (!response.ok) throw new Error(data.error ?? `Clear returned ${response.status}`);
+      if (data.integrations) setIntegrations(data.integrations);
+      setVoiceKeyMessage('Cleared.');
+    } catch (cause) {
+      setVoiceKeyMessage(cause instanceof Error ? cause.message : 'Failed to clear voice key');
+    } finally {
+      setTaskBusy(null);
+    }
+  }
+
+  async function toggleLibraryTts(active: boolean) {
+    setTaskBusy('library-tts');
+    setLibraryTtsMessage(null);
+    try {
+      const response = await fetch('/api/control/library-tts', {
+        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active }),
+      });
+      const data = await response.json() as { active?: boolean; error?: string };
+      if (!response.ok) throw new Error(data.error ?? `Request returned ${response.status}`);
+      setLibraryTtsActive(data.active ?? active);
+      setLibraryTtsMessage(data.active
+        ? 'Listen-to-book is now on — note no voice provider call is wired up yet (scaffolding only).'
+        : 'Listen-to-book deactivated — the library shows the "not available yet" message again.');
+    } catch (cause) {
+      setLibraryTtsMessage(cause instanceof Error ? cause.message : 'Failed to update listen-to-book status');
     } finally {
       setTaskBusy(null);
     }
@@ -818,6 +884,45 @@ export default function MaraControlCenter() {
                 )}
               </div>
               {anthropicKeyMessage && <p className="mcc-muted">{anthropicKeyMessage}</p>}
+            </div>
+            <div className="mcc-anthropic-key-form">
+              <div className="mcc-panel-heading"><h2>Library — Listen to Book</h2><span>{libraryTtsActive ? 'ON' : 'OFF'}</span></div>
+              <p className="mcc-muted">
+                Scaffolding for the Public Library&apos;s audiobook feature — stays off, and no voice
+                provider call is wired up yet, until you both save a key below and activate it here.
+              </p>
+              <div className="mcc-task-actions">
+                <input
+                  type="password"
+                  placeholder="voice API key..."
+                  value={voiceKeyInput}
+                  onChange={(event) => setVoiceKeyInput(event.target.value)}
+                  disabled={taskBusy === 'voice-key'}
+                  autoComplete="off"
+                />
+                <button type="button" disabled={taskBusy === 'voice-key' || !voiceKeyInput.trim()} onClick={() => void saveVoiceKey()}>Save key</button>
+                {integrations.find((i) => i.id === 'voice')?.configured && (
+                  <button type="button" disabled={taskBusy === 'voice-key'} onClick={() => void clearVoiceKey()}>Clear key</button>
+                )}
+              </div>
+              {voiceKeyMessage && <p className="mcc-muted">{voiceKeyMessage}</p>}
+              <div className="mcc-task-actions">
+                <button
+                  type="button"
+                  disabled={taskBusy === 'library-tts' || libraryTtsActive === true}
+                  onClick={() => void toggleLibraryTts(true)}
+                >
+                  Activate
+                </button>
+                <button
+                  type="button"
+                  disabled={taskBusy === 'library-tts' || libraryTtsActive === false}
+                  onClick={() => void toggleLibraryTts(false)}
+                >
+                  Deactivate
+                </button>
+              </div>
+              {libraryTtsMessage && <p className="mcc-muted">{libraryTtsMessage}</p>}
             </div>
             <div className="mcc-anthropic-key-form">
               <div className="mcc-panel-heading"><h2>Creator Monetization</h2><span>{monetizationActive ? 'LIVE' : 'NOT ACTIVE'}</span></div>

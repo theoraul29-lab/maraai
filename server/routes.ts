@@ -78,6 +78,7 @@ import { readToolCatalog } from './services/tool-catalog.js';
 import { readIntegrationStatus } from './services/integration-status.js';
 import { readSecuritySnapshot } from './services/security-status.js';
 import { setAnthropicApiKeyOverride } from './lib/anthropic-key-store.js';
+import { setVoiceApiKeyOverride } from './lib/voice-key-store.js';
 import { approveCodeAgentPlan, createCodeAgentRequestWithTask, getCodeAgentPlan, listCodeAgentPlans, rejectCodeAgentPlan } from './services/code-agent.js';
 import { detectCodeWriteIntent, handleAutonomousCodeRequest } from './services/autonomous-code-pipeline.js';
 import { detectPythonExecutionIntent, handlePythonExecutionRequest } from './services/python-agent.js';
@@ -580,6 +581,7 @@ export async function registerRoutes(
   // first read. See server/modules/library.ts for the caching architecture.
   app.get('/api/library/search', libraryModule.searchLibrary);
   app.get('/api/library/curated/ro-classics', libraryModule.getCuratedRomanianClassics);
+  app.get('/api/library/tts-status', libraryModule.getLibraryTtsStatus);
   app.get('/api/library/mine', requireAuth, libraryModule.listMyLibraryBooks);
   app.get('/api/library/:id/read', libraryModule.readLibraryBook);
   app.post('/api/library/:id/save', requireAuth, libraryModule.saveBookToLibrary);
@@ -1479,6 +1481,44 @@ export async function registerRoutes(
     } catch (error) {
       res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to clear Anthropic key' });
     }
+  });
+
+  // Voice/TTS key for the Public Library's "listen to book" feature —
+  // scaffolding only (see voice-key-store.ts / library.ts). Same
+  // save-encrypted / never-echo-back pattern as the Anthropic key above.
+  app.post('/api/control/integrations/voice', requireAdmin, (req: any, res: any) => {
+    const apiKey = typeof req.body?.apiKey === 'string' ? req.body.apiKey.trim() : '';
+    if (!apiKey) return res.status(400).json({ error: 'apiKey is required' });
+    if (apiKey.length > 500) return res.status(413).json({ error: 'apiKey is unexpectedly long' });
+    try {
+      setVoiceApiKeyOverride(apiKey);
+      recordControlAdminAction('integrations.voice.key_set', 0, req.user?.uid ?? null, {}, 'integration');
+      res.json({ ok: true, integrations: readIntegrationStatus() });
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to save voice key' });
+    }
+  });
+
+  app.delete('/api/control/integrations/voice', requireAdmin, (req: any, res: any) => {
+    try {
+      setVoiceApiKeyOverride(null);
+      recordControlAdminAction('integrations.voice.key_cleared', 0, req.user?.uid ?? null, {}, 'integration');
+      res.json({ ok: true, integrations: readIntegrationStatus() });
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to clear voice key' });
+    }
+  });
+
+  // Library "listen to book" on/off switch — deliberately separate from
+  // whether a voice key is saved (above): an admin can stage a key ahead of
+  // time without turning the feature on, and can turn it back off without
+  // losing the key. See library.ts for why there's no synthesis call yet.
+  app.post('/api/control/library-tts', requireAdmin, (req: any, res: any) => {
+    libraryModule.adminSetLibraryTtsStatus(req, res);
+    recordControlAdminAction(
+      req.body?.active === true ? 'library_tts.activated' : 'library_tts.deactivated',
+      0, req.user?.uid ?? null, {}, 'integration',
+    );
   });
 
   // Creator monetization: replaces a hardcoded frontend launch date that

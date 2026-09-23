@@ -1,4 +1,5 @@
 import { hasAnthropicApiKeyOverride } from '../lib/anthropic-key-store.js';
+import { hasVoiceApiKeyOverride } from '../lib/voice-key-store.js';
 
 export interface IntegrationStatus {
   id: 'github' | 'railway' | 'cloudflare' | 'voice' | 'ollama' | 'anthropic';
@@ -27,6 +28,6 @@ export function readIntegrationStatus(): IntegrationStatus[] {
     { id: 'github', state: githubConfigured() ? 'CONFIGURED' : 'NOT_CONFIGURED', configured: githubConfigured(), available: githubConfigured(), reason: githubConfigured() ? 'GitHub credential/configuration is present; use /api/control/github/status for live GitHub App status.' : 'No GitHub App credential has been configured for Mara.' },
     { id: 'railway', state: railwayConfigured() ? 'CONFIGURED' : 'NOT_CONFIGURED', configured: railwayConfigured(), available: railwayConfigured(), reason: railwayConfigured() ? 'Railway credential/configuration is present; use /api/control/railway/status for live status.' : 'No Railway API token is configured. Local CLI auth may still provide read-only status.' },
     { id: 'cloudflare', state: process.env.CLOUDFLARE_API_TOKEN ? 'CONFIGURED' : 'NOT_CONFIGURED', configured: Boolean(process.env.CLOUDFLARE_API_TOKEN), available: false, reason: process.env.CLOUDFLARE_API_TOKEN ? 'Credential configured; DNS/CDN operations still require explicit approval and no handler is registered in this build.' : 'No Cloudflare capability integration is configured.' },
-    { id: 'voice', state: process.env.VOICE_PROVIDER ? 'CONFIGURED' : 'NOT_CONFIGURED', configured: Boolean(process.env.VOICE_PROVIDER), available: false, reason: process.env.VOICE_PROVIDER ? 'Provider configured; server-side voice integration is not implemented in this build.' : 'Browser-native voice layer is available when supported; no server-side STT/TTS provider is configured.' },
+    { id: 'voice', state: (process.env.VOICE_API_KEY || hasVoiceApiKeyOverride()) ? 'CONFIGURED' : 'NOT_CONFIGURED', configured: Boolean(process.env.VOICE_API_KEY || hasVoiceApiKeyOverride()), available: false, reason: (process.env.VOICE_API_KEY || hasVoiceApiKeyOverride()) ? 'Key saved for the Public Library "listen to book" feature — still off until activated in Integrations below, and no provider call is wired up yet.' : 'Optional — add a key in Control Center → Integrations for the Public Library\'s "listen to book" feature (scaffolding only; stays off until activated).' },
   ];
 }

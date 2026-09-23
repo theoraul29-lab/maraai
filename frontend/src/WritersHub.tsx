@@ -1250,6 +1250,25 @@ const PublicLibraryTab: React.FC = () => {
       .catch(() => { /* silent — the shelf just doesn't render */ });
   }, []);
 
+  // "Listen to book" — scaffolding only, deliberately off until an admin
+  // both saves a voice-provider key and activates it from Control Center
+  // (see server/modules/library.ts). Reader always shows the button; the
+  // click just explains the current state rather than doing nothing
+  // silently.
+  const [ttsActive, setTtsActive] = useState(false);
+  const [ttsMessage, setTtsMessage] = useState<string | null>(null);
+  useEffect(() => {
+    axios.get(`${API_URL}/api/library/tts-status`, { timeout: LIBRARY_SEARCH_TIMEOUT_MS })
+      .then((res) => setTtsActive(res.data?.active === true))
+      .catch(() => { /* silent — defaults to off, which is also the real default */ });
+  }, []);
+  const handleListenClick = () => {
+    setTtsMessage(ttsActive
+      ? t('writers.classicsListenComingSoon', 'Coming very soon.')
+      : t('writers.classicsListenUnavailable', 'Listening isn’t available yet.'));
+    window.setTimeout(() => setTtsMessage(null), 3500);
+  };
+
   const fetchMyLibrary = useCallback(async () => {
     if (!user) { setMyLibrary([]); return; }
     setMyLibraryLoading(true);
@@ -1460,16 +1479,26 @@ const PublicLibraryTab: React.FC = () => {
                 {openBook.authors.length > 0 && <>{t('writers.classicsBy', 'by')} {openBook.authors.join(', ')} · </>}
                 {openBook.wordCount.toLocaleString(i18n.language)} {t('writers.classicsWords', 'words')}
               </p>
-              {user && (
+              <div className="library-reading-actions">
+                {user && (
+                  <button
+                    type="button"
+                    className={`library-save-btn ${openBook.savedByUser ? 'library-save-btn--active' : ''}`}
+                    onClick={handleSaveToggle}
+                    disabled={savingBook}
+                  >
+                    {openBook.savedByUser ? `🔖 ${t('writers.classicsSaved', 'In your library')}` : `+ ${t('writers.classicsSave', 'Add to My Library')}`}
+                  </button>
+                )}
                 <button
                   type="button"
-                  className={`library-save-btn ${openBook.savedByUser ? 'library-save-btn--active' : ''}`}
-                  onClick={handleSaveToggle}
-                  disabled={savingBook}
+                  className={`library-listen-btn ${ttsActive ? 'library-listen-btn--active' : ''}`}
+                  onClick={handleListenClick}
                 >
-                  {openBook.savedByUser ? `🔖 ${t('writers.classicsSaved', 'In your library')}` : `+ ${t('writers.classicsSave', 'Add to My Library')}`}
+                  🎧 {t('writers.classicsListen', 'Listen to book')}
                 </button>
-              )}
+              </div>
+              {ttsMessage && <p className="library-listen-message">{ttsMessage}</p>}
             </div>
 
             <div className={`library-page-card ${pageTurning ? 'library-page-card--turning' : ''}`}>

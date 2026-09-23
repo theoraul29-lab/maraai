@@ -10,6 +10,18 @@
 import { rawSqlite } from '../db.js';
 import { assertSafeExternalUrl } from '../lib/ssrf-guard.js';
 
+// Also created independently by costGuard.ts / anthropic-key-store.ts /
+// voice-key-store.ts on their own imports — all `IF NOT EXISTS` against the
+// identical schema, so whichever module loads first wins and the others are
+// harmless no-ops. Needed here for the library-tts on/off flag below.
+rawSqlite.exec(`
+  CREATE TABLE IF NOT EXISTS system_config (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at INTEGER NOT NULL DEFAULT (unixepoch())
+  )
+`);
+
 // Gutendex's own response tells us which host actually serves a book's
 // text — always some gutenberg.org mirror in practice, but defence-in-depth
 // against a compromised/malicious Gutendex response pointing this server's
@@ -268,6 +280,47 @@ export async function getCuratedRomanianClassics(req: any, res: any) {
       downloadCount: 0,
     })),
   });
+}
+
+// --- "Listen to book" — scaffolding only, deliberately left OFF ------------
+//
+// Owner-agreed scope: build the on/off switch and the credential slot (see
+// voice-key-store.ts) now, wire up an actual voice provider's "generate
+// speech from this text" call later once one is chosen. Every provider
+// (ElevenLabs, Google, Azure, ...) has its own request/response shape, so
+// there is deliberately no synthesis code here yet — only the switch this
+// future code will check before ever running, and the reader-side message
+// telling readers the feature exists but isn't on. Persisted the same way
+// as creator_monetization_active: an admin flips it from Control Center,
+// not a code change/redeploy.
+function isLibraryTtsActive(): boolean {
+  const row = rawSqlite.prepare(
+    `SELECT value FROM system_config WHERE key = 'library_tts_active'`,
+  ).get() as { value: string } | undefined;
+  return row?.value === 'true';
+}
+
+function setLibraryTtsActive(active: boolean): void {
+  rawSqlite.prepare(
+    `INSERT INTO system_config (key, value, updated_at)
+     VALUES ('library_tts_active', ?, unixepoch())
+     ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = unixepoch()`,
+  ).run(active ? 'true' : 'false');
+}
+
+// Public (no auth) — the library reader needs this for every visitor, not
+// just logged-in ones, and the value carries no sensitive information.
+export async function getLibraryTtsStatus(_req: any, res: any) {
+  res.set('Cache-Control', 'no-store'); // same staleness class of bug as Control Center's other toggles — see routes.ts
+  res.json({ active: isLibraryTtsActive() });
+}
+
+// Admin-only write side, called from Control Center's Integrations panel.
+export function adminSetLibraryTtsStatus(req: any, res: any): void {
+  const active = req.body?.active === true;
+  setLibraryTtsActive(active);
+  console.log(`[library] TTS ${active ? 'activated' : 'deactivated'} by admin`);
+  res.json({ active });
 }
 
 interface GutendexPerson { name: string; birth_year: number | null; death_year: number | null }
