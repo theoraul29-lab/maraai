@@ -186,17 +186,25 @@ function removeElementsByClass(html: string, tagName: string, className: string)
 /**
  * Wikisource's rendered HTML carries far more page "furniture" than
  * Gutenberg's — a byline/sister-projects header block, editorial notes,
- * category boxes — none of which belongs in reading text. Strip the known
- * wrapper elements first (balanced, nesting-aware — see above), then fall
- * through to the same generic tag-stripping stripHtmlToText already does
- * for Gutenberg's HTML fallback.
+ * category boxes, and (for poems that are part of a larger collection) a
+ * "see also" navbox linking every other poem in that collection — none of
+ * which belongs in reading text. Strip the known wrapper elements first
+ * (balanced, nesting-aware — see above), then fall through to the same
+ * generic tag-stripping stripHtmlToText already does for Gutenberg's HTML
+ * fallback.
  */
 function stripWikisourceHtmlToText(html: string): string {
   let withoutChrome = html
     .replace(/<!--[\s\S]*?-->/g, '')
-    .replace(/<style[\s\S]*?<\/style>/gi, '');
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    // "▲ Back to top" link — a plain, non-nested table with no distinctive
+    // class to key off, so (unlike the header/navbox above) a bounded
+    // non-greedy match is safe here.
+    .replace(/<table[^>]*>(?:(?!<\/table>)[\s\S])*?href="#top"[\s\S]*?<\/table>/gi, '');
   withoutChrome = removeElementsByClass(withoutChrome, 'div', 'ws-header');
   withoutChrome = removeElementsByClass(withoutChrome, 'div', 'ws-noexport');
+  withoutChrome = removeElementsByClass(withoutChrome, 'div', 'navbox');
+  withoutChrome = removeElementsByClass(withoutChrome, 'div', 'licenseContainer');
   return stripHtmlToText(withoutChrome);
 }
 
@@ -415,6 +423,12 @@ function stripHtmlToText(html: string): string {
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<[^>]+>/g, '');
   text = text
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
+    // Numeric entities (e.g. &#8211; en-dash, &#160; nbsp) are common
+    // throughout Wikisource's rendered text — dialogue in Romanian prose
+    // almost always opens with an en-dash — and were previously left as
+    // literal "&#8211;" in the displayed reading text (confirmed live).
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCodePoint(parseInt(dec, 10)))
     .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, ' ');
   return text.replace(/\n{3,}/g, '\n\n').replace(/[ \t]{2,}/g, ' ').trim();

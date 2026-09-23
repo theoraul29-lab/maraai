@@ -61,7 +61,9 @@
       "Bash(curl -s -m 10 https://ollama.hellomara.net/api/tags)",
       "Bash(curl -s -m 10 -o /dev/null -w \"HTTP %{http_code}\\\\n\" https://ollama.hellomara.net/)",
       "Bash(curl -s https://hellomara.net/api/health)",
-      "Bash(curl -s https://hellomara.net/api/_debug/env-ollama)"
+      "Bash(curl -s https://hellomara.net/api/_debug/env-ollama)",
+      "Bash(node _test_strip3.mjs)",
+      "Bash(curl -s \"https://hellomara.net/api/library/1000002356/read\")"
     ],
     "additionalDirectories": [
       "\\tmp\\walkthrough-stash"
