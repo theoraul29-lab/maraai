@@ -225,6 +225,52 @@
   margin: 0;
 }
 
+.pricing-invoices {
+  max-width: 700px;
+  margin: 0 auto 40px;
+  padding: 0 24px;
+}
+.pricing-invoices-list {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pricing-invoice-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  font-size: 0.85rem;
+}
+.pricing-invoice-desc { flex: 1 1 180px; color: #fff; font-weight: 600; }
+.pricing-invoice-date { color: rgba(255,255,255,0.5); }
+.pricing-invoice-amount { color: rgba(255,255,255,0.75); font-variant-numeric: tabular-nums; }
+.pricing-invoice-download {
+  color: #a855f7;
+  text-decoration: none;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.pricing-invoice-download:hover { text-decoration: underline; }
+
+.pricing-legal-link {
+  text-align: center;
+  padding: 0 24px 40px;
+  font-size: 0.8rem;
+}
+.pricing-legal-link a {
+  color: rgba(255,255,255,0.4);
+  text-decoration: underline;
+}
+.pricing-legal-link a:hover { color: rgba(255,255,255,0.7); }
+
 .pricing-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));

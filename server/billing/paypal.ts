@@ -17,6 +17,7 @@ import { and, eq, desc } from 'drizzle-orm';
 import { db } from '../db.js';
 import { subscriptions } from '../../shared/models/billing.js';
 import { PLAN_CATALOGUE, type PlanDefinition } from './plans.js';
+import { createInvoice } from './invoices.js';
 
 interface PayPalAuthToken {
   access_token: string;
@@ -277,11 +278,20 @@ type PayPalSubscriptionResource = {
   subscriber?: { payer_id?: string };
 };
 
+// Resource shape for PAYMENT.SALE.COMPLETED — a single recurring charge on
+// an existing subscription, fired once per billing cycle. Distinct from
+// PayPalSubscriptionResource (which describes the subscription itself).
+type PayPalSaleResource = {
+  id: string; // the sale/transaction id — unique per charge, used as the invoice's source_id
+  billing_agreement_id?: string; // links back to our subscriptions.providerSubscriptionId
+  amount?: { total?: string; currency?: string };
+};
+
 interface PayPalEvent {
   id: string;
   event_type: string;
   resource_type?: string;
-  resource?: PayPalSubscriptionResource;
+  resource?: PayPalSubscriptionResource | PayPalSaleResource;
 }
 
 function mapPayPalStatus(
@@ -519,9 +529,60 @@ export async function sendPayPalPayout(params: {
   }
 }
 
+/**
+ * One recurring charge on an already-active subscription. Unlike the
+ * lifecycle events below, PayPal's sale resource doesn't reliably carry our
+ * custom_id, so the user is found by looking up billing_agreement_id
+ * against subscriptions.providerSubscriptionId instead of parsing it.
+ *
+ * NOTE: built from PayPal's documented event shape but not yet exercised
+ * against a real recurring charge — that only happens once a live
+ * subscription reaches its first monthly renewal. Verify the first real
+ * PAYMENT.SALE.COMPLETED delivery produces a correct invoice before
+ * relying on this for more than one billing cycle unattended.
+ */
+async function handleSalePayment(resource: PayPalSaleResource): Promise<void> {
+  const agreementId = resource.billing_agreement_id;
+  if (!agreementId) return;
+  const sub = (
+    await db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.providerSubscriptionId, agreementId))
+      .limit(1)
+  )[0];
+  if (!sub) return;
+
+  const plan = PLAN_CATALOGUE.find((p) => p.id === sub.planId);
+  const amountCents = resource.amount?.total
+    ? Math.round(parseFloat(resource.amount.total) * 100)
+    : plan?.priceCents ?? 0;
+  const currency = resource.amount?.currency ?? 'EUR';
+
+  try {
+    createInvoice({
+      userId: sub.userId,
+      sourceType: 'subscription',
+      sourceId: resource.id,
+      description: `${plan ? plan.tier.toUpperCase() : 'VIP'} — ${new Date().toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })}`,
+      amountCents,
+      currency,
+    });
+  } catch (err) {
+    console.error('[paypal] invoice creation failed for sale', resource.id, err);
+  }
+}
+
 export async function handlePayPalEvent(event: PayPalEvent): Promise<void> {
   if (!event.resource) return;
-  const binding = parseCustomId(event.resource);
+
+  if (event.event_type === 'PAYMENT.SALE.COMPLETED') {
+    await handleSalePayment(event.resource as PayPalSaleResource);
+    return;
+  }
+
+  const resource = event.resource as PayPalSubscriptionResource;
+  const binding = parseCustomId(resource);
   if (!binding) {
     // Subscriptions created outside of our flow (e.g. directly in the
     // dashboard) won't have custom_id — ignore them.
@@ -536,10 +597,24 @@ export async function handlePayPalEvent(event: PayPalEvent): Promise<void> {
     case 'BILLING.SUBSCRIPTION.SUSPENDED':
     case 'BILLING.SUBSCRIPTION.PAYMENT.FAILED':
       await upsertSubscription({
-        resource: event.resource,
+        resource,
         userId: binding.userId,
         planId: binding.planId,
       });
+      if (event.event_type === 'BILLING.SUBSCRIPTION.ACTIVATED') {
+        const plan = PLAN_CATALOGUE.find((p) => p.id === binding.planId);
+        try {
+          createInvoice({
+            userId: binding.userId,
+            sourceType: 'subscription',
+            sourceId: resource.id, // the subscription id — fires once, at activation
+            description: `${plan ? plan.tier.toUpperCase() : 'VIP'} — ${new Date().toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })}`,
+            amountCents: plan?.priceCents ?? 0,
+          });
+        } catch (err) {
+          console.error('[paypal] invoice creation failed for subscription activation', resource.id, err);
+        }
+      }
       return;
     default:
       return;

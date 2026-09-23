@@ -32,6 +32,8 @@ import {
   handlePayPalEvent,
   createPayPalSubscription,
 } from './paypal.js';
+import { listInvoicesForUser, getInvoiceById } from './invoices.js';
+import { renderInvoicePdf } from './invoice-pdf.js';
 
 function paymentsEnabled(): boolean {
   return process.env.PAYMENTS_ENABLED === 'true';
@@ -167,6 +169,41 @@ export function registerBillingApi(app: Express): void {
       });
     } catch (err) {
       console.error('[billing] GET /me failed:', err);
+      res.status(500).json({ error: 'internal_error' });
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // GET /api/billing/invoices — the logged-in user's own invoices.
+  // GET /api/billing/invoices/:id/pdf — download one as a PDF.
+  // -------------------------------------------------------------------------
+  app.get('/api/billing/invoices', async (req: Request, res: Response) => {
+    const userId = await getAuthenticatedUserId(req);
+    if (!userId) return res.status(401).json({ error: 'unauthenticated' });
+    try {
+      res.json({ items: listInvoicesForUser(userId) });
+    } catch (err) {
+      console.error('[billing] GET /invoices failed:', err);
+      res.status(500).json({ error: 'internal_error' });
+    }
+  });
+
+  app.get('/api/billing/invoices/:id/pdf', async (req: Request, res: Response) => {
+    const userId = await getAuthenticatedUserId(req);
+    if (!userId) return res.status(401).json({ error: 'unauthenticated' });
+    try {
+      const invoice = getInvoiceById(req.params.id);
+      if (!invoice || invoice.userId !== userId) {
+        return res.status(404).json({ error: 'not_found' });
+      }
+      const row = await db.select({ email: users.email }).from(users).where(eq(users.id, userId)).limit(1);
+      const buyerEmail = row[0]?.email ?? '';
+      const pdf = await renderInvoicePdf(invoice, buyerEmail);
+      res.set('Content-Type', 'application/pdf');
+      res.set('Content-Disposition', `attachment; filename="invoice-${invoice.invoiceNumber}.pdf"`);
+      res.send(pdf);
+    } catch (err) {
+      console.error('[billing] GET /invoices/:id/pdf failed:', err);
       res.status(500).json({ error: 'internal_error' });
     }
   });

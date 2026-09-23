@@ -131,8 +131,14 @@ export function markPurchaseCompleted(params: {
   item: string;
   priceCents: number;
   paypalOrderId: string;
-}): void {
-  if (hasCompletedPurchase(params.userId, params.item)) return;
+}): string {
+  // Returns the program_purchases row id in every path (including the
+  // already-completed early-out) so callers can key an idempotent invoice
+  // off it — see server/billing/invoices.ts.
+  const already = rawSqlite
+    .prepare(`SELECT id FROM program_purchases WHERE user_id = ? AND program_id = ? AND status = 'completed' LIMIT 1`)
+    .get(params.userId, params.item) as { id: string } | undefined;
+  if (already) return already.id;
 
   const pending = rawSqlite
     .prepare(`SELECT id FROM program_purchases WHERE paypal_order_id = ? AND program_id = ? LIMIT 1`)
@@ -142,16 +148,18 @@ export function markPurchaseCompleted(params: {
     rawSqlite
       .prepare(`UPDATE program_purchases SET status = 'completed', completed_at = unixepoch() WHERE id = ?`)
       .run(pending.id);
-    return;
+    return pending.id;
   }
 
+  const id = rawSqlite.prepare(`SELECT lower(hex(randomblob(16))) AS id`).get() as { id: string };
   rawSqlite
     .prepare(
       `INSERT INTO program_purchases
          (id, user_id, program_id, amount_cents, currency, paypal_order_id, status, completed_at)
-       VALUES (lower(hex(randomblob(16))), ?, ?, ?, 'EUR', ?, 'completed', unixepoch())`,
+       VALUES (?, ?, ?, ?, 'EUR', ?, 'completed', unixepoch())`,
     )
-    .run(params.userId, params.item, params.priceCents, params.paypalOrderId);
+    .run(id.id, params.userId, params.item, params.priceCents, params.paypalOrderId);
+  return id.id;
 }
 
 /** Record a pending purchase before redirecting the user to PayPal. */

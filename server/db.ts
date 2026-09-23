@@ -714,6 +714,30 @@ sqlite.exec(`
   -- Prevent duplicate completed purchases: one completed row per (user, program)
   CREATE UNIQUE INDEX IF NOT EXISTS idx_program_purchases_completed_unique
     ON program_purchases(user_id, program_id) WHERE status = 'completed';
+
+  -- Invoices (Kleinunternehmer paragraph 19 UStG -- no VAT line, simplified
+  -- Kleinbetragsrechnung format since every current price is under 250 EUR).
+  -- seq is the real gap-free sequence GoBD requires for invoice numbers;
+  -- id is the opaque, non-guessable identifier used in API/URLs so
+  -- sequential invoice numbers aren't enumerable by users.
+  -- (source_type, source_id) is unique so a webhook retry can't double-
+  -- invoice the same purchase/payment; for subscriptions source_id is the
+  -- PayPal sale/transaction id of that specific billing-cycle charge, not
+  -- the subscription id itself, so each month's charge still gets its own row.
+  CREATE TABLE IF NOT EXISTS invoices (
+    seq INTEGER PRIMARY KEY AUTOINCREMENT,
+    id TEXT NOT NULL UNIQUE,
+    invoice_number TEXT NOT NULL UNIQUE,
+    user_id TEXT NOT NULL,
+    source_type TEXT NOT NULL CHECK(source_type IN ('subscription','program_purchase')),
+    source_id TEXT NOT NULL,
+    description TEXT NOT NULL,
+    amount_cents INTEGER NOT NULL,
+    currency TEXT NOT NULL DEFAULT 'EUR',
+    issued_at INTEGER NOT NULL DEFAULT (unixepoch())
+  );
+  CREATE INDEX IF NOT EXISTS idx_invoices_user ON invoices(user_id, issued_at);
+  CREATE UNIQUE INDEX IF NOT EXISTS idx_invoices_source ON invoices(source_type, source_id);
 `);
 
 }

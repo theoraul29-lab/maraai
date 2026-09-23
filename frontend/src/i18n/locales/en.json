@@ -1146,7 +1146,10 @@
     "faq4Q": "How do I pay?",
     "faq4A": "Stripe (card) or PayPal. Secure transaction, automatic invoice.",
     "vipComingSoon": "VIP activates soon — check back in a few days.",
-    "vipError": "Couldn't start the subscription. Please try again."
+    "vipError": "Couldn't start the subscription. Please try again.",
+    "invoicesTitle": "My invoices",
+    "invoiceDownload": "Download PDF",
+    "termsLink": "Terms of Service & Refund Policy"
   },
   "search": {
     "placeholder": "Search people, Sparks, articles…",
@@ -1211,7 +1214,8 @@
     "captureFailed": "Payment capture failed. Please contact support.",
     "error": "PayPal error",
     "redirecting": "⏳ Redirecting…",
-    "payWith": "💳 Pay {{amount}} EUR with PayPal"
+    "payWith": "💳 Pay {{amount}} EUR with PayPal",
+    "comingSoon": "Payments activate soon — check back shortly."
   },
   "mara": {
     "risk": {
@@ -1609,5 +1613,41 @@
     "s8Text": "For any questions about your personal data, contact us at:",
     "s9Title": "Security & Automated Request Logging",
     "s9Text": "To protect the platform and its users, automated or abusive requests (such as vulnerability scanning, bot traffic, or attempts to access non-existent administrative interfaces) may be logged. The data collected is limited to: IP address, requested path, HTTP method, and a truncated User-Agent string. This data is retained for a maximum of 30 days and is processed on the basis of our legitimate interest in network and information security (Art. 6(1)(f) GDPR, Recital 49). IPs identified as the source of abusive traffic may be temporarily blocked. No request bodies, authentication tokens, or personal message content are ever stored for this purpose."
+  },
+  "termsOfService": {
+    "back": "Back",
+    "title": "Terms of Service",
+    "updated": "Last updated: September 23, 2026",
+    "labelExplorer": "Explorer",
+    "labelVip": "VIP subscription",
+    "labelPrograms": "Individual programs",
+    "germany": "Germany",
+    "s1Title": "1. What MaraAI offers",
+    "s1Intro": "MaraAI (hellomara.net) is a platform combining an AI companion, daily self-improvement missions, a social feed (\"Sparks\"), and a writing/publishing hub. It is offered in three ways:",
+    "s1Explorer": "free, no card required — chat with Mara, watch Sparks, read public articles, join the community, and the two starter programs (New Mindset, New Habit).",
+    "s1Vip": "€21/month, billed automatically until cancelled — unlimited Mara AI with a custom personality, HD uploads, and VIP-only content.",
+    "s1Programs": "one-time payments from €8, independent of VIP — unlock a specific transformation program permanently.",
+    "s2Title": "2. VIP subscription — billing and cancellation",
+    "s2Li1": "The VIP subscription renews automatically every month at the then-current price until you cancel it.",
+    "s2Li2": "You can cancel at any time from your account settings. There is no cancellation fee.",
+    "s2Li3": "After cancelling, you keep VIP access until the end of the period you already paid for — no partial refund is issued for the unused remainder, consistent with the withdrawal-right waiver in section 4.",
+    "s2Li4": "Payments are processed by PayPal. MaraAI does not store your payment card or PayPal credentials.",
+    "s3Title": "3. Individual programs — one-time purchases",
+    "s3Text": "Programs, the program bundle, and the book are unlocked with a single one-time payment and remain accessible to your account permanently — they are not subscriptions and do not renew or expire.",
+    "s4Title": "4. EU right of withdrawal (14 days)",
+    "s4Intro": "If you are a consumer in the European Union, you normally have a 14-day right to withdraw from an online purchase without giving a reason. For digital content and services delivered immediately (which is how MaraAI works — access is granted right after payment), this right ends as soon as performance has begun, provided you have given your prior express consent to immediate access and acknowledged that you thereby lose the right of withdrawal (Art. 16(m), Directive 2011/83/EU).",
+    "s4Consent": "By completing a VIP subscription or program purchase, you confirm that you want immediate access and acknowledge the loss of the withdrawal right described above.",
+    "s5Title": "5. Refund policy",
+    "s5Li1": "cancel anytime — no refund for the current billing period, access continues until it ends.",
+    "s5Li2": "not refundable once access has been granted, the same principle as a digital book or course you have already started.",
+    "s5Li3": "If you believe you were charged in error, contact us — see section 8 — and we will look into it.",
+    "s6Title": "6. Who you are contracting with",
+    "s6Text": "MaraAI is operated as a sole proprietorship (Einzelunternehmen/Gewerbe) registered in Germany:",
+    "s6Vat": "As a small business under § 19 UStG (Kleinunternehmerregelung), no VAT is charged on invoices.",
+    "s7Title": "7. Governing law & dispute resolution",
+    "s7Text": "These terms are governed by German law. The European Commission provides an online dispute resolution (ODR) platform at",
+    "s7Text2": "We are not obliged and not willing to participate in dispute resolution proceedings before a consumer arbitration board.",
+    "s8Title": "8. Contact",
+    "s8Text": "For questions about these terms, billing, or cancellations, contact us at:"
   }
 }

@@ -42,6 +42,7 @@ const TransparencyDashboard = lazy(() => import('./maraai/TransparencyDashboard'
 import { ThemeProvider } from './contexts/ThemeContext';
 const NotFound = lazy(() => import('./NotFound'));
 const PrivacyPolicy = lazy(() => import('./PrivacyPolicy'));
+const TermsOfService = lazy(() => import('./TermsOfService'));
 import CookieBanner from './components/CookieBanner';
 
 function ControlCenterAuthGate({ children }: { children: React.ReactNode }) {
@@ -273,6 +274,7 @@ function App() {
                 />
                 <Route path="/transparency" element={<RequireAuth><TransparencyDashboard /></RequireAuth>} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/terms" element={<TermsOfService />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from './contexts/AuthContext';
 import { AuthModal } from './components/AuthModal';
@@ -28,6 +28,23 @@ export default function Pricing() {
       .then((data) => setPaymentsActive(!!data.paymentsActive))
       .catch(() => {});
   }, []);
+
+  interface Invoice {
+    id: string;
+    invoiceNumber: string;
+    description: string;
+    amountCents: number;
+    currency: string;
+    issuedAt: number;
+  }
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  useEffect(() => {
+    if (!isAuthenticated) { setInvoices([]); return; }
+    fetch('/api/billing/invoices', { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : { items: [] }))
+      .then((data) => setInvoices(data.items ?? []))
+      .catch(() => {});
+  }, [isAuthenticated]);
 
   const TIERS = [
     {
@@ -184,6 +201,29 @@ export default function Pricing() {
 
       <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
 
+      {isAuthenticated && invoices.length > 0 && (
+        <div className="pricing-invoices">
+          <h2 className="pricing-section-title">{t('pricing.invoicesTitle', 'My invoices')}</h2>
+          <ul className="pricing-invoices-list">
+            {invoices.map((inv) => (
+              <li key={inv.id} className="pricing-invoice-row">
+                <span className="pricing-invoice-desc">{inv.description}</span>
+                <span className="pricing-invoice-date">{new Date(inv.issuedAt * 1000).toLocaleDateString()}</span>
+                <span className="pricing-invoice-amount">{(inv.amountCents / 100).toFixed(2)} {inv.currency}</span>
+                <a
+                  className="pricing-invoice-download"
+                  href={`/api/billing/invoices/${inv.id}/pdf`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {t('pricing.invoiceDownload', 'Download PDF')}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="pricing-section-divider">
         <h2 className="pricing-section-title">{t('pricing.programsTitle')}</h2>
         <p className="pricing-section-sub">{t('pricing.programsSubtitle')}</p>
@@ -229,6 +269,10 @@ export default function Pricing() {
           <p>{t('pricing.faq4A')}</p>
         </div>
       </div>
+
+      <p className="pricing-legal-link">
+        <Link to="/terms">{t('pricing.termsLink', 'Terms of Service & Refund Policy')}</Link>
+      </p>
     </div>
   );
 }

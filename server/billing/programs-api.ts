@@ -24,6 +24,7 @@ import {
   expandWithPrerequisites,
 } from './programs.js';
 import { isPayPalConfigured, createPayPalOrder, capturePayPalOrder } from './paypal.js';
+import { createInvoice } from './invoices.js';
 
 function paymentsEnabled(): boolean {
   return process.env.PAYMENTS_ENABLED === 'true';
@@ -168,12 +169,25 @@ export function registerProgramBillingApi(
         for (const id of idsStr.split(',')) {
           const def = findPurchasableItem(id);
           if (def) {
-            markPurchaseCompleted({
+            const purchaseId = markPurchaseCompleted({
               userId,
               item: def.id,
               priceCents: def.priceCents,
               paypalOrderId: orderId,
             });
+            try {
+              createInvoice({
+                userId,
+                sourceType: 'program_purchase',
+                sourceId: purchaseId,
+                description: def.name,
+                amountCents: def.priceCents,
+              });
+            } catch (err) {
+              // Never let invoicing block granting the access the user paid
+              // for — log and move on; the invoice can be backfilled.
+              console.error('[billing/programs] invoice creation failed:', err);
+            }
           }
         }
       }

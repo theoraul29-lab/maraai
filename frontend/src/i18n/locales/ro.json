@@ -1146,7 +1146,10 @@
     "faq4Q": "Cum plătesc?",
     "faq4A": "Stripe (card) sau PayPal. Tranzacție sigură, factură automată.",
     "vipComingSoon": "VIP se activează în curând — revino în câteva zile.",
-    "vipError": "Nu am putut porni abonarea. Încearcă din nou."
+    "vipError": "Nu am putut porni abonarea. Încearcă din nou.",
+    "invoicesTitle": "Facturile mele",
+    "invoiceDownload": "Descarcă PDF",
+    "termsLink": "Termeni și condiții & Politica de rambursare"
   },
   "search": {
     "placeholder": "Caută persoane, Sparks, articole…",
@@ -1211,7 +1214,8 @@
     "captureFailed": "Capturare eșuată. Contactează suportul.",
     "error": "Eroare PayPal",
     "redirecting": "⏳ Redirecționare…",
-    "payWith": "💳 Plătește {{amount}} EUR cu PayPal"
+    "payWith": "💳 Plătește {{amount}} EUR cu PayPal",
+    "comingSoon": "Plățile se activează în curând — revino puțin mai târziu."
   },
   "mara": {
     "risk": {
@@ -1609,5 +1613,41 @@
     "s8Text": "Pentru intrebari despre datele personale, ne poti contacta la:",
     "s9Title": "Securitate și jurnalizarea cererilor automate",
     "s9Text": "Pentru a proteja platforma și utilizatorii săi, cererile automate sau abuzive (cum ar fi scanarea vulnerabilităților, traficul de bot sau încercările de accesare a unor interfețe administrative inexistente) pot fi înregistrate. Datele colectate se limitează la: adresa IP, calea solicitată, metoda HTTP și un User-Agent trunchiat. Aceste date sunt păstrate maximum 30 de zile și sunt prelucrate în baza interesului nostru legitim privind securitatea rețelei și a informațiilor (Art. 6(1)(f) GDPR, Considerentul 49). IP-urile identificate ca sursă de trafic abuziv pot fi blocate temporar. Nu sunt stocate niciodată corpuri de cerere, token-uri de autentificare sau conținut personal de mesaje în acest scop."
+  },
+  "termsOfService": {
+    "back": "Înapoi",
+    "title": "Termeni și condiții",
+    "updated": "Ultima actualizare: 23 septembrie 2026",
+    "labelExplorer": "Explorer",
+    "labelVip": "Abonament VIP",
+    "labelPrograms": "Programe individuale",
+    "germany": "Germania",
+    "s1Title": "1. Ce oferă MaraAI",
+    "s1Intro": "MaraAI (hellomara.net) este o platformă care combină un companion AI, misiuni zilnice de auto-dezvoltare, un feed social (\"Sparks\") și un hub de scriere/publicare. Este oferită în trei moduri:",
+    "s1Explorer": "gratuit, fără card — chat cu Mara, vizionare Sparks, citire articole publice, acces la comunitate și cele două programe de start (New Mindset, New Habit).",
+    "s1Vip": "€21/lună, facturat automat până la anulare — Mara AI nelimitat cu personalitate personalizată, upload HD și conținut exclusiv VIP.",
+    "s1Programs": "plăți unice de la €8, independente de VIP — deblochează permanent un program de transformare specific.",
+    "s2Title": "2. Abonamentul VIP — facturare și anulare",
+    "s2Li1": "Abonamentul VIP se reînnoiește automat în fiecare lună, la prețul valabil atunci, până când îl anulezi.",
+    "s2Li2": "Poți anula oricând din setările contului. Nu există nicio taxă de anulare.",
+    "s2Li3": "După anulare, păstrezi accesul VIP până la finalul perioadei deja plătite — nu se emite nicio rambursare parțială pentru restul neutilizat, în conformitate cu renunțarea la dreptul de retragere din secțiunea 4.",
+    "s2Li4": "Plățile sunt procesate de PayPal. MaraAI nu stochează datele cardului sau ale contului tău PayPal.",
+    "s3Title": "3. Programe individuale — plăți unice",
+    "s3Text": "Programele, pachetul de programe și cartea se deblochează printr-o singură plată unică și rămân accesibile permanent contului tău — nu sunt abonamente și nu expiră sau se reînnoiesc.",
+    "s4Title": "4. Dreptul de retragere UE (14 zile)",
+    "s4Intro": "Dacă ești consumator în Uniunea Europeană, ai în mod normal dreptul de a te retrage dintr-o achiziție online în 14 zile, fără a oferi un motiv. Pentru conținut și servicii digitale livrate imediat (așa cum funcționează MaraAI — accesul este acordat imediat după plată), acest drept încetează din momentul în care execuția a început, cu condiția să fi acordat în prealabil consimțământul expres pentru acces imediat și să fi confirmat că astfel pierzi dreptul de retragere (Art. 16(m), Directiva 2011/83/UE).",
+    "s4Consent": "Finalizând un abonament VIP sau achiziția unui program, confirmi că dorești acces imediat și confirmi pierderea dreptului de retragere descris mai sus.",
+    "s5Title": "5. Politica de rambursare",
+    "s5Li1": "anulare oricând — fără rambursare pentru perioada de facturare curentă, accesul continuă până la finalul acesteia.",
+    "s5Li2": "nerambursabile odată ce accesul a fost acordat, același principiu ca la o carte sau un curs digital deja început.",
+    "s5Li3": "Dacă crezi că ai fost taxat din greșeală, contactează-ne — vezi secțiunea 8 — și vom verifica.",
+    "s6Title": "6. Cu cine contractezi",
+    "s6Text": "MaraAI este operat ca întreprindere individuală (Einzelunternehmen/Gewerbe) înregistrată în Germania:",
+    "s6Vat": "Fiind o afacere mică conform § 19 UStG (Kleinunternehmerregelung), nu se percepe TVA pe facturi.",
+    "s7Title": "7. Legea aplicabilă și soluționarea disputelor",
+    "s7Text": "Acești termeni sunt guvernați de legea germană. Comisia Europeană oferă o platformă de soluționare online a litigiilor (ODR) la",
+    "s7Text2": "Nu suntem obligați și nu suntem dispuși să participăm la proceduri de soluționare a litigiilor în fața unei comisii de arbitraj pentru consumatori.",
+    "s8Title": "8. Contact",
+    "s8Text": "Pentru întrebări despre acești termeni, facturare sau anulări, contactează-ne la:"
   }
 }
