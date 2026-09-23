@@ -22,6 +22,13 @@
   color: #f87171;
   margin: 4px 0 0;
 }
+.paypal-btn-coming-soon {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.4);
+  text-align: center;
+  padding: 8px 0;
+  margin: 0;
+}
 .paypal-fallback-btn {
   background: #0070ba;
   color: #fff;

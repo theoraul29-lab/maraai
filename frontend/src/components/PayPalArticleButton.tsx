@@ -29,8 +29,17 @@ export default function PayPalArticleButton({ articleId, priceCents, onSuccess, 
   const { state: sdkState, sdk } = usePayPalSDK(PAYPAL_CLIENT_ID);
   const rendered = useRef(false);
 
+  // See PayPalProgramButton.tsx for why this check exists.
+  const [paymentsActive, setPaymentsActive] = useState(true);
   useEffect(() => {
-    if (sdkState !== 'ready' || !sdk?.Buttons || !containerRef.current || rendered.current) return;
+    fetch('/api/config/features')
+      .then((r) => r.json())
+      .then((data) => setPaymentsActive(!!data.paymentsActive))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!paymentsActive || sdkState !== 'ready' || !sdk?.Buttons || !containerRef.current || rendered.current) return;
     rendered.current = true;
     setStatus('rendering');
 
@@ -79,7 +88,11 @@ export default function PayPalArticleButton({ articleId, priceCents, onSuccess, 
       if (status !== 'error') setStatus('ready');
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sdkState]);
+  }, [sdkState, paymentsActive]);
+
+  if (!paymentsActive) {
+    return <p className="paypal-btn-coming-soon">{t('paypal.comingSoon', 'Payments activate soon — check back shortly.')}</p>;
+  }
 
   if (!PAYPAL_CLIENT_ID || sdkState === 'error') {
     return (

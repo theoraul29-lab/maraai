@@ -34,8 +34,19 @@ export default function PayPalMultiProgramButton({ programIds, totalCents, onSuc
   const idsRef = useRef(programIds);
   idsRef.current = programIds;
 
+  // See PayPalProgramButton.tsx for why this check exists — same gap,
+  // same fix, mirrored here since this component duplicates that one's
+  // structure rather than wrapping it.
+  const [paymentsActive, setPaymentsActive] = useState(true);
   useEffect(() => {
-    if (sdkState !== 'ready' || !sdk?.Buttons || !containerRef.current || rendered.current) return;
+    fetch('/api/config/features')
+      .then((r) => r.json())
+      .then((data) => setPaymentsActive(!!data.paymentsActive))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!paymentsActive || sdkState !== 'ready' || !sdk?.Buttons || !containerRef.current || rendered.current) return;
     rendered.current = true;
     setStatus('rendering');
 
@@ -85,7 +96,11 @@ export default function PayPalMultiProgramButton({ programIds, totalCents, onSuc
       if (status !== 'error') setStatus('ready');
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sdkState]);
+  }, [sdkState, paymentsActive]);
+
+  if (!paymentsActive) {
+    return <p className="paypal-btn-coming-soon">{t('paypal.comingSoon', 'Payments activate soon — check back shortly.')}</p>;
+  }
 
   if (!PAYPAL_CLIENT_ID || sdkState === 'error') {
     return (

@@ -15,6 +15,19 @@ export default function Pricing() {
   const [pendingTier, setPendingTier] = useState<'free' | 'vip_monthly' | null>(null);
   const [subscribing, setSubscribing] = useState(false);
   const [vipNotice, setVipNotice] = useState<string | null>(null);
+  // `/api/billing/subscribe` only checks PAYMENTS_ENABLED + provider keys —
+  // with live PayPal creds configured, that meant "Become VIP" opened a
+  // real, live checkout regardless of whether the operator had actually
+  // launched payments (see Nav.tsx's separate paymentsActive flag, which
+  // the lock icon reads but this button never did). Check it client-side
+  // before ever hitting the real endpoint.
+  const [paymentsActive, setPaymentsActive] = useState(true);
+  useEffect(() => {
+    fetch('/api/config/features')
+      .then((r) => r.json())
+      .then((data) => setPaymentsActive(!!data.paymentsActive))
+      .catch(() => {});
+  }, []);
 
   const TIERS = [
     {
@@ -58,6 +71,10 @@ export default function Pricing() {
   // until PAYMENTS_ENABLED + provider keys are configured, instead of
   // silently doing nothing.
   async function startSubscribe() {
+    if (!paymentsActive) {
+      setVipNotice(t('pricing.vipComingSoon', 'VIP activates soon — check back in a few days.'));
+      return;
+    }
     setSubscribing(true);
     setVipNotice(null);
     try {

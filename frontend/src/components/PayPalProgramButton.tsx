@@ -23,8 +23,22 @@ export default function PayPalProgramButton({ programId, programName: _programNa
   const { state: sdkState, sdk } = usePayPalSDK(PAYPAL_CLIENT_ID);
   const rendered = useRef(false);
 
+  // `/api/config/features`'s `paymentsActive` is the single "is this
+  // deployment ready to take real money" switch the rest of the app reads
+  // (see Nav.tsx's VIP lock icon). This component used to only check
+  // whether a PayPal client id was present — with live keys configured
+  // (see PAYPAL_MODE=live) that meant a fully working, real-money button
+  // regardless of whether the operator considered payments launched.
+  const [paymentsActive, setPaymentsActive] = useState(true);
   useEffect(() => {
-    if (sdkState !== 'ready' || !sdk?.Buttons || !containerRef.current || rendered.current) return;
+    fetch('/api/config/features')
+      .then((r) => r.json())
+      .then((data) => setPaymentsActive(!!data.paymentsActive))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!paymentsActive || sdkState !== 'ready' || !sdk?.Buttons || !containerRef.current || rendered.current) return;
     rendered.current = true;
     setStatus('rendering');
 
@@ -80,7 +94,11 @@ export default function PayPalProgramButton({ programId, programName: _programNa
       if (status !== 'error') setStatus('ready');
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sdkState]);
+  }, [sdkState, paymentsActive]);
+
+  if (!paymentsActive) {
+    return <p className="paypal-btn-coming-soon">{t('paypal.comingSoon', 'Payments activate soon — check back shortly.')}</p>;
+  }
 
   // Fallback: SDK not loaded → plain redirect button
   if (!PAYPAL_CLIENT_ID || sdkState === 'error') {
