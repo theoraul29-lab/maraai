@@ -56,7 +56,7 @@
     "multer": "^2.1.1",
     "pdf-parse": "^1.1.1",
     "pdfkit": "^0.20.2",
-    "resend": "^6.12.3",
+    "resend": "^6.28.1",
     "sanitize-html": "^2.17.7",
     "sqlite-vec": "^0.1.10-alpha.4",
     "sqlite3": "^6.0.1",
