@@ -179,6 +179,10 @@ export function setSessionUser(req: Request, userId: string): Promise<void> {
     req.session.regenerate((err) => {
       if (err) return reject(err);
       req.session.userId = userId;
+      // Marks this session as real (not the anonymous fallback), so the
+      // rolling-cookie refresh in setupSessionAuth applies to it — see the
+      // comment there for why this is scoped rather than global.
+      req.session.isAuthenticated = true;
       req.session.save((saveErr) => {
         if (saveErr) return reject(saveErr);
         resolve();

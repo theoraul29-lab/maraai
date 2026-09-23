@@ -124,6 +124,7 @@ export function MobileOrbHome({ items = ITEMS }: MobileOrbHomeProps) {
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'signup'>('login');
   const [showProgramsLock, setShowProgramsLock] = useState(false);
   const [creatorLockMessage, setCreatorLockMessage] = useState<string | null>(null);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -241,7 +242,10 @@ export function MobileOrbHome({ items = ITEMS }: MobileOrbHomeProps) {
             <button
               type="button"
               className="mara-orb-home__register-btn"
-              onClick={() => setAuthModalOpen(true)}
+              onClick={() => {
+                setAuthModalMode('signup');
+                setAuthModalOpen(true);
+              }}
             >
               {t('home.createAccount')}
             </button>
@@ -265,7 +269,7 @@ export function MobileOrbHome({ items = ITEMS }: MobileOrbHomeProps) {
         </div>
       </div>
 
-      <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+      <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} initialMode={authModalMode} />
       {settingsOpen && (
         <SubsystemSettings
           onClose={() => setSettingsOpen(false)}

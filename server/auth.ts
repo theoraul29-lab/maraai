@@ -14,6 +14,9 @@ declare module 'express-session' {
     /** Epoch ms when this session was first created. Drives the anonymous
      *  read-only preview window (see requireAccountGate in routes.ts). */
     firstSeenAt?: number;
+    /** Set by setSessionUser() on login/signup. Gates the rolling cookie
+     *  refresh below — see the comment on `rolling` in setupSessionAuth. */
+    isAuthenticated?: boolean;
   }
 }
 
@@ -155,12 +158,18 @@ export function setupSessionAuth(app: Express) {
       store: sessionStore,
       resave: false,
       saveUninitialized: false,
-      // `rolling: true` resets the cookie's Max-Age on every authenticated
-      // request, so the 30-day window is "30 days of inactivity" rather
-      // than "30 days since first login". Combined with the persistent
-      // SQLite session store this means a user who returns every few
-      // weeks stays signed in indefinitely without re-entering credentials.
-      rolling: true,
+      // Rolling the cookie's Max-Age is only applied to authenticated
+      // sessions, explicitly, below (see `req.session.touch()`) — not via
+      // this global flag. `rolling: true` here used to force a fresh
+      // Set-Cookie on *every* response, including ones still in flight on
+      // the pre-login anonymous cookie. A login/signup regenerates the
+      // session id (see setSessionUser), but if one of those anonymous
+      // responses landed at the browser after the login response, its
+      // Set-Cookie (bearing the old anonymous id) silently overwrote the
+      // freshly authenticated cookie — reverting the user to logged-out
+      // client-side even though the server-side login succeeded. Scoping
+      // the refresh to authenticated sessions only removes that race.
+      rolling: false,
       name: 'connect.sid',
       cookie: {
         httpOnly: true,
@@ -188,6 +197,12 @@ export function setupSessionAuth(app: Express) {
     // limited time before an account is required (see requireAccountGate).
     if (typeof req.session.firstSeenAt !== 'number') req.session.firstSeenAt = Date.now();
     req.user = { uid: req.session.userId, email: null };
+    // Replaces the old global `rolling: true` — only authenticated
+    // sessions get their cookie's Max-Age refreshed on activity ("30 days
+    // of inactivity" for real accounts). Anonymous sessions no longer
+    // force a Set-Cookie on every background request, which is what let a
+    // late-arriving anonymous response clobber a just-issued login cookie.
+    if (req.session.isAuthenticated) req.session.touch();
     next();
   });
 }

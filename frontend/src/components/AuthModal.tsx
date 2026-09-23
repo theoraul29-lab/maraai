@@ -8,6 +8,9 @@ import './AuthModal.css';
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
+  /** Which form to show when the modal opens. Defaults to 'login' so all
+   *  existing callers keep their current behavior unchanged. */
+  initialMode?: 'login' | 'signup';
 }
 
 interface FormValidation {
@@ -16,7 +19,7 @@ interface FormValidation {
   name: string[];
 }
 
-export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
+export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode }) => {
   const { login, signup, loginWithOAuth, oauthError, clearOAuthError } = useAuth();
   const { handleError } = useErrorHandler();
   const { t } = useTranslation();
@@ -50,6 +53,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       closeButtonRef.current.focus();
     }
   }, [isOpen]);
+
+  // The modal stays mounted between opens (isOpen just toggles visibility),
+  // so a plain useState default only ever applies on first mount. Re-sync
+  // the form to whichever mode the caller asked for every time it opens —
+  // otherwise a "Create account" entry point that opens this same modal
+  // would show whatever mode was last left active (usually 'login').
+  useEffect(() => {
+    if (isOpen) setMode(initialMode ?? 'login');
+  }, [isOpen, initialMode]);
 
   // Surface a pending OAuth-redirect error exactly once. The provider shape is
   // either `oauth_<specific>` (our codes) or `google_<google_error>` (passed
