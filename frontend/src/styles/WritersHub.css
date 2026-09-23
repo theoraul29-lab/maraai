@@ -1223,6 +1223,8 @@
 /* --- Public Library (Gutendex classics) ---------------------------------- */
 .writers-classics {
   max-width: 900px;
+  width: 100%;
+  min-width: 0;
   margin: 0 auto;
 }
 
