@@ -248,6 +248,11 @@ export async function registerRoutes(
     '/api/runtime',
     '/api/waitlist',
     '/api/preview/status',
+    // Provider-to-server callbacks (no user session to require) — see the
+    // matching CSRF_EXEMPT_PATHS entries in auth.ts for why these two were
+    // unreachable until now.
+    '/api/billing/stripe/webhook',
+    '/api/billing/paypal/webhook',
   ]);
 
   // ── Anonymous read-only preview window ──────────────────────────────────────

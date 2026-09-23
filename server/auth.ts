@@ -77,6 +77,15 @@ function resolveSessionStoreDir(): string {
 const CSRF_EXEMPT_PATHS = new Set<string>([
   '/api/waitlist',
   '/api/webhooks/stripe',
+  // Provider-to-server callbacks — no browser session, so no CSRF token to
+  // send. Each verifies its own signature (Stripe: HMAC on the raw body;
+  // PayPal: round-trip to their verify-webhook-signature endpoint) before
+  // acting on anything, which is what actually guards these routes.
+  // Found unreachable in a live audit: every PayPal/Stripe webhook call
+  // was silently rejected with 403 before reaching that verification,
+  // meaning subscription state never updated from a real payment.
+  '/api/billing/stripe/webhook',
+  '/api/billing/paypal/webhook',
 ]);
 
 export function csrfProtection(req: Request, res: Response, next: NextFunction) {
