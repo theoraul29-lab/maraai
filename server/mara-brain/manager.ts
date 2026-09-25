@@ -83,6 +83,12 @@ class BrainManagerImpl {
   // the DB before instantiation.
   private _cycleLock: SingletonLock | null = null;
   private _passive = false; // true if we lost the lock at boot
+  private _passiveRetryTimer: NodeJS.Timeout | null = null;
+  // How often a passive instance retries the advisory lock. Independent of
+  // the lock's own TTL — this just controls how quickly a passive instance
+  // notices the previous holder's lease expired (or that it released
+  // cleanly on shutdown) and takes over, rather than never retrying.
+  private readonly PASSIVE_RETRY_MS = 60_000;
 
   /** Pause between consecutive cycles (replaces the old "cycle interval"). */
   get respiroMs(): number {
@@ -151,15 +157,46 @@ class BrainManagerImpl {
         : 'unknown';
       logger(
         `Brain cycle lock already held by another instance (${holderInfo}). ` +
-          'Running in passive mode (no scheduler, no manual triggers, no initial learning).',
+          `Running in passive mode (no scheduler, no manual triggers, no initial learning); ` +
+          `retrying every ${Math.round(this.PASSIVE_RETRY_MS / 1000)}s in case the holder's lease expires or it releases on shutdown.`,
         'mara-scheduler',
       );
       this._passive = true;
+      this._schedulePassiveRetry(logger);
       return;
     }
-    this._cycleLock.startHeartbeat();
+    this._becomeActive(logger);
+  }
+
+  /**
+   * Repeatedly retries the advisory lock while passive. Without this, an
+   * instance that lost the boot-time race for the lock (e.g. a Railway
+   * rolling deploy briefly overlapping with the previous instance) would
+   * stay passive for its entire lifetime even long after the original
+   * holder's TTL expired or it released the lock on shutdown — the lock
+   * itself is self-healing, but nothing on the losing side ever asked
+   * again. Cleared once the retry succeeds or stop() is called.
+   */
+  private _schedulePassiveRetry(logger: (msg: string, tag?: string) => void): void {
+    if (this._passiveRetryTimer) return;
+    this._passiveRetryTimer = setInterval(() => {
+      if (!this._cycleLock?.acquire()) return;
+      if (this._passiveRetryTimer) {
+        clearInterval(this._passiveRetryTimer);
+        this._passiveRetryTimer = null;
+      }
+      this._passive = false;
+      logger('Reclaimed brain_cycle advisory lock on retry — switching from passive to active.', 'mara-scheduler');
+      this._becomeActive(logger);
+    }, this.PASSIVE_RETRY_MS);
+    this._passiveRetryTimer.unref?.();
+  }
+
+  /** Everything that only makes sense once this instance actually owns the lock. */
+  private _becomeActive(logger: (msg: string, tag?: string) => void): void {
+    this._cycleLock!.startHeartbeat();
     logger(
-      `Acquired brain_cycle advisory lock (ttl=${Math.round(lockTtlMs / 1000)}s)`,
+      `Acquired brain_cycle advisory lock (ttl=${Math.round(this._cycleLock!.ttlMs / 1000)}s)`,
       'mara-scheduler',
     );
 
@@ -273,6 +310,10 @@ class BrainManagerImpl {
 
   /** Stop the scheduler. Used for tests and graceful shutdown. */
   stop(): void {
+    if (this._passiveRetryTimer) {
+      clearInterval(this._passiveRetryTimer);
+      this._passiveRetryTimer = null;
+    }
     if (this._initialTimeout) {
       clearTimeout(this._initialTimeout);
       this._initialTimeout = null;
@@ -387,6 +428,7 @@ class BrainManagerImpl {
         clearInterval(this._selfPostTimer);
         this._selfPostTimer = null;
       }
+      this._schedulePassiveRetry(logger);
       return;
     }
 
