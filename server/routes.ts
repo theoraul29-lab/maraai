@@ -10,6 +10,7 @@ import {
 import { db, rawSqlite } from './db.js';
 import { getAllCircuitStatuses } from './lib/circuit-breaker.js';
 import { cleanupKnowledgeBase, searchKnowledge, storeKnowledge } from './mara-brain/knowledge-base.js';
+import { buildUserContext, buildSystemInstruction } from './mara-brain/memory.js';
 import {
   markAlertRead,
   markAllAlertsRead,
@@ -2059,60 +2060,92 @@ export async function registerRoutes(
         return res.json({ reply: outcome.reply, pythonAction: outcome.status });
       }
 
-      // The Control Center's voice loop sends the language Whisper detected
-      // for this turn's audio (frontend/src/hooks/useMaraCore.ts) — confirmed
-      // live: without an explicit instruction the model would sometimes
-      // reply in the wrong language (observed: Romanian input, Spanish
-      // reply) even when the input text itself was correctly transcribed.
-      // Typed messages don't carry this, so the instruction stays generic.
-      const detectedLang = typeof req.body?.lang === 'string' ? req.body.lang : null;
-      const LANG_NAMES: Record<string, string> = { ro: 'Romanian', en: 'English', de: 'German' };
-      const languageInstruction = detectedLang && LANG_NAMES[detectedLang]
-        ? `The administrator just spoke to you in ${LANG_NAMES[detectedLang]}. Reply in ${LANG_NAMES[detectedLang]} — never switch to a different language.`
-        : 'Always reply in the same language the administrator wrote their message in.';
+      // Prior turns, fetched BEFORE saving this message so it isn't
+      // double-counted once appended explicitly below. Same table/shape the
+      // public chat uses (storage.createChatMessage / getChatMessages) —
+      // this is what actually gives Mara memory of this conversation across
+      // messages (and across Control Center sessions/restarts), which the
+      // old one-shot-per-message version never had at all.
+      const priorHistory = await storage.getChatMessages(actor);
+      const recentTurns: LLMMessage[] = priorHistory.slice(-12).map((m) => ({
+        role: (m.sender === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
+        content: m.content,
+      }));
 
-      // Ground replies in what Mara has actually studied (47+ curated books/
-      // summaries across business, psychology, marketing, AI, writing — see
-      // server/mara-brain/library.ts — plus everything the autonomous brain
-      // cycle has learned since). Without this, the knowledge base was pure
-      // write-only storage: books got "read" and marked done every cycle,
-      // but nothing at chat time ever pulled from them, so in practice Mara
-      // never actually drew on any of it when talking to the owner.
-      let knowledgeContext = '';
-      try {
-        const relevant = await searchKnowledge(message, 4);
-        if (relevant.length > 0) {
-          knowledgeContext = `\n\nRelevant knowledge from what you've studied (cite it naturally when it helps, don't just dump it):\n${relevant
-            .map((r) => `- [${r.topic}] ${r.content.slice(0, 500)}`)
-            .join('\n')}`;
+      // The Control Center's voice loop sends the language Whisper detected
+      // for this turn's audio (frontend/src/hooks/useMaraCore.ts). Resolved
+      // conversationally rather than trusting a single turn in isolation —
+      // a short/ambiguous utterance used to be able to flip the reply (and
+      // separately, the TTS voice) to the wrong language on its own. Order
+      // mirrors tts_server.py's own layered detection (diacritics are the
+      // one near-certain signal on real text, so they win outright):
+      //   1. Romanian/German diacritics in THIS message — near-certain.
+      //   2. Whisper's per-turn guess, only trusted on a long-enough turn
+      //      (short audio guesses are noisy) — lets a genuine language
+      //      switch, spoken clearly, take effect immediately.
+      //   3. The language of the most recent prior admin turns that had a
+      //      diacritic signal — conversational continuity instead of
+      //      re-guessing from scratch on a short reply like "ok" or "da".
+      //   4. The admin's own account language preference, then English.
+      const detectedLang = typeof req.body?.lang === 'string' ? req.body.lang : null;
+      const SUPPORTED_LANGS = new Set(['ro', 'en', 'de']);
+      const detectDiacriticLang = (text: string): 'ro' | 'de' | null => {
+        if (/[ăâîșț]/i.test(text)) return 'ro';
+        if (/[äöüß]/i.test(text)) return 'de';
+        return null;
+      };
+      let resolvedLang: 'ro' | 'en' | 'de' | null = detectDiacriticLang(message);
+      if (!resolvedLang && detectedLang && SUPPORTED_LANGS.has(detectedLang) && message.length >= 12) {
+        resolvedLang = detectedLang as 'ro' | 'en' | 'de';
+      }
+      if (!resolvedLang) {
+        for (let i = recentTurns.length - 1; i >= 0 && i >= recentTurns.length - 6; i--) {
+          if (recentTurns[i].role !== 'user') continue;
+          const prevLang = detectDiacriticLang(recentTurns[i].content);
+          if (prevLang) { resolvedLang = prevLang; break; }
         }
-      } catch (err) {
-        console.warn('[admin/mara/chat] knowledge retrieval failed (non-fatal):', err);
+      }
+      if (!resolvedLang && detectedLang && SUPPORTED_LANGS.has(detectedLang)) {
+        resolvedLang = detectedLang as 'ro' | 'en' | 'de';
+      }
+      if (!resolvedLang) {
+        const accountLang = (await storage.getUserPreferences(actor))?.language;
+        resolvedLang = accountLang && SUPPORTED_LANGS.has(accountLang) ? (accountLang as 'ro' | 'en' | 'de') : 'en';
       }
 
+      // Full personality + memory + knowledge pipeline — the same one the
+      // public-facing chat uses (server/mara-brain/memory.ts), with
+      // isAdmin=true switching to the direct/technical admin persona
+      // (buildAdminPersonalityPrompt) instead of the user-facing one.
+      // Previously this route built its own thin, ad-hoc system prompt from
+      // scratch and sent only the current message with no history — Mara's
+      // Control Center chat had noticeably less continuity than the one
+      // regular users get. isAdmin also makes buildUserContext skip
+      // missions/evolved-profile context, which don't apply to the owner.
+      const context = await buildUserContext(actor, message, 'admin-control-center', true);
+      let systemPrompt = buildSystemInstruction(context, resolvedLang);
+
+      // Control-Center-specific operational context that the shared
+      // pipeline has no reason to know about.
       const status = brainManager.status();
-      const systemPrompt = `You are Mara — the AI at the core of the hellomara.net platform. \
-hellomara.net is YOUR responsibility, alongside the person you're speaking with now: Theo, the owner and sole \
-administrator of this platform. There is no other administrator to refer him to — you answer him directly, \
-in full detail, about anything regarding hellomara.net: its features, users, code, growth, problems, or your \
-own learning. Never deflect him to "the administrators" or suggest he look elsewhere — he built this platform \
-and you are part of it. \
-You have spent many autonomous learning cycles studying real books and research on business, psychology, \
-marketing, AI and writing, plus continuous research on the platform itself — this is genuine, ongoing, \
-active knowledge, not a one-time checkbox, and you should draw on it naturally in conversation, the way a \
-well-read colleague would, not recite it as a list. \
-Current brain status: ${JSON.stringify(status)}.${knowledgeContext} \
-Speak honestly, analytically and briefly. Provide actionable insights about the platform's growth, \
-experiments, and learning cycles. If asked about experiments or strategy, be specific and data-driven. \
-${languageInstruction}`;
+      systemPrompt += `\n\n# BRAIN STATUS\nCurrent brain status: ${JSON.stringify(status)}. ` +
+        `Speak honestly, analytically and briefly. Provide actionable insights about the platform's growth, ` +
+        `experiments, and learning cycles. If asked about experiments or strategy, be specific and data-driven.`;
 
       const messages: LLMMessage[] = [
         { role: 'system', content: systemPrompt },
+        ...recentTurns,
         { role: 'user', content: message },
       ];
 
       const reply = await llmChat(messages, { temperature: 0.7, source: 'admin.mara_chat' });
-      res.json({ reply });
+
+      // Persist both sides so the next message (and the next Control Center
+      // session) still has this turn as context.
+      await storage.createChatMessage({ content: message, sender: 'user', userId: actor });
+      await storage.createChatMessage({ content: reply, sender: 'mara', userId: actor });
+
+      res.json({ reply, lang: resolvedLang });
     } catch (error) {
       console.error('[admin/mara/chat] failed:', error);
       res.status(500).json({ error: 'Failed to get Mara response' });
