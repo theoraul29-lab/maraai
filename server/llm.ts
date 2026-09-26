@@ -24,18 +24,28 @@
  *
  * ## Universal rate-limit funnel (PR #96 / audit §F7)
  *
- * Every autonomous LLM call (anything that isn't a live user chat) must flow
- * through `learningRateLimiter` so the daily cap (`MARA_LEARNING_MAX_CALLS_PER_DAY`,
- * default 100/day) is actually enforced. Callers identify themselves via the
- * `source` opt:
+ * Every autonomous LLM call (anything that isn't a live, human-initiated chat)
+ * must flow through `learningRateLimiter` so the daily cap
+ * (`MARA_LEARNING_MAX_CALLS_PER_DAY`, default 100/day) is actually enforced.
+ * Callers identify themselves via the `source` opt:
  *
- *     llmChat(messages, { source: 'user_chat', temperature: 0.95 })   // bypasses
- *     llmGenerate(prompt, { source: 'cycle.phase_4.growth-engineer' }) // rate-limited
+ *     llmChat(messages, { source: 'user_chat', temperature: 0.95 })      // bypasses
+ *     llmChat(messages, { source: 'admin.mara_chat', temperature: 0.7 }) // bypasses
+ *     llmGenerate(prompt, { source: 'cycle.phase_4.growth-engineer' })   // rate-limited
  *
  * If a rate-limited caller hits the cap (or the circuit is open after 3 LLM
  * failures), the call throws `LLMRateLimitedError` which agent code catches
- * and treats as "skip this phase / iteration". `user_chat` is NEVER throttled
- * here — it's a single live request per chat message and must stay snappy.
+ * and treats as "skip this phase / iteration". `user_chat` and
+ * `admin.mara_chat` are NEVER throttled here — both are a single live
+ * request per chat message (public site chat, and the owner's Control
+ * Center chat, respectively) and must stay snappy. Confirmed live 2026-09-26:
+ * admin.mara_chat was originally routed through the shared cap like any
+ * other `admin.*` source, and MaraBrain's own background cycles routinely
+ * exhaust that cap — which silently broke the owner's Control Center chat
+ * ("Mara didn't respond") while the public chat kept working fine. Any
+ * future `admin.*` source added here for a genuine live chat surface needs
+ * the same explicit exemption in `llmChat` below — the `admin.${string}`
+ * type alone does not imply one.
  */
 
 import {
@@ -81,8 +91,8 @@ export interface LLMCallOpts {
    */
   temperature?: number;
   /**
-   * Caller identity. Anything other than `user_chat` is routed through
-   * `learningRateLimiter` and counts against the daily cap.
+   * Caller identity. Anything other than `user_chat` or `admin.mara_chat`
+   * is routed through `learningRateLimiter` and counts against the daily cap.
    */
   source?: LLMSource;
   /**
@@ -163,6 +173,18 @@ export async function llmChat(
 
   // Brain autonom → ANTHROPIC_BRAIN_API_KEY (fallback la ANTHROPIC_API_KEY)
   const exec = async () => (await getBrainAIResponse(messages, { temperature, thinkingBudget, source })).text;
+
+  // Control Center's chat with Mara is a live, human-initiated conversation
+  // (the owner talking to Mara in real time), same contract as user_chat —
+  // it must never be silently dropped by the autonomous-agents' shared daily
+  // cap. Kept on its own `admin.mara_chat` source (rather than reusing
+  // `user_chat`) purely so call logs/observability can still distinguish
+  // admin from public chat traffic; it still goes through the Brain
+  // provider/credentials path above, unlike user_chat.
+  if (source === 'admin.mara_chat') {
+    return exec();
+  }
+
   const result = await guardedLLMCall(source, exec);
   if (result === null) {
     throw new LLMRateLimitedError(source);
