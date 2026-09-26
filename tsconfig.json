@@ -12,5 +12,5 @@
     "allowJs": false
   },
   "include": ["server/**/*", "backend/**/*", "shared/**/*"],
-  "exclude": ["node_modules", "dist", "frontend"]
+  "exclude": ["node_modules", "dist", "frontend", "server/stt/cosyvoice-env", "server/stt/CosyVoice"]
 }

@@ -231,18 +231,25 @@ export function useMaraCore() {
     setSending(true);
     setMessages((prev) => [...prev, { role: 'user', content: trimmed, ts: Date.now() }]);
     let reply: string;
+    // The backend resolves the conversation's language from more than just
+    // this one turn (diacritics, recent history, account preference — see
+    // routes.ts) rather than trusting Whisper's single-turn guess in
+    // isolation, so the reply we speak stays voiced consistently even when
+    // `opts?.lang` was wrong or missing (typed messages never had it at all).
+    let resolvedLang: string | undefined = opts?.lang;
     try {
       const response = await fetch('/api/admin/mara/chat', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         // `lang` is the language Whisper detected for this turn's audio (see
-        // transcribeWithLocalStt) — lets the backend instruct the model to
-        // reply in that exact language instead of guessing from the text.
+        // transcribeWithLocalStt) — one signal among several the backend
+        // uses to resolve the conversation's actual language.
         body: JSON.stringify({ message: trimmed, lang: opts?.lang }),
       });
-      const data = await response.json() as { reply?: string };
+      const data = await response.json() as { reply?: string; lang?: string };
       reply = data.reply ?? t('mara.errors.noResponse', "Mara didn't respond.");
+      if (data.lang) resolvedLang = data.lang;
     } catch {
       reply = t('mara.errors.connectionFailed', 'Connection to Mara failed — try again.');
     }
@@ -255,10 +262,10 @@ export function useMaraCore() {
       // actually finish speaking before opening the mic again — otherwise
       // the mic would pick up her own reply. Typed chat below skips this
       // (fire-and-forget) since there's no next listening turn to gate.
-      await speak(reply, opts.lang);
+      await speak(reply, resolvedLang);
       if (conversationModeRef.current) startListeningAnyRef.current();
     } else {
-      void speak(reply);
+      void speak(reply, resolvedLang);
     }
   }, [speak]);
 

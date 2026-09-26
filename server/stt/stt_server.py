@@ -151,6 +151,11 @@ if __name__ == "__main__":
     import uvicorn
 
     port = int(os.environ.get("MARA_STT_PORT", "5752"))
-    # Loopback-only: reachable through the Cloudflare Tunnel (cloudflared
-    # proxies to localhost on this same machine), never bound wider.
-    uvicorn.run(app, host="127.0.0.1", port=port)
+    # Bound to all interfaces, not just loopback: cloudflared is a separate
+    # OS process on this machine, and ~/.cloudflared/config.yml routes
+    # stt.hellomara.net to this machine's LAN IP (192.168.178.144), not
+    # 127.0.0.1 — same root cause found and fixed the same day (2026-09-26)
+    # in cosyvoice_tts_server.py and bridge-server.ts: a 127.0.0.1-only bind
+    # left stt.hellomara.net returning 502 while curl to 127.0.0.1 worked
+    # fine locally. No port forwarding exists on the router for 5752.
+    uvicorn.run(app, host="0.0.0.0", port=port)

@@ -109,12 +109,19 @@ const server = createServer((req: IncomingMessage, res: ServerResponse) => {
   })();
 });
 
-// Loopback-only: cloudflared runs on this same machine and proxies tunnel
-// traffic to localhost, so binding wider than 127.0.0.1 only expands the
-// attack surface (LAN, or the public internet on a misconfigured
-// router/firewall) without the tunnel needing it.
-server.listen(PORT, '127.0.0.1', () => {
-  console.info(`[bridge] Mara local execution bridge listening on 127.0.0.1:${PORT} (repo: ${process.cwd()})`);
+// Bound to all interfaces, not just loopback: cloudflared is a separate OS
+// process on this same machine, and ~/.cloudflared/config.yml routes
+// bridge.hellomara.net to this machine's LAN IP (192.168.178.144), not
+// 127.0.0.1 — confirmed live 2026-09-26 that a 127.0.0.1-only bind left
+// bridge.hellomara.net returning 502 (cloudflared couldn't reach the LAN IP)
+// while curl to 127.0.0.1 worked fine locally; same root cause found and
+// fixed the same day in cosyvoice_tts_server.py. Binding wider does expand
+// reachability to the LAN, but every request here still requires
+// MARA_BRIDGE_TOKEN (checked below) — the bearer-token check is what
+// actually gates access, not the bind address, so this doesn't remove any
+// real protection. No port forwarding exists on the router for 4790.
+server.listen(PORT, '0.0.0.0', () => {
+  console.info(`[bridge] Mara local execution bridge listening on 0.0.0.0:${PORT} (repo: ${process.cwd()})`);
 });
 
 process.on('SIGINT', () => { server.close(() => process.exit(0)); });

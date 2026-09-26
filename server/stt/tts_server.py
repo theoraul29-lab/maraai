@@ -96,16 +96,25 @@ def check_auth(authorization: str | None) -> None:
 # no single method covers both "one-word reply" and "full paragraph" well:
 #
 #  1. Diacritics — ă/â/î/ș/ț only occur in Romanian, ä/ö/ü/ß only in German
-#     among the languages we support, so a hit is treated as certain.
-#  2. langdetect (a pure-Python port of Google's n-gram language-detection
+#     among the languages we support, so a hit is treated as certain. Wins
+#     even over the hint below: if the text itself clearly says otherwise,
+#     trust the text, not the caller's guess.
+#  2. An explicit `lang` hint from the caller. Originally this was just the
+#     admin's UI locale (a weak signal, so it sat last). The Control
+#     Center's chat endpoint (server/routes.ts /api/admin/mara/chat) now
+#     resolves it from the whole conversation — recent turns, not just this
+#     one reply's text — so it's a stronger signal than re-guessing from a
+#     short/ambiguous TTS string in isolation, and is trusted right after
+#     diacritics rather than last.
+#  3. langdetect (a pure-Python port of Google's n-gram language-detection
 #     library, already MIT/Apache-licensed and installed alongside
 #     edge-tts) — very reliable on real sentences (verified locally: 8/8 on
 #     realistic assistant-reply-length RO/EN/DE samples) but shaky on very
 #     short strings, so it's only trusted when it lands on one of our three
 #     supported languages; anything else (it knows ~55) is treated as
-#     inconclusive and falls through.
-#  3. A handful of common stopwords, for short replies too brief for #2.
-#  4. An explicit `lang` hint from the caller (e.g. the admin's UI locale).
+#     inconclusive and falls through. Callers that don't send a hint (or
+#     send an unsupported one) still get a good guess here.
+#  4. A handful of common stopwords, for short replies too brief for #3.
 #  5. English, as the final default.
 _RO_DIACRITICS = re.compile(r"[ăâîșț]", re.IGNORECASE)
 _DE_DIACRITICS = re.compile(r"[äöüß]", re.IGNORECASE)
@@ -125,11 +134,56 @@ _EN_WORDS = {
 }
 
 
+# Mara's replies are LLM output written for reading, not speaking — they
+# routinely contain Markdown (**bold**, `code`, bullet lists, # headers,
+# [links](url)) that edge-tts has no concept of and just reads as literal
+# characters ("asterisk asterisk new mindset asterisk asterisk"). Confirmed
+# live 2026-09-26: a real Control Center reply came back as
+# "- **NEW MINDSET - 1 zi**: ..." — exactly the kind of text this service
+# was, until now, handing straight to the synthesizer. Stripped down to
+# plain spoken text before every synthesis call; this is the single biggest
+# fixable cause of Mara sounding robotic; it's a mechanical cleanup, not a
+# taste/voice-tuning judgment call.
+_MD_CODE_FENCE = re.compile(r"```.*?```", re.DOTALL)
+_MD_INLINE_CODE = re.compile(r"`([^`]+)`")
+_MD_BOLD_ITALIC = re.compile(r"(\*\*\*|___)(.+?)\1")
+_MD_BOLD = re.compile(r"(\*\*|__)(.+?)\1")
+_MD_ITALIC = re.compile(r"(?<!\w)[*_](?!\s)(.+?)(?<!\s)[*_](?!\w)")
+_MD_HEADER = re.compile(r"^\s{0,3}#{1,6}\s+", re.MULTILINE)
+_MD_BULLET = re.compile(r"^\s*[-*•]\s+", re.MULTILINE)
+_MD_NUMBERED = re.compile(r"^\s*\d+[.)]\s+", re.MULTILINE)
+_MD_LINK = re.compile(r"\[([^\]]+)\]\([^)]+\)")
+_MD_BLOCKQUOTE = re.compile(r"^\s{0,3}>\s?", re.MULTILINE)
+
+
+def strip_markdown_for_speech(text: str) -> str:
+    text = _MD_CODE_FENCE.sub(" ", text)
+    text = _MD_INLINE_CODE.sub(r"\1", text)
+    text = _MD_LINK.sub(r"\1", text)
+    text = _MD_BOLD_ITALIC.sub(r"\2", text)
+    text = _MD_BOLD.sub(r"\2", text)
+    text = _MD_ITALIC.sub(r"\1", text)
+    text = _MD_HEADER.sub("", text)
+    text = _MD_BLOCKQUOTE.sub("", text)
+    text = _MD_BULLET.sub("", text)
+    text = _MD_NUMBERED.sub("", text)
+    # Collapse the whitespace the substitutions above can leave behind
+    # without merging separate lines/paragraphs into one run-on sentence —
+    # edge-tts already treats a newline as a natural pause.
+    text = re.sub(r"[ \t]+", " ", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
+
+
 def detect_lang(text: str, hint: str | None) -> str:
     if _RO_DIACRITICS.search(text):
         return "ro"
     if _DE_DIACRITICS.search(text):
         return "de"
+
+    normalized_hint = (hint or "").split("-")[0].lower()
+    if normalized_hint in LANG_VOICE_MAP:
+        return normalized_hint
 
     if len(text) >= 12:
         try:
@@ -148,10 +202,6 @@ def detect_lang(text: str, hint: str | None) -> str:
     best_lang = max(scores, key=lambda k: scores[k])
     if scores[best_lang] > 0:
         return best_lang
-
-    normalized_hint = (hint or "").split("-")[0].lower()
-    if normalized_hint in LANG_VOICE_MAP:
-        return normalized_hint
 
     return DEFAULT_LANG
 
@@ -183,6 +233,16 @@ async def synthesize(body: dict, authorization: str | None = Header(default=None
         raise HTTPException(status_code=400, detail="text is empty")
     if len(text) > 4000:
         raise HTTPException(status_code=400, detail="text too long")
+    text = strip_markdown_for_speech(text)
+    if not text:
+        raise HTTPException(status_code=400, detail="text is empty after stripping markdown")
+
+    # Back to edge-tts's own defaults — the -4%/-2Hz tried on 2026-09-26
+    # didn't land well (reported live). Left caller-overridable rather than
+    # hardcoded either way, since tuning this is a listening judgment call
+    # this service can't make for itself.
+    rate = body.get("rate") if isinstance(body.get("rate"), str) else "+0%"
+    pitch = body.get("pitch") if isinstance(body.get("pitch"), str) else "+0Hz"
 
     explicit_voice = body.get("voice")
     if explicit_voice and isinstance(explicit_voice, str):
@@ -206,7 +266,7 @@ async def synthesize(body: dict, authorization: str | None = Header(default=None
     for attempt in range(3):
         try:
             chunks: list[bytes] = []
-            communicate = edge_tts.Communicate(text, voice)
+            communicate = edge_tts.Communicate(text, voice, rate=rate, pitch=pitch)
             async for chunk in communicate.stream():
                 if chunk["type"] == "audio":
                     chunks.append(chunk["data"])
@@ -229,6 +289,14 @@ if __name__ == "__main__":
     import uvicorn
 
     port = int(os.environ.get("MARA_TTS_PORT", "5753"))
-    # Loopback-only: reachable through the Cloudflare Tunnel (cloudflared
-    # proxies to localhost on this same machine), never bound wider.
-    uvicorn.run(app, host="127.0.0.1", port=port)
+    # Bound to all interfaces, not just loopback: cloudflared is a separate
+    # OS process on this machine, and ~/.cloudflared/config.yml routes
+    # tts.hellomara.net to this machine's LAN IP (192.168.178.144), not
+    # 127.0.0.1 — that hostname now points at cosyvoice_tts_server.py's port
+    # (5754) instead of this service, but this fix is applied here too so
+    # this service isn't silently broken if ever reverted to. Confirmed
+    # live 2026-09-26 (same root cause on the bridge and STT services): a
+    # 127.0.0.1-only bind left the tunnel returning 502 while curl to
+    # 127.0.0.1 worked fine locally. No port forwarding exists on the
+    # router for 5753.
+    uvicorn.run(app, host="0.0.0.0", port=port)

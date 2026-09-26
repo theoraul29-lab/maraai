@@ -8,6 +8,14 @@ node_modules/
 venv/
 venv_back/
 whisper-env/
+# Vendored FunAudioLLM/CosyVoice clone + its own venv + downloaded
+# CosyVoice2-0.5B model weights (~5GB) — machine-specific local TTS
+# backend for Control Center, same treatment as whisper-env/ above.
+# cosyvoice_tts_server.py (the actual Mara-specific server code) lives
+# inside this ignored folder too, for its relative-import paths into the
+# cloned repo — see that file's own docstring for the run command.
+server/stt/CosyVoice/
+server/stt/cosyvoice-env/
 __pycache__/
 *.pyc
 *.pyo
