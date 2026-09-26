@@ -22,6 +22,15 @@ interface BlockedUser {
   profileImageUrl: string | null;
 }
 
+interface BillingInfo {
+  planId: string;
+  tier: 'free' | 'vip';
+  subscription: {
+    status: string;
+    periodEnd: string | null;
+  } | null;
+}
+
 interface SettingsModalProps {
   onClose: () => void;
 }
@@ -46,6 +55,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
   const [deleteScheduledFor, setDeleteScheduledFor] = useState<number | null>(null);
   const [blockedUsers, setBlockedUsers] = useState<BlockedUser[] | null>(null);
   const [unblockingId, setUnblockingId] = useState<string | null>(null);
+  const [billing, setBilling] = useState<BillingInfo | null>(null);
+  const [loadingBilling, setLoadingBilling] = useState(true);
+  const [cancelConfirm, setCancelConfirm] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState('');
+  const [cancelSuccess, setCancelSuccess] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -64,6 +79,39 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
       .then(data => setBlockedUsers(Array.isArray(data.items) ? data.items : []))
       .catch(() => setBlockedUsers([]));
   }, []);
+
+  useEffect(() => {
+    fetch('/api/billing/me', { credentials: 'include' })
+      .then(r => r.json())
+      .then(data => setBilling(data))
+      .catch(() => setBilling(null))
+      .finally(() => setLoadingBilling(false));
+  }, []);
+
+  const handleCancelSubscription = async () => {
+    if (!cancelConfirm) { setCancelConfirm(true); return; }
+    setCancelling(true);
+    setCancelError('');
+    try {
+      const res = await fetch('/api/billing/cancel', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setCancelError(d.message || t('settings.subscriptionCancelError'));
+        return;
+      }
+      setBilling(b => b ? { ...b, subscription: { status: 'cancelled', periodEnd: d.periodEnd } } : b);
+      setCancelSuccess(true);
+      setCancelConfirm(false);
+    } catch {
+      setCancelError(t('settings.subscriptionCancelError'));
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   const handleUnblock = async (id: string) => {
     setUnblockingId(id);
@@ -211,6 +259,84 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                     <div className="settings-user-tier">{user?.tier?.toUpperCase()}</div>
                   </div>
                 </div>
+
+                <h3 className="settings-section-title">{t('settings.subscriptionTitle')}</h3>
+                {loadingBilling ? (
+                  <div className="settings-loading">{t('common.loading')}</div>
+                ) : !billing ? (
+                  <div className="settings-error">{t('settings.subscriptionLoadError')}</div>
+                ) : billing.tier === 'vip' && billing.subscription ? (
+                  <div className="settings-subscription">
+                    <div className="settings-subscription-plan">{t('settings.subscriptionPlanVip')}</div>
+                    {billing.subscription.status === 'active' ? (
+                      <div className="settings-subscription-status">
+                        {t('settings.subscriptionStatusActive')}
+                        {billing.subscription.periodEnd && (
+                          <> · {t('settings.subscriptionRenewsOn', { date: new Date(billing.subscription.periodEnd).toLocaleDateString() })}</>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="settings-subscription-status">
+                        {billing.subscription.periodEnd
+                          ? t('settings.subscriptionCancelledUntil', { date: new Date(billing.subscription.periodEnd).toLocaleDateString() })
+                          : t('settings.subscriptionCancelledUntil', { date: '' })}
+                      </div>
+                    )}
+
+                    {cancelSuccess ? (
+                      <div className="settings-success">
+                        {t('settings.subscriptionCancelSuccess', {
+                          date: billing.subscription.periodEnd ? new Date(billing.subscription.periodEnd).toLocaleDateString() : '',
+                        })}
+                      </div>
+                    ) : billing.subscription.status === 'active' ? (
+                      <>
+                        {cancelError && <div className="settings-error">{cancelError}</div>}
+                        {cancelConfirm ? (
+                          <div className="settings-delete-confirm">
+                            <p className="settings-delete-warn">
+                              {t('settings.subscriptionCancelConfirmQuestion', {
+                                date: billing.subscription.periodEnd ? new Date(billing.subscription.periodEnd).toLocaleDateString() : '',
+                              })}
+                            </p>
+                            <div className="settings-delete-actions">
+                              <button
+                                className="settings-btn-danger"
+                                onClick={handleCancelSubscription}
+                                disabled={cancelling}
+                              >
+                                {cancelling ? t('settings.subscriptionCancelling') : t('settings.subscriptionCancelConfirmBtn')}
+                              </button>
+                              <button
+                                className="settings-btn-ghost"
+                                onClick={() => { setCancelConfirm(false); setCancelError(''); }}
+                                disabled={cancelling}
+                              >
+                                {t('settings.cancelBtn')}
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button className="settings-btn-delete" onClick={handleCancelSubscription}>
+                            {t('settings.subscriptionCancelBtn')}
+                          </button>
+                        )}
+                      </>
+                    ) : null}
+                  </div>
+                ) : (
+                  <div className="settings-subscription">
+                    <div className="settings-subscription-plan">{t('settings.subscriptionPlanFree')}</div>
+                    <p className="settings-danger-desc">
+                      {t('settings.subscriptionUpgradeCta')}{' '}
+                      <Link to="/pricing" className="settings-privacy-link" onClick={onClose}>
+                        {t('settings.subscriptionUpgradeLink')}
+                      </Link>
+                    </p>
+                  </div>
+                )}
+
+                <div className="settings-divider" />
 
                 <h3 className="settings-section-title">{t('settings.changePassword')}</h3>
                 {pwSuccess ? (

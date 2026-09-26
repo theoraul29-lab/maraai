@@ -31,6 +31,7 @@ import {
   verifyWebhookEvent as verifyPayPalEvent,
   handlePayPalEvent,
   createPayPalSubscription,
+  cancelPayPalSubscription,
 } from './paypal.js';
 import { listInvoicesForUser, getInvoiceById } from './invoices.js';
 import { renderInvoicePdf } from './invoice-pdf.js';
@@ -365,6 +366,22 @@ export function registerBillingApi(app: Express): void {
           console.error('[billing] stripe cancel_at_period_end failed:', err);
           // Intentionally continue: we still want to record the cancellation
           // locally so the user isn't stuck if the provider call hiccups.
+        }
+      }
+
+      // PayPal has no "cancel at period end" concept — cancelling the
+      // subscription stops the next billing cycle immediately, and the
+      // customer keeps access locally until `periodEnd` via the status
+      // check below (features.ts), same as the Stripe path.
+      if (sub.provider === 'paypal' && sub.providerSubscriptionId) {
+        try {
+          await cancelPayPalSubscription(sub.providerSubscriptionId);
+        } catch (err) {
+          console.error('[billing] paypal cancel failed:', err);
+          // Intentionally continue: we still want to record the cancellation
+          // locally so the user isn't stuck if the provider call hiccups.
+          // This does mean a failed provider call could leave PayPal still
+          // billing — logged loudly so it surfaces in ops monitoring.
         }
       }
 
