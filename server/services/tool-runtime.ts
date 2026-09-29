@@ -16,6 +16,7 @@ import { requiredRiskForTool as getRequiredRiskForTool } from './tool-policy.js'
 import { prepareGitHubWriteOperation, readGitHubStatus } from './github/operations.js';
 import { prepareRailwayWriteOperation, readRailwayStatus } from './railway/operations.js';
 import { runPythonScript } from './python-sandbox.js';
+import { researchTopic } from '../mara-brain/agents/web-research.js';
 
 export type ToolExecutionResult = unknown;
 
@@ -46,6 +47,10 @@ const handlers: Record<string, ToolHandler> = {
   'python.execute': async (payload) => runPythonScript(String(payload.code ?? ''), {
     timeoutMs: typeof payload.timeoutMs === 'number' ? payload.timeoutMs : undefined,
   }),
+  'research.topic': async (payload) => researchTopic(
+    String(payload.query ?? ''),
+    typeof payload.context === 'string' ? payload.context : undefined,
+  ),
 };
 
 function readGitHubWriteOperation(value: unknown): Parameters<typeof prepareGitHubWriteOperation>[0] {
@@ -99,6 +104,7 @@ function validatePayload(toolType: string, payload: Record<string, unknown>): vo
   if (toolType === 'git.push' && typeof payload.commitTaskId !== 'number') throw new Error('git.push requires a commitTaskId');
   if (toolType === 'code-agent.plan' && typeof payload.requestId !== 'number') throw new Error('code-agent.plan requires requestId');
   if (toolType === 'python.execute' && (typeof payload.code !== 'string' || !payload.code.trim())) throw new Error('python.execute requires non-empty code');
+  if (toolType === 'research.topic' && (typeof payload.query !== 'string' || !payload.query.trim())) throw new Error('research.topic requires a non-empty query');
   if (toolType === 'github.write_plan' && typeof payload.operation !== 'string') throw new Error('github.write_plan requires an operation');
   if (toolType === 'railway.write_plan' && typeof payload.operation !== 'string') throw new Error('railway.write_plan requires an operation');
 }

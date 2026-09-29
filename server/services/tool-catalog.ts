@@ -26,6 +26,8 @@ export function readToolCatalog(): ToolCatalogEntry[] {
     { id: 'git.stage_proposal', label: 'Stage approved proposal', description: 'Stage only approved proposal paths after validation review.', risk: 'HIGH_RISK', available: true, execution: 'approval_required' },
     { id: 'git.push', label: 'Push to origin', description: 'Push the current branch after a linked, completed commit task.', risk: 'HIGH_RISK', available: true, execution: 'approval_required' },
     { id: 'code-agent.plan', label: 'Code Agent plan', description: 'Generate a repository-aware plan through the existing Mara LLM router.', risk: 'LOW_RISK', available: true, execution: 'local_capability' },
+    { id: 'research.topic', label: 'Research a topic', description: 'Run on-demand web research through the existing research pipeline, outside the regular Brain cycle.', risk: 'LOW_RISK', available: true, execution: 'local_capability' },
+    { id: 'python.execute', label: 'Run Python', description: 'Execute a short Python script in the sandboxed, no-network, no-secrets runtime.', risk: 'LOW_RISK', available: true, execution: 'local_capability' },
     { id: 'repository.git_status', label: 'Git status', description: 'Read branch, diff, and recent commits.', risk: 'READ_ONLY', available: true, execution: 'local_capability' },
     { id: 'github.status', label: 'GitHub status', description: 'Read GitHub App repository, branches, commits, issues, PRs, and Actions status.', risk: 'READ_ONLY', available: true, execution: 'local_capability' },
     { id: 'github.write_plan', label: 'GitHub write plan', description: 'Prepare a GitHub write operation for owner confirmation; does not execute remote writes.', risk: 'HIGH_RISK', available: true, execution: 'approval_required' },

@@ -87,9 +87,10 @@ import { runPythonScript } from './services/python-sandbox.js';
 import { isHelloMaraModuleId, readHelloMaraModule, readHelloMaraModules } from './services/hellomara-module-registry.js';
 import { readGitHubStatus } from './services/github/operations.js';
 import { readRailwayStatus } from './services/railway/operations.js';
-import { controlTaskWorkerStatus } from './bootstrap/control-task-worker.js';
+import { controlTaskWorkerStatus, runOneControlTask } from './bootstrap/control-task-worker.js';
 import { allowedAgentTools, createAgentTask } from './services/agent-runtime.js';
 import { requiredRiskForTool } from './services/tool-policy.js';
+import { isSafeToolRegistered } from './services/tool-runtime.js';
 import {
   approveControlTask,
   cancelControlTask,
@@ -1388,6 +1389,36 @@ export async function registerRoutes(
 
   app.get('/api/control/tools', requireAdmin, (_req: any, res: any) => {
     res.json({ tools: readToolCatalog() });
+  });
+
+  // Runs a Tools-tab entry on demand. Creates a control task exactly like the
+  // rest of the admin surface, then immediately tries to execute it once:
+  // READ_ONLY/LOW_RISK tools run right away and this returns the completed
+  // result inline; anything riskier lands in WAITING_APPROVAL and this simply
+  // returns that state — runOneControlTask only ever claims a task the normal
+  // worker would also be allowed to claim, so there is no separate execution
+  // path or bypass here, just a synchronous nudge for the safe case.
+  app.post('/api/control/tools/:id/run', requireAdmin, async (req: any, res: any) => {
+    const toolId = String(req.params.id);
+    if (!isSafeToolRegistered(toolId)) {
+      return res.status(404).json({ error: `Unknown tool: ${toolId}` });
+    }
+    try {
+      const payload = req.body?.payload && typeof req.body.payload === 'object' ? req.body.payload : {};
+      if (JSON.stringify(payload).length > 100_000) return res.status(413).json({ error: 'Tool payload exceeds the 100 KB limit' });
+      const tool = readToolCatalog().find((entry) => entry.id === toolId);
+      const task = createControlTask({
+        taskType: toolId,
+        title: `Tools tab: ${tool?.label ?? toolId}`,
+        payload,
+        createdBy: req.user?.uid ?? null,
+      });
+      recordControlAdminAction('tool.run', task.id, req.user?.uid ?? null, { toolId });
+      const finished = await runOneControlTask(task.id);
+      res.status(201).json({ task: finished ?? task });
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : 'Tool run failed' });
+    }
   });
 
   app.post('/api/control/code-agent/requests', requireAdmin, async (req: any, res: any) => {

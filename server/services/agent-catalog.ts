@@ -79,7 +79,7 @@ export const AGENT_CATALOG: readonly AgentCatalogEntry[] = [
     role: 'Dedicated research orchestration beyond the existing Brain research phase.',
     capabilities: ['research-orchestration'],
     risk: 'LOW_RISK',
-    execution: 'not_configured',
+    execution: 'admin_invoked',
   },
   {
     id: 'devops-agent',
@@ -87,7 +87,7 @@ export const AGENT_CATALOG: readonly AgentCatalogEntry[] = [
     role: 'Infrastructure and deployment operations behind explicit approval.',
     capabilities: ['deployment', 'infrastructure'],
     risk: 'CRITICAL',
-    execution: 'not_configured',
+    execution: 'admin_invoked',
   },
   {
     id: 'security-agent',
@@ -111,6 +111,6 @@ export const AGENT_CATALOG: readonly AgentCatalogEntry[] = [
     role: 'Project planning and cross-capability coordination.',
     capabilities: ['planning', 'coordination'],
     risk: 'MODERATE_RISK',
-    execution: 'not_configured',
+    execution: 'admin_invoked',
   },
 ];

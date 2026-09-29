@@ -7,6 +7,9 @@ const agentTools: Record<string, readonly string[]> = {
   'code-explorer': ['repository.overview', 'repository.git_status', 'repository.search', 'repository.preview'],
   'testing-agent': ['project.typecheck', 'server.build', 'frontend.typecheck', 'frontend.build', 'python.execute'],
   'code-agent': ['code-agent.plan'],
+  'research-agent': ['research.topic'],
+  'devops-agent': ['railway.status', 'railway.write_plan'],
+  'project-agent': ['tasks.status', 'repository.overview'],
 };
 
 export function createAgentTask(input: {

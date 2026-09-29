@@ -90,6 +90,10 @@ export default function MaraControlCenter() {
   const [voiceKeyMessage, setVoiceKeyMessage] = useState<string | null>(null);
   const [libraryTtsActive, setLibraryTtsActive] = useState<boolean | null>(null);
   const [libraryTtsMessage, setLibraryTtsMessage] = useState<string | null>(null);
+  const [toolInputs, setToolInputs] = useState<Record<string, string>>({});
+  const [toolRuns, setToolRuns] = useState<Record<string, { status: string; summary: string } | undefined>>({});
+  const [agentTaskMessage, setAgentTaskMessage] = useState<string | null>(null);
+  const [researchQuery, setResearchQuery] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -241,23 +245,94 @@ export default function MaraControlCenter() {
     }
   }
 
-  async function queueAgentTask(agentId: string, toolType: string, module?: HelloMaraModuleEntry | null) {
+  async function queueAgentTask(agentId: string, toolType: string, module?: HelloMaraModuleEntry | null, extraPayload?: Record<string, unknown>) {
     setTaskBusy(`${agentId}:${toolType}`);
+    setAgentTaskMessage(null);
     try {
+      const payload = { ...(module ? { moduleId: module.id, moduleName: module.displayName } : {}), ...(extraPayload ?? {}) };
       const response = await fetch(`/api/control/agents/${encodeURIComponent(agentId)}/tasks`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ toolType, payload: module ? { moduleId: module.id, moduleName: module.displayName } : {}, moduleId: module?.id, moduleName: module?.displayName }),
+        body: JSON.stringify({ toolType, payload, moduleId: module?.id, moduleName: module?.displayName }),
       });
-      if (!response.ok) throw new Error(`Agent task request returned ${response.status}`);
+      const data = await response.json().catch(() => ({})) as { task?: { id: number; status: string }; error?: string };
+      if (!response.ok) throw new Error(data.error ?? `Agent task request returned ${response.status}`);
+      setAgentTaskMessage(data.task?.status === 'WAITING_APPROVAL'
+        ? `Task #${data.task.id} queued — waiting for your approval in the Tasks tab.`
+        : `Task #${data.task?.id ?? '?'} queued for ${agentId}.`);
       setError(null);
     } catch (cause) {
+      setAgentTaskMessage(null);
       setError(cause instanceof Error ? cause.message : 'Agent task request failed');
     } finally {
       setTaskBusy(null);
     }
   }
+
+  async function runTool(tool: ToolCatalogEntry, payload: Record<string, unknown> = {}) {
+    const key = tool.id;
+    setTaskBusy(`tool:${key}`);
+    try {
+      const response = await fetch(`/api/control/tools/${encodeURIComponent(tool.id)}/run`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payload }),
+      });
+      const data = await response.json().catch(() => ({})) as {
+        task?: { status: string; result?: unknown; error?: string | null };
+        error?: string;
+      };
+      if (!response.ok) throw new Error(data.error ?? `Tool run returned ${response.status}`);
+      const task = data.task;
+      const summary = task?.status === 'COMPLETED'
+        ? JSON.stringify(task.result, null, 2)
+        : task?.status === 'WAITING_APPROVAL'
+          ? 'Waiting for your approval — see the Tasks tab.'
+          : task?.status === 'FAILED'
+            ? (task.error ?? 'Failed.')
+            : `Status: ${task?.status ?? 'unknown'}`;
+      setToolRuns((current) => ({ ...current, [key]: { status: task?.status ?? 'unknown', summary: (summary ?? '').slice(0, 4000) } }));
+    } catch (cause) {
+      setToolRuns((current) => ({ ...current, [key]: { status: 'ERROR', summary: cause instanceof Error ? cause.message : 'Tool run failed' } }));
+    } finally {
+      setTaskBusy(null);
+    }
+  }
+
+  const GITHUB_WRITE_OPERATIONS = ['create_branch', 'write_file', 'create_issue', 'update_issue', 'create_pull_request'] as const;
+  const RAILWAY_WRITE_OPERATIONS = ['deploy', 'redeploy', 'restart', 'update_variables'] as const;
+
+  function toolPayloadFromInput(toolId: string): Record<string, unknown> {
+    const value = toolInputs[toolId] ?? '';
+    if (toolId === 'repository.search') return { query: value };
+    if (toolId === 'repository.preview') return { path: value };
+    if (toolId === 'python.execute') return { code: value };
+    if (toolId === 'research.topic') return { query: value };
+    if (toolId === 'git.create_branch') return { branch: value };
+    if (toolId === 'github.write_plan' || toolId === 'railway.write_plan') {
+      const operation = toolInputs[`${toolId}::op`] ?? (toolId === 'github.write_plan' ? GITHUB_WRITE_OPERATIONS[0] : RAILWAY_WRITE_OPERATIONS[0]);
+      const reason = toolInputs[`${toolId}::reason`]?.trim() || 'Requested from Control Center Tools tab.';
+      return { operation, reason };
+    }
+    return {};
+  }
+
+  function toolNeedsInput(toolId: string): 'text' | 'code' | 'github-op' | 'railway-op' | null {
+    if (toolId === 'repository.search' || toolId === 'repository.preview' || toolId === 'research.topic' || toolId === 'git.create_branch') return 'text';
+    if (toolId === 'python.execute') return 'code';
+    if (toolId === 'github.write_plan') return 'github-op';
+    if (toolId === 'railway.write_plan') return 'railway-op';
+    return null;
+  }
+
+  // These tools take payload fields that only make sense wired to another
+  // task's id (a proposal, a validation run, a commit) — they're steps inside
+  // the Code Agent -> bridge pipeline, not something to fire standalone with
+  // typed-in text, so the Tools tab shows them as pipeline-only instead of a
+  // button that would always fail validation on execution.
+  const PIPELINE_ONLY_TOOLS = new Set(['repository.apply_changes', 'git.stage_proposal', 'git.commit_staged', 'git.push']);
 
   async function decideControlTask(taskId: string, decision: 'approve' | 'cancel') {
     const numericId = taskId.startsWith('control:') ? taskId.slice('control:'.length) : '';
@@ -687,9 +762,39 @@ export default function MaraControlCenter() {
                   <button type="button" disabled={taskBusy !== null} onClick={() => void queueAgentTask(agent.id, 'project.typecheck', selectedModule)}>Typecheck</button>
                   <button type="button" disabled={taskBusy !== null} onClick={() => void queueAgentTask(agent.id, 'frontend.build', selectedModule)}>Frontend build</button>
                 </>}
+                {agent.id === 'research-agent' && <>
+                  <input
+                    value={researchQuery}
+                    onChange={(event) => setResearchQuery(event.target.value)}
+                    placeholder="Topic to research now"
+                    style={{ width: 180 }}
+                  />
+                  <button
+                    type="button"
+                    disabled={taskBusy !== null || !researchQuery.trim()}
+                    onClick={() => void queueAgentTask(agent.id, 'research.topic', null, { query: researchQuery.trim() })}
+                  >
+                    Research now
+                  </button>
+                </>}
+                {agent.id === 'devops-agent' && <>
+                  <button type="button" disabled={taskBusy !== null} onClick={() => void queueAgentTask(agent.id, 'railway.status')}>Railway status</button>
+                  <button
+                    type="button"
+                    disabled={taskBusy !== null}
+                    onClick={() => void queueAgentTask(agent.id, 'railway.write_plan', null, { operation: 'redeploy', reason: 'Requested via Control Center devops-agent' })}
+                  >
+                    Prepare redeploy plan
+                  </button>
+                </>}
+                {agent.id === 'project-agent' && <>
+                  <button type="button" disabled={taskBusy !== null} onClick={() => void queueAgentTask(agent.id, 'tasks.status')}>Task status</button>
+                  <button type="button" disabled={taskBusy !== null} onClick={() => void queueAgentTask(agent.id, 'repository.overview')}>Repository overview</button>
+                </>}
               </span>
             </div>)}
             {!agents.length && <p className="mcc-muted">Agent catalog unavailable.</p>}
+            {agentTaskMessage && <p className="mcc-muted">{agentTaskMessage}</p>}
           </section>
           <section className="mcc-panel mcc-panel--wide">
             <div className="mcc-panel-heading"><h2>Code Agent</h2><span>Persistent planning workflow</span></div>
@@ -992,8 +1097,73 @@ export default function MaraControlCenter() {
 
         {activeView === 'tools' && <div className="mcc-view">
           <section className="mcc-panel mcc-panel--wide mcc-panel--scroll">
-            <div className="mcc-panel-heading"><h2>Tools</h2><span>Permission-aware catalog</span></div>
-            {tools.map((tool) => <div className="mcc-signal" key={tool.id}><span>{tool.label} · {tool.description}</span><strong>{tool.available ? tool.risk : 'NOT CONFIGURED'}</strong></div>)}
+            <div className="mcc-panel-heading"><h2>Tools</h2><span>Permission-aware catalog · click Run to actually invoke</span></div>
+            {tools.map((tool) => {
+              const inputKind = toolNeedsInput(tool.id);
+              const busy = taskBusy === `tool:${tool.id}`;
+              const inputValue = toolInputs[tool.id] ?? '';
+              const needsTypedInput = inputKind === 'text' || inputKind === 'code';
+              const disabled = busy || !tool.available || (needsTypedInput && !inputValue.trim());
+              const pipelineOnly = PIPELINE_ONLY_TOOLS.has(tool.id);
+              return (
+                <div className="mcc-signal" key={tool.id} style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                    <span>{tool.label} · {tool.description}</span>
+                    <span className="mcc-agent-actions">
+                      <strong>{tool.available ? tool.risk : 'NOT CONFIGURED'}</strong>
+                      {tool.available && !pipelineOnly && (
+                        <button
+                          type="button"
+                          disabled={disabled}
+                          onClick={() => void runTool(tool, toolPayloadFromInput(tool.id))}
+                        >
+                          {busy ? 'Running…' : tool.execution === 'approval_required' ? 'Request' : 'Run'}
+                        </button>
+                      )}
+                      {tool.available && pipelineOnly && <span className="mcc-muted">Pipeline only</span>}
+                    </span>
+                  </div>
+                  {pipelineOnly && <p className="mcc-muted" style={{ marginTop: 4 }}>Runs automatically as a step of the Code Agent → bridge workflow, not standalone.</p>}
+                  {inputKind === 'text' && (
+                    <div className="mcc-repository-search" style={{ marginTop: 8 }}>
+                      <input
+                        value={inputValue}
+                        onChange={(event) => setToolInputs((current) => ({ ...current, [tool.id]: event.target.value }))}
+                        placeholder={tool.id === 'repository.preview' ? 'File path' : tool.id === 'git.create_branch' ? 'Branch name' : 'Query'}
+                      />
+                    </div>
+                  )}
+                  {inputKind === 'code' && (
+                    <div className="mcc-code-request" style={{ marginTop: 8 }}>
+                      <textarea
+                        value={inputValue}
+                        onChange={(event) => setToolInputs((current) => ({ ...current, [tool.id]: event.target.value }))}
+                        placeholder="Python code to run in the sandbox"
+                        rows={4}
+                      />
+                    </div>
+                  )}
+                  {(inputKind === 'github-op' || inputKind === 'railway-op') && (
+                    <div className="mcc-repository-search" style={{ marginTop: 8 }}>
+                      <select
+                        value={toolInputs[`${tool.id}::op`] ?? (inputKind === 'github-op' ? GITHUB_WRITE_OPERATIONS[0] : RAILWAY_WRITE_OPERATIONS[0])}
+                        onChange={(event) => setToolInputs((current) => ({ ...current, [`${tool.id}::op`]: event.target.value }))}
+                      >
+                        {(inputKind === 'github-op' ? GITHUB_WRITE_OPERATIONS : RAILWAY_WRITE_OPERATIONS).map((op) => <option key={op} value={op}>{op}</option>)}
+                      </select>
+                      <input
+                        value={toolInputs[`${tool.id}::reason`] ?? ''}
+                        onChange={(event) => setToolInputs((current) => ({ ...current, [`${tool.id}::reason`]: event.target.value }))}
+                        placeholder="Reason (optional)"
+                      />
+                    </div>
+                  )}
+                  {toolRuns[tool.id] && (
+                    <pre className="mcc-code-preview" style={{ marginTop: 6 }}>{toolRuns[tool.id]!.summary}</pre>
+                  )}
+                </div>
+              );
+            })}
           </section>
         </div>}
 
