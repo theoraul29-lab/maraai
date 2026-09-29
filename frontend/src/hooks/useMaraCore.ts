@@ -40,16 +40,15 @@ const VOICE_STYLE_STORAGE_KEY = 'mara_voice_style';
 // gets real audio started in roughly one sentence's synthesis time instead
 // of the whole reply's.
 //
-// Deploy note (2026-09-29): getting this exact change live took several
-// redeploys — Railway kept serving the pre-change bundle (same content
-// hash) across multiple API-triggered deploys of this same commit, even
-// with usePreviousImageTag:false and purgeServiceCache. Ruled out
-// Cloudflare (cf-cache-status: BYPASS) and Railway's own edge (same result
-// hitting the *.up.railway.app domain directly) — the stale content
-// consistently traced back to something in the build/image layer for this
-// specific commit, not response caching. A genuinely new commit is what
-// finally forced a real rebuild; if this ever recurs, don't burn time on
-// cache-purge mutations for the same commit — just get a new SHA out.
+// Verifying-a-deploy note (2026-09-29): this file is lazy-loaded, so its
+// compiled output lives in a route-level chunk (MaraControlCenter-*.js),
+// never in the app-shell entry bundle (index-*.js) — that entry file's
+// content hash doesn't change when only this file does, because it doesn't
+// contain this code at all. A whole redeploy-troubleshooting detour that
+// day was chasing a phantom Railway build-cache bug; the deploys had been
+// fine the entire time, the wrong chunk was being checked. To confirm a
+// change here actually shipped, check the MaraControlCenter-* chunk (or
+// grep dist/public/assets/*.js broadly), never just index-*.js.
 async function* parseLengthPrefixedWavFrames(body: ReadableStream<Uint8Array>): AsyncGenerator<Blob> {
   const reader = body.getReader();
   let buffer = new Uint8Array(0);
