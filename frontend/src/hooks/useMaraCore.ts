@@ -28,6 +28,47 @@ export type VoiceStyle = 'male' | 'female';
 
 const VOICE_STYLE_STORAGE_KEY = 'mara_voice_style';
 
+// Matches cosyvoice_tts_server.py's streaming /synthesize response: one WAV
+// clip per sentence, each prefixed with its own 4-byte big-endian length,
+// back to back, instead of one clip for the whole reply. Added 2026-09-28
+// after confirming live that waiting for a full (possibly multi-sentence)
+// reply to synthesize before sending anything back routinely took long
+// enough that the request died somewhere between here and the laptop
+// before ever getting a response — silently, since that failure never
+// reached cosyvoice_tts_server.py's own log — and speak() fell back to the
+// robotic browser voice every time. Playing each sentence as it arrives
+// gets real audio started in roughly one sentence's synthesis time instead
+// of the whole reply's.
+async function* parseLengthPrefixedWavFrames(body: ReadableStream<Uint8Array>): AsyncGenerator<Blob> {
+  const reader = body.getReader();
+  let buffer = new Uint8Array(0);
+  const append = (chunk: Uint8Array) => {
+    const next = new Uint8Array(buffer.length + chunk.length);
+    next.set(buffer, 0);
+    next.set(chunk, buffer.length);
+    buffer = next;
+  };
+  try {
+    while (true) {
+      while (buffer.length < 4) {
+        const { done, value } = await reader.read();
+        if (done) return;
+        if (value) append(value);
+      }
+      const frameLen = new DataView(buffer.buffer, buffer.byteOffset, 4).getUint32(0, false);
+      while (buffer.length < 4 + frameLen) {
+        const { done, value } = await reader.read();
+        if (done) return; // truncated mid-frame — drop it, stream is over
+        if (value) append(value);
+      }
+      yield new Blob([buffer.slice(4, 4 + frameLen)], { type: 'audio/wav' });
+      buffer = buffer.slice(4 + frameLen);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}
+
 function loadStoredVoiceStyle(): VoiceStyle {
   try {
     return localStorage.getItem(VOICE_STYLE_STORAGE_KEY) === 'female' ? 'female' : 'male';
@@ -185,7 +226,25 @@ export function useMaraCore() {
       return speakWithBrowserVoice(text);
     }
 
+    const playBlob = (blob: Blob): Promise<void> => {
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      currentAudioRef.current = audio;
+      audio.onplay = () => setSpeaking(true);
+      return new Promise<void>((resolve) => {
+        const cleanup = () => {
+          URL.revokeObjectURL(url);
+          if (currentAudioRef.current === audio) currentAudioRef.current = null;
+          resolve();
+        };
+        audio.onended = cleanup;
+        audio.onerror = cleanup;
+        audio.play().catch(cleanup);
+      });
+    };
+
     return (async () => {
+      let playedAny = false;
       try {
         // credentials must be explicit 'omit' — same cross-origin reasoning
         // as the STT fetch below (frontend/src/csrf.ts's global fetch
@@ -197,29 +256,30 @@ export function useMaraCore() {
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ttsConfig.token}` },
           body: JSON.stringify({ text, lang: lang || i18n.language, voiceStyle }),
         });
-        if (!res.ok) throw new Error(`tts ${res.status}`);
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const audio = new Audio(url);
-        currentAudioRef.current = audio;
-        audio.onplay = () => setSpeaking(true);
+        if (!res.ok || !res.body) throw new Error(`tts ${res.status}`);
+
         await new Promise<void>((resolve) => {
-          const cleanup = () => {
-            setSpeaking(false);
-            URL.revokeObjectURL(url);
-            if (currentAudioRef.current === audio) currentAudioRef.current = null;
-            if (speakResolveRef.current === resolve) speakResolveRef.current = null;
-            resolve();
-          };
           speakResolveRef.current = resolve;
-          audio.onended = cleanup;
-          audio.onerror = cleanup;
-          audio.play().catch(cleanup);
+          (async () => {
+            try {
+              for await (const blob of parseLengthPrefixedWavFrames(res.body!)) {
+                playedAny = true;
+                await playBlob(blob);
+              }
+            } finally {
+              setSpeaking(false);
+              if (speakResolveRef.current === resolve) speakResolveRef.current = null;
+              resolve();
+            }
+          })();
         });
       } catch {
-        // Local TTS unreachable or the request/playback failed — fall back
-        // to the browser voice rather than leaving Mara silent.
-        await speakWithBrowserVoice(text);
+        // Local TTS unreachable, or it failed before a single sentence
+        // played — fall back to the browser voice rather than leaving Mara
+        // silent. If some sentences already played, a mid-stream failure
+        // just ends the reply a little short instead of restarting it in
+        // the robotic voice, which reads worse than a clean stop.
+        if (!playedAny) await speakWithBrowserVoice(text);
       }
     })();
   }, [i18n.language, voiceStyle, speakWithBrowserVoice]);
