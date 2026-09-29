@@ -1571,7 +1571,9 @@
     "analyzeError": "Eroare la analiză.",
     "uploadDocTitle": "Upload carte / document",
     "implementedByMara": "🤖 Implementat de Mara:",
-    "needsClaudeCode": "⚡ Necesită Claude Code"
+    "needsClaudeCode": "⚡ Necesită Claude Code",
+    "confirmCodeShipped": "✅ Codul a fost livrat — marchează implementat",
+    "experimentImplementedConfirmed": "Experiment marcat implementat — a pornit fereastra de măsurare."
   },
   "privacyPolicy": {
     "labelEmail": "Email",

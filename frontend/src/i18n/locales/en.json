@@ -1571,7 +1571,9 @@
     "analyzeError": "Error during analysis.",
     "uploadDocTitle": "Upload book / document",
     "implementedByMara": "🤖 Implemented by Mara:",
-    "needsClaudeCode": "⚡ Needs Claude Code"
+    "needsClaudeCode": "⚡ Needs Claude Code",
+    "confirmCodeShipped": "✅ Code shipped — mark implemented",
+    "experimentImplementedConfirmed": "Experiment marked implemented — measurement window started."
   },
   "privacyPolicy": {
     "labelEmail": "Email",

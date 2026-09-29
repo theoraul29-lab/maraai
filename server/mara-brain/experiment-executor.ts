@@ -6,11 +6,14 @@
 // changes, no external API calls.
 //
 // For experiments that require code changes (identified by file paths or
-// TypeScript keywords in the code_sketch), the executor marks the experiment
-// as needing manual Claude Code implementation and records a structured note.
+// TypeScript keywords in the code_sketch), the executor records a structured
+// implementation note and leaves the experiment in 'approved' status — no
+// code was actually written, so the measurement clock must not start yet.
 //
 // Lifecycle after approval:
-//   approved → (executor runs) → implemented (7-day measurement timer starts)
+//   approved → (executor runs, DB-only change) → implemented (7-day timer starts)
+//   approved → (executor runs, needs code) → stays approved until admin marks
+//     it implemented for real, once the code has shipped
 
 import { rawSqlite } from '../db.js';
 import { markImplemented, getExperiment } from './agents/growth-engineer.js';
@@ -42,8 +45,8 @@ function requiresCodeChange(sketch: string): boolean {
  * - If the code_sketch only describes DB-level actions (XP, text changes),
  *   we generate an LLM summary and mark it implemented immediately.
  * - If the sketch involves code files, we store a detailed implementation
- *   note for the human developer and still mark implemented so the 7-day
- *   measurement timer starts (the A/B split is active from this point on).
+ *   note for the human developer and leave the experiment in 'approved'
+ *   status — the admin marks it implemented manually once the code ships.
  */
 export async function executeApprovedExperiment(
   experimentId: number,
@@ -112,11 +115,19 @@ Write a 2-sentence summary of what was implemented and what the treatment group 
     console.warn('[executor] Could not write implementation_notes:', (err as Error).message);
   }
 
-  // Mark as implemented → starts the 7-day measurement timer
-  await markImplemented(experimentId);
+  // Only pure DB-level changes are actually done at this point, so only those
+  // start the 7-day measurement timer. An experiment that needs Claude Code
+  // stays in 'approved' status — nothing shipped yet, so marking it
+  // 'implemented' here would start the A/B measurement window on a change
+  // that never happened and corrupt the outcome data MaraBrain learns from.
+  // It moves to 'implemented' later via the admin's explicit "Mark
+  // implemented" action, once the code has actually been written and deployed.
+  if (!needsClaudeCode) {
+    await markImplemented(experimentId);
+  }
 
   console.log(
-    `[executor] Experiment #${experimentId} ${needsClaudeCode ? '⚡ needs Claude Code' : '✅ auto-implemented'}`,
+    `[executor] Experiment #${experimentId} ${needsClaudeCode ? '⚡ needs Claude Code — staying in approved status' : '✅ auto-implemented'}`,
   );
 
   return { experimentId, actionsPerformed, needsClaudeCode, implementationNotes };

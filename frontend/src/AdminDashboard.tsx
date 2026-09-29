@@ -772,6 +772,29 @@ function GrowthTab() {
     finally { setExecuting(null); }
   };
 
+  const handleConfirmShipped = async (id: number) => {
+    setExecuting(id);
+    try {
+      const res = await fetch(`/api/admin/mara/experiments/${id}/implement`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      if (res.ok) {
+        showToast(t('admin.experimentImplementedConfirmed'), true);
+        loadData();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        showToast(`Error: ${err.error || 'Something went wrong.'}`, false);
+      }
+    } catch {
+      showToast(t('admin.networkError'), false);
+    } finally {
+      setExecuting(null);
+    }
+  };
+
   if (loading) return <div className="adb-loading">{t('admin.loadingGrowth')}</div>;
 
   return (
@@ -843,6 +866,7 @@ function GrowthTab() {
               {exp.implementation_notes && (() => {
                 try {
                   const notes = JSON.parse(exp.implementation_notes);
+                  const awaitingCodeShip = notes.needsClaudeCode && exp.status === 'approved';
                   return (
                     <div className="adb-exp-impl">
                       <div className="adb-exp-impl-title">{t('admin.implementedByMara')}</div>
@@ -851,6 +875,16 @@ function GrowthTab() {
                       ))}
                       {notes.needsClaudeCode && (
                         <div className="adb-exp-needs-code">{t('admin.needsClaudeCode')}</div>
+                      )}
+                      {awaitingCodeShip && (
+                        <button
+                          className="adb-btn adb-btn--primary"
+                          style={{ marginTop: 8 }}
+                          onClick={() => handleConfirmShipped(exp.id)}
+                          disabled={executing === exp.id}
+                        >
+                          {executing === exp.id ? t('admin.implementing') : t('admin.confirmCodeShipped')}
+                        </button>
                       )}
                     </div>
                   );
