@@ -39,6 +39,17 @@ const VOICE_STYLE_STORAGE_KEY = 'mara_voice_style';
 // robotic browser voice every time. Playing each sentence as it arrives
 // gets real audio started in roughly one sentence's synthesis time instead
 // of the whole reply's.
+//
+// Deploy note (2026-09-29): getting this exact change live took several
+// redeploys — Railway kept serving the pre-change bundle (same content
+// hash) across multiple API-triggered deploys of this same commit, even
+// with usePreviousImageTag:false and purgeServiceCache. Ruled out
+// Cloudflare (cf-cache-status: BYPASS) and Railway's own edge (same result
+// hitting the *.up.railway.app domain directly) — the stale content
+// consistently traced back to something in the build/image layer for this
+// specific commit, not response caching. A genuinely new commit is what
+// finally forced a real rebuild; if this ever recurs, don't burn time on
+// cache-purge mutations for the same commit — just get a new SHA out.
 async function* parseLengthPrefixedWavFrames(body: ReadableStream<Uint8Array>): AsyncGenerator<Blob> {
   const reader = body.getReader();
   let buffer = new Uint8Array(0);
