@@ -8,10 +8,19 @@
  *
  * Required env:
  *   OLLAMA_BASE_URL  (default: http://localhost:11434)
- *   OLLAMA_MODEL     (default: llama3.1:8b)
+ *   OLLAMA_MODEL     (default: qwen3:14b)
  *
  * Optional env:
  *   OLLAMA_TIMEOUT_MS  (default: 120000 — same shape as ANTHROPIC_TIMEOUT_MS)
+ *
+ * `think: false` is always sent: Qwen3 is a hybrid-reasoning model that
+ * defaults to an internal <think> pass before every reply (confirmed via
+ * `ollama show qwen3:14b` — thinking defaults to true). Ollama already keeps
+ * that reasoning in a separate `message.thinking` field we never read, so it
+ * was never leaking into replies — but it was still ~5x the eval tokens
+ * (154 vs 30 in a side-by-side test) for a plain conversational reply that
+ * gains nothing from step-by-step reasoning. Non-thinking models (the prior
+ * llama3.1:8b, qwen3-coder:30b) just ignore the field.
  */
 
 import type {
@@ -22,15 +31,21 @@ import type {
 } from './ai-provider.js';
 
 const DEFAULT_BASE_URL = 'http://localhost:11434';
-const DEFAULT_MODEL = 'llama3.1:8b';
+const DEFAULT_MODEL = 'qwen3:14b';
 const DEFAULT_TIMEOUT_MS = 120_000;
 const HEALTH_TIMEOUT_MS = 3_000;
 const HEALTH_CACHE_TTL_MS = 30_000;
+// Keeps the model resident in VRAM well past Ollama's 5m default so a
+// conversation with real gaps between messages doesn't keep re-paying the
+// ~10-13s cold load observed on this model/GPU.
+const KEEP_ALIVE = '30m';
 
 interface OllamaChatRequest {
   model: string;
   messages: { role: 'system' | 'user' | 'assistant'; content: string }[];
   stream: false;
+  think: false;
+  keep_alive: string;
   options?: {
     temperature?: number;
   };
@@ -163,6 +178,8 @@ class OllamaProvider implements AIProvider {
       model,
       messages: reqMessages,
       stream: false,
+      think: false,
+      keep_alive: KEEP_ALIVE,
       ...(typeof opts.temperature === 'number' ? { options: { temperature: opts.temperature } } : {}),
     };
 
