@@ -174,8 +174,10 @@ export function buildSystemInstruction(context: UserMemoryContext, language?: st
   const parts: string[] = [context.personalityPrompt];
 
   // Platform context — Mara knows she lives on MaraAI and can guide users.
+  // Admin sessions get the factual reference only, no conversion/CTA script —
+  // see getPlatformContext's isAdmin param.
   const lang = language || context.preferences?.language || 'ro';
-  parts.push('', getPlatformContext(lang));
+  parts.push('', getPlatformContext(lang, context.isAdmin));
 
   // Language instruction (keep lang var below for the block after knowledge)
   if (lang === 'ro') {

@@ -58,7 +58,7 @@ function langInstruction(lang: string): string {
  * Niciodată nu se loghează sau nu se expune clientului.
  */
 export function buildAdminSystemPrompt(lang = 'en'): string {
-  const platform = getPlatformContext(lang);
+  const platform = getPlatformContext(lang, true);
   return [ADMIN_CORE, '', platform, langInstruction(lang)].join('\n');
 }
 
