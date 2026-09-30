@@ -2111,13 +2111,18 @@ export async function registerRoutes(
       // mirrors tts_server.py's own layered detection (diacritics are the
       // one near-certain signal on real text, so they win outright):
       //   1. Romanian/German diacritics in THIS message — near-certain.
-      //   2. Whisper's per-turn guess, only trusted on a long-enough turn
+      //   2. Common-word match in THIS message (typed English/Romanian/German
+      //      has no diacritic signal to lean on — diacritics alone left every
+      //      plain-typed English message with nothing to detect on, falling
+      //      all the way through to account-language preference regardless
+      //      of what was actually typed).
+      //   3. Whisper's per-turn guess, only trusted on a long-enough turn
       //      (short audio guesses are noisy) — lets a genuine language
       //      switch, spoken clearly, take effect immediately.
-      //   3. The language of the most recent prior admin turns that had a
+      //   4. The language of the most recent prior admin turns that had a
       //      diacritic signal — conversational continuity instead of
       //      re-guessing from scratch on a short reply like "ok" or "da".
-      //   4. The admin's own account language preference, then English.
+      //   5. The admin's own account language preference, then English.
       const detectedLang = typeof req.body?.lang === 'string' ? req.body.lang : null;
       const SUPPORTED_LANGS = new Set(['ro', 'en', 'de']);
       const detectDiacriticLang = (text: string): 'ro' | 'de' | null => {
@@ -2125,7 +2130,24 @@ export async function registerRoutes(
         if (/[äöüß]/i.test(text)) return 'de';
         return null;
       };
-      let resolvedLang: 'ro' | 'en' | 'de' | null = detectDiacriticLang(message);
+      // Common function words, matched whole-word so this doesn't false-hit on
+      // substrings ("is" inside "this"). Romanian entries are the forms people
+      // actually type day-to-day, without diacritics, since most don't bother.
+      const WORD_LANG_MARKERS: Record<'ro' | 'en' | 'de', RegExp> = {
+        ro: /\b(si|este|sunt|ce|cum|nu|da|buna|salut|multumesc|azi|acum|aici|acolo|bine|pentru|vreau|trebuie|unde|cand|cine|de ce|mersi|multam|asta|acest|aceasta)\b/i,
+        en: /\b(the|is|are|you|how|what|why|where|when|who|not|and|but|with|this|that|have|has|will|can|could|would|should|please|thanks|thank|hello|hi|good|yes|no|today|now|here|there)\b/i,
+        de: /\b(und|ist|sind|wie|was|warum|wo|wann|wer|nicht|aber|mit|dieser|dieses|haben|hat|wird|kann|konnte|sollte|bitte|danke|hallo|gut|ja|nein|heute|jetzt|hier|dort)\b/i,
+      };
+      const detectWordLang = (text: string): 'ro' | 'en' | 'de' | null => {
+        const scores = (['ro', 'en', 'de'] as const).map((lang) => ({
+          lang,
+          count: (text.match(new RegExp(WORD_LANG_MARKERS[lang], 'gi')) ?? []).length,
+        }));
+        scores.sort((a, b) => b.count - a.count);
+        if (scores[0].count > 0 && scores[0].count > scores[1].count) return scores[0].lang;
+        return null;
+      };
+      let resolvedLang: 'ro' | 'en' | 'de' | null = detectDiacriticLang(message) ?? detectWordLang(message);
       if (!resolvedLang && detectedLang && SUPPORTED_LANGS.has(detectedLang) && message.length >= 12) {
         resolvedLang = detectedLang as 'ro' | 'en' | 'de';
       }
