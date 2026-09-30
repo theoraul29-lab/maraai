@@ -21,7 +21,8 @@ export type KnowledgeCategory =
   | 'book_knowledge'
   | 'library_read_marker' // stable per-book progress marker (Etapa 3 Task 5)
   | 'platform_application' // per-module application extracted from a book (Etapa 3 Task 6)
-  | 'web_read_marker'; // stable per-web-topic progress marker
+  | 'web_read_marker' // stable per-web-topic progress marker
+  | 'public_library_read_marker'; // stable per-Gutenberg/Wikisource-book progress marker
 
 export type KnowledgeSource =
   | 'llm'

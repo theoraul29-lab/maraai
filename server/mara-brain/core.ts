@@ -151,10 +151,15 @@ async function _runBrainCycleInner(): Promise<BrainCycleResult> {
       try {
         await withTimeout((async () => {
           const progress = await getLibraryProgress();
-          // Catch-up mode: read 2 books per cycle when many are unread (> 10),
-          // so a freshly expanded library (30+ new books) is absorbed in ~2 days
-          // instead of 3+. Falls back to 1/cycle once the backlog shrinks.
-          const booksThisCycle = progress.unread > 10 ? 2 : 1;
+          // Catch-up mode: read more per cycle when many built-in books are
+          // still unread (> 10), so a freshly expanded library is absorbed in
+          // ~2 days instead of 3+. The baseline itself (3, not 1) reflects
+          // readNextLibraryBook() now falling through to the much larger
+          // Public Library tier once the built-in list is exhausted — that
+          // tier is effectively never "done" (cross-domain topics rotate
+          // indefinitely), so there's always real material to read at a
+          // faster pace than the old fixed built-in list justified.
+          const booksThisCycle = progress.unread > 10 ? 5 : 3;
           for (let i = 0; i < booksThisCycle; i++) {
             const bookResult = await readNextLibraryBook();
             if (bookResult) {

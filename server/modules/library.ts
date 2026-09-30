@@ -444,6 +444,24 @@ export async function listPopularBookIds(lang: string, limit: number): Promise<n
   return data.results.slice(0, limit).map((b) => b.id);
 }
 
+/**
+ * Plain (non-Express) Gutendex keyword search, for callers that just need
+ * book ids — used by the brain's public-library reading (server/mara-brain/
+ * library.ts) to find candidates for a subject/topic query. Mirrors
+ * listPopularBookIds's shape; kept separate from searchLibrary(req, res)
+ * since that one is wired to the HTTP layer (query params, Wikisource merge,
+ * response shaping) that a background reader has no use for.
+ */
+export async function searchBookIdsByTopic(query: string, lang: string, limit: number): Promise<number[]> {
+  const params = new URLSearchParams();
+  params.set('search', query);
+  if (lang) params.set('languages', lang);
+  const resp = await fetch(`${GUTENDEX_BASE}?${params.toString()}`, { headers: FETCH_HEADERS, signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+  if (!resp.ok) throw new Error(`Gutendex returned ${resp.status}`);
+  const data = await resp.json() as { results: GutendexBook[] };
+  return data.results.slice(0, limit).map((b) => b.id);
+}
+
 function rowToCachedBook(row: Record<string, unknown>): CachedBook {
   return {
     id: Number(row.id),

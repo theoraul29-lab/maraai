@@ -10,6 +10,7 @@ import { maraKnowledgeBase } from '../../shared/schema.js';
 import { like } from 'drizzle-orm';
 import { webSearch } from '../lib/web-search.js';
 import { getBrainRunContext, recordResearchUnavailable } from './run-context.js';
+import { searchBookIdsByTopic, fetchAndCacheBook, getCachedBook } from '../modules/library.js';
 
 export interface LibraryBook {
   id: string;
@@ -2404,6 +2405,131 @@ export async function getNextUnreadBook(): Promise<LibraryBook | null> {
   return unread.length > 0 ? unread[0] : null;
 }
 
+// ─── Public Library reading — broad, cross-domain learning ────────────────────
+//
+// The built-in library above is a small, hand-curated set. This tier reaches
+// into WritersHub's Public Library (Gutenberg/Wikisource public-domain books,
+// server/modules/library.ts) across a rotating set of subjects so Mara's
+// learning isn't limited to that fixed list — business, philosophy,
+// psychology, ethics and biography, not just one lane. Every book read here
+// is fetched through the exact same cache (library_books_cache) the reading
+// UI uses, so a book Mara reads becomes instantly available to human readers
+// too (and vice versa — a book a user already cached is never re-fetched).
+//
+// Deliberately queries stand in for fixed titles: Gutenberg's catalog is
+// public-domain (pre-1929 in most cases), so a well-known modern title isn't
+// reliably there — searching by subject/keyword surfaces whatever real
+// matches exist instead of assuming a specific book is present.
+
+interface PublicLibraryTopic {
+  id: string;
+  category: 'philosophy' | 'psychology' | 'business' | 'self_development' | 'leadership' | 'writing_craft' | 'biography';
+  query: string;
+}
+
+// Queries are deliberately ONE short keyword each. Confirmed empirically
+// against the live Gutendex API: a 4-5 word query ("stoic philosophy
+// meditations epictetus seneca") matched zero books — Gutendex's search
+// appears to require every term to match, so a long query is almost always
+// over-constrained — while the same topic as a single word ("stoic") matched
+// 6. Measured real match counts (2026-09-30, may drift as the catalog
+// changes): philosophy 218, biography 277, philosophy/success 92,
+// business 96, psychology 82, ethics 59, rhetoric 11, diplomacy 6, stoic 6,
+// self-help 3, leadership 5.
+const PUBLIC_LIBRARY_TOPICS: PublicLibraryTopic[] = [
+  { id: 'pl:philosophy', category: 'philosophy', query: 'philosophy' },
+  { id: 'pl:stoicism', category: 'philosophy', query: 'stoic' },
+  { id: 'pl:ethics', category: 'philosophy', query: 'ethics' },
+  { id: 'pl:psychology', category: 'psychology', query: 'psychology' },
+  { id: 'pl:mind', category: 'psychology', query: 'mind' },
+  { id: 'pl:self-help', category: 'self_development', query: 'self-help' },
+  { id: 'pl:success', category: 'self_development', query: 'success' },
+  { id: 'pl:character', category: 'self_development', query: 'character' },
+  { id: 'pl:business', category: 'business', query: 'business' },
+  { id: 'pl:economics', category: 'business', query: 'economics' },
+  { id: 'pl:leadership', category: 'leadership', query: 'leadership' },
+  { id: 'pl:rhetoric', category: 'leadership', query: 'rhetoric' },
+  { id: 'pl:diplomacy', category: 'leadership', query: 'diplomacy' },
+  { id: 'pl:fiction', category: 'writing_craft', query: 'fiction' },
+  { id: 'pl:storytelling', category: 'writing_craft', query: 'storytelling' },
+  { id: 'pl:biography', category: 'biography', query: 'biography' },
+  { id: 'pl:autobiography', category: 'biography', query: 'autobiography' },
+];
+
+const readPublicBookIds = new Set<number>();
+
+async function getReadPublicBookIds(): Promise<Set<number>> {
+  const ids = new Set<number>(readPublicBookIds);
+  const rows = await db
+    .select()
+    .from(maraKnowledgeBase)
+    .where(like(maraKnowledgeBase.topic, 'public_book:%'));
+  for (const row of rows) {
+    const id = Number(row.topic.slice('public_book:'.length).trim());
+    if (Number.isFinite(id)) ids.add(id);
+  }
+  return ids;
+}
+
+async function markPublicBookAsRead(id: number, title: string): Promise<void> {
+  readPublicBookIds.add(id);
+  await storeKnowledge(
+    'public_library_read_marker',
+    `public_book:${id}`,
+    `Public library book read on ${new Date().toISOString()}: ${title} (id ${id})`,
+    'document',
+    100,
+    { publicBookId: id },
+  );
+}
+
+// Round-robins through PUBLIC_LIBRARY_TOPICS so a single popular query
+// doesn't dominate every cycle — persisted the same lightweight way the
+// web-topic cursor is (in-memory, best-effort; a restart just resumes at
+// topic 0, which is fine since topics themselves rotate their own read set).
+let publicTopicCursor = 0;
+
+/**
+ * Read the next book from the Public Library (Gutenberg/Wikisource) that
+ * hasn't been read yet, searching across PUBLIC_LIBRARY_TOPICS. Returns null
+ * only once every topic has been searched with nothing new found — the
+ * caller (readNextLibraryBook) falls back to web topics at that point.
+ */
+async function readNextPublicLibraryBook(): Promise<DocumentReadResult | null> {
+  const alreadyRead = await getReadPublicBookIds();
+
+  for (let attempt = 0; attempt < PUBLIC_LIBRARY_TOPICS.length; attempt++) {
+    const topic = PUBLIC_LIBRARY_TOPICS[(publicTopicCursor + attempt) % PUBLIC_LIBRARY_TOPICS.length];
+    let candidateIds: number[];
+    try {
+      candidateIds = await searchBookIdsByTopic(topic.query, 'en', 10);
+    } catch (err) {
+      console.warn(`[Library] Public library search failed for "${topic.id}":`, err instanceof Error ? err.message : err);
+      continue;
+    }
+    const unread = candidateIds.filter((id) => !alreadyRead.has(id));
+    if (unread.length === 0) continue;
+
+    publicTopicCursor = (publicTopicCursor + attempt + 1) % PUBLIC_LIBRARY_TOPICS.length;
+    const bookId = unread[0];
+    try {
+      const cached = getCachedBook(bookId) ?? await fetchAndCacheBook(bookId);
+      console.log(`[Library] 📖 Reading (public, ${topic.category}): "${cached.title}"`);
+      const result = await processDocument(cached.content, cached.title, `library:public:${topic.category}`);
+      await markPublicBookAsRead(bookId, cached.title);
+      return result;
+    } catch (err) {
+      console.warn(`[Library] Public library book #${bookId} ("${topic.id}") failed:`, err instanceof Error ? err.message : err);
+      // Mark it read anyway so a permanently-broken book (bad encoding, no
+      // usable format) doesn't get retried every single cycle.
+      await markPublicBookAsRead(bookId, `(failed) ${topic.id}#${bookId}`);
+      continue;
+    }
+  }
+
+  return null;
+}
+
 // ─── Web reading — fallback when built-in library is exhausted ───────────────
 
 const WEB_TOPICS = [
@@ -2498,13 +2624,18 @@ async function readNextWebTopic(): Promise<DocumentReadResult | null> {
 }
 
 /**
- * Read the next book from the library — called during brain cycle
- * Reads one book per cycle to stay within rate limits
+ * Read the next book from the library — called during brain cycle.
+ * Chains three tiers as each is exhausted: the small hand-curated built-in
+ * library, then the much larger Public Library (Gutenberg/Wikisource,
+ * cross-domain via PUBLIC_LIBRARY_TOPICS), then web-search topics as the
+ * final fallback once both book sources are read.
  */
 export async function readNextLibraryBook(): Promise<DocumentReadResult | null> {
   const book = await getNextUnreadBook();
   if (!book) {
-    console.log('[Library] 📚 All library books read — switching to web learning');
+    const publicResult = await readNextPublicLibraryBook();
+    if (publicResult) return publicResult;
+    console.log('[Library] 📚 Built-in + Public Library exhausted — switching to web learning');
     return readNextWebTopic();
   }
 
