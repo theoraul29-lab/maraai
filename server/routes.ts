@@ -2179,11 +2179,22 @@ export async function registerRoutes(
       let systemPrompt = buildSystemInstruction(context, resolvedLang);
 
       // Control-Center-specific operational context that the shared
-      // pipeline has no reason to know about.
+      // pipeline has no reason to know about. Reference material ONLY — the
+      // original wording here ("provide actionable insights about growth,
+      // experiments, and learning cycles") had no "only when relevant"
+      // qualifier, so a plain "how are you" got answered with a recap of the
+      // last brain cycle instead of a normal reply (confirmed live: two
+      // different casual greetings produced the identical canned "I just
+      // completed a full learning session..." response — the model was
+      // treating this block as something to report on by default, the same
+      // failure shape as the earlier module-list bug, just a different
+      // payload). Scoped the instruction down to only surface this when the
+      // admin actually asks about it.
       const status = brainManager.status();
-      systemPrompt += `\n\n# BRAIN STATUS\nCurrent brain status: ${JSON.stringify(status)}. ` +
-        `Speak honestly, analytically and briefly. Provide actionable insights about the platform's growth, ` +
-        `experiments, and learning cycles. If asked about experiments or strategy, be specific and data-driven.`;
+      systemPrompt += `\n\n# BRAIN STATUS (reference only)\nCurrent brain status: ${JSON.stringify(status)}. ` +
+        `Use this only if the admin actually asks about brain status, learning cycles, experiments, or ` +
+        `strategy — then be honest, analytical, brief, and data-driven. For anything else (a greeting, small ` +
+        `talk, an unrelated question), ignore this block entirely and just respond naturally to what was asked.`;
 
       const messages: LLMMessage[] = [
         { role: 'system', content: systemPrompt },
