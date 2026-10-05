@@ -2471,7 +2471,12 @@ async function getReadPublicBookIds(): Promise<Set<number>> {
   return ids;
 }
 
-async function markPublicBookAsRead(id: number, title: string): Promise<void> {
+async function markPublicBookAsRead(
+  id: number,
+  title: string,
+  category: PublicLibraryTopic['category'],
+  failed = false,
+): Promise<void> {
   readPublicBookIds.add(id);
   await storeKnowledge(
     'public_library_read_marker',
@@ -2479,7 +2484,10 @@ async function markPublicBookAsRead(id: number, title: string): Promise<void> {
     `Public library book read on ${new Date().toISOString()}: ${title} (id ${id})`,
     'document',
     100,
-    { publicBookId: id },
+    // Structured metadata (not just the content string) so a real stats
+    // query can report "how many / which category / any failures" without
+    // ever having to parse free text.
+    { publicBookId: id, title, category, failed },
   );
 }
 
@@ -2516,13 +2524,13 @@ async function readNextPublicLibraryBook(): Promise<DocumentReadResult | null> {
       const cached = getCachedBook(bookId) ?? await fetchAndCacheBook(bookId);
       console.log(`[Library] 📖 Reading (public, ${topic.category}): "${cached.title}"`);
       const result = await processDocument(cached.content, cached.title, `library:public:${topic.category}`);
-      await markPublicBookAsRead(bookId, cached.title);
+      await markPublicBookAsRead(bookId, cached.title, topic.category);
       return result;
     } catch (err) {
       console.warn(`[Library] Public library book #${bookId} ("${topic.id}") failed:`, err instanceof Error ? err.message : err);
       // Mark it read anyway so a permanently-broken book (bad encoding, no
       // usable format) doesn't get retried every single cycle.
-      await markPublicBookAsRead(bookId, `(failed) ${topic.id}#${bookId}`);
+      await markPublicBookAsRead(bookId, `${topic.id}#${bookId}`, topic.category, true);
       continue;
     }
   }

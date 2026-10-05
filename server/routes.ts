@@ -91,6 +91,7 @@ import { controlTaskWorkerStatus, runOneControlTask } from './bootstrap/control-
 import { allowedAgentTools, createAgentTask } from './services/agent-runtime.js';
 import { requiredRiskForTool } from './services/tool-policy.js';
 import { isSafeToolRegistered } from './services/tool-runtime.js';
+import { getLearningOverview, getRecentLibraryReads, getKnowledgeSample } from './services/learning-progress.js';
 import {
   approveControlTask,
   cancelControlTask,
@@ -1389,6 +1390,45 @@ export async function registerRoutes(
 
   app.get('/api/control/tools', requireAdmin, (_req: any, res: any) => {
     res.json({ tools: readToolCatalog() });
+  });
+
+  // Learning Progress — real DB-backed stats, zero AI involvement. See
+  // server/services/learning-progress.ts for why this exists: a chat
+  // question like "what have you read" relies on topic-sampled retrieval
+  // plus whatever the model does with that sample, which can't give an
+  // exact count. These three endpoints are the exact-number path instead.
+  app.get('/api/control/learning/overview', requireAdmin, (_req: any, res: any) => {
+    try { res.json(getLearningOverview()); }
+    catch (error) { res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to read learning overview' }); }
+  });
+
+  app.get('/api/control/learning/recent', requireAdmin, (req: any, res: any) => {
+    try {
+      const rawLimit = Number.parseInt(String(req.query.limit ?? '15'), 10);
+      const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(rawLimit, 1), 100) : 15;
+      res.json({ reads: getRecentLibraryReads(limit) });
+    } catch (error) { res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to read recent reads' }); }
+  });
+
+  app.get('/api/control/learning/samples', requireAdmin, (req: any, res: any) => {
+    try {
+      const rawLimit = Number.parseInt(String(req.query.limit ?? '5'), 10);
+      const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(rawLimit, 1), 25) : 5;
+      res.json({ samples: getKnowledgeSample(limit) });
+    } catch (error) { res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to read knowledge samples' }); }
+  });
+
+  // Direct keyword/vector search over the real knowledge base — same
+  // searchKnowledge() the chat pipeline uses for retrieval, exposed raw
+  // here so the admin can look up what's actually stored without going
+  // through a chat completion at all.
+  app.get('/api/control/learning/search', requireAdmin, async (req: any, res: any) => {
+    const q = typeof req.query.q === 'string' ? req.query.q.trim().slice(0, 200) : '';
+    if (!q) return res.status(400).json({ error: 'q query param is required' });
+    try {
+      const results = await searchKnowledge(q, 10);
+      res.json({ results });
+    } catch (error) { res.status(500).json({ error: error instanceof Error ? error.message : 'Search failed' }); }
   });
 
   // Runs a Tools-tab entry on demand. Creates a control task exactly like the

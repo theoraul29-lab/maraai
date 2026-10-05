@@ -240,3 +240,42 @@ export interface MaraActivityEntry {
   planId: number | null;
   createdAt: string | null;
 }
+
+export interface LearningOverview {
+  builtIn: { total: number; read: number };
+  publicLibrary: { read: number; failed: number };
+  webTopics: { read: number };
+  ideasExtracted: number;
+  byCategory: Record<string, number>;
+  readRate: { last24h: number; last7d: number };
+  publicLibraryHealth: {
+    lastSuccessAt: string | null;
+    recentAttempts: number;
+    recentFailures: number;
+  };
+}
+
+export interface RecentRead {
+  title: string;
+  source: 'built-in' | 'public' | 'web';
+  category: string | null;
+  failed: boolean;
+  readAt: string;
+}
+
+export interface KnowledgeSample {
+  id: number;
+  topic: string;
+  content: string;
+  category: string;
+  createdAt: string;
+}
+
+export interface KnowledgeSearchResult {
+  id: number;
+  topic: string;
+  content: string;
+  category: string;
+  confidence: number;
+  relevanceScore: number;
+}

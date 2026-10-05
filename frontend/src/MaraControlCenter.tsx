@@ -28,6 +28,10 @@ import type {
   GitHubStatusSnapshot,
   RailwayStatusSnapshot,
   SecuritySnapshot,
+  LearningOverview,
+  RecentRead,
+  KnowledgeSample,
+  KnowledgeSearchResult,
 } from './types/control';
 
 async function getJson<T>(url: string): Promise<T> {
@@ -94,6 +98,12 @@ export default function MaraControlCenter() {
   const [toolRuns, setToolRuns] = useState<Record<string, { status: string; summary: string } | undefined>>({});
   const [agentTaskMessage, setAgentTaskMessage] = useState<string | null>(null);
   const [researchQuery, setResearchQuery] = useState('');
+  const [learningOverview, setLearningOverview] = useState<LearningOverview | null>(null);
+  const [recentReads, setRecentReads] = useState<RecentRead[]>([]);
+  const [knowledgeSamples, setKnowledgeSamples] = useState<KnowledgeSample[]>([]);
+  const [knowledgeQuery, setKnowledgeQuery] = useState('');
+  const [knowledgeResults, setKnowledgeResults] = useState<KnowledgeSearchResult[] | null>(null);
+  const [knowledgeSearchBusy, setKnowledgeSearchBusy] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -119,6 +129,9 @@ export default function MaraControlCenter() {
         ['security', getJson<SecuritySnapshot>('/api/control/security')],
         ['monetization', getJson<{ active: boolean }>('/api/creator/monetization-status')],
         ['libraryTts', getJson<{ active: boolean }>('/api/library/tts-status')],
+        ['learningOverview', getJson<LearningOverview>('/api/control/learning/overview')],
+        ['recentReads', getJson<{ reads: RecentRead[] }>('/api/control/learning/recent?limit=15')],
+        ['knowledgeSamples', getJson<{ samples: KnowledgeSample[] }>('/api/control/learning/samples?limit=5')],
       ] as const;
       const results = await Promise.allSettled(requests.map(([, request]) => request));
       if (!active) return;
@@ -143,6 +156,9 @@ export default function MaraControlCenter() {
         security: SecuritySnapshot;
         monetization: { active: boolean };
         libraryTts: { active: boolean };
+        learningOverview: LearningOverview;
+        recentReads: { reads: RecentRead[] };
+        knowledgeSamples: { samples: KnowledgeSample[] };
       }>(requests.map(([name]) => name), results);
       if (values.overview) setDashboard(values.overview);
       if (values.brain) { setBrain(values.brain.brain); setProvider(values.brain.ai); }
@@ -167,6 +183,9 @@ export default function MaraControlCenter() {
       if (values.security) setSecurity(values.security);
       if (values.monetization) setMonetizationActive(values.monetization.active);
       if (values.libraryTts) setLibraryTtsActive(values.libraryTts.active);
+      if (values.learningOverview) setLearningOverview(values.learningOverview);
+      if (values.recentReads) setRecentReads(values.recentReads.reads);
+      if (values.knowledgeSamples) setKnowledgeSamples(values.knowledgeSamples.samples);
       setError(failures.length ? `Unavailable: ${failures.join(', ')}` : null);
       setUpdatedAt(new Date());
     };
@@ -207,6 +226,20 @@ export default function MaraControlCenter() {
       setRepositoryResults(response.files);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Repository search failed');
+    }
+  }
+
+  async function searchKnowledgeBase() {
+    const query = knowledgeQuery.trim();
+    if (!query) return setKnowledgeResults(null);
+    setKnowledgeSearchBusy(true);
+    try {
+      const response = await getJson<{ results: KnowledgeSearchResult[] }>(`/api/control/learning/search?q=${encodeURIComponent(query)}`);
+      setKnowledgeResults(response.results);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Knowledge search failed');
+    } finally {
+      setKnowledgeSearchBusy(false);
     }
   }
 
@@ -533,7 +566,7 @@ export default function MaraControlCenter() {
     }
   }
 
-  type View = 'command' | 'modules' | 'agents' | 'repository' | 'tasks' | 'approvals' | 'audit' | 'activity' | 'security' | 'integrations' | 'github' | 'railway' | 'tools' | 'telemetry';
+  type View = 'command' | 'modules' | 'agents' | 'repository' | 'tasks' | 'approvals' | 'audit' | 'activity' | 'security' | 'integrations' | 'github' | 'railway' | 'tools' | 'telemetry' | 'learning';
   const [activeView, setActiveView] = useState<View>('command');
 
   // The page itself never scrolls in the desktop shell — only the active
@@ -570,6 +603,7 @@ export default function MaraControlCenter() {
           <div className="mcc-sidebar-title">Core</div>
           {navItem('Nexus Core', 'command')}
           {navItem('Agents', 'agents')}
+          {navItem('Learning', 'learning')}
           {navItem('Telemetry', 'telemetry')}
           <a className="mcc-sidebar-item" href="/admin/brain">Mara Brain (full)</a>
         </div>
@@ -1164,6 +1198,78 @@ export default function MaraControlCenter() {
                 </div>
               );
             })}
+          </section>
+        </div>}
+
+        {activeView === 'learning' && <div className="mcc-view">
+          <section className="mcc-panel mcc-panel--wide">
+            <div className="mcc-panel-heading"><h2>Learning Progress</h2><span>Real DB counts — zero AI involved, every number is a direct query</span></div>
+            <div className="mcc-task-grid">
+              <div><strong>{learningOverview?.builtIn.read ?? '—'}</strong><span>Built-in read (of {learningOverview?.builtIn.total ?? '—'} listed)</span></div>
+              <div><strong>{learningOverview?.publicLibrary.read ?? '—'}</strong><span>Public Library read</span></div>
+              <div><strong>{learningOverview?.webTopics.read ?? '—'}</strong><span>Web topics read</span></div>
+              <div><strong>{learningOverview?.ideasExtracted ?? '—'}</strong><span>Ideas extracted total</span></div>
+              <div><strong>{learningOverview?.readRate.last24h ?? '—'}</strong><span>Read, last 24h</span></div>
+              <div><strong>{learningOverview?.readRate.last7d ?? '—'}</strong><span>Read, last 7d</span></div>
+            </div>
+            {learningOverview?.builtIn.read != null && learningOverview.builtIn.read > learningOverview.builtIn.total && (
+              <p className="mcc-muted" style={{ marginTop: 10 }}>
+                Built-in read count exceeds the current list size — the built-in list changed over time; old read markers for books no longer on the list still count toward history.
+              </p>
+            )}
+          </section>
+
+          <section className="mcc-panel mcc-panel--wide">
+            <div className="mcc-panel-heading"><h2>By category</h2><span>Distinct books read, built-in + Public Library</span></div>
+            {learningOverview && Object.keys(learningOverview.byCategory).length > 0
+              ? Object.entries(learningOverview.byCategory).sort((a, b) => b[1] - a[1]).map(([category, count]) => (
+                <div className="mcc-signal" key={category}><span>{category}</span><strong>{count}</strong></div>
+              ))
+              : <p className="mcc-muted">No categorized reads yet.</p>}
+          </section>
+
+          <section className="mcc-panel mcc-panel--wide">
+            <div className="mcc-panel-heading"><h2>Public Library reliability</h2><span>Gutendex/Wikisource is a known-flaky external API — this is honest, not a green checkmark</span></div>
+            <div className="mcc-signal"><span>Last successful read</span><strong>{learningOverview?.publicLibraryHealth.lastSuccessAt ? formatTime(learningOverview.publicLibraryHealth.lastSuccessAt) : 'None yet'}</strong></div>
+            <div className="mcc-signal"><span>Attempts, last 24h</span><strong>{learningOverview?.publicLibraryHealth.recentAttempts ?? '—'}</strong></div>
+            <div className="mcc-signal"><span>Failures, last 24h</span><strong>{learningOverview?.publicLibraryHealth.recentFailures ?? '—'}</strong></div>
+          </section>
+
+          <section className="mcc-panel mcc-panel--wide mcc-panel--scroll">
+            <div className="mcc-panel-heading"><h2>Recently read</h2><span>Most recent {recentReads.length}, any source</span></div>
+            {recentReads.map((read, index) => (
+              <div className="mcc-signal" key={`${read.title}-${index}`}>
+                <span>{read.failed ? '⚠️ ' : ''}{read.title}{read.category ? ` · ${read.category}` : ''}</span>
+                <strong>{read.source} · {read.readAt ? formatTime(read.readAt) : '—'}</strong>
+              </div>
+            ))}
+            {!recentReads.length && <p className="mcc-muted">Nothing read yet.</p>}
+          </section>
+
+          <section className="mcc-panel mcc-panel--wide mcc-panel--scroll">
+            <div className="mcc-panel-heading"><h2>Real ideas extracted</h2><span>Verbatim from the knowledge base, not AI-generated for this view</span></div>
+            {knowledgeSamples.map((sample) => (
+              <div key={sample.id} style={{ marginBottom: 10 }}>
+                <pre className="mcc-code-preview" style={{ marginTop: 0 }}>{sample.content}</pre>
+                <p className="mcc-muted" style={{ margin: '2px 0 0' }}>{sample.createdAt ? formatTime(sample.createdAt) : '—'}</p>
+              </div>
+            ))}
+            {!knowledgeSamples.length && <p className="mcc-muted">No extracted ideas yet.</p>}
+          </section>
+
+          <section className="mcc-panel mcc-panel--wide mcc-panel--scroll">
+            <div className="mcc-panel-heading"><h2>Search real knowledge</h2><span>Direct DB search — the same retrieval chat uses, no completion on top</span></div>
+            <form className="mcc-repository-search" onSubmit={(event) => { event.preventDefault(); void searchKnowledgeBase(); }}>
+              <input value={knowledgeQuery} onChange={(event) => setKnowledgeQuery(event.target.value)} placeholder="Search what Mara has actually learned" aria-label="Search knowledge base" />
+              <button type="submit" disabled={knowledgeSearchBusy}>{knowledgeSearchBusy ? 'Searching…' : 'Search'}</button>
+            </form>
+            {knowledgeResults && knowledgeResults.map((result) => (
+              <div key={result.id} style={{ marginTop: 10 }}>
+                <div className="mcc-signal"><span>{result.topic}</span><strong>{result.category} · relevance {result.relevanceScore.toFixed(2)}</strong></div>
+                <pre className="mcc-code-preview" style={{ marginTop: 4 }}>{result.content}</pre>
+              </div>
+            ))}
+            {knowledgeResults && knowledgeResults.length === 0 && <p className="mcc-muted">No matches.</p>}
           </section>
         </div>}
 
