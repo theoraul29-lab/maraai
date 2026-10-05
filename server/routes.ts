@@ -68,6 +68,7 @@ import {
 } from './mara-brain/index.js';
 import { learningRateLimiter } from './mara-brain/rate-limiter.js';
 import { executeApprovedExperiment } from './mara-brain/experiment-executor.js';
+import { executive } from './mara-core/executive.js';
 import { approveExperiment, parseExperimentDecision, rejectExperiment } from './mara-brain/experiment-decisions.js';
 import { getBrainControlSnapshot } from './mara-brain/control-service.js';
 import { readControlLogs } from './services/log-reader.js';
@@ -1108,10 +1109,20 @@ export async function registerRoutes(
     }
   });
 
-  // ExecutiveReasoning — shared cognitive state across all three brains
+  // ExecutiveReasoning — shared cognitive state across all three brains.
+  //
+  // This used a runtime `require('./mara-core/executive.js')` instead of a
+  // top-level import — invisible at build time (no syntax error, the file
+  // itself loads fine) but a ReferenceError the moment this specific route
+  // actually ran, since the whole server is ESM (`"type": "module"` in
+  // package.json) and `require` isn't a global there. Caught by this same
+  // try/catch, which is exactly why it surfaced as a clean-looking
+  // "Unavailable: executive" in Control Center rather than a crash — and
+  // why it went unnoticed until today: this endpoint had no real caller
+  // before Control Center's consolidation just wired one up for the first
+  // time ever.
   app.get('/api/admin/mara/executive', requireAdmin, (_req: any, res: any) => {
     try {
-      const { executive } = require('./mara-core/executive.js');
       res.json(executive.getStatus());
     } catch (err: any) {
       res.status(500).json({ error: err.message });
