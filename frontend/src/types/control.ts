@@ -287,3 +287,43 @@ export interface UploadedDocument {
   totalChunks: number | null;
   createdAt: string;
 }
+
+export type GrowthExperimentStatus = 'proposed' | 'approved' | 'implemented' | 'measured' | 'rejected';
+
+export interface GrowthExperiment {
+  id: number;
+  dropOffStage: string;
+  baselineDropOffRate: number;
+  hypothesis: string;
+  framework: string;
+  codeSketch: string;
+  iceImpact: number;
+  iceConfidence: number;
+  iceEase: number;
+  iceScore: number;
+  expectedImpactPct: number;
+  status: GrowthExperimentStatus;
+  decidedBy: string | null;
+  decidedAt: string | number | null;
+  decisionNote: string | null;
+  implementedAt: string | number | null;
+  measureAfterAt: string | number | null;
+  actualImpactPct: number | null;
+  succeeded: number | null;
+  learnings: string | null;
+  measuredAt: string | number | null;
+  createdAt: string | number | null;
+}
+
+export interface GrowthFunnelStage {
+  stage: string;
+  count: number;
+  dropOffRateFromPrev: number;
+}
+
+export interface GrowthFunnelSnapshot {
+  windowDays: number;
+  totalSignups: number;
+  stages: GrowthFunnelStage[];
+  hasMeaningfulData: boolean;
+}

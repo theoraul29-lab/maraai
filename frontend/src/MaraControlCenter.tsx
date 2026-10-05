@@ -9,7 +9,6 @@ import type {
   BrainStatus,
   ControlLogSnapshot,
   DashboardOverview,
-  ExperimentSnapshot,
   ProviderHealth,
   RepositoryStatus,
   RepositorySearchResult,
@@ -33,6 +32,9 @@ import type {
   KnowledgeSample,
   KnowledgeSearchResult,
   UploadedDocument,
+  GrowthExperiment,
+  GrowthFunnelSnapshot,
+  GrowthExperimentStatus,
 } from './types/control';
 
 async function getJson<T>(url: string): Promise<T> {
@@ -62,7 +64,6 @@ export default function MaraControlCenter() {
   const [brain, setBrain] = useState<BrainStatus | null>(null);
   const [provider, setProvider] = useState<ProviderHealth | null>(null);
   const [logs, setLogs] = useState<ControlLogSnapshot | null>(null);
-  const [experiments, setExperiments] = useState<ExperimentSnapshot | null>(null);
   const [tasks, setTasks] = useState<TaskSnapshot | null>(null);
   const [repository, setRepository] = useState<RepositoryStatus | null>(null);
   const [repositoryQuery, setRepositoryQuery] = useState('');
@@ -83,7 +84,6 @@ export default function MaraControlCenter() {
   const [selectedModuleId, setSelectedModuleId] = useState<HelloMaraModuleEntry['id'] | null>('missions');
   const [error, setError] = useState<string | null>(null);
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
-  const [approvalBusy, setApprovalBusy] = useState<number | null>(null);
   const [taskBusy, setTaskBusy] = useState<string | null>(null);
   const [codeTaskDescription, setCodeTaskDescription] = useState('');
   const [codeTaskMessage, setCodeTaskMessage] = useState('');
@@ -111,6 +111,11 @@ export default function MaraControlCenter() {
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadBusy, setUploadBusy] = useState(false);
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
+  const [allExperiments, setAllExperiments] = useState<GrowthExperiment[]>([]);
+  const [growthFunnel, setGrowthFunnel] = useState<GrowthFunnelSnapshot | null>(null);
+  const [experimentFilter, setExperimentFilter] = useState<GrowthExperimentStatus | ''>('');
+  const [expandedExperiments, setExpandedExperiments] = useState<Set<number>>(new Set());
+  const [experimentActionMsg, setExperimentActionMsg] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -119,7 +124,6 @@ export default function MaraControlCenter() {
         ['overview', getJson<DashboardOverview>('/api/control/overview')],
         ['brain', getJson<BrainControlSnapshot>('/api/control/brain/status')],
         ['logs', getJson<ControlLogSnapshot>('/api/control/logs?brainLimit=5&alertLimit=5')],
-        ['experiments', getJson<ExperimentSnapshot>('/api/admin/mara/experiments?status=proposed&limit=5')],
         ['tasks', getJson<TaskSnapshot>('/api/control/tasks/status')],
         ['repository', getJson<RepositoryStatus>('/api/control/repository')],
         ['git', getJson<RepositoryGitStatus>('/api/control/repository/git')],
@@ -140,6 +144,8 @@ export default function MaraControlCenter() {
         ['recentReads', getJson<{ reads: RecentRead[] }>('/api/control/learning/recent?limit=15')],
         ['knowledgeSamples', getJson<{ samples: KnowledgeSample[] }>('/api/control/learning/samples?limit=5')],
         ['uploadedDocs', getJson<{ documents: UploadedDocument[] }>('/api/control/learning/uploads?limit=20')],
+        ['allExperiments', getJson<{ experiments: GrowthExperiment[] }>('/api/admin/mara/experiments?limit=100')],
+        ['growthFunnel', getJson<GrowthFunnelSnapshot>('/api/admin/mara/experiments/funnel?days=14')],
       ] as const;
       const results = await Promise.allSettled(requests.map(([, request]) => request));
       if (!active) return;
@@ -147,7 +153,6 @@ export default function MaraControlCenter() {
         overview: DashboardOverview;
         brain: BrainControlSnapshot;
         logs: ControlLogSnapshot;
-        experiments: ExperimentSnapshot;
         tasks: TaskSnapshot;
         repository: RepositoryStatus;
         git: RepositoryGitStatus;
@@ -168,11 +173,12 @@ export default function MaraControlCenter() {
         recentReads: { reads: RecentRead[] };
         knowledgeSamples: { samples: KnowledgeSample[] };
         uploadedDocs: { documents: UploadedDocument[] };
+        allExperiments: { experiments: GrowthExperiment[] };
+        growthFunnel: GrowthFunnelSnapshot;
       }>(requests.map(([name]) => name), results);
       if (values.overview) setDashboard(values.overview);
       if (values.brain) { setBrain(values.brain.brain); setProvider(values.brain.ai); }
       if (values.logs) setLogs(values.logs);
-      if (values.experiments) setExperiments(values.experiments);
       if (values.tasks) setTasks(values.tasks);
       if (values.repository) setRepository(values.repository);
       if (values.git) setGitStatus(values.git);
@@ -196,6 +202,8 @@ export default function MaraControlCenter() {
       if (values.recentReads) setRecentReads(values.recentReads.reads);
       if (values.knowledgeSamples) setKnowledgeSamples(values.knowledgeSamples.samples);
       if (values.uploadedDocs) setUploadedDocs(values.uploadedDocs.documents);
+      if (values.allExperiments) setAllExperiments(values.allExperiments.experiments);
+      if (values.growthFunnel) setGrowthFunnel(values.growthFunnel);
       setError(failures.length ? `Unavailable: ${failures.join(', ')}` : null);
       setUpdatedAt(new Date());
     };
@@ -208,24 +216,39 @@ export default function MaraControlCenter() {
     };
   }, []);
 
-  async function decideExperiment(id: number, decision: 'approve' | 'reject') {
-    setApprovalBusy(id);
+  async function actOnExperiment(id: number, action: 'approve' | 'reject' | 'implement', extraBody?: Record<string, unknown>) {
+    setTaskBusy(`experiment:${id}`);
+    setExperimentActionMsg(null);
     try {
-      const response = await fetch(`/api/admin/mara/experiments/${id}/${decision}`, {
+      const response = await fetch(`/api/admin/mara/experiments/${id}/${action}`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ note: `Decision from Mara Control Center: ${decision}` }),
+        body: JSON.stringify(extraBody ?? {}),
       });
-      if (!response.ok) throw new Error(`Approval request returned ${response.status}`);
-      setExperiments((current) => current
-        ? { ...current, experiments: current.experiments.filter((experiment) => experiment.id !== id), count: Math.max(0, current.count - 1) }
-        : current);
+      const payload = await response.json().catch(() => ({})) as { experiment?: GrowthExperiment; error?: string };
+      if (!response.ok) {
+        setExperimentActionMsg(`Action failed: ${payload.error ?? response.status}`);
+      } else {
+        const pastTense = action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'marked implemented';
+        setExperimentActionMsg(`Experiment #${id} ${pastTense}`);
+        if (payload.experiment) {
+          setAllExperiments((current) => current.map((exp) => exp.id === id ? { ...exp, ...payload.experiment } : exp));
+        }
+      }
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Approval request failed');
+      setExperimentActionMsg(cause instanceof Error ? cause.message : 'Request failed');
     } finally {
-      setApprovalBusy(null);
+      setTaskBusy(null);
     }
+  }
+
+  function toggleExpandExperiment(id: number) {
+    setExpandedExperiments((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
   }
 
   async function searchRepository() {
@@ -950,19 +973,77 @@ export default function MaraControlCenter() {
         </div>}
 
         {activeView === 'approvals' && <div className="mcc-view">
-          <section className="mcc-panel mcc-panel--wide mcc-panel--scroll">
-            <div className="mcc-panel-heading"><h2>Approvals waiting</h2><span>{experiments?.count ?? 0} proposed</span></div>
-            {(experiments?.experiments ?? []).map((experiment) => (
-              <div className="mcc-signal" key={experiment.id}>
-                <span>{experiment.hypothesis}</span>
-                <span className="mcc-approval-actions">
-                  <strong>{experiment.iceScore ? `ICE ${experiment.iceScore.toFixed(1)}` : experiment.status}</strong>
-                  <button type="button" disabled={approvalBusy === experiment.id} onClick={() => void decideExperiment(experiment.id, 'approve')}>Approve</button>
-                  <button type="button" disabled={approvalBusy === experiment.id} onClick={() => void decideExperiment(experiment.id, 'reject')}>Reject</button>
-                </span>
+          <section className="mcc-panel mcc-panel--wide">
+            <div className="mcc-panel-heading"><h2>Funnel</h2><span>Last {growthFunnel?.windowDays ?? 14} days · {growthFunnel?.totalSignups ?? 0} signups</span></div>
+            {growthFunnel && !growthFunnel.hasMeaningfulData && (
+              <p className="mcc-muted">Not enough signal yet — Mara proposes experiments once the funnel has at least 5 signups in the window.</p>
+            )}
+            {(growthFunnel?.stages ?? []).map((stage) => (
+              <div className="mcc-signal" key={stage.stage}>
+                <span>{stage.stage}</span>
+                <strong>{stage.count}{stage.stage !== 'signup' ? ` · drop-off ${(stage.dropOffRateFromPrev * 100).toFixed(0)}%` : ''}</strong>
               </div>
             ))}
-            {!experiments?.experiments.length && <p className="mcc-muted">No experiment approvals waiting.</p>}
+          </section>
+
+          <section className="mcc-panel mcc-panel--wide mcc-panel--scroll">
+            <div className="mcc-panel-heading">
+              <h2>Growth Experiments</h2>
+              <span className="mcc-agent-actions">
+                {(['', 'proposed', 'approved', 'implemented', 'measured', 'rejected'] as const).map((status) => (
+                  <button
+                    key={status || 'all'}
+                    type="button"
+                    disabled={experimentFilter === status}
+                    onClick={() => setExperimentFilter(status)}
+                  >
+                    {status || 'all'}
+                  </button>
+                ))}
+              </span>
+            </div>
+            {experimentActionMsg && <p className="mcc-muted">{experimentActionMsg}</p>}
+            {allExperiments
+              .filter((exp) => !experimentFilter || exp.status === experimentFilter)
+              .map((exp) => {
+                const busy = taskBusy === `experiment:${exp.id}`;
+                const expanded = expandedExperiments.has(exp.id);
+                return (
+                  <div className="mcc-signal" key={exp.id} style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', cursor: 'pointer' }} onClick={() => toggleExpandExperiment(exp.id)}>
+                      <span>{exp.hypothesis}</span>
+                      <span className="mcc-agent-actions">
+                        <strong>{exp.status.toUpperCase()} · ICE {exp.iceScore?.toFixed(1) ?? '—'}</strong>
+                      </span>
+                    </div>
+                    {expanded && (
+                      <div style={{ marginTop: 8 }}>
+                        <p className="mcc-muted">Drop-off stage: {exp.dropOffStage} · baseline {(exp.baselineDropOffRate * 100).toFixed(0)}% · framework {exp.framework} · expected impact {(exp.expectedImpactPct * 100).toFixed(0)}%</p>
+                        <p className="mcc-muted">ICE — impact {exp.iceImpact} · confidence {exp.iceConfidence} · ease {exp.iceEase}</p>
+                        {exp.codeSketch && <pre className="mcc-code-preview">{exp.codeSketch}</pre>}
+                        {exp.decidedBy && <p className="mcc-muted">Decided by {exp.decidedBy}{exp.decisionNote ? ` — "${exp.decisionNote}"` : ''}</p>}
+                        {exp.status === 'implemented' && <p className="mcc-muted">Implemented {formatTime(String(exp.implementedAt))} · measures after {formatTime(String(exp.measureAfterAt))}</p>}
+                        {exp.status === 'measured' && (
+                          <p className="mcc-muted">
+                            {exp.succeeded ? '✅ Succeeded' : '❌ Did not hit target'} · actual impact {exp.actualImpactPct != null ? `${(exp.actualImpactPct * 100).toFixed(0)}%` : '—'}
+                            {exp.learnings ? ` — ${exp.learnings}` : ''}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    <span className="mcc-agent-actions" style={{ marginTop: 8 }}>
+                      {exp.status === 'proposed' && <>
+                        <button type="button" disabled={busy} onClick={(e) => { e.stopPropagation(); void actOnExperiment(exp.id, 'approve'); }}>Approve</button>
+                        <button type="button" disabled={busy} onClick={(e) => { e.stopPropagation(); void actOnExperiment(exp.id, 'reject'); }}>Reject</button>
+                      </>}
+                      {exp.status === 'approved' && (
+                        <button type="button" disabled={busy} onClick={(e) => { e.stopPropagation(); void actOnExperiment(exp.id, 'implement'); }}>🚀 Mark implemented</button>
+                      )}
+                    </span>
+                  </div>
+                );
+              })}
+            {!allExperiments.length && <p className="mcc-muted">No experiments yet.</p>}
           </section>
         </div>}
 
