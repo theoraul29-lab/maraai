@@ -36,6 +36,9 @@ import type {
   GrowthFunnelSnapshot,
   GrowthExperimentStatus,
   GrowthDashboardData,
+  ExecutiveStatus,
+  ModuleInsight,
+  ReadingQueueItem,
 } from './types/control';
 
 async function getJson<T>(url: string): Promise<T> {
@@ -118,6 +121,13 @@ export default function MaraControlCenter() {
   const [expandedExperiments, setExpandedExperiments] = useState<Set<number>>(new Set());
   const [experimentActionMsg, setExperimentActionMsg] = useState<string | null>(null);
   const [growthDashboard, setGrowthDashboard] = useState<GrowthDashboardData | null>(null);
+  const [triggerMessage, setTriggerMessage] = useState<string | null>(null);
+  const [executive, setExecutive] = useState<ExecutiveStatus | null>(null);
+  const [moduleInsights, setModuleInsights] = useState<ModuleInsight[]>([]);
+  const [readingQueue, setReadingQueue] = useState<ReadingQueueItem[]>([]);
+  const [newQueueTopic, setNewQueueTopic] = useState('');
+  const [newQueueReason, setNewQueueReason] = useState('');
+  const [queueMessage, setQueueMessage] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -149,6 +159,9 @@ export default function MaraControlCenter() {
         ['allExperiments', getJson<{ experiments: GrowthExperiment[] }>('/api/admin/mara/experiments?limit=100')],
         ['growthFunnel', getJson<GrowthFunnelSnapshot>('/api/admin/mara/experiments/funnel?days=14')],
         ['growthDashboard', getJson<GrowthDashboardData>('/api/growth/dashboard')],
+        ['executive', getJson<ExecutiveStatus>('/api/admin/mara/executive')],
+        ['moduleInsights', getJson<{ insights: ModuleInsight[] }>('/api/admin/learning/insights?status=proposed')],
+        ['readingQueue', getJson<{ queue: ReadingQueueItem[] }>('/api/admin/learning/queue')],
       ] as const;
       const results = await Promise.allSettled(requests.map(([, request]) => request));
       if (!active) return;
@@ -179,6 +192,9 @@ export default function MaraControlCenter() {
         allExperiments: { experiments: GrowthExperiment[] };
         growthFunnel: GrowthFunnelSnapshot;
         growthDashboard: GrowthDashboardData;
+        executive: ExecutiveStatus;
+        moduleInsights: { insights: ModuleInsight[] };
+        readingQueue: { queue: ReadingQueueItem[] };
       }>(requests.map(([name]) => name), results);
       if (values.overview) setDashboard(values.overview);
       if (values.brain) { setBrain(values.brain.brain); setProvider(values.brain.ai); }
@@ -209,6 +225,9 @@ export default function MaraControlCenter() {
       if (values.allExperiments) setAllExperiments(values.allExperiments.experiments);
       if (values.growthFunnel) setGrowthFunnel(values.growthFunnel);
       if (values.growthDashboard) setGrowthDashboard(values.growthDashboard);
+      if (values.executive) setExecutive(values.executive);
+      if (values.moduleInsights) setModuleInsights(values.moduleInsights.insights);
+      if (values.readingQueue) setReadingQueue(values.readingQueue.queue);
       setError(failures.length ? `Unavailable: ${failures.join(', ')}` : null);
       setUpdatedAt(new Date());
     };
@@ -278,6 +297,64 @@ export default function MaraControlCenter() {
       setError(cause instanceof Error ? cause.message : 'Knowledge search failed');
     } finally {
       setKnowledgeSearchBusy(false);
+    }
+  }
+
+  async function triggerBrainCycle() {
+    setTaskBusy('trigger-brain');
+    setTriggerMessage(null);
+    try {
+      const response = await fetch('/api/admin/brain/trigger', { method: 'POST', credentials: 'include' });
+      const data = await response.json().catch(() => ({})) as { message?: string; error?: string };
+      setTriggerMessage(data.message ?? data.error ?? (response.ok ? 'Cycle started.' : `Failed: ${response.status}`));
+    } catch (cause) {
+      setTriggerMessage(cause instanceof Error ? cause.message : 'Trigger failed');
+    } finally {
+      setTaskBusy(null);
+    }
+  }
+
+  async function updateModuleInsight(id: number, status: 'approved' | 'rejected' | 'completed') {
+    setTaskBusy(`insight:${id}`);
+    try {
+      const response = await fetch(`/api/admin/learning/insights/${id}/status`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      if (response.ok) setModuleInsights((current) => current.filter((ins) => ins.id !== id));
+      else setExperimentActionMsg(`Insight update failed: ${response.status}`);
+    } catch (cause) {
+      setExperimentActionMsg(cause instanceof Error ? cause.message : 'Insight update failed');
+    } finally {
+      setTaskBusy(null);
+    }
+  }
+
+  async function addToReadingQueue() {
+    const topic = newQueueTopic.trim();
+    if (!topic) { setQueueMessage('Topic is required.'); return; }
+    setTaskBusy('add-queue');
+    setQueueMessage(null);
+    try {
+      const response = await fetch('/api/admin/learning/queue', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic, reason: newQueueReason, priority: 'medium' }),
+      });
+      const data = await response.json().catch(() => ({})) as { error?: string };
+      if (!response.ok) { setQueueMessage(`Failed: ${data.error ?? response.status}`); return; }
+      setQueueMessage(`Added: ${topic}`);
+      setNewQueueTopic('');
+      setNewQueueReason('');
+      const refreshed = await getJson<{ queue: ReadingQueueItem[] }>('/api/admin/learning/queue');
+      setReadingQueue(refreshed.queue);
+    } catch (cause) {
+      setQueueMessage(cause instanceof Error ? cause.message : 'Failed to add topic');
+    } finally {
+      setTaskBusy(null);
     }
   }
 
@@ -726,6 +803,10 @@ export default function MaraControlCenter() {
                   <div><dt>Last cycle</dt><dd>{formatTime(brain?.lastRunAt ?? null)}</dd></div>
                   <div><dt>Next cycle</dt><dd>{formatTime(brain?.nextRunAt ?? null)}</dd></div>
                 </dl>
+                <button type="button" disabled={taskBusy === 'trigger-brain'} onClick={() => void triggerBrainCycle()} style={{ marginTop: 10 }}>
+                  {taskBusy === 'trigger-brain' ? 'Starting…' : 'Trigger cycle now'}
+                </button>
+                {triggerMessage && <p className="mcc-muted" style={{ marginTop: 6 }}>{triggerMessage}</p>}
               </article>
 
               <article className="mcc-panel">
@@ -1043,6 +1124,28 @@ export default function MaraControlCenter() {
               </section>
             </>
           )}
+
+          <section className="mcc-panel mcc-panel--wide mcc-panel--scroll">
+            <div className="mcc-panel-heading"><h2>Module Insights</h2><span>{moduleInsights.length} proposed</span></div>
+            {moduleInsights.map((ins) => {
+              const busy = taskBusy === `insight:${ins.id}`;
+              return (
+                <div className="mcc-signal" key={ins.id} style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                    <span>[{ins.module}] {ins.title}</span>
+                    <strong>{ins.priority} · impact {ins.estimatedImpact}</strong>
+                  </div>
+                  <p className="mcc-muted" style={{ margin: '4px 0' }}>{ins.description}</p>
+                  <span className="mcc-agent-actions">
+                    <button type="button" disabled={busy} onClick={() => void updateModuleInsight(ins.id, 'approved')}>Approve</button>
+                    <button type="button" disabled={busy} onClick={() => void updateModuleInsight(ins.id, 'rejected')}>Reject</button>
+                    <button type="button" disabled={busy} onClick={() => void updateModuleInsight(ins.id, 'completed')}>Mark done</button>
+                  </span>
+                </div>
+              );
+            })}
+            {!moduleInsights.length && <p className="mcc-muted">No module insights proposed right now.</p>}
+          </section>
 
           <section className="mcc-panel mcc-panel--wide mcc-panel--scroll">
             <div className="mcc-panel-heading">
@@ -1458,6 +1561,23 @@ export default function MaraControlCenter() {
           </section>
 
           <section className="mcc-panel mcc-panel--wide mcc-panel--scroll">
+            <div className="mcc-panel-heading"><h2>Reading / research queue</h2><span>{readingQueue.length} pending</span></div>
+            <div className="mcc-repository-search" style={{ flexWrap: 'wrap' }}>
+              <input value={newQueueTopic} onChange={(event) => setNewQueueTopic(event.target.value)} placeholder="Topic (e.g. 'Hormozi $100M Offers')" style={{ flex: '1 1 200px' }} />
+              <input value={newQueueReason} onChange={(event) => setNewQueueReason(event.target.value)} placeholder="Why Mara should learn this" style={{ flex: '1 1 200px' }} />
+              <button type="button" disabled={taskBusy === 'add-queue'} onClick={() => void addToReadingQueue()}>Add to queue</button>
+            </div>
+            {queueMessage && <p className="mcc-muted" style={{ marginTop: 6 }}>{queueMessage}</p>}
+            {readingQueue.map((item) => (
+              <div className="mcc-signal" key={item.id}>
+                <span>{item.topic} — {item.reason}</span>
+                <strong>{item.priority} · {item.status}</strong>
+              </div>
+            ))}
+            {!readingQueue.length && <p className="mcc-muted">Queue is empty.</p>}
+          </section>
+
+          <section className="mcc-panel mcc-panel--wide mcc-panel--scroll">
             <div className="mcc-panel-heading"><h2>Search real knowledge</h2><span>Direct DB search — the same retrieval chat uses, no completion on top</span></div>
             <form className="mcc-repository-search" onSubmit={(event) => { event.preventDefault(); void searchKnowledgeBase(); }}>
               <input value={knowledgeQuery} onChange={(event) => setKnowledgeQuery(event.target.value)} placeholder="Search what Mara has actually learned" aria-label="Search knowledge base" />
@@ -1512,6 +1632,28 @@ export default function MaraControlCenter() {
               ))}
               {!dashboard?.aiRoutes.length && <p className="mcc-muted">No AI route activity recorded.</p>}
             </div>
+          </section>
+          <section className="mcc-panel mcc-panel--wide mcc-panel--scroll">
+            <div className="mcc-panel-heading"><h2>Executive Reasoning</h2><span>CognitiveState · signal ring {executive?.signalCount ?? 0}/50</span></div>
+            <div className="mcc-signal"><span>Current priority</span><strong>{executive?.state.currentPriority || '—'}</strong></div>
+            <div className="mcc-signal"><span>Focus modules</span><strong>{executive?.state.focusModules.length ? executive.state.focusModules.join(', ') : '—'}</strong></div>
+            <div className="mcc-signal"><span>Last updated</span><strong>{executive?.state.lastUpdated ? formatTime(new Date(executive.state.lastUpdated).toISOString()) : '—'}</strong></div>
+            <p className="mcc-muted" style={{ marginTop: 8 }}>{executive?.state.funnelSummary || 'Funnel summary not yet computed.'}</p>
+            {!!executive?.state.topUserTopics.length && (
+              <p className="mcc-muted">Top user topics: {executive.state.topUserTopics.join(', ')}</p>
+            )}
+            {!!executive?.state.activeExperiments.length && (
+              <>
+                <p className="mcc-muted" style={{ marginTop: 8 }}>Active experiments:</p>
+                {executive.state.activeExperiments.map((e, i) => <p className="mcc-muted" key={i}>· {e}</p>)}
+              </>
+            )}
+            {!!executive?.state.recentOutcomes.length && (
+              <>
+                <p className="mcc-muted" style={{ marginTop: 8 }}>Recent outcomes:</p>
+                {executive.state.recentOutcomes.map((o, i) => <p className="mcc-muted" key={i}>· {o}</p>)}
+              </>
+            )}
           </section>
         </div>}
       </div>

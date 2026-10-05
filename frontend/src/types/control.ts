@@ -347,6 +347,42 @@ export interface GrowthDashboardReferrer {
   referralCount: number;
 }
 
+export interface ExecutiveStatus {
+  state: {
+    lastUpdated: number;
+    funnelSummary: string | null;
+    activeExperiments: string[];
+    recentOutcomes: string[];
+    topUserTopics: string[];
+    currentPriority: string;
+    focusModules: string[];
+  };
+  signalCount: number;
+}
+
+export interface ModuleInsight {
+  id: number;
+  module: string;
+  insightType: string;
+  title: string;
+  description: string;
+  priority: string;
+  estimatedImpact: string;
+  source: string;
+  status: string;
+  createdAt: string | number | null;
+}
+
+export interface ReadingQueueItem {
+  id: number;
+  topic: string;
+  reason: string;
+  priority: string;
+  status: string;
+  source: string;
+  createdAt: string | number | null;
+}
+
 export interface GrowthDashboardData {
   gateActive: boolean;
   userCount: number;
