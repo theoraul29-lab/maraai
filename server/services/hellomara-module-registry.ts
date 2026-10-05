@@ -163,6 +163,17 @@ function missing(paths: readonly string[]): string[] {
   return paths.filter((file) => !fs.existsSync(path.join(REPO_ROOT, file)));
 }
 
+// The production Docker image (Dockerfile.nodejs) only copies server/,
+// shared/, dist/ and migrations/ into the runtime stage — frontend/src is
+// build-time-only (compiled into dist/public) and never shipped. Checking
+// frontendFiles/tests against the filesystem there would report every
+// single module as 'error' with zero signal, since none of those files can
+// ever exist in that environment. Computed once at module load (the
+// runtime's own file layout doesn't change while the process is alive).
+const FRONTEND_SOURCE_PRESENT = fs.existsSync(path.join(REPO_ROOT, 'frontend', 'src'));
+
+const RECENT_FAILURE_WINDOW_SECONDS = 24 * 60 * 60;
+
 function tableExists(table: string): boolean {
   try {
     const row = rawSqlite.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=? LIMIT 1").get(table) as { name: string } | undefined;
@@ -232,28 +243,44 @@ export async function readHelloMaraModules(): Promise<{ modules: HelloMaraModule
   ]);
   const changedFiles = new Set(git.diff.files);
   const modules = MODULE_DEFINITIONS.map((definition) => {
-    const frontendFiles = existing(definition.frontendFiles);
+    const frontendFiles = FRONTEND_SOURCE_PRESENT ? existing(definition.frontendFiles) : [];
     const backendFiles = existing(definition.backendFiles);
     const sharedDependencies = existing(definition.sharedDependencies);
-    const tests = existing(definition.tests);
+    const tests = FRONTEND_SOURCE_PRESENT ? existing(definition.tests) : [];
     const assets = existing(definition.assets);
-    const missingFiles = [...missing(definition.frontendFiles), ...missing(definition.backendFiles), ...missing(definition.sharedDependencies)];
+    const missingFiles = [
+      ...(FRONTEND_SOURCE_PRESENT ? missing(definition.frontendFiles) : []),
+      ...missing(definition.backendFiles),
+      ...missing(definition.sharedDependencies),
+    ];
     const missingTables = definition.databaseDependencies.filter((table) => !tableExists(table));
     const moduleTasks = tasksSnapshot.tasks.filter((task) => taskBelongsToModule(task, definition));
     const activeTasks = moduleTasks.filter((task) => ['QUEUED', 'PLANNING', 'RUNNING', 'WAITING_APPROVAL'].includes(task.status));
     const recentChanges = [...definition.frontendFiles, ...definition.backendFiles, ...definition.sharedDependencies].filter((file) => changedFiles.has(file));
-    const errors = moduleTasks.filter((task) => task.status === 'FAILED').map((task) => task.title).slice(0, 20);
+    // A FAILED task flips this dimension to 'error' with no expiry, so one
+    // stale blip (e.g. a single bad brain cycle later retried successfully)
+    // pins the module red forever even after dozens of subsequent runs
+    // succeed. Bound it to a recent window — this is a live-health signal,
+    // not the audit trail (that's Audit & Logs).
+    const errors = moduleTasks
+      .filter((task) => task.status === 'FAILED' && typeof task.createdAt === 'number' && Date.now() / 1000 - task.createdAt <= RECENT_FAILURE_WINDOW_SECONDS)
+      .map((task) => task.title)
+      .slice(0, 20);
     const warnings = [
       ...missingFiles.map((file) => `Expected module file is missing: ${file}`),
       ...missingTables.map((table) => `Database table not found in active SQLite runtime: ${table}`),
     ];
     const status = healthFromParts({
-      frontend: frontendFiles.length === definition.frontendFiles.length ? 'healthy' : frontendFiles.length > 0 ? 'warning' : 'error',
+      frontend: !FRONTEND_SOURCE_PRESENT
+        ? 'not_configured'
+        : frontendFiles.length === definition.frontendFiles.length ? 'healthy' : frontendFiles.length > 0 ? 'warning' : 'error',
       backend: backendFiles.length === definition.backendFiles.length ? 'healthy' : backendFiles.length > 0 ? 'warning' : 'error',
       database: missingTables.length === 0 ? 'healthy' : missingTables.length === definition.databaseDependencies.length ? 'error' : 'warning',
       ai: definition.aiIntegrations.length === 0 ? 'not_configured' : ai?.ok ? 'healthy' : ai?.configured ? 'warning' : 'not_configured',
       tasks: errors.length > 0 ? 'error' : activeTasks.length > 0 ? 'warning' : 'healthy',
-      tests: definition.tests.length === 0 ? 'warning' : tests.length === definition.tests.length ? 'healthy' : 'warning',
+      tests: !FRONTEND_SOURCE_PRESENT
+        ? 'not_configured'
+        : definition.tests.length === 0 ? 'warning' : tests.length === definition.tests.length ? 'healthy' : 'warning',
     });
     return {
       ...definition,
