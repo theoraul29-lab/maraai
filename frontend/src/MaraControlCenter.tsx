@@ -40,6 +40,7 @@ import type {
   ModuleInsight,
   ReadingQueueItem,
   AiRouteLog,
+  MaraReflection,
 } from './types/control';
 
 async function getJson<T>(url: string): Promise<T> {
@@ -130,6 +131,8 @@ export default function MaraControlCenter() {
   const [newQueueReason, setNewQueueReason] = useState('');
   const [queueMessage, setQueueMessage] = useState<string | null>(null);
   const [aiRouteLogs, setAiRouteLogs] = useState<AiRouteLog[]>([]);
+  const [reflections, setReflections] = useState<MaraReflection[]>([]);
+  const [copiedReflectionId, setCopiedReflectionId] = useState<number | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -165,6 +168,7 @@ export default function MaraControlCenter() {
         ['moduleInsights', getJson<{ insights: ModuleInsight[] }>('/api/admin/learning/insights?status=proposed')],
         ['readingQueue', getJson<{ queue: ReadingQueueItem[] }>('/api/admin/learning/queue')],
         ['aiRouteLogs', getJson<{ routes: AiRouteLog[] }>('/api/admin/dashboard/ai-routes')],
+        ['reflections', getJson<{ reflections: MaraReflection[] }>('/api/admin/dashboard/reflections')],
       ] as const;
       const results = await Promise.allSettled(requests.map(([, request]) => request));
       if (!active) return;
@@ -199,6 +203,7 @@ export default function MaraControlCenter() {
         moduleInsights: { insights: ModuleInsight[] };
         readingQueue: { queue: ReadingQueueItem[] };
         aiRouteLogs: { routes: AiRouteLog[] };
+        reflections: { reflections: MaraReflection[] };
       }>(requests.map(([name]) => name), results);
       if (values.overview) setDashboard(values.overview);
       if (values.brain) { setBrain(values.brain.brain); setProvider(values.brain.ai); }
@@ -233,6 +238,7 @@ export default function MaraControlCenter() {
       if (values.moduleInsights) setModuleInsights(values.moduleInsights.insights);
       if (values.readingQueue) setReadingQueue(values.readingQueue.queue);
       if (values.aiRouteLogs) setAiRouteLogs(values.aiRouteLogs.routes);
+      if (values.reflections) setReflections(values.reflections.reflections);
       setError(failures.length ? `Unavailable: ${failures.join(', ')}` : null);
       setUpdatedAt(new Date());
     };
@@ -387,6 +393,14 @@ export default function MaraControlCenter() {
     } finally {
       setTaskBusy(null);
     }
+  }
+
+  async function copyReflection(id: number, content: string) {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopiedReflectionId(id);
+      setTimeout(() => setCopiedReflectionId((current) => current === id ? null : current), 2000);
+    } catch { /* clipboard unavailable — silent, non-critical */ }
   }
 
   async function uploadDocument() {
@@ -750,12 +764,12 @@ export default function MaraControlCenter() {
     return () => { document.body.style.overflow = previous; };
   }, []);
 
+  // Brain/Growth/Experiments/Mara Chat used to point at their own standalone
+  // admin pages — all fully consolidated into this page now (Learning,
+  // Approvals/Growth, Telemetry, Agents views), so those entries were
+  // removed rather than left pointing at redundant duplicates. Waitlist is
+  // the one admin surface genuinely outside this consolidation's scope.
   const links: Array<[string, string]> = [
-    ['/admin', 'Admin Dashboard'],
-    ['/admin/brain', 'Brain'],
-    ['/admin/growth', 'Growth'],
-    ['/admin/experiments', 'Experiments'],
-    ['/admin/mara', 'Mara Chat'],
     ['/admin/waitlist', 'Waitlist'],
   ];
 
@@ -1687,6 +1701,19 @@ export default function MaraControlCenter() {
               </div>
             ))}
             {!aiRouteLogs.length && <p className="mcc-muted">No raw AI route logs yet.</p>}
+          </section>
+          <section className="mcc-panel mcc-panel--wide mcc-panel--scroll">
+            <div className="mcc-panel-heading"><h2>Mara's reflections</h2><span>Self-written, free-form — not the structured brain logs above</span></div>
+            {reflections.map((r) => (
+              <div key={r.id} style={{ marginBottom: 10 }}>
+                <pre className="mcc-code-preview" style={{ marginTop: 0, whiteSpace: 'pre-wrap' }}>{r.content}</pre>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+                  <span className="mcc-muted">{formatTime(String(r.created_at))}</span>
+                  <button type="button" onClick={() => void copyReflection(r.id, r.content)}>{copiedReflectionId === r.id ? 'Copied!' : 'Copy'}</button>
+                </div>
+              </div>
+            ))}
+            {!reflections.length && <p className="mcc-muted">No reflections written yet.</p>}
           </section>
           <section className="mcc-panel mcc-panel--wide mcc-panel--scroll">
             <div className="mcc-panel-heading"><h2>Executive Reasoning</h2><span>CognitiveState · signal ring {executive?.signalCount ?? 0}/50</span></div>

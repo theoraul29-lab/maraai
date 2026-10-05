@@ -15,7 +15,6 @@ import { MaraChatWidget } from './components/MaraChatWidget';
 import P2PContributingBadge from './components/P2PContributingBadge';
 
 // Heavy route modules are lazy-loaded to reduce initial bundle size.
-const AdminDashboard = lazy(() => import('./AdminDashboard'));
 const Missions = lazy(() => import('./Missions'));
 const Pricing = lazy(() => import('./Pricing'));
 const VIP = lazy(() => import('./VIP').then((m) => ({ default: m.VIP })));
@@ -31,11 +30,7 @@ import HomePage from './HomePage';
 // visitors. Loading them eagerly bloated the initial bundle by ~110 kB; lazy
 // chunks isolate that cost to the admins who actually visit /admin/*.
 const Community = lazy(() => import('./Community'));
-const AdminBrain = lazy(() => import('./AdminBrain'));
-const AdminGrowthDashboard = lazy(() => import('./AdminGrowthDashboard'));
-const AdminExperiments = lazy(() => import('./AdminExperiments'));
 const AdminWaitlist = lazy(() => import('./AdminWaitlist'));
-const AdminMaraChat = lazy(() => import('./AdminMaraChat'));
 const MaraControlCenter = lazy(() => import('./MaraControlCenter'));
 const OnboardingFlow = lazy(() => import('./maraai/OnboardingFlow').then((m) => ({ default: m.OnboardingFlow })));
 const TransparencyDashboard = lazy(() => import('./maraai/TransparencyDashboard').then((m) => ({ default: m.TransparencyDashboard })));
@@ -261,13 +256,20 @@ function App() {
                 <Route path="/pricing" element={<Pricing />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/reset-password/confirmation" element={<ResetPasswordConfirmation />} />
-                <Route path="/admin" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
                 <Route path="/control-center" element={<ControlCenterAuthGate><MaraControlCenter /></ControlCenterAuthGate>} />
-                <Route path="/admin/brain" element={<AdminGuard><AdminBrain /></AdminGuard>} />
-                <Route path="/admin/experiments" element={<AdminGuard><AdminExperiments /></AdminGuard>} />
                 <Route path="/admin/waitlist" element={<AdminGuard><AdminWaitlist /></AdminGuard>} />
-                <Route path="/admin/mara" element={<AdminGuard><AdminMaraChat /></AdminGuard>} />
-                <Route path="/admin/growth" element={<AdminGuard><AdminGrowthDashboard /></AdminGuard>} />
+                {/* /admin, /admin/mara, /admin/brain, /admin/experiments, /admin/growth all
+                    used to be separate standalone pages with real, non-overlapping content
+                    (Overview, Chat, Brain/ExecutiveReasoning/reading-queue, the Growth
+                    Experiments lifecycle, the weekly Growth Dashboard) — all confirmed fully
+                    ported into Control Center's own views (checked field-by-field against
+                    each page, not assumed) over several commits. Redirect instead of a hard
+                    404 for anyone with these URLs bookmarked. */}
+                <Route path="/admin" element={<Navigate to="/control-center" replace />} />
+                <Route path="/admin/mara" element={<Navigate to="/control-center" replace />} />
+                <Route path="/admin/brain" element={<Navigate to="/control-center" replace />} />
+                <Route path="/admin/experiments" element={<Navigate to="/control-center" replace />} />
+                <Route path="/admin/growth" element={<Navigate to="/control-center" replace />} />
                 <Route
                   path="/onboarding"
                   element={<RequireAuth><OnboardingFlow onClose={() => navigate('/')} /></RequireAuth>}

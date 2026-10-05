@@ -1,7 +1,9 @@
 // Admin-only dashboard for the pre-launch waitlist.
 //
-// Visible at /admin/waitlist. Mirrors AdminBrain / AdminExperiments
-// patterns: inline styles, fetch-with-credentials, 403 fallback for
+// Visible at /admin/waitlist. The one admin surface not folded into
+// Control Center — everything else that used to live in separate pages
+// like this (Brain, Growth, Experiments) is there now. Same patterns as
+// those used to: inline styles, fetch-with-credentials, 403 fallback for
 // non-admins. The backend gates every endpoint via the same
 // requireAdmin middleware used by /api/admin/mara/*.
 //

@@ -347,6 +347,12 @@ export interface GrowthDashboardReferrer {
   referralCount: number;
 }
 
+export interface MaraReflection {
+  id: number;
+  content: string;
+  created_at: string | number;
+}
+
 export interface AiRouteLog {
   route: string;
   module: string | null;
