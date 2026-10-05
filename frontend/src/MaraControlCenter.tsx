@@ -35,6 +35,7 @@ import type {
   GrowthExperiment,
   GrowthFunnelSnapshot,
   GrowthExperimentStatus,
+  GrowthDashboardData,
 } from './types/control';
 
 async function getJson<T>(url: string): Promise<T> {
@@ -116,6 +117,7 @@ export default function MaraControlCenter() {
   const [experimentFilter, setExperimentFilter] = useState<GrowthExperimentStatus | ''>('');
   const [expandedExperiments, setExpandedExperiments] = useState<Set<number>>(new Set());
   const [experimentActionMsg, setExperimentActionMsg] = useState<string | null>(null);
+  const [growthDashboard, setGrowthDashboard] = useState<GrowthDashboardData | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -146,6 +148,7 @@ export default function MaraControlCenter() {
         ['uploadedDocs', getJson<{ documents: UploadedDocument[] }>('/api/control/learning/uploads?limit=20')],
         ['allExperiments', getJson<{ experiments: GrowthExperiment[] }>('/api/admin/mara/experiments?limit=100')],
         ['growthFunnel', getJson<GrowthFunnelSnapshot>('/api/admin/mara/experiments/funnel?days=14')],
+        ['growthDashboard', getJson<GrowthDashboardData>('/api/growth/dashboard')],
       ] as const;
       const results = await Promise.allSettled(requests.map(([, request]) => request));
       if (!active) return;
@@ -175,6 +178,7 @@ export default function MaraControlCenter() {
         uploadedDocs: { documents: UploadedDocument[] };
         allExperiments: { experiments: GrowthExperiment[] };
         growthFunnel: GrowthFunnelSnapshot;
+        growthDashboard: GrowthDashboardData;
       }>(requests.map(([name]) => name), results);
       if (values.overview) setDashboard(values.overview);
       if (values.brain) { setBrain(values.brain.brain); setProvider(values.brain.ai); }
@@ -204,6 +208,7 @@ export default function MaraControlCenter() {
       if (values.uploadedDocs) setUploadedDocs(values.uploadedDocs.documents);
       if (values.allExperiments) setAllExperiments(values.allExperiments.experiments);
       if (values.growthFunnel) setGrowthFunnel(values.growthFunnel);
+      if (values.growthDashboard) setGrowthDashboard(values.growthDashboard);
       setError(failures.length ? `Unavailable: ${failures.join(', ')}` : null);
       setUpdatedAt(new Date());
     };
@@ -985,6 +990,59 @@ export default function MaraControlCenter() {
               </div>
             ))}
           </section>
+
+          {growthDashboard && !growthDashboard.gateActive && (
+            <section className="mcc-panel mcc-panel--wide">
+              <div className="mcc-panel-heading"><h2>Growth Dashboard</h2><span>Gated until {growthDashboard.threshold} users</span></div>
+              <p className="mcc-muted">Currently {growthDashboard.userCount} registered users ({Math.round((growthDashboard.userCount / growthDashboard.threshold) * 100)}% of threshold) — cohorts/referrers activate automatically past that.</p>
+            </section>
+          )}
+          {growthDashboard?.gateActive && (
+            <>
+              <section className="mcc-panel mcc-panel--wide">
+                <div className="mcc-panel-heading"><h2>Funnel — this week vs. last</h2><span>Activation/engagement/conversion/retention</span></div>
+                {growthDashboard.funnel.current.map((stage, i) => {
+                  const prev = growthDashboard.funnel.previous[i];
+                  const pct = (1 - stage.dropOffRate) * 100;
+                  const prevPct = prev ? (1 - prev.dropOffRate) * 100 : null;
+                  const delta = prevPct != null ? pct - prevPct : null;
+                  return (
+                    <div className="mcc-signal" key={stage.stage}>
+                      <span>{stage.label}</span>
+                      <strong>{stage.count}{delta != null ? ` · ${delta >= 0 ? '+' : ''}${delta.toFixed(1)}pp vs last week` : ''}</strong>
+                    </div>
+                  );
+                })}
+              </section>
+              <section className="mcc-panel mcc-panel--wide mcc-panel--scroll">
+                <div className="mcc-panel-heading"><h2>Cohort retention</h2><span>By signup week</span></div>
+                {growthDashboard.cohorts.map((row) => (
+                  <div className="mcc-signal" key={row.week}>
+                    <span>{row.week} · {row.signups} signups</span>
+                    <strong>
+                      D7 {row.signups > 0 ? `${Math.round((row.day7 / row.signups) * 100)}%` : '—'} ·
+                      D30 {row.signups > 0 ? `${Math.round((row.day30 / row.signups) * 100)}%` : '—'}
+                    </strong>
+                  </div>
+                ))}
+                {!growthDashboard.cohorts.length && <p className="mcc-muted">Not enough data yet.</p>}
+              </section>
+              <section className="mcc-panel mcc-panel--wide">
+                <div className="mcc-panel-heading"><h2>Qualitative signals</h2><span>Investigator context served today</span></div>
+                {growthDashboard.qualitativeSignals.map((s) => (
+                  <div className="mcc-signal" key={s.type}><span>{s.type}</span><strong>{s.count}</strong></div>
+                ))}
+                {!growthDashboard.qualitativeSignals.length && <p className="mcc-muted">No active signals right now.</p>}
+              </section>
+              <section className="mcc-panel mcc-panel--wide mcc-panel--scroll">
+                <div className="mcc-panel-heading"><h2>Top referrers</h2></div>
+                {growthDashboard.topReferrers.map((r, i) => (
+                  <div className="mcc-signal" key={r.userId}><span>#{i + 1} · {r.userId.slice(0, 12)}…</span><strong>{r.referralCount} referrals</strong></div>
+                ))}
+                {!growthDashboard.topReferrers.length && <p className="mcc-muted">No referrals recorded yet.</p>}
+              </section>
+            </>
+          )}
 
           <section className="mcc-panel mcc-panel--wide mcc-panel--scroll">
             <div className="mcc-panel-heading">

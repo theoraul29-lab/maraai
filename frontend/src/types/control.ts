@@ -327,3 +327,32 @@ export interface GrowthFunnelSnapshot {
   stages: GrowthFunnelStage[];
   hasMeaningfulData: boolean;
 }
+
+export interface GrowthDashboardStage {
+  stage: string;
+  label: string;
+  count: number;
+  dropOffRate: number;
+}
+
+export interface GrowthDashboardCohort {
+  week: string;
+  signups: number;
+  day7: number;
+  day30: number;
+}
+
+export interface GrowthDashboardReferrer {
+  userId: string;
+  referralCount: number;
+}
+
+export interface GrowthDashboardData {
+  gateActive: boolean;
+  userCount: number;
+  threshold: number;
+  funnel: { current: GrowthDashboardStage[]; previous: GrowthDashboardStage[] };
+  cohorts: GrowthDashboardCohort[];
+  topReferrers: GrowthDashboardReferrer[];
+  qualitativeSignals: Array<{ type: string; count: number }>;
+}
