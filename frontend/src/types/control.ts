@@ -347,6 +347,17 @@ export interface GrowthDashboardReferrer {
   referralCount: number;
 }
 
+export interface AiRouteLog {
+  route: string;
+  module: string | null;
+  latency_ms: number | null;
+  tokens_in: number | null;
+  tokens_out: number | null;
+  success: boolean;
+  error: string | null;
+  created_at: string | number;
+}
+
 export interface ExecutiveStatus {
   state: {
     lastUpdated: number;

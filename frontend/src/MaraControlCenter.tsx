@@ -39,6 +39,7 @@ import type {
   ExecutiveStatus,
   ModuleInsight,
   ReadingQueueItem,
+  AiRouteLog,
 } from './types/control';
 
 async function getJson<T>(url: string): Promise<T> {
@@ -128,6 +129,7 @@ export default function MaraControlCenter() {
   const [newQueueTopic, setNewQueueTopic] = useState('');
   const [newQueueReason, setNewQueueReason] = useState('');
   const [queueMessage, setQueueMessage] = useState<string | null>(null);
+  const [aiRouteLogs, setAiRouteLogs] = useState<AiRouteLog[]>([]);
 
   useEffect(() => {
     let active = true;
@@ -162,6 +164,7 @@ export default function MaraControlCenter() {
         ['executive', getJson<ExecutiveStatus>('/api/admin/mara/executive')],
         ['moduleInsights', getJson<{ insights: ModuleInsight[] }>('/api/admin/learning/insights?status=proposed')],
         ['readingQueue', getJson<{ queue: ReadingQueueItem[] }>('/api/admin/learning/queue')],
+        ['aiRouteLogs', getJson<{ routes: AiRouteLog[] }>('/api/admin/dashboard/ai-routes')],
       ] as const;
       const results = await Promise.allSettled(requests.map(([, request]) => request));
       if (!active) return;
@@ -195,6 +198,7 @@ export default function MaraControlCenter() {
         executive: ExecutiveStatus;
         moduleInsights: { insights: ModuleInsight[] };
         readingQueue: { queue: ReadingQueueItem[] };
+        aiRouteLogs: { routes: AiRouteLog[] };
       }>(requests.map(([name]) => name), results);
       if (values.overview) setDashboard(values.overview);
       if (values.brain) { setBrain(values.brain.brain); setProvider(values.brain.ai); }
@@ -228,6 +232,7 @@ export default function MaraControlCenter() {
       if (values.executive) setExecutive(values.executive);
       if (values.moduleInsights) setModuleInsights(values.moduleInsights.insights);
       if (values.readingQueue) setReadingQueue(values.readingQueue.queue);
+      if (values.aiRouteLogs) setAiRouteLogs(values.aiRouteLogs.routes);
       setError(failures.length ? `Unavailable: ${failures.join(', ')}` : null);
       setUpdatedAt(new Date());
     };
@@ -353,6 +358,32 @@ export default function MaraControlCenter() {
       setReadingQueue(refreshed.queue);
     } catch (cause) {
       setQueueMessage(cause instanceof Error ? cause.message : 'Failed to add topic');
+    } finally {
+      setTaskBusy(null);
+    }
+  }
+
+  async function markAlertRead(id: number) {
+    setTaskBusy(`alert:${id}`);
+    try {
+      const response = await fetch(`/api/admin/alerts/${id}/read`, { method: 'POST', credentials: 'include' });
+      if (response.ok) {
+        setLogs((current) => current ? {
+          ...current,
+          alerts: current.alerts.filter((alert) => alert.id !== id),
+          unreadAlerts: Math.max(0, current.unreadAlerts - 1),
+        } : current);
+      }
+    } finally {
+      setTaskBusy(null);
+    }
+  }
+
+  async function markAllAlertsRead() {
+    setTaskBusy('alerts-all');
+    try {
+      const response = await fetch('/api/admin/alerts/read-all', { method: 'POST', credentials: 'include' });
+      if (response.ok) setLogs((current) => current ? { ...current, alerts: [], unreadAlerts: 0 } : current);
     } finally {
       setTaskBusy(null);
     }
@@ -862,8 +893,22 @@ export default function MaraControlCenter() {
                   {!logs?.brainLogs.length && <p className="mcc-muted">No Brain logs available.</p>}
                 </article>
                 <article className="mcc-panel">
-                  <div className="mcc-panel-heading"><h2>Alerts</h2><span>{logs?.unreadAlerts ?? 0} unread</span></div>
-                  {(logs?.alerts ?? []).map((alert) => <div className="mcc-signal" key={alert.id}><span>{alert.title}</span><strong>{alert.severity}</strong></div>)}
+                  <div className="mcc-panel-heading">
+                    <h2>Alerts</h2>
+                    <span className="mcc-agent-actions">
+                      {!!logs?.alerts.length && <button type="button" disabled={taskBusy === 'alerts-all'} onClick={() => void markAllAlertsRead()}>Mark all read</button>}
+                      <span>{logs?.unreadAlerts ?? 0} unread</span>
+                    </span>
+                  </div>
+                  {(logs?.alerts ?? []).map((alert) => (
+                    <div className="mcc-signal" key={alert.id}>
+                      <span>{alert.title}</span>
+                      <span className="mcc-agent-actions">
+                        <strong>{alert.severity}</strong>
+                        <button type="button" disabled={taskBusy === `alert:${alert.id}`} onClick={() => void markAlertRead(alert.id)}>Read</button>
+                      </span>
+                    </div>
+                  ))}
                   {!logs?.alerts.length && <p className="mcc-muted">No alerts available.</p>}
                   {brain?.lastError && <div className="mcc-error">Last Brain error: {brain.lastError}</div>}
                 </article>
@@ -1632,6 +1677,16 @@ export default function MaraControlCenter() {
               ))}
               {!dashboard?.aiRoutes.length && <p className="mcc-muted">No AI route activity recorded.</p>}
             </div>
+          </section>
+          <section className="mcc-panel mcc-panel--wide mcc-panel--scroll">
+            <div className="mcc-panel-heading"><h2>AI route logs</h2><span>Last {aiRouteLogs.length} raw requests</span></div>
+            {aiRouteLogs.slice(0, 20).map((log, index) => (
+              <div className="mcc-signal" key={index}>
+                <span>{log.route}{log.module ? ` · ${log.module}` : ''}{!log.success ? ` · ⚠️ ${log.error ?? 'failed'}` : ''}</span>
+                <strong>{log.latency_ms ? `${log.latency_ms}ms` : '—'} · {formatTime(String(log.created_at))}</strong>
+              </div>
+            ))}
+            {!aiRouteLogs.length && <p className="mcc-muted">No raw AI route logs yet.</p>}
           </section>
           <section className="mcc-panel mcc-panel--wide mcc-panel--scroll">
             <div className="mcc-panel-heading"><h2>Executive Reasoning</h2><span>CognitiveState · signal ring {executive?.signalCount ?? 0}/50</span></div>
