@@ -1249,6 +1249,10 @@
       "male": "Masculină",
       "female": "Feminină"
     },
+    "lang": {
+      "title": "Limbă primară — \"auto\" detectează la fiecare mesaj, fixarea blochează text și voce pe o singură limbă și sare peste detectare complet",
+      "auto": "Auto"
+    },
     "status": {
       "transcribing": "Mara transcrie…",
       "speaking": "Mara vorbește…",

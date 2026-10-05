@@ -1249,6 +1249,10 @@
       "male": "Male",
       "female": "Female"
     },
+    "lang": {
+      "title": "Primary language — \"auto\" detects per turn, pinning locks text and voice to one language and skips detection entirely",
+      "auto": "Auto"
+    },
     "status": {
       "transcribing": "Mara is transcribing…",
       "speaking": "Mara is speaking…",

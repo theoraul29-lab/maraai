@@ -25,8 +25,10 @@ type VoiceWindow = Window & { SpeechRecognition?: RecognitionConstructor; webkit
 type SttConfig = { url: string; token: string };
 type TtsConfig = { url: string; token: string };
 export type VoiceStyle = 'male' | 'female';
+export type PrimaryLang = 'auto' | 'ro' | 'en' | 'de';
 
 const VOICE_STYLE_STORAGE_KEY = 'mara_voice_style';
+const PRIMARY_LANG_STORAGE_KEY = 'mara_primary_lang';
 
 // Matches cosyvoice_tts_server.py's streaming /synthesize response: one WAV
 // clip per sentence, each prefixed with its own 4-byte big-endian length,
@@ -87,6 +89,15 @@ function loadStoredVoiceStyle(): VoiceStyle {
   }
 }
 
+function loadStoredPrimaryLang(): PrimaryLang {
+  try {
+    const stored = localStorage.getItem(PRIMARY_LANG_STORAGE_KEY);
+    return stored === 'ro' || stored === 'en' || stored === 'de' ? stored : 'auto';
+  } catch {
+    return 'auto';
+  }
+}
+
 function chooseVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
   const preferred = voices.find((voice) => /female|samantha|zira|aria|susan|google us english/i.test(voice.name));
   return preferred ?? voices[0] ?? null;
@@ -135,6 +146,7 @@ export function useMaraCore() {
   const [voiceSupported, setVoiceSupported] = useState(false);
   const [ttsSupported, setTtsSupported] = useState(false);
   const [voiceStyle, setVoiceStyleState] = useState<VoiceStyle>(loadStoredVoiceStyle);
+  const [primaryLang, setPrimaryLangState] = useState<PrimaryLang>(loadStoredPrimaryLang);
   const [recognitionBlocked, setRecognitionBlocked] = useState(false);
   const [statusNote, setStatusNote] = useState<string | null>(null);
   // Whether the hands-free conversation loop is engaged — spans multiple
@@ -184,6 +196,25 @@ export function useMaraCore() {
       // Storage quota / privacy mode — the in-memory choice for this session still applies.
     }
   }, []);
+
+  // 'auto' (default) keeps the existing multi-signal detection in
+  // routes.ts/stt_server.py. Any other value pins Control Center to that one
+  // language for both STT and the chat reply/TTS voice, bypassing detection
+  // entirely — added after a short Romanian utterance got Whisper-misdetected
+  // and transcribed as garbled nonsense ("PEALTE, SICOM, PUDEM...").
+  const setPrimaryLang = useCallback((lang: PrimaryLang) => {
+    setPrimaryLangState(lang);
+    try {
+      localStorage.setItem(PRIMARY_LANG_STORAGE_KEY, lang);
+    } catch {
+      // Storage quota / privacy mode — the in-memory choice for this session still applies.
+    }
+  }, []);
+  // sendMessage/transcribeWithLocalStt are defined further down and would
+  // otherwise close over the initial 'auto' value — mirrors sendMessageRef's
+  // own reason for existing just below.
+  const primaryLangRef = useRef(primaryLang);
+  useEffect(() => { primaryLangRef.current = primaryLang; }, [primaryLang]);
 
   useEffect(() => {
     // First getVoices() call is often [] and just triggers async loading —
@@ -306,7 +337,8 @@ export function useMaraCore() {
     // routes.ts) rather than trusting Whisper's single-turn guess in
     // isolation, so the reply we speak stays voiced consistently even when
     // `opts?.lang` was wrong or missing (typed messages never had it at all).
-    let resolvedLang: string | undefined = opts?.lang;
+    const pinned = primaryLangRef.current !== 'auto' ? primaryLangRef.current : undefined;
+    let resolvedLang: string | undefined = pinned ?? opts?.lang;
     try {
       const response = await fetch('/api/admin/mara/chat', {
         method: 'POST',
@@ -314,12 +346,13 @@ export function useMaraCore() {
         headers: { 'Content-Type': 'application/json' },
         // `lang` is the language Whisper detected for this turn's audio (see
         // transcribeWithLocalStt) — one signal among several the backend
-        // uses to resolve the conversation's actual language.
-        body: JSON.stringify({ message: trimmed, lang: opts?.lang }),
+        // uses to resolve the conversation's actual language. `pinnedLang`
+        // short-circuits all of that server-side when set (routes.ts).
+        body: JSON.stringify({ message: trimmed, lang: opts?.lang, pinnedLang: pinned }),
       });
       const data = await response.json() as { reply?: string; lang?: string };
       reply = data.reply ?? t('mara.errors.noResponse', "Mara didn't respond.");
-      if (data.lang) resolvedLang = data.lang;
+      if (data.lang) resolvedLang = pinned ?? data.lang;
     } catch {
       reply = t('mara.errors.connectionFailed', 'Connection to Mara failed — try again.');
     }
@@ -426,6 +459,7 @@ export function useMaraCore() {
     try {
       const form = new FormData();
       form.append('file', blob, 'speech.webm');
+      if (primaryLangRef.current !== 'auto') form.append('language', primaryLangRef.current);
       // credentials must be explicit 'omit': the app's global fetch wrapper
       // (frontend/src/csrf.ts) defaults every POST to credentials:'include'
       // + an X-CSRF-Token header for same-origin API calls — sending either
@@ -615,6 +649,6 @@ export function useMaraCore() {
   return {
     messages, sending, listening, transcribing, speaking, voiceSupported, recognitionBlocked, statusNote,
     sendMessage, toggleConversation, conversationActive,
-    ttsSupported, voiceStyle, setVoiceStyle,
+    ttsSupported, voiceStyle, setVoiceStyle, primaryLang, setPrimaryLang,
   };
 }

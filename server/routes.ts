@@ -2150,6 +2150,14 @@ export async function registerRoutes(
       // separately, the TTS voice) to the wrong language on its own. Order
       // mirrors tts_server.py's own layered detection (diacritics are the
       // one near-certain signal on real text, so they win outright):
+      //   0. pinnedLang — the admin explicitly locked Control Center to one
+      //      primary language (UI toggle in useMaraCore.ts). Short-circuits
+      //      everything below, INCLUDING diacritics: confirmed live that a
+      //      short/ambiguous spoken turn can get Whisper-misdetected and
+      //      transcribed as garbled nonsense in the wrong language entirely
+      //      ("PEALTE, SICOM, PUDEM..." from a Romanian utterance) — pinning
+      //      is the admin opting out of per-turn detection altogether, not
+      //      just nudging it, so nothing here should be allowed to override it.
       //   1. Romanian/German diacritics in THIS message — near-certain.
       //   2. Common-word match in THIS message (typed English/Romanian/German
       //      has no diacritic signal to lean on — diacritics alone left every
@@ -2163,8 +2171,11 @@ export async function registerRoutes(
       //      diacritic signal — conversational continuity instead of
       //      re-guessing from scratch on a short reply like "ok" or "da".
       //   5. The admin's own account language preference, then English.
-      const detectedLang = typeof req.body?.lang === 'string' ? req.body.lang : null;
       const SUPPORTED_LANGS = new Set(['ro', 'en', 'de']);
+      const pinnedLang = typeof req.body?.pinnedLang === 'string' && SUPPORTED_LANGS.has(req.body.pinnedLang)
+        ? req.body.pinnedLang as 'ro' | 'en' | 'de'
+        : null;
+      const detectedLang = typeof req.body?.lang === 'string' ? req.body.lang : null;
       const detectDiacriticLang = (text: string): 'ro' | 'de' | null => {
         if (/[ăâîșț]/i.test(text)) return 'ro';
         if (/[äöüß]/i.test(text)) return 'de';
@@ -2187,7 +2198,8 @@ export async function registerRoutes(
         if (scores[0].count > 0 && scores[0].count > scores[1].count) return scores[0].lang;
         return null;
       };
-      let resolvedLang: 'ro' | 'en' | 'de' | null = detectDiacriticLang(message) ?? detectWordLang(message);
+      let resolvedLang: 'ro' | 'en' | 'de' | null = pinnedLang;
+      if (!resolvedLang) resolvedLang = detectDiacriticLang(message) ?? detectWordLang(message);
       if (!resolvedLang && detectedLang && SUPPORTED_LANGS.has(detectedLang) && message.length >= 12) {
         resolvedLang = detectedLang as 'ro' | 'en' | 'de';
       }

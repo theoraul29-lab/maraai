@@ -40,7 +40,7 @@ if sys.platform == "win32":
     bin_dirs = glob.glob(os.path.join(nvidia_root, "*", "bin"))
     os.environ["PATH"] = os.pathsep.join(bin_dirs + [os.environ.get("PATH", "")])
 
-from fastapi import FastAPI, Header, HTTPException, UploadFile
+from fastapi import FastAPI, Form, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from faster_whisper import WhisperModel
@@ -104,8 +104,20 @@ def health():
 
 
 @app.post("/transcribe")
-async def transcribe(file: UploadFile, authorization: str | None = Header(default=None)):
+async def transcribe(
+    file: UploadFile,
+    authorization: str | None = Header(default=None),
+    # Optional pin: when the Control Center admin has set a fixed primary
+    # language, send it here to skip detect_language() entirely. Detection
+    # is a best-effort narrowing step, not a sure thing — it has a
+    # documented confusion pattern among similar Romance languages on short
+    # utterances, confirmed live (a short Romanian utterance transcribed as
+    # garbled pseudo-English). Pinning removes that ambiguity outright
+    # instead of trying to narrow it.
+    language: str | None = Form(default=None),
+):
     check_auth(authorization)
+    pinned_lang = language if language in SUPPORTED_LANGS else None
     raw = await file.read()
     if not raw:
         raise HTTPException(status_code=400, detail="empty audio")
@@ -122,19 +134,23 @@ async def transcribe(file: UploadFile, authorization: str | None = Header(defaul
         tmp_path = tmp.name
 
     try:
-        # Detect language first, restricted to what the voice pipeline
-        # actually supports, then transcribe with that forced — rather than
-        # letting transcribe() auto-detect across all ~99 languages and risk
-        # landing on a lookalike (Spanish/Italian/Portuguese for Romanian).
-        forced_lang = None
-        try:
-            audio_array = decode_audio(tmp_path)
-            _top_lang, _top_prob, all_probs = model.detect_language(audio=audio_array, vad_filter=True)
-            restricted = [(lang, prob) for lang, prob in all_probs if lang in SUPPORTED_LANGS]
-            if restricted:
-                forced_lang = max(restricted, key=lambda pair: pair[1])[0]
-        except Exception as exc:  # noqa: BLE001 - detection is a best-effort narrowing step
-            print(f"[stt] language pre-detection failed, falling back to unrestricted auto-detect: {exc}", file=sys.stderr)
+        if pinned_lang:
+            forced_lang = pinned_lang
+        else:
+            # Detect language first, restricted to what the voice pipeline
+            # actually supports, then transcribe with that forced — rather
+            # than letting transcribe() auto-detect across all ~99 languages
+            # and risk landing on a lookalike (Spanish/Italian/Portuguese for
+            # Romanian).
+            forced_lang = None
+            try:
+                audio_array = decode_audio(tmp_path)
+                _top_lang, _top_prob, all_probs = model.detect_language(audio=audio_array, vad_filter=True)
+                restricted = [(lang, prob) for lang, prob in all_probs if lang in SUPPORTED_LANGS]
+                if restricted:
+                    forced_lang = max(restricted, key=lambda pair: pair[1])[0]
+            except Exception as exc:  # noqa: BLE001 - detection is a best-effort narrowing step
+                print(f"[stt] language pre-detection failed, falling back to unrestricted auto-detect: {exc}", file=sys.stderr)
 
         segments, info = model.transcribe(tmp_path, language=forced_lang, beam_size=5, vad_filter=True)
         text = "".join(segment.text for segment in segments).strip()

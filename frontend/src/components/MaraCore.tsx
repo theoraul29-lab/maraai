@@ -41,7 +41,7 @@ export function MaraCore({ agents }: { agents: AgentCatalogEntry[] }) {
   const {
     messages, sending, listening, transcribing, speaking,
     voiceSupported, recognitionBlocked, statusNote, sendMessage, toggleConversation, conversationActive,
-    ttsSupported, voiceStyle, setVoiceStyle,
+    ttsSupported, voiceStyle, setVoiceStyle, primaryLang, setPrimaryLang,
   } = useMaraCore();
   const inputRef = useRef<HTMLInputElement>(null);
   const logRef = useRef<HTMLDivElement>(null);
@@ -234,6 +234,18 @@ export function MaraCore({ agents }: { agents: AgentCatalogEntry[] }) {
                 </button>
               </div>
             )}
+            <div className="mcc-voice-picker" title={t('mara.lang.title', 'Primary language — "auto" detects per turn, pinning locks text and voice to one language and skips detection entirely')}>
+              {(['auto', 'ro', 'en', 'de'] as const).map((code) => (
+                <button
+                  key={code}
+                  type="button"
+                  className={`mcc-voice-picker-btn${primaryLang === code ? ' mcc-voice-picker-btn--active' : ''}`}
+                  onClick={() => setPrimaryLang(code)}
+                >
+                  {code === 'auto' ? t('mara.lang.auto', 'Auto') : code.toUpperCase()}
+                </button>
+              ))}
+            </div>
             <div className="mcc-nexus-status">
               {transcribing
                 ? t('mara.status.transcribing', 'Mara is transcribing…')
