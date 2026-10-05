@@ -32,6 +32,7 @@ import type {
   RecentRead,
   KnowledgeSample,
   KnowledgeSearchResult,
+  UploadedDocument,
 } from './types/control';
 
 async function getJson<T>(url: string): Promise<T> {
@@ -104,6 +105,12 @@ export default function MaraControlCenter() {
   const [knowledgeQuery, setKnowledgeQuery] = useState('');
   const [knowledgeResults, setKnowledgeResults] = useState<KnowledgeSearchResult[] | null>(null);
   const [knowledgeSearchBusy, setKnowledgeSearchBusy] = useState(false);
+  const [uploadedDocs, setUploadedDocs] = useState<UploadedDocument[]>([]);
+  const [uploadTitle, setUploadTitle] = useState('');
+  const [uploadCategory, setUploadCategory] = useState('general');
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadBusy, setUploadBusy] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -132,6 +139,7 @@ export default function MaraControlCenter() {
         ['learningOverview', getJson<LearningOverview>('/api/control/learning/overview')],
         ['recentReads', getJson<{ reads: RecentRead[] }>('/api/control/learning/recent?limit=15')],
         ['knowledgeSamples', getJson<{ samples: KnowledgeSample[] }>('/api/control/learning/samples?limit=5')],
+        ['uploadedDocs', getJson<{ documents: UploadedDocument[] }>('/api/control/learning/uploads?limit=20')],
       ] as const;
       const results = await Promise.allSettled(requests.map(([, request]) => request));
       if (!active) return;
@@ -159,6 +167,7 @@ export default function MaraControlCenter() {
         learningOverview: LearningOverview;
         recentReads: { reads: RecentRead[] };
         knowledgeSamples: { samples: KnowledgeSample[] };
+        uploadedDocs: { documents: UploadedDocument[] };
       }>(requests.map(([name]) => name), results);
       if (values.overview) setDashboard(values.overview);
       if (values.brain) { setBrain(values.brain.brain); setProvider(values.brain.ai); }
@@ -186,6 +195,7 @@ export default function MaraControlCenter() {
       if (values.learningOverview) setLearningOverview(values.learningOverview);
       if (values.recentReads) setRecentReads(values.recentReads.reads);
       if (values.knowledgeSamples) setKnowledgeSamples(values.knowledgeSamples.samples);
+      if (values.uploadedDocs) setUploadedDocs(values.uploadedDocs.documents);
       setError(failures.length ? `Unavailable: ${failures.join(', ')}` : null);
       setUpdatedAt(new Date());
     };
@@ -240,6 +250,33 @@ export default function MaraControlCenter() {
       setError(cause instanceof Error ? cause.message : 'Knowledge search failed');
     } finally {
       setKnowledgeSearchBusy(false);
+    }
+  }
+
+  async function uploadDocument() {
+    if (!uploadFile || !uploadTitle.trim()) {
+      setUploadMessage('Title and a file are both required.');
+      return;
+    }
+    setUploadBusy(true);
+    setUploadMessage('Processing…');
+    try {
+      const form = new FormData();
+      form.append('title', uploadTitle.trim());
+      form.append('category', uploadCategory);
+      form.append('file', uploadFile);
+      const response = await fetch('/api/admin/mara/library/upload', { method: 'POST', credentials: 'include', body: form });
+      const data = await response.json() as { message?: string; error?: string };
+      if (!response.ok) throw new Error(data.error ?? `Upload returned ${response.status}`);
+      setUploadMessage(data.message ?? 'Uploaded — Mara is processing it in the background.');
+      setUploadTitle('');
+      setUploadFile(null);
+      const refreshed = await getJson<{ documents: UploadedDocument[] }>('/api/control/learning/uploads?limit=20');
+      setUploadedDocs(refreshed.documents);
+    } catch (cause) {
+      setUploadMessage(cause instanceof Error ? cause.message : 'Upload failed');
+    } finally {
+      setUploadBusy(false);
     }
   }
 
@@ -1255,6 +1292,30 @@ export default function MaraControlCenter() {
               </div>
             ))}
             {!knowledgeSamples.length && <p className="mcc-muted">No extracted ideas yet.</p>}
+          </section>
+
+          <section className="mcc-panel mcc-panel--wide">
+            <div className="mcc-panel-heading"><h2>Upload a document</h2><span>PDF, TXT or MD — Mara chunks it, extracts ideas, adds it to her knowledge</span></div>
+            <div className="mcc-repository-search" style={{ flexWrap: 'wrap' }}>
+              <input value={uploadTitle} onChange={(event) => setUploadTitle(event.target.value)} placeholder="Document title" style={{ flex: '1 1 200px' }} />
+              <select value={uploadCategory} onChange={(event) => setUploadCategory(event.target.value)}>
+                {['general', 'business', 'psychology', 'marketing', 'writing', 'ai', 'content_creation'].map((cat) => <option key={cat} value={cat}>{cat}</option>)}
+              </select>
+              <input type="file" accept=".pdf,.txt,.md" onChange={(event) => setUploadFile(event.target.files?.[0] ?? null)} />
+              <button type="button" disabled={uploadBusy} onClick={() => void uploadDocument()}>{uploadBusy ? 'Uploading…' : 'Upload'}</button>
+            </div>
+            {uploadMessage && <p className="mcc-muted" style={{ marginTop: 8 }}>{uploadMessage}</p>}
+          </section>
+
+          <section className="mcc-panel mcc-panel--wide mcc-panel--scroll">
+            <div className="mcc-panel-heading"><h2>Uploaded documents</h2><span>{uploadedDocs.length} on file</span></div>
+            {uploadedDocs.map((doc) => (
+              <div className="mcc-signal" key={doc.id}>
+                <span>{doc.title} · {doc.category}</span>
+                <strong>{doc.totalChunks != null ? `${doc.totalChunks} chunks · ` : ''}{doc.createdAt ? formatTime(doc.createdAt) : '—'}</strong>
+              </div>
+            ))}
+            {!uploadedDocs.length && <p className="mcc-muted">Nothing uploaded yet.</p>}
           </section>
 
           <section className="mcc-panel mcc-panel--wide mcc-panel--scroll">

@@ -91,7 +91,7 @@ import { controlTaskWorkerStatus, runOneControlTask } from './bootstrap/control-
 import { allowedAgentTools, createAgentTask } from './services/agent-runtime.js';
 import { requiredRiskForTool } from './services/tool-policy.js';
 import { isSafeToolRegistered } from './services/tool-runtime.js';
-import { getLearningOverview, getRecentLibraryReads, getKnowledgeSample } from './services/learning-progress.js';
+import { getLearningOverview, getRecentLibraryReads, getKnowledgeSample, getUploadedDocuments } from './services/learning-progress.js';
 import {
   approveControlTask,
   cancelControlTask,
@@ -1416,6 +1416,14 @@ export async function registerRoutes(
       const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(rawLimit, 1), 25) : 5;
       res.json({ samples: getKnowledgeSample(limit) });
     } catch (error) { res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to read knowledge samples' }); }
+  });
+
+  app.get('/api/control/learning/uploads', requireAdmin, (req: any, res: any) => {
+    try {
+      const rawLimit = Number.parseInt(String(req.query.limit ?? '20'), 10);
+      const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(rawLimit, 1), 100) : 20;
+      res.json({ documents: getUploadedDocuments(limit) });
+    } catch (error) { res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to read uploaded documents' }); }
   });
 
   // Direct keyword/vector search over the real knowledge base — same

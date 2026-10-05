@@ -279,3 +279,11 @@ export interface KnowledgeSearchResult {
   confidence: number;
   relevanceScore: number;
 }
+
+export interface UploadedDocument {
+  id: number;
+  title: string;
+  category: string;
+  totalChunks: number | null;
+  createdAt: string;
+}

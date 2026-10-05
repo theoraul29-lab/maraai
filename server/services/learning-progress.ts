@@ -41,6 +41,14 @@ export interface KnowledgeSample {
   createdAt: string;
 }
 
+export interface UploadedDocument {
+  id: number;
+  title: string;
+  category: string;
+  totalChunks: number | null;
+  createdAt: string;
+}
+
 const DAY_S = 24 * 60 * 60;
 
 // created_at is declared `integer (mode: timestamp)` in the drizzle schema,
@@ -217,4 +225,32 @@ export function getKnowledgeSample(limit = 5): KnowledgeSample[] {
     category: row.category,
     createdAt: safeIsoDate(row.epoch) ?? '',
   }));
+}
+
+// Admin-uploaded documents specifically (not the built-in/public/web library
+// tiers, which also write book_knowledge rows via the same processDocument()
+// pipeline). addAndReadCustomBook() (mara-brain/library.ts) tags these with
+// source: `upload:${category}` in metadata — the only reliable way to tell
+// them apart, since every tier shares the same topic format ("Document: X").
+export function getUploadedDocuments(limit = 20): UploadedDocument[] {
+  const rows = rawSqlite.prepare(`
+    SELECT id, topic, metadata, ${EPOCH_EXPR} as epoch
+    FROM mara_knowledge_base
+    WHERE category = 'book_knowledge' AND json_extract(metadata, '$.source') LIKE 'upload:%'
+    ORDER BY epoch DESC
+    LIMIT ?
+  `).all(limit) as { id: number; topic: string; metadata: string; epoch: number }[];
+
+  return rows.map((row) => {
+    let meta: Record<string, unknown> = {};
+    try { meta = JSON.parse(row.metadata || '{}'); } catch { /* leave empty */ }
+    const source = typeof meta.source === 'string' ? meta.source : 'upload:general';
+    return {
+      id: row.id,
+      title: typeof meta.documentTitle === 'string' ? meta.documentTitle : row.topic.replace(/^Document: /, ''),
+      category: source.slice('upload:'.length) || 'general',
+      totalChunks: typeof meta.totalChunks === 'number' ? meta.totalChunks : null,
+      createdAt: safeIsoDate(row.epoch) ?? '',
+    };
+  });
 }
