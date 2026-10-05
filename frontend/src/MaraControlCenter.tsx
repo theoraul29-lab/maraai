@@ -1428,6 +1428,19 @@ export default function MaraControlCenter() {
               <div className="mcc-signal"><span>Pending orders</span><strong>{dashboard?.revenue.pendingOrders ?? '—'}</strong></div>
               <div className="mcc-signal"><span>Mission completions</span><strong>{dashboard?.missions.completed ?? '—'}</strong></div>
               <div className="mcc-signal"><span>Revenue this month</span><strong>${dashboard?.revenue.thisMonth ?? '—'}</strong></div>
+              <div className="mcc-signal"><span>Revenue total</span><strong>${dashboard?.revenue.total ?? '—'}</strong></div>
+              <div className="mcc-signal"><span>Notifications today</span><strong>{dashboard?.notifications.today ?? '—'} / {dashboard?.notifications.total ?? '—'} total</strong></div>
+              <div className="mcc-signal"><span>PWA installs</span><strong>{dashboard?.pwa.installs ?? '—'}</strong></div>
+              <div className="mcc-signal"><span>Brain logs today</span><strong>{dashboard?.brain.logsToday ?? '—'}</strong></div>
+              <div className="mcc-signal"><span>Node.js</span><strong>{dashboard?.system.nodeVersion ?? '—'}</strong></div>
+              <div className="mcc-signal"><span>Memory</span><strong>{dashboard?.system.memoryMB ?? '—'} / {dashboard?.system.totalMemoryMB ?? '—'} MB</strong></div>
+            </article>
+            <article className="mcc-panel">
+              <div className="mcc-panel-heading"><h2>Language distribution</h2><span>Users</span></div>
+              {(dashboard?.languages ?? []).map((lang) => (
+                <div className="mcc-signal" key={lang.language || 'unset'}><span>{lang.language || 'not set'}</span><strong>{lang.cnt}</strong></div>
+              ))}
+              {!dashboard?.languages.length && <p className="mcc-muted">No language data.</p>}
             </article>
           </section>
           <section className="mcc-panel mcc-panel--wide mcc-panel--scroll">
