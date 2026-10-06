@@ -12,7 +12,7 @@ import './App.css';
 import Nav from './Nav';
 import MobileBottomNav from './components/MobileBottomNav';
 import { MaraChatWidget } from './components/MaraChatWidget';
-import { MaraChatProvider } from './contexts/MaraChatContext';
+import { MaraChatProvider, useMaraChat } from './contexts/MaraChatContext';
 import P2PContributingBadge from './components/P2PContributingBadge';
 
 // Heavy route modules are lazy-loaded to reduce initial bundle size.
@@ -94,6 +94,7 @@ function ControlCenterAuthGate({ children }: { children: React.ReactNode }) {
  */
 function OnboardingGuard() {
   const { isAuthenticated, loading, user } = useAuth();
+  const { pendingMaraReturn, setPendingMaraReturn, openChat } = useMaraChat();
   const navigate = useNavigate();
   const location = useLocation();
   const checked = useRef(false);
@@ -102,6 +103,20 @@ function OnboardingGuard() {
     if (loading || !isAuthenticated || checked.current) return;
     if (user?.isAdmin) return;
     if (location.pathname === '/onboarding') return;
+
+    // This signup/login started from a Mara conversation (guest chat limit
+    // CTA, or the "sign in to chat" CTA) — the user asked to keep talking to
+    // Mara, not to take a profile-setup tour. Skip the redirect below and
+    // bring them back into the chat (which will load their now-migrated
+    // history) instead. Generic onboarding still applies normally to a
+    // signup/login that didn't originate from Mara, and will still be
+    // offered on this account's next fresh page load.
+    if (pendingMaraReturn) {
+      checked.current = true;
+      setPendingMaraReturn(false);
+      openChat();
+      return;
+    }
 
     checked.current = true;
     // OnboardingFlow's own completion (Activate, or Skip for now) is
@@ -116,7 +131,7 @@ function OnboardingGuard() {
         .then(r => r.json())
         .then(data => { if (!data.done) navigate('/onboarding', { replace: true }); });
     }).catch(() => {});
-  }, [isAuthenticated, loading, user, navigate, location.pathname]);
+  }, [isAuthenticated, loading, user, navigate, location.pathname, pendingMaraReturn, setPendingMaraReturn, openChat]);
 
   return null;
 }

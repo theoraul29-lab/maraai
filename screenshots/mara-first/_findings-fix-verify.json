@@ -1,0 +1,86 @@
+{
+  "console": [],
+  "network": [],
+  "notes": [
+    {
+      "name": "old-guest-sid-captured",
+      "note": true
+    },
+    {
+      "name": "signin-cta-visible",
+      "note": 1
+    },
+    {
+      "name": "mara-signup-response-status",
+      "note": 201
+    },
+    {
+      "name": "mara-signup-response-body",
+      "note": "{\"id\":\"9d4a930b6ffcbc89be6098f5aa7e12c6\",\"email\":\"mara-qa-fix-1791280076346@example.test\",\"name\":\"Mara Fix QA\",\"tier\":\"free\",\"badges\":[],\"earnings\":0,\"createdAt\":null,\"avatar\":null,\"bio\":null,\"preferredLanguage\":null,\"isAdmin\":false,\"hasPassword\":true}"
+    },
+    {
+      "name": "url-after-signup",
+      "note": "http://localhost:5000/"
+    },
+    {
+      "name": "redirected-to-onboarding (should be false)",
+      "note": false
+    },
+    {
+      "name": "chat-modal-reopened-automatically",
+      "note": true
+    },
+    {
+      "name": "migrated-bubble-count",
+      "note": 6
+    },
+    {
+      "name": "12-post-signup-mara-return.png",
+      "note": "Back in Mara chat after signup, no onboarding redirect, 6 bubbles"
+    },
+    {
+      "name": "bubble-count-after-continuing",
+      "note": 8
+    },
+    {
+      "name": "13-post-signup-conversation-continued.png",
+      "note": "Conversation continued post-signup — 8 bubbles"
+    },
+    {
+      "name": "url-after-reload",
+      "note": "http://localhost:5000/onboarding"
+    },
+    {
+      "name": "bubble-count-after-reload (conversation must survive)",
+      "note": 8
+    },
+    {
+      "name": "authenticated-as",
+      "note": "mara-qa-fix-1791280076346@example.test"
+    },
+    {
+      "name": "replay-old-guest-cookie-auth-me",
+      "note": "{\"user\":null,\"anonymousId\":\"u_42febbc102b24ae4a40358c52069cee7\"}"
+    },
+    {
+      "name": "replay-signup-attempt-status",
+      "note": 403
+    },
+    {
+      "name": "normal-signup-response-status",
+      "note": 201
+    },
+    {
+      "name": "normal-signup-response-body",
+      "note": "{\"id\":\"71113957b0a102320244b512ecdafa89\",\"email\":\"mara-qa-normal-1791280087687@example.test\",\"name\":\"Normal QA\",\"tier\":\"free\",\"badges\":[],\"earnings\":0,\"createdAt\":null,\"avatar\":null,\"bio\":null,\"preferredLanguage\":null,\"isAdmin\":false,\"hasPassword\":true}"
+    },
+    {
+      "name": "normal-signup-url-after (should include /onboarding)",
+      "note": "http://localhost:5000/onboarding"
+    },
+    {
+      "name": "_debug-normal-signup-onboarding.png",
+      "note": "Normal (non-Mara) signup redirect target: http://localhost:5000/onboarding"
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "console": [],
+  "network": [],
+  "notes": [
+    {
+      "name": "onboarding-redirect-confirmed",
+      "note": "Login redirected to /onboarding instead of staying on the Mara chat flow"
+    },
+    {
+      "name": "_debug-after-login-home.png",
+      "note": "Home after logging into the migrated test account (post-onboarding-skip)"
+    },
+    {
+      "name": "migrated-message-count",
+      "note": "6 message bubbles visible"
+    },
+    {
+      "name": "07-guest-to-account.png",
+      "note": "Authenticated chat showing migrated guest conversation — 6 bubbles"
+    },
+    {
+      "name": "mission-attempt",
+      "note": "\"I really want to start exercising regula...\" -> buttons=0"
+    },
+    {
+      "name": "mission-attempt",
+      "note": "\"Yes, I am serious about this goal, pleas...\" -> buttons=1"
+    },
+    {
+      "name": "mission-sentinel-observed",
+      "note": true
+    },
+    {
+      "name": "08-mission-proposal.png",
+      "note": "Mission sentinel observed: true"
+    },
+    {
+      "name": "09-mission-created.png",
+      "note": "After clicking Create my Mission"
+    }
+  ]
+}

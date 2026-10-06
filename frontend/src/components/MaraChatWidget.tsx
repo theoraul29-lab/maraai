@@ -79,7 +79,7 @@ export function MaraChatWidget() {
   const { user } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { isOpen, closeChat, toggleChat, setOrbState, setMoodColor } = useMaraChat();
+  const { isOpen, closeChat, toggleChat, setOrbState, setMoodColor, setPendingMaraReturn } = useMaraChat();
   const [missionActionBusy, setMissionActionBusy] = useState(false);
   const [missionActionMsg, setMissionActionMsg] = useState<string | null>(null);
 
@@ -451,6 +451,7 @@ export function MaraChatWidget() {
               <div className="mara-quick-actions">
                 <button
                   onClick={() => {
+                    setPendingMaraReturn(true);
                     closeChat();
                     setAuthModalOpen(true);
                   }}
@@ -541,7 +542,7 @@ export function MaraChatWidget() {
                   {t('chat.guestLimitCta', "I can keep going with you. Create your free account and I'll remember where we left off.")}
                 </p>
                 <div className="mara-quick-actions">
-                  <button onClick={() => { closeChat(); setAuthModalOpen(true); }}>
+                  <button onClick={() => { setPendingMaraReturn(true); closeChat(); setAuthModalOpen(true); }}>
                     {t('chat.loginCta', 'Sign in / Create account')}
                   </button>
                 </div>

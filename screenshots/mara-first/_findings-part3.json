@@ -1,0 +1,60 @@
+{
+  "console": [
+    {
+      "label": "sparks",
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+    }
+  ],
+  "network": [
+    {
+      "label": "sparks",
+      "url": "http://localhost:5000/api/videos/164/view",
+      "status": 401
+    },
+    {
+      "label": "sparks",
+      "url": "https://yt3.ggpht.com/_ShEGOdg-t5YGJse14Ooq6FYBZqX_QSlhaTNjG06miYusm5lWm1UroLyVxnYtahADfRTVLtuVQ=s68-c-k-c0x00ffffff-no-rj",
+      "failure": "net::ERR_ABORTED"
+    },
+    {
+      "label": "sparks",
+      "url": "https://www.youtube.com/api/stats/qoe?fmt=396&afmt=251&cpn=jS7vy_6tgI3RblVg&el=embedded&ns=yt&fexp=v1%2C100673025%2C-76668381%2C494889%2C26564110%2C34656%2C124674%2C117689%2C9252%2C16509%2C23206%2C35402%2C65300%2C15105%2C25059%2C4174%2C30446%2C18706%2C26008%2C13015%2C1192%2C10231%2C4665%2C6620%2C2784%2C23826%2C9500%2C1840%2C18114%2C6005%2C29513%2C41205%2C20589%2C34313%2C9181%2C32874%2C20109%2C6032%2C1168%2C372%2C3793%2C3965%2C30205%2C3527%2C589%2C11462%2C26850%2C1349%2C13722%2C4367%2C9717%2C3613%2C26539%2C3843%2C17160%2C1340%2C6470%2C4434%2C3241%2C3%2C17340%2C1180%2C7857%2C1538%2C1810%2C4014%2C20491%2C2061%2C15894%2C15390%2C9178%2C6387%2C1648%2C1659%2C4595%2C9279%2C3637%2C11%2C5315%2C1327%2C2686%2C3037%2C5469%2C3424%2C10734%2C1505%2C13292%2C589%2C1306%2C8664%2C6864&cl=992552249&seq=1&docid=dQw4w9WgXcQ&ei=ZLrEasH8FpbQ1PIPhJ_PqAk&event=streamingstats&plid=AAZdKFUeUPxU5C0A&cbr=HeadlessChrome&cbrver=148.0.7778.96&c=WEB_EMBEDDED_PLAYER&cver=2.20261005.01.00&cplayer=UNIPLAYER&cos=Windows&cosver=10.0&cplatform=DESKTOP&vps=0.000:N,0.032:B,0.331:B,0.331:B&cat=streaming,sabr&cmt=0.032:0.000,0.331:0.000&afs=0.328:251::i:fl.-13.02;tl.-14;vg.-0.9900000000000002;nm.1;sms.2:CAEoAQ&vfs=0.331:396:396::a:sms.2:CAEoAQ&view=0.331:500:704&bwm=0.331:84323:0.178&bwe=0.331:609485&bat=0.331:1:1&vis=0.331:0&bh=0.331:0.000&qclc=ChBqUzd2eV82dGdJM1JibFZnEAE",
+      "failure": "net::ERR_ABORTED"
+    }
+  ],
+  "notes": [
+    {
+      "name": "spark-chip-count",
+      "note": 1
+    },
+    {
+      "name": "10a-spark-offer.png",
+      "note": "Spark offer shown after quick-start chip"
+    },
+    {
+      "name": "sparks-copy-has-reels-word",
+      "note": false
+    },
+    {
+      "name": "10-sparks-handoff.png",
+      "note": "Sparks hand-off target page — URL: http://localhost:5000/reels"
+    },
+    {
+      "name": "mobile-horizontal-overflow",
+      "note": false
+    },
+    {
+      "name": "11-mara-mobile.png",
+      "note": "Mobile viewport (390x844) home screen"
+    },
+    {
+      "name": "mobile-fab-count",
+      "note": 1
+    },
+    {
+      "name": "11b-mara-mobile-chat.png",
+      "note": "Mobile chat opened via FAB"
+    }
+  ]
+}
