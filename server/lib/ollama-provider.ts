@@ -39,13 +39,32 @@ const HEALTH_CACHE_TTL_MS = 30_000;
 // conversation with real gaps between messages doesn't keep re-paying the
 // ~10-13s cold load observed on this model/GPU.
 const KEEP_ALIVE = '30m';
+// Same reasoning as the Anthropic provider's MAX_TOOL_ROUNDS — bounds the
+// internal call-execute-recall loop when tools are offered.
+const MAX_TOOL_ROUNDS = 4;
+
+interface OllamaToolCall {
+  function: { name: string; arguments: Record<string, unknown> };
+}
+
+interface OllamaChatMessage {
+  role: 'system' | 'user' | 'assistant' | 'tool';
+  content: string;
+  tool_calls?: OllamaToolCall[];
+}
+
+interface OllamaToolDef {
+  type: 'function';
+  function: { name: string; description: string; parameters: Record<string, unknown> };
+}
 
 interface OllamaChatRequest {
   model: string;
-  messages: { role: 'system' | 'user' | 'assistant'; content: string }[];
+  messages: OllamaChatMessage[];
   stream: false;
   think: false;
   keep_alive: string;
+  tools?: OllamaToolDef[];
   options?: {
     temperature?: number;
   };
@@ -56,6 +75,7 @@ interface OllamaChatResponse {
   message?: {
     role: string;
     content: string;
+    tool_calls?: OllamaToolCall[];
   };
   // Ollama also returns `done`, `total_duration`, etc. — ignored.
 }
@@ -169,53 +189,73 @@ class OllamaProvider implements AIProvider {
 
   async chat(messages: AIMessage[], opts: AIChatOptions = {}): Promise<AIResponse> {
     const model = getModel();
-    const reqMessages = normaliseMessages(messages, opts.systemPrompt);
+    let reqMessages = normaliseMessages(messages, opts.systemPrompt);
     if (reqMessages.length === 0 || reqMessages.every((m) => m.role === 'system')) {
       throw new Error('Ollama chat requires at least one user or assistant message.');
     }
 
-    const body: OllamaChatRequest = {
-      model,
-      messages: reqMessages,
-      stream: false,
-      think: false,
-      keep_alive: KEEP_ALIVE,
-      ...(typeof opts.temperature === 'number' ? { options: { temperature: opts.temperature } } : {}),
-    };
+    const tools: OllamaToolDef[] | undefined = opts.tools?.map((t) => ({
+      type: 'function',
+      function: { name: t.name, description: t.description, parameters: t.parameters },
+    }));
 
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), getTimeoutMs());
-    let res: Response;
-    try {
-      res = await fetch(`${getBaseUrl()}/api/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-        signal: controller.signal,
-      });
-    } finally {
-      clearTimeout(timer);
+    for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+      const body: OllamaChatRequest = {
+        model,
+        messages: reqMessages,
+        stream: false,
+        think: false,
+        keep_alive: KEEP_ALIVE,
+        ...(tools && tools.length > 0 ? { tools } : {}),
+        ...(typeof opts.temperature === 'number' ? { options: { temperature: opts.temperature } } : {}),
+      };
+
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), getTimeoutMs());
+      let res: Response;
+      try {
+        res = await fetch(`${getBaseUrl()}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timer);
+      }
+
+      if (!res.ok) {
+        // Bust the availability cache so the next call re-checks immediately
+        // rather than waiting up to 30s — we just observed a real failure.
+        cachedAvailability = null;
+        const errBody = await res.text().catch(() => '');
+        throw new Error(`Ollama /api/chat returned ${res.status}: ${errBody.slice(0, 200)}`);
+      }
+
+      const data = (await res.json()) as OllamaChatResponse;
+      const toolCalls = data.message?.tool_calls;
+
+      if (!toolCalls || toolCalls.length === 0 || !opts.onToolCall) {
+        const text = (data.message?.content ?? '').trim();
+        if (!text) {
+          throw new Error('Ollama returned an empty response.');
+        }
+        return { text, provider: 'ollama', model: data.model || model };
+      }
+
+      // Execute every requested tool call, append the assistant's tool-call
+      // turn plus each tool's result, then loop for the model's real reply.
+      reqMessages = [
+        ...reqMessages,
+        { role: 'assistant', content: data.message?.content ?? '', tool_calls: toolCalls },
+      ];
+      for (const call of toolCalls) {
+        const result = await opts.onToolCall(call.function.name, call.function.arguments ?? {});
+        reqMessages.push({ role: 'tool', content: result });
+      }
     }
 
-    if (!res.ok) {
-      // Bust the availability cache so the next call re-checks immediately
-      // rather than waiting up to 30s — we just observed a real failure.
-      cachedAvailability = null;
-      const errBody = await res.text().catch(() => '');
-      throw new Error(`Ollama /api/chat returned ${res.status}: ${errBody.slice(0, 200)}`);
-    }
-
-    const data = (await res.json()) as OllamaChatResponse;
-    const text = (data.message?.content ?? '').trim();
-    if (!text) {
-      throw new Error('Ollama returned an empty response.');
-    }
-
-    return {
-      text,
-      provider: 'ollama',
-      model: data.model || model,
-    };
+    throw new Error('Ollama chat: too many tool-call rounds without a final answer.');
   }
 }
 

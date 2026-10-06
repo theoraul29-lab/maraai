@@ -1,8 +1,96 @@
-import { buildUserContext, buildSystemInstruction, recordLearningFromChat, getPlatformContext } from './mara-brain/index.js';
+import { buildUserContext, buildSystemInstruction, recordLearningFromChat, getPlatformContext, storeUserMemory, type MemoryCategory } from './mara-brain/index.js';
 import { llmChat, llmGenerate, isLLMConfigured } from './llm.js';
 import { logError } from './logger.js';
 import { isUserAdmin } from './lib/admin-check.js';
 import { webSearch, formatSearchResultsForPrompt } from './lib/web-search.js';
+import type { AIToolDefinition, AIToolExecutor } from './lib/ai-provider.js';
+
+// ─── save_memory tool ───────────────────────────────────────────────────────
+// Lets conversational Mara intentionally persist a long-term user memory,
+// on top of the existing heuristic regex scanner (recordLearningFromChat) —
+// not a replacement for it. Reuses storeUserMemory()/user_memories exactly
+// as-is; no new table, no new retrieval path. Offered ONLY on the live,
+// authenticated /api/chat path (see getMaraResponse below) — never to
+// guests (no userId to attach it to) and never to the admin persona.
+
+const MEMORY_CATEGORIES = new Set<MemoryCategory>([
+  'goal', 'preference', 'personal_info', 'interest', 'achievement', 'general',
+]);
+
+const SAVE_MEMORY_TOOL: AIToolDefinition = {
+  name: 'save_memory',
+  description:
+    "Save a durable, long-term memory about the user so you can recall it in future conversations. " +
+    "Call this ONLY when the user has explicitly asked you to remember/save something, OR has just explicitly " +
+    "agreed after you asked their permission to remember something they said. Never call this for information " +
+    "the user hasn't approved saving, and never save secrets, passwords, API keys, or payment details.",
+  parameters: {
+    type: 'object',
+    properties: {
+      fact: {
+        type: 'string',
+        description:
+          "The fact to remember, as a short standalone statement in the user's own words (e.g. " +
+          '"Prefers working in the morning"). Do not invent or embellish — only what the user actually said.',
+      },
+      category: {
+        type: 'string',
+        enum: Array.from(MEMORY_CATEGORIES),
+        description: 'Best-fit category for this fact. Defaults to "general" if unsure.',
+      },
+    },
+    required: ['fact'],
+  },
+};
+
+/**
+ * The only place save_memory's side effect actually happens. `userId` is a
+ * closure variable captured from the authenticated request context in
+ * getMaraResponse below — the model is never offered a userId parameter
+ * (see SAVE_MEMORY_TOOL's schema above, which has none), so there is no
+ * value in the tool call the model could use to target another account.
+ */
+function buildSaveMemoryExecutor(userId: string): AIToolExecutor {
+  // Observed empirically (local Ollama/qwen3): a model can call save_memory
+  // twice in one turn with slightly reworded fact text ("prefer..." vs
+  // "prefers..."), which storeUserMemory's exact-string dedup does not
+  // catch. Rather than building fuzzy/semantic dedup (a second subsystem —
+  // explicitly out of scope), this closure is created fresh per request
+  // (see getMaraResponse below) and simply caps actual persistence at one
+  // successful save per turn; a second call in the same turn still gets a
+  // success response (the user's intent was already honoured) but does not
+  // insert a second near-duplicate row.
+  let savedThisTurn = false;
+
+  return async (toolName, args) => {
+    if (toolName !== 'save_memory') {
+      return JSON.stringify({ success: false, error: 'unknown_tool' });
+    }
+    const fact = typeof args.fact === 'string' ? args.fact.trim() : '';
+    const rawCategory = typeof args.category === 'string' ? (args.category as MemoryCategory) : 'general';
+    const category: MemoryCategory = MEMORY_CATEGORIES.has(rawCategory) ? rawCategory : 'general';
+
+    if (!fact) {
+      return JSON.stringify({ success: false, error: 'empty_fact' });
+    }
+    if (fact.length > 500) {
+      return JSON.stringify({ success: false, error: 'fact_too_long' });
+    }
+
+    if (savedThisTurn) {
+      console.log(`[save_memory] user=${userId.slice(0, 12)}… category=${category} skipped=duplicate_in_turn`);
+      return JSON.stringify({ success: true, fact, category });
+    }
+
+    const saved = storeUserMemory(userId, fact, category);
+    // No memory content in the log — just enough to diagnose invocation/outcome.
+    console.log(`[save_memory] user=${userId.slice(0, 12)}… category=${category} success=${saved}`);
+    if (saved) savedThisTurn = true;
+    return JSON.stringify(
+      saved ? { success: true, fact, category } : { success: false, error: 'storage_failed' },
+    );
+  };
+}
 
 // Localized Mara "Guided Muse" persona used when the brain module is
 // unavailable. English is the canonical source; other languages are kept as
@@ -164,7 +252,12 @@ export async function getMaraResponse(
 	// Build full user context with personality + knowledge + memory.
 	// `isAdmin` switches Mara to the admin persona (direct, strategic, no
 	// emotional scaffolding). Computed via ADMIN_USER_IDS / ADMIN_EMAILS env.
+	// Also gates save_memory below: only a real, non-admin, authenticated
+	// user (one buildUserContext actually ran for) gets the tool — never
+	// guests (no stable userId to attach a permanent memory to) and never
+	// the admin persona (out of scope for this feature).
 	let systemInstruction: string;
+	let offerSaveMemory = false;
 	try {
 		if (userId) {
 			const isAdmin = await isUserAdmin(userId);
@@ -177,6 +270,7 @@ export async function getMaraResponse(
 			);
 			const context = await Promise.race([contextPromise, timeoutPromise]);
 			systemInstruction = buildSystemInstruction(context, prefs?.language);
+			offerSaveMemory = !isAdmin;
 
 			// Async: record learning from this interaction (non-blocking)
 			recordLearningFromChat(userId, message, '', module).catch(() => {});
@@ -185,6 +279,16 @@ export async function getMaraResponse(
 		}
 	} catch {
 		systemInstruction = getFallbackInstruction(prefs?.language);
+	}
+
+	if (offerSaveMemory) {
+		systemInstruction +=
+			'\n\n# LONG-TERM MEMORY\nYou have a save_memory tool that durably remembers something about this user for future conversations.\n' +
+			'- If the user explicitly asks you to remember/save something ("remember that...", "save this", "don\'t forget that...", "keep this in mind"), call save_memory directly — do not ask "are you sure?" first, they already told you.\n' +
+			'- If you notice something that sounds like a stable, useful long-term fact (a preference, a recurring pattern, a goal, a constraint) but the user did NOT explicitly ask you to save it, you may ask naturally — e.g. "Want me to remember that?" — and only call save_memory after they say yes.\n' +
+			'- Never silently save something the user has not explicitly requested or approved.\n' +
+			"- Do not save trivial one-off statements, passing emotions, or anything resembling a password/secret/payment detail.\n" +
+			'- After the tool returns, only tell the user it was saved if the result says success — if it failed, say honestly that you could not save it right now.';
 	}
 
 	const searchContext = await fetchSearchContext(message);
@@ -209,6 +313,9 @@ export async function getMaraResponse(
 		responseText = await llmChat(conversationMessages, {
 			temperature: 0.95,
 			source: 'user_chat',
+			...(offerSaveMemory && userId
+				? { tools: [SAVE_MEMORY_TOOL], onToolCall: buildSaveMemoryExecutor(userId) }
+				: {}),
 		});
 	} catch (err) {
 		logError(err, { scope: 'getMaraResponse' });

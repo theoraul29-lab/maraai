@@ -22,6 +22,27 @@ export interface AIResponse {
   model: string;
 }
 
+/**
+ * A tool/function the model may call. `parameters` is a JSON Schema object
+ * describing the arguments — passed to each provider's own tool-definition
+ * shape verbatim (Anthropic: `input_schema`; Ollama: `function.parameters`).
+ */
+export interface AIToolDefinition {
+  name: string;
+  description: string;
+  parameters: Record<string, unknown>;
+}
+
+/**
+ * Executes a tool call and returns a short string result fed back to the
+ * model as the tool's output. Provided by the caller (e.g. server/ai.ts),
+ * never by the provider — this is the one place a tool's side effect
+ * (a database write, in the save_memory case) actually happens, so the
+ * caller is the only party that can decide what the model is allowed to
+ * affect and with which server-derived identity.
+ */
+export type AIToolExecutor = (toolName: string, args: Record<string, unknown>) => Promise<string>;
+
 export interface AIChatOptions {
   /** Internal source label for Brain dry-run telemetry. */
   source?: string;
@@ -48,6 +69,18 @@ export interface AIChatOptions {
    * Ollama. Set to 0 or omit to disable.
    */
   thinkingBudget?: number;
+
+  /**
+   * Tools the model may call. When set together with `onToolCall`, a
+   * provider's `chat()` runs its own bounded tool-call loop internally
+   * (call → execute → feed result back → final call) and still returns only
+   * the final natural-language `AIResponse.text` — callers never see raw
+   * tool-call wire format, so this stays a provider-internal detail rather
+   * than a second orchestration layer.
+   */
+  tools?: AIToolDefinition[];
+  /** Required when `tools` is set — see `AIToolExecutor`. */
+  onToolCall?: AIToolExecutor;
 }
 
 export interface AIProvider {

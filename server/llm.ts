@@ -57,6 +57,7 @@ import {
   getProvidersHealth,
   type ProviderHealth,
 } from './lib/provider-router.js';
+import type { AIToolDefinition, AIToolExecutor } from './lib/ai-provider.js';
 import { guardedLLMCall } from './mara-brain/rate-limiter.js';
 import { getBrainRunContext } from './mara-brain/run-context.js';
 
@@ -101,6 +102,16 @@ export interface LLMCallOpts {
    * Has no effect on user_chat calls or Ollama.
    */
   thinkingBudget?: number;
+
+  /**
+   * Tools the model may call during this turn (e.g. save_memory) — only
+   * honoured on the `user_chat` source. Autonomous/brain sources never
+   * receive tools, even if accidentally set, so the ~10-minute brain cycle
+   * stays exactly as it was.
+   */
+  tools?: AIToolDefinition[];
+  /** Required alongside `tools` — executes the call and returns its result. */
+  onToolCall?: AIToolExecutor;
 }
 
 /**
@@ -150,13 +161,15 @@ export function isLLMConfigured(): boolean {
 function normaliseOpts(
   opts: LLMCallOpts | number | undefined,
   defaultTemp: number,
-): { temperature: number; source: LLMSource; thinkingBudget?: number } {
+): { temperature: number; source: LLMSource; thinkingBudget?: number; tools?: AIToolDefinition[]; onToolCall?: AIToolExecutor } {
   if (opts == null) return { temperature: defaultTemp, source: 'user_chat' };
   if (typeof opts === 'number') return { temperature: opts, source: 'user_chat' };
   return {
     temperature: opts.temperature ?? defaultTemp,
     source: opts.source ?? 'user_chat',
     ...(opts.thinkingBudget ? { thinkingBudget: opts.thinkingBudget } : {}),
+    ...(opts.tools ? { tools: opts.tools } : {}),
+    ...(opts.onToolCall ? { onToolCall: opts.onToolCall } : {}),
   };
 }
 
@@ -164,11 +177,11 @@ export async function llmChat(
   messages: LLMMessage[],
   opts: LLMCallOpts | number = {},
 ): Promise<string> {
-  const { temperature, source, thinkingBudget } = normaliseOpts(opts, 0.95);
+  const { temperature, source, thinkingBudget, tools, onToolCall } = normaliseOpts(opts, 0.95);
 
   if (source === 'user_chat') {
     // Chat cu userii → ANTHROPIC_API_KEY (cu fallback Ollama dacă e configurat)
-    return (await getAIResponse(messages, { temperature, source })).text;
+    return (await getAIResponse(messages, { temperature, source, tools, onToolCall })).text;
   }
 
   // Brain autonom → ANTHROPIC_BRAIN_API_KEY (fallback la ANTHROPIC_API_KEY)

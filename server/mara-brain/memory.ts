@@ -342,17 +342,26 @@ export function extractPersonalFacts(message: string): Array<{ fact: string; cat
   return facts;
 }
 
-export function storeUserMemory(userId: string, fact: string, category: MemoryCategory = 'general'): void {
+/**
+ * Returns true if the fact is durably stored under this user (either just
+ * inserted, or already present — exact-string dedup, see the SELECT below).
+ * Returns false only on a genuine storage failure. The save_memory tool
+ * (server/ai.ts) relies on this to decide what it's allowed to tell the
+ * user — it must never claim a memory was saved unless this returns true.
+ */
+export function storeUserMemory(userId: string, fact: string, category: MemoryCategory = 'general'): boolean {
   try {
     const existing = rawSqlite
       .prepare('SELECT id FROM user_memories WHERE user_id = ? AND fact = ?')
       .get(userId, fact);
-    if (existing) return;
+    if (existing) return true;
     rawSqlite
       .prepare('INSERT INTO user_memories (user_id, fact, category) VALUES (?, ?, ?)')
       .run(userId, fact.slice(0, 500), category);
+    return true;
   } catch (err) {
     console.warn('[Memory] Failed to store user memory:', err);
+    return false;
   }
 }
 

@@ -21,6 +21,11 @@ import { getEffectiveAnthropicApiKey } from './anthropic-key-store.js';
 const DEFAULT_MODEL = 'claude-sonnet-4-6';
 const DEFAULT_MAX_TOKENS = 1024;
 const DEFAULT_TIMEOUT_MS = 120_000;
+// A tool call that needs a second round (model called a tool, we executed
+// it, model now replies with the result in hand) is the only case this
+// loop exists for. Capped defensively against a misbehaving model that
+// keeps calling tools instead of ever answering.
+const MAX_TOOL_ROUNDS = 4;
 
 function getModel(): string {
   return process.env.ANTHROPIC_MODEL || DEFAULT_MODEL;
@@ -114,25 +119,56 @@ class AnthropicProvider implements AIProvider {
       throw new Error('Anthropic chat requires at least one user or assistant message.');
     }
 
-    const res = await client.messages.create({
-      model,
-      max_tokens: getMaxTokens(),
-      ...(typeof opts.temperature === 'number' ? { temperature: opts.temperature } : {}),
-      ...(system ? { system } : {}),
-      messages: turns,
-    });
+    const tools = opts.tools?.map((t) => ({
+      name: t.name,
+      description: t.description,
+      input_schema: t.parameters as Anthropic.Tool.InputSchema,
+    }));
 
-    const text = res.content
-      .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-      .map((block) => block.text)
-      .join('')
-      .trim();
+    // Plain string turns are enough unless/until a tool round forces us to
+    // carry structured content blocks (the assistant's tool_use + our
+    // tool_result) — widen the working array to Anthropic's own param type
+    // only at that point, rather than changing the shape for every call.
+    let conversation: Anthropic.MessageParam[] = turns;
 
-    return {
-      text,
-      provider: 'anthropic',
-      model,
-    };
+    for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+      const res = await client.messages.create({
+        model,
+        max_tokens: getMaxTokens(),
+        ...(typeof opts.temperature === 'number' ? { temperature: opts.temperature } : {}),
+        ...(system ? { system } : {}),
+        ...(tools && tools.length > 0 ? { tools } : {}),
+        messages: conversation,
+      });
+
+      const toolUseBlocks = res.content.filter(
+        (block): block is Anthropic.ToolUseBlock => block.type === 'tool_use',
+      );
+
+      if (toolUseBlocks.length === 0 || !opts.onToolCall) {
+        const text = res.content
+          .filter((block): block is Anthropic.TextBlock => block.type === 'text')
+          .map((block) => block.text)
+          .join('')
+          .trim();
+        return { text, provider: 'anthropic', model };
+      }
+
+      // Execute every requested tool call, then hand the results back for a
+      // follow-up turn so the model can produce its real final reply.
+      const resultBlocks: Anthropic.ToolResultBlockParam[] = [];
+      for (const block of toolUseBlocks) {
+        const result = await opts.onToolCall(block.name, (block.input ?? {}) as Record<string, unknown>);
+        resultBlocks.push({ type: 'tool_result', tool_use_id: block.id, content: result });
+      }
+      conversation = [
+        ...conversation,
+        { role: 'assistant', content: res.content },
+        { role: 'user', content: resultBlocks },
+      ];
+    }
+
+    throw new Error('Anthropic chat: too many tool-call rounds without a final answer.');
   }
 }
 

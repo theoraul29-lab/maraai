@@ -2,7 +2,7 @@
 // Re-exports everything for clean imports
 
 export { runBrainCycle, runInitialLearning } from './core.js';
-export { buildUserContext, buildSystemInstruction, recordLearningFromChat } from './memory.js';
+export { buildUserContext, buildSystemInstruction, recordLearningFromChat, storeUserMemory, type MemoryCategory } from './memory.js';
 export { storeKnowledge, searchKnowledge, getKnowledgeContext, getKnowledgeStats, learnFromText, type ExtractedIdea } from './knowledge-base.js';
 export {
   buildPersonalityPrompt,
