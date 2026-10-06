@@ -135,8 +135,7 @@ export async function buildUserContext(
   const personalityPrompt = buildPersonalityPrompt(newToxicityState, emotionalProfile, isAdmin);
 
   // 8. Investigator signals — mission abandonment, returning user, not activated.
-  //    Skipped for admin sessions (not relevant for internal testing).
-  const investigatorContext = isAdmin ? '' : getInvestigatorContext(userId);
+  const investigatorContext = getInvestigatorContext(userId);
 
   // 9. Per-user long-term memories (goals, preferences, personal facts shared in past chats).
   //    Admin accounts get their own personal memories too (own user_memories
@@ -147,11 +146,11 @@ export async function buildUserContext(
   // 10. Mission context — active missions with details + completion summary.
   //     Sync (reads from translation cache), safe to call on every request.
   const lang = preferences?.language || undefined;
-  const missionsContext = isAdmin ? '' : getMissionContextForMara(userId, lang);
+  const missionsContext = getMissionContextForMara(userId, lang);
 
   // 11. Evolved emotional profile — written async by brain cycle Phase 1.5.
   //     Read-only here; never blocks the response.
-  const evolvedProfile = isAdmin ? '' : getEvolvedProfile(userId);
+  const evolvedProfile = getEvolvedProfile(userId);
 
   return {
     userId,
