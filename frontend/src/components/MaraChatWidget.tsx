@@ -226,10 +226,11 @@ export function MaraChatWidget() {
     }
   }, [guestLoading, guestRemaining, guestLimit, setOrbState, t]);
 
-  // Auto-scroll to bottom
+  // Auto-scroll to bottom — covers both the authenticated message list and
+  // the guest one, since both reuse the same messagesEndRef anchor.
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, guestMessages]);
 
   useEffect(() => {
     if (!isOpen) return;
