@@ -26,6 +26,8 @@ import * as libraryModule from './modules/library.js';
 
 import * as creatorsModule from './modules/creators.js';
 import * as chatModule from './modules/chat.js';
+import * as guestChatModule from './modules/guest-chat.js';
+import { guestChatGuard } from './middleware/guestChatGuard.js';
 import * as ttsModule from './modules/tts.js';
 import * as sttModule from './modules/stt.js';
 import * as userPrefsModule from './modules/userPrefs.js';
@@ -257,6 +259,13 @@ export async function registerRoutes(
     // unreachable until now.
     '/api/billing/stripe/webhook',
     '/api/billing/paypal/webhook',
+    // Mara-first guest chat (flag-gated, see GUEST_CHAT_ENABLED below) — a
+    // deliberately narrow, explicit carve-out, not a weakening of
+    // PREVIEW_BLOCKED_PREFIXES's '/api/chat' entry: that entry still forces
+    // requireRealUser for the real, unlimited-turn /api/chat. This exact
+    // path gets its own strict guard (requireAuth + guestChatGuard) at its
+    // route registration instead, same pattern as /api/waitlist above.
+    '/api/chat/guest',
   ]);
 
   // ── Anonymous read-only preview window ──────────────────────────────────────
@@ -633,6 +642,20 @@ export async function registerRoutes(
   // Chat endpoints (require auth)
   app.get(api.chat.list.path, requireAuth, chatModule.getChatHistory);
   app.post(api.chat.send.path, requireAuth, chatModule.sendChatMessage);
+
+  // Guest chat — off by default (GUEST_CHAT_ENABLED), flipped on only once
+  // the Privacy Policy disclosures for anonymous Mara conversations are
+  // live. requireAuth here only confirms a session uid exists (true for
+  // every visitor); guestChatGuard is the real enforcement (message count +
+  // IP-hash backstop, server/middleware/guestChatGuard.ts).
+  const requireGuestChatEnabled = (_req: any, res: any, next: any) => {
+    if (process.env.GUEST_CHAT_ENABLED !== 'true') {
+      return res.status(404).json({ message: 'Not found' });
+    }
+    next();
+  };
+  app.get('/api/chat/guest', requireGuestChatEnabled, requireAuth, guestChatModule.getGuestChatHistory);
+  app.post('/api/chat/guest', requireGuestChatEnabled, requireAuth, guestChatGuard, guestChatModule.sendGuestChatMessage);
 
   // ─── Admin chat — securizat cu 4 straturi ────────────────────────────────
   // Ordinea middleware-urilor este intenționată și obligatorie:

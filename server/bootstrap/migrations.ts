@@ -137,6 +137,22 @@ export function runMigrations() {
     console.error('[migrations] Failed to add journal_entries.is_ai_generated (non-fatal):', err);
   }
 
+  // ai_usage_log.ip_hash — added for the Mara-first guest-chat limiter's
+  // secondary per-IP rolling-window check (server/middleware/
+  // guestChatGuard.ts). costGuard.ts's CREATE TABLE now includes this
+  // column for fresh DBs; this self-heals the already-running production
+  // table created before the column existed.
+  try {
+    const aulRows = rawSqlite
+      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='ai_usage_log'")
+      .all() as Array<{ name: string }>;
+    if (aulRows.length > 0) {
+      ensureColumns('ai_usage_log', [['ip_hash', 'text']]);
+    }
+  } catch (err) {
+    console.error('[migrations] Failed to add ai_usage_log.ip_hash (non-fatal):', err);
+  }
+
   // ── Missions hardening migrations ───────────────────────────────────────────
   // These self-heal existing production databases for the mission/program
   // integrity fixes. db.ts only defines the fresh-DB schema (CREATE TABLE IF

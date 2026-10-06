@@ -31,9 +31,16 @@ rawSqlite.exec(`
     tokens_estimated INTEGER NOT NULL DEFAULT 0,
     provider TEXT,
     outcome TEXT NOT NULL DEFAULT 'ok',
-    date_utc TEXT NOT NULL
+    date_utc TEXT NOT NULL,
+    ip_hash TEXT
   )
 `);
+// ip_hash: added for the guest-chat limiter's secondary per-IP rolling-
+// window check (server/middleware/guestChatGuard.ts). Only a hash is
+// stored, never the raw IP, consistent with the Privacy Policy's existing
+// "we do not permanently store your IP address" claim. On an
+// already-existing production table (created before this column existed),
+// server/bootstrap/migrations.ts self-heals it additively.
 
 // Also created independently by anthropic-key-store.ts on its own import —
 // see the comment there for why the duplication is intentional/harmless.

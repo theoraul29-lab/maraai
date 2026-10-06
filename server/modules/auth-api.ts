@@ -19,12 +19,21 @@ import { randomBytes, createHash } from 'crypto';
 import type { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { db } from '../db.js';
-import { users, localAuthCredentials, passwordResetTokens, userPreferences } from '../../shared/schema.js';
+import { users, localAuthCredentials, passwordResetTokens, userPreferences, chatMessages } from '../../shared/schema.js';
 import { sendPasswordResetEmail, sendWelcomeEmail } from '../lib/email.js';
 import { eq, sql, and, gt } from 'drizzle-orm';
 import { z } from 'zod';
 import { publishEvent } from '../maraai/kafka.js';
 import { BRAIN_EVENT_TOPIC } from '../mara-brain/manager.js';
+import { extractPersonalFacts, storeUserMemory } from '../mara-brain/memory.js';
+import { storage } from '../storage.js';
+
+// Anonymous session ids are always `u_<32 hex chars>` (makeId(), auth.ts) —
+// never the shape of a real `users.id` (lower(hex(randomblob(16))), no
+// prefix). This is what lets the guest-chat migration below trust that a
+// matching id really was a pre-signup guest session, never another
+// account's id, without needing a separate confirmation token.
+const GUEST_SESSION_ID_RE = /^u_[0-9a-f]{32}$/i;
 
 // 8 rounds gives ~25-50ms hash on commodity Railway CPUs while still being
 // well within the OWASP-recommended bcrypt cost. 10 rounds was burning
@@ -222,6 +231,12 @@ function flashBadRequest(res: Response, code: AuthErrorCode, message: string) {
 }
 
 async function signupHandler(req: Request, res: Response) {
+  // Captured BEFORE anything else — this is the only id ever migrated below,
+  // read from the server-side session (never the request body), so it is
+  // always the caller's own current session and can never be used to attach
+  // one visitor's guest conversation to someone else's new account.
+  const guestUserId: string | undefined = req.session?.userId;
+
   const parsed = signupBodySchema.safeParse(req.body);
   if (!parsed.success) {
     return flashBadRequest(res, 'signup_body_invalid', 'Email, password (min 6 chars) and name are required.');
@@ -277,6 +292,20 @@ async function signupHandler(req: Request, res: Response) {
           passwordHash,
         })
         .run();
+
+      // Guest → account migration (Mara-first guest chat). Atomic with
+      // account creation: if this transaction rolls back, no migration is
+      // committed either. Scoped to chat_messages only — explicitly not
+      // ai_usage_log (rate-limit bookkeeping, not memory, left under the
+      // old id) and nothing else, since chat_messages is the only table the
+      // guest-chat endpoint ever writes to under an anonymous session id.
+      if (guestUserId && GUEST_SESSION_ID_RE.test(guestUserId)) {
+        tx.update(chatMessages)
+          .set({ userId: row.id })
+          .where(eq(chatMessages.userId, guestUserId))
+          .run();
+      }
+
       return row;
     });
   } catch (err) {
@@ -290,6 +319,23 @@ async function signupHandler(req: Request, res: Response) {
     return authError(res, 500, 'account_create_failed', 'Failed to create account. Please try again.');
   }
 
+  // Best-effort: seed long-term memory from the just-migrated guest
+  // conversation, reusing the same heuristic no-LLM extractor the live chat
+  // path already uses per-message (server/mara-brain/memory.ts) — not a new
+  // extraction system. Never blocks or fails signup.
+  if (guestUserId && GUEST_SESSION_ID_RE.test(guestUserId)) {
+    try {
+      const migrated = await storage.getChatMessages(user.id);
+      for (const m of migrated) {
+        if (m.sender !== 'user') continue;
+        for (const { fact, category } of extractPersonalFacts(m.content)) {
+          storeUserMemory(user.id, fact, category);
+        }
+      }
+    } catch (err) {
+      console.error('[auth] guest-chat memory seeding failed (non-fatal):', err);
+    }
+  }
 
   try {
     await setSessionUser(req, user.id);

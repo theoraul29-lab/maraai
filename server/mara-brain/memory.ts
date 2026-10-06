@@ -204,6 +204,15 @@ export function buildSystemInstruction(context: UserMemoryContext, language?: st
       `Use this to guide and motivate the user. Reference their active missions naturally when relevant. ` +
       `If they ask about a step or how to do something, you now know the exact task details.`
     );
+
+    // Mara-first mission hand-off: the frontend only shows the "Create my
+    // Mission" / "Not yet" buttons when this exact sentinel is present, and
+    // only an explicit click calls the real Missions API (suggestMission /
+    // startMission in server/missions/engine.ts) — never created silently.
+    parts.push(
+      `\n# MISSION HAND-OFF\nIf (and only if) the user describes a concrete, new goal they want to work on — one not already covered by an active mission above — end your reply with this exact line, alone, on its own line: [[SUGGEST_MISSION]]\n` +
+      `Do not add this line for small talk, questions, or a goal already covered by an active mission above. Never mention this marker to the user or explain what it does.`,
+    );
   }
 
   // Qualitative investigator signals (mission abandoned, returning user, not activated)
