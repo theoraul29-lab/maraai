@@ -138,8 +138,11 @@ export async function buildUserContext(
   //    Skipped for admin sessions (not relevant for internal testing).
   const investigatorContext = isAdmin ? '' : getInvestigatorContext(userId);
 
-  // 9. Per-user long-term memories (goals, preferences, personal facts shared in past chats)
-  const userMemories = isAdmin ? '' : getUserMemories(userId);
+  // 9. Per-user long-term memories (goals, preferences, personal facts shared in past chats).
+  //    Admin accounts get their own personal memories too (own user_memories
+  //    rows, same table/path as everyone else) — only investigator/missions/
+  //    evolved-profile context stays admin-excluded below.
+  const userMemories = getUserMemories(userId);
 
   // 10. Mission context — active missions with details + completion summary.
   //     Sync (reads from translation cache), safe to call on every request.

@@ -45,6 +45,9 @@ import {
   analyzeFeedbackPatterns,
   generateImprovementIdeas,
   generateMarketingPost,
+  SAVE_MEMORY_TOOL,
+  buildSaveMemoryExecutor,
+  getSaveMemoryInstructions,
 } from './ai.js';
 import { getAIHealth, llmChat } from './llm.js';
 import type { LLMMessage } from './llm.js';
@@ -2290,13 +2293,25 @@ export async function registerRoutes(
         `strategy — then be honest, analytical, brief, and data-driven. For anything else (a greeting, small ` +
         `talk, an unrelated question), ignore this block entirely and just respond naturally to what was asked.`;
 
+      // Same save_memory tool as the public chat (server/ai.ts) — the admin
+      // gets personal memory here too, reusing the exact tool/executor
+      // rather than a second implementation. This route is already
+      // admin-only (requireAdmin above), so there's no persona branching
+      // needed — always offer it.
+      systemPrompt += getSaveMemoryInstructions();
+
       const messages: LLMMessage[] = [
         { role: 'system', content: systemPrompt },
         ...recentTurns,
         { role: 'user', content: message },
       ];
 
-      const reply = await llmChat(messages, { temperature: 0.7, source: 'admin.mara_chat' });
+      const reply = await llmChat(messages, {
+        temperature: 0.7,
+        source: 'admin.mara_chat',
+        tools: [SAVE_MEMORY_TOOL],
+        onToolCall: buildSaveMemoryExecutor(actor),
+      });
 
       // Persist both sides so the next message (and the next Control Center
       // session) still has this turn as context.

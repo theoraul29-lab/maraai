@@ -17,7 +17,7 @@ const MEMORY_CATEGORIES = new Set<MemoryCategory>([
   'goal', 'preference', 'personal_info', 'interest', 'achievement', 'general',
 ]);
 
-const SAVE_MEMORY_TOOL: AIToolDefinition = {
+export const SAVE_MEMORY_TOOL: AIToolDefinition = {
   name: 'save_memory',
   description:
     "Save a durable, long-term memory about the user so you can recall it in future conversations. " +
@@ -50,7 +50,7 @@ const SAVE_MEMORY_TOOL: AIToolDefinition = {
  * (see SAVE_MEMORY_TOOL's schema above, which has none), so there is no
  * value in the tool call the model could use to target another account.
  */
-function buildSaveMemoryExecutor(userId: string): AIToolExecutor {
+export function buildSaveMemoryExecutor(userId: string): AIToolExecutor {
   // Observed empirically (local Ollama/qwen3): a model can call save_memory
   // twice in one turn with slightly reworded fact text ("prefer..." vs
   // "prefers..."), which storeUserMemory's exact-string dedup does not
@@ -90,6 +90,22 @@ function buildSaveMemoryExecutor(userId: string): AIToolExecutor {
       saved ? { success: true, fact, category } : { success: false, error: 'storage_failed' },
     );
   };
+}
+
+/**
+ * System-prompt instructions for the save_memory tool — shared verbatim by
+ * both getMaraResponse (public chat) and Control Center's own chat handler
+ * (server/routes.ts), so there is exactly one copy of this text, not two.
+ */
+export function getSaveMemoryInstructions(): string {
+  return (
+    '\n\n# LONG-TERM MEMORY\nYou have a save_memory tool that durably remembers something about this user for future conversations.\n' +
+    '- If the user explicitly asks you to remember/save something ("remember that...", "save this", "don\'t forget that...", "keep this in mind"), call save_memory directly — do not ask "are you sure?" first, they already told you.\n' +
+    '- If you notice something that sounds like a stable, useful long-term fact (a preference, a recurring pattern, a goal, a constraint) but the user did NOT explicitly ask you to save it, you may ask naturally — e.g. "Want me to remember that?" — and only call save_memory after they say yes.\n' +
+    '- Never silently save something the user has not explicitly requested or approved.\n' +
+    '- Do not save trivial one-off statements, passing emotions, or anything resembling a password/secret/payment detail.\n' +
+    '- After the tool returns, only tell the user it was saved if the result says success — if it failed, say honestly that you could not save it right now.'
+  );
 }
 
 // Localized Mara "Guided Muse" persona used when the brain module is
@@ -270,7 +286,9 @@ export async function getMaraResponse(
 			);
 			const context = await Promise.race([contextPromise, timeoutPromise]);
 			systemInstruction = buildSystemInstruction(context, prefs?.language);
-			offerSaveMemory = !isAdmin;
+			// Any authenticated user — including admin — gets save_memory; only
+			// guests (no userId, never reach this branch) are excluded.
+			offerSaveMemory = true;
 
 			// Async: record learning from this interaction (non-blocking)
 			recordLearningFromChat(userId, message, '', module).catch(() => {});
@@ -282,13 +300,7 @@ export async function getMaraResponse(
 	}
 
 	if (offerSaveMemory) {
-		systemInstruction +=
-			'\n\n# LONG-TERM MEMORY\nYou have a save_memory tool that durably remembers something about this user for future conversations.\n' +
-			'- If the user explicitly asks you to remember/save something ("remember that...", "save this", "don\'t forget that...", "keep this in mind"), call save_memory directly — do not ask "are you sure?" first, they already told you.\n' +
-			'- If you notice something that sounds like a stable, useful long-term fact (a preference, a recurring pattern, a goal, a constraint) but the user did NOT explicitly ask you to save it, you may ask naturally — e.g. "Want me to remember that?" — and only call save_memory after they say yes.\n' +
-			'- Never silently save something the user has not explicitly requested or approved.\n' +
-			"- Do not save trivial one-off statements, passing emotions, or anything resembling a password/secret/payment detail.\n" +
-			'- After the tool returns, only tell the user it was saved if the result says success — if it failed, say honestly that you could not save it right now.';
+		systemInstruction += getSaveMemoryInstructions();
 	}
 
 	const searchContext = await fetchSearchContext(message);

@@ -185,7 +185,18 @@ export async function llmChat(
   }
 
   // Brain autonom → ANTHROPIC_BRAIN_API_KEY (fallback la ANTHROPIC_API_KEY)
-  const exec = async () => (await getBrainAIResponse(messages, { temperature, thinkingBudget, source })).text;
+  // tools/onToolCall are forwarded only for admin.mara_chat (the Control
+  // Center's own save_memory wiring below) — every other brain/autonomous
+  // source never sets them, so this is a no-op for the brain cycle itself.
+  const exec = async () =>
+    (
+      await getBrainAIResponse(messages, {
+        temperature,
+        thinkingBudget,
+        source,
+        ...(source === 'admin.mara_chat' ? { tools, onToolCall } : {}),
+      })
+    ).text;
 
   // Control Center's chat with Mara is a live, human-initiated conversation
   // (the owner talking to Mara in real time), same contract as user_chat —

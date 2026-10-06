@@ -215,23 +215,57 @@ class AnthropicBrainProvider implements AIProvider {
     const budget = opts.thinkingBudget && opts.thinkingBudget > 0 ? opts.thinkingBudget : 0;
     const maxTokens = budget > 0 ? Math.max(getMaxTokens(), budget + 2000) : getMaxTokens();
 
-    const res = await (client.messages.create as unknown as (p: Record<string, unknown>) => Promise<Anthropic.Message>)({
-      model,
-      max_tokens: maxTokens,
-      // Extended thinking requires temperature=1; otherwise honour caller's value.
-      temperature: budget > 0 ? 1 : (typeof opts.temperature === 'number' ? opts.temperature : undefined),
-      ...(budget > 0 ? { thinking: { type: 'enabled', budget_tokens: budget } } : {}),
-      ...(system ? { system } : {}),
-      messages: turns,
-    });
+    const tools = opts.tools?.map((t) => ({
+      name: t.name,
+      description: t.description,
+      input_schema: t.parameters as Anthropic.Tool.InputSchema,
+    }));
 
-    const text = res.content
-      .filter((block): block is Anthropic.TextBlock => block.type === 'text')
-      .map((block) => block.text)
-      .join('')
-      .trim();
+    // Same tool-call round loop as AnthropicProvider.chat() above. Only
+    // admin.mara_chat (server/llm.ts) ever passes tools/onToolCall through
+    // to this brain provider — every other brain/autonomous caller omits
+    // them, so toolUseBlocks/onToolCall are empty/undefined and the loop
+    // falls straight through to a single-round reply, unchanged from before.
+    let conversation: Anthropic.MessageParam[] = turns;
 
-    return { text, provider: 'anthropic', model };
+    for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+      const res = await (client.messages.create as unknown as (p: Record<string, unknown>) => Promise<Anthropic.Message>)({
+        model,
+        max_tokens: maxTokens,
+        // Extended thinking requires temperature=1; otherwise honour caller's value.
+        temperature: budget > 0 ? 1 : (typeof opts.temperature === 'number' ? opts.temperature : undefined),
+        ...(budget > 0 ? { thinking: { type: 'enabled', budget_tokens: budget } } : {}),
+        ...(system ? { system } : {}),
+        ...(tools && tools.length > 0 ? { tools } : {}),
+        messages: conversation,
+      });
+
+      const toolUseBlocks = res.content.filter(
+        (block): block is Anthropic.ToolUseBlock => block.type === 'tool_use',
+      );
+
+      if (toolUseBlocks.length === 0 || !opts.onToolCall) {
+        const text = res.content
+          .filter((block): block is Anthropic.TextBlock => block.type === 'text')
+          .map((block) => block.text)
+          .join('')
+          .trim();
+        return { text, provider: 'anthropic', model };
+      }
+
+      const resultBlocks: Anthropic.ToolResultBlockParam[] = [];
+      for (const block of toolUseBlocks) {
+        const result = await opts.onToolCall(block.name, (block.input ?? {}) as Record<string, unknown>);
+        resultBlocks.push({ type: 'tool_result', tool_use_id: block.id, content: result });
+      }
+      conversation = [
+        ...conversation,
+        { role: 'assistant', content: res.content },
+        { role: 'user', content: resultBlocks },
+      ];
+    }
+
+    throw new Error('Anthropic brain chat: too many tool-call rounds without a final answer.');
   }
 }
 
