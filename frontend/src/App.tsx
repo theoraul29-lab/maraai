@@ -12,6 +12,7 @@ import './App.css';
 import Nav from './Nav';
 import MobileBottomNav from './components/MobileBottomNav';
 import { MaraChatWidget } from './components/MaraChatWidget';
+import { MaraChatProvider } from './contexts/MaraChatContext';
 import P2PContributingBadge from './components/P2PContributingBadge';
 
 // Heavy route modules are lazy-loaded to reduce initial bundle size.
@@ -236,6 +237,7 @@ function App() {
     <ErrorBoundary level="page">
       <AuthProvider>
         <ThemeProvider>
+        <MaraChatProvider>
         <div className="App">
           {!isHomePage && !isFullscreenPanel && <Nav />}
           {!isHomePage && !isFullscreenPanel && <MobileBottomNav />}
@@ -291,6 +293,7 @@ function App() {
           </ErrorBoundary>}
           {!isControlCenterRoute && <CookieBanner />}
         </div>
+        </MaraChatProvider>
         </ThemeProvider>
       </AuthProvider>
     </ErrorBoundary>

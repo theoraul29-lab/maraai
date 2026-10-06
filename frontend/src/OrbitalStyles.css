@@ -130,16 +130,48 @@
   align-items: center;
   justify-content: center;
   position: relative;
-  cursor: default;
+  cursor: pointer;
   /* `animation: maraAmbientGlow 12s` is applied ONLY on desktop
      (`@media (min-width: 769px)` block at the bottom of this file).
      On mobile / phones the orb stays a steady purple so the OLED
      panel does not read the 4s-per-stop colour cycle as flicker. */
-  transition: transform 0.3s ease;
-  box-shadow: 
+  transition: transform 0.3s ease, box-shadow 0.4s ease;
+  box-shadow:
     0 0 40px rgba(147, 51, 234, 0.5),
     0 0 80px rgba(147, 51, 234, 0.3),
     0 0 160px rgba(147, 51, 234, 0.15);
+}
+
+.mara-orb:focus-visible {
+  outline: 2px solid rgba(147, 51, 234, 0.9);
+  outline-offset: 6px;
+}
+
+/* Interaction-state modifiers — layered on top of the existing
+   maraAmbientGlow colour cycle rather than replacing it. --mara-mood-color
+   (set inline from useMaraMood via MaraChatContext) tints an extra outer
+   ring so the orb's mood is visible without fighting the base animation. */
+.mara-orb--listening {
+  box-shadow:
+    0 0 40px rgba(147, 51, 234, 0.5),
+    0 0 80px rgba(147, 51, 234, 0.3),
+    0 0 160px rgba(147, 51, 234, 0.15),
+    0 0 50px 10px var(--mara-mood-color, transparent);
+}
+
+.mara-orb--thinking {
+  animation-duration: 4s !important;
+  box-shadow:
+    0 0 40px rgba(147, 51, 234, 0.6),
+    0 0 90px rgba(147, 51, 234, 0.4),
+    0 0 170px rgba(147, 51, 234, 0.2);
+}
+
+.mara-orb--speaking {
+  box-shadow:
+    0 0 50px rgba(147, 51, 234, 0.6),
+    0 0 100px rgba(147, 51, 234, 0.4),
+    0 0 40px 14px var(--mara-mood-color, transparent);
 }
 
 /* Holographic ray effect - Layer 1.

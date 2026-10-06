@@ -1,11 +1,12 @@
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useErrorHandler } from './hooks/useErrorHandler';
 import { useTouchGesture } from './hooks/useTouchGesture';
 import { useAccessible } from './hooks/useAccessible';
 import { useIsMobile } from './hooks/useIsMobile';
+import { useMaraChat } from './contexts/MaraChatContext';
 import './OrbitalStyles.css';
 // NOTE: the chat widget is now rendered globally in App.tsx (`<MaraChatWidget />`)
 // so we do NOT mount a second one here. Until 2026-05 the home rendered two
@@ -49,6 +50,7 @@ function HomePage() {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
   const { handleError } = useErrorHandler();
+  const { openChat, orbState, moodColor } = useMaraChat();
 
   // State management
   const [tremor, setTremor] = useState<TremorState>({ active: false, intensity: 0 });
@@ -293,6 +295,21 @@ function HomePage() {
   );
 
   /**
+   * Open the Mara chat (the central orb's primary action) with the same
+   * tremor feedback used for the module orbs, instead of navigating.
+   */
+  const handleMaraOrbClick = useCallback(() => {
+    try {
+      if (!isMobile) {
+        setTremor({ active: true, intensity: 6 });
+      }
+      openChat();
+    } catch (error) {
+      handleError(error as Error, { context: 'mara_orb_click' });
+    }
+  }, [isMobile, openChat, handleError]);
+
+  /**
    * Desktop positioning
    */
   const getOrbPosition = useCallback((index: number) => {
@@ -354,9 +371,22 @@ function HomePage() {
         {/* Matrix background effect */}
         <div className="matrix-background" aria-hidden="true" />
 
-        {/* Center Mara AI orb */}
+        {/* Center Mara AI orb — the primary "talk to Mara" entry point */}
         <div className={`orbital-center ${isMobile ? 'mobile-orbital-center' : ''}`}>
-          <div className="mara-orb" role="img" aria-label={t('home.maraCenter')}>
+          <div
+            className={`mara-orb mara-orb--${orbState}`}
+            role="button"
+            tabIndex={0}
+            aria-label={t('home.maraCenterTalk', 'Talk to Mara')}
+            onClick={handleMaraOrbClick}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleMaraOrbClick();
+              }
+            }}
+            style={{ '--mara-mood-color': moodColor } as CSSProperties}
+          >
             <div className="mara-inner">
               <span className="mara-text">{t('home.mara')}</span>
             </div>

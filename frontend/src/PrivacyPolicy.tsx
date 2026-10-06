@@ -25,6 +25,7 @@ export default function PrivacyPolicy() {
             <li><strong>{t('privacyPolicy.labelContent', 'Content')}:</strong> {t('privacyPolicy.s1Content')}</li>
             <li><strong>{t('privacyPolicy.labelMissions', 'Missions')}:</strong> {t('privacyPolicy.s1Missions')}</li>
             <li><strong>{t('privacyPolicy.labelMessages', 'Messages')}:</strong> {t('privacyPolicy.s1Messages')}</li>
+            <li><strong>{t('privacyPolicy.labelMaraChat', 'Mara chat')}:</strong> {t('privacyPolicy.s1MaraChat')}</li>
             <li><strong>{t('privacyPolicy.labelSession', 'Session')}:</strong> {t('privacyPolicy.s1Session')}</li>
           </ul>
         </section>
@@ -57,6 +58,7 @@ export default function PrivacyPolicy() {
             <li><strong>{t('privacyPolicy.labelMessages', 'Messages')}:</strong> {t('privacyPolicy.s4Li1')}</li>
             <li><strong>{t('privacyPolicy.labelContent', 'Content')}:</strong> {t('privacyPolicy.s4Li2')}</li>
             <li><strong>{t('privacyPolicy.labelDeletion', 'Deletion')}:</strong> {t('privacyPolicy.s4Li3')}</li>
+            <li><strong>{t('privacyPolicy.labelMaraChat', 'Mara chat')}:</strong> {t('privacyPolicy.s4Li4')}</li>
           </ul>
         </section>
 
@@ -70,6 +72,7 @@ export default function PrivacyPolicy() {
             <li><strong>{t('privacyPolicy.labelPortability', 'Portability')}:</strong> {t('privacyPolicy.s5Li4')}</li>
             <li><strong>{t('privacyPolicy.labelObjection', 'Objection')}:</strong> {t('privacyPolicy.s5Li5')}</li>
           </ul>
+          <p>{t('privacyPolicy.s5Note')}</p>
         </section>
 
         <section className="privacy-section">
@@ -92,6 +95,20 @@ export default function PrivacyPolicy() {
             {t('privacyPolicy.s8Text')}{' '}
             <strong>privacy@hellomara.net</strong>
           </p>
+        </section>
+
+        <section className="privacy-section">
+          <h2>{t('privacyPolicy.s10Title')}</h2>
+          <p>{t('privacyPolicy.s10Text')}</p>
+        </section>
+
+        <section className="privacy-section">
+          <h2>{t('privacyPolicy.s11Title')}</h2>
+          <ul>
+            <li>{t('privacyPolicy.s11Li1')}</li>
+            <li>{t('privacyPolicy.s11Li2')}</li>
+            <li>{t('privacyPolicy.s11Li3')}</li>
+          </ul>
         </section>
       </div>
     </div>
