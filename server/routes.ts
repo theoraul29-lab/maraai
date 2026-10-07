@@ -102,6 +102,7 @@ import {
   approveControlTask,
   cancelControlTask,
   createControlTask,
+  findValidationTaskForProposal,
   listControlTaskEvents,
   listControlAdminActions,
   reviewControlTask,
@@ -1552,13 +1553,91 @@ export async function registerRoutes(
     res.json({ plans: listCodeAgentPlans() });
   });
 
-  app.post('/api/control/code-agent/plans/:id/approve', requireAdmin, (req: any, res: any) => {
+  // Collapses the old 6-click chain (approve plan -> approve apply -> review
+  // validation -> create+approve stage -> create+approve commit -> create+
+  // approve push) into the single admin click this route already was. Every
+  // step below still only runs because this one click happened; nothing here
+  // is triggered automatically by the planner or by Mara — it's the exact
+  // same functions a human clicking through each step individually would
+  // have called, just sequenced in one request instead of six.
+  app.post('/api/control/code-agent/plans/:id/approve', requireAdmin, async (req: any, res: any) => {
     const actor = String(req.user?.email ?? req.user?.uid ?? 'unknown-admin');
     const planId = Number.parseInt(String(req.params.id), 10);
-    const plan = approveCodeAgentPlan(planId, actor);
-    if (!plan) return res.status(409).json({ error: 'Plan is not waiting for approval or was not found' });
-    recordControlAdminAction('code_agent.plan.approved', planId, actor, { modificationTaskId: plan.task.id });
-    res.json(plan);
+
+    const approved = approveCodeAgentPlan(planId, actor);
+    if (!approved) return res.status(409).json({ error: 'Plan is not waiting for approval or was not found' });
+    recordControlAdminAction('code_agent.plan.approved', planId, actor, { modificationTaskId: approved.task.id });
+    const applyTaskId = approved.task.id;
+
+    const approvedApplyTask = approveControlTask(applyTaskId, actor);
+    if (!approvedApplyTask) return res.json({ plan: approved, shipStatus: 'failed', shipDetail: 'Could not approve the apply task.' });
+
+    const finishedApply = await runOneControlTask(applyTaskId);
+    if (!finishedApply || finishedApply.status !== 'COMPLETED') {
+      return res.json({ plan: approved, shipStatus: 'failed', shipDetail: `Apply failed: ${finishedApply?.error ?? 'unknown error'}`, applyTaskId });
+    }
+
+    const validationTask = findValidationTaskForProposal(applyTaskId);
+    if (!validationTask) {
+      return res.json({ plan: approved, shipStatus: 'failed', shipDetail: 'No validation task was created for the apply.', applyTaskId });
+    }
+    const finishedValidation = await runOneControlTask(validationTask.id);
+    const validationResult = finishedValidation?.result as { exitCode?: number } | undefined;
+    if (!finishedValidation || finishedValidation.status !== 'COMPLETED' || validationResult?.exitCode !== 0) {
+      return res.json({ plan: approved, shipStatus: 'failed', shipDetail: `Validation (typecheck) failed: ${finishedValidation?.error ?? JSON.stringify(validationResult)}`, applyTaskId, validationTaskId: validationTask.id });
+    }
+
+    const reviewed = reviewControlTask(validationTask.id, 'approved', actor);
+    if (!reviewed) {
+      return res.json({ plan: approved, shipStatus: 'failed', shipDetail: 'Could not mark validation as reviewed.', applyTaskId, validationTaskId: validationTask.id });
+    }
+
+    const paths = approved.plan.changes.map((c: Record<string, unknown>) => String(c.path));
+    const stageTask = createControlTask({
+      taskType: 'git.stage_proposal',
+      title: `Stage Code Agent plan #${planId}`,
+      payload: { paths, proposalTaskId: applyTaskId, validationTaskId: validationTask.id },
+      priority: 'high',
+      createdBy: actor,
+      assignedAgent: 'code-agent',
+    });
+    approveControlTask(stageTask.id, actor);
+    const finishedStage = await runOneControlTask(stageTask.id);
+    if (!finishedStage || finishedStage.status !== 'COMPLETED') {
+      return res.json({ plan: approved, shipStatus: 'failed', shipDetail: `Stage failed: ${finishedStage?.error ?? 'unknown error'}`, applyTaskId, validationTaskId: validationTask.id, stageTaskId: stageTask.id });
+    }
+
+    const summary = typeof approved.plan.analysis.summary === 'string' ? approved.plan.analysis.summary : `Code Agent plan #${planId}`;
+    const commitTask = createControlTask({
+      taskType: 'git.commit_staged',
+      title: `Commit Code Agent plan #${planId}`,
+      payload: { message: `feat(mara): ${summary}`.slice(0, 200), proposalTaskId: applyTaskId, validationTaskId: validationTask.id },
+      priority: 'high',
+      createdBy: actor,
+      assignedAgent: 'code-agent',
+    });
+    approveControlTask(commitTask.id, actor);
+    const finishedCommit = await runOneControlTask(commitTask.id);
+    if (!finishedCommit || finishedCommit.status !== 'COMPLETED') {
+      return res.json({ plan: approved, shipStatus: 'failed', shipDetail: `Commit failed: ${finishedCommit?.error ?? 'unknown error'}`, stageTaskId: stageTask.id, commitTaskId: commitTask.id });
+    }
+
+    const pushTask = createControlTask({
+      taskType: 'git.push',
+      title: `Push Code Agent plan #${planId}`,
+      payload: { commitTaskId: commitTask.id },
+      priority: 'high',
+      createdBy: actor,
+      assignedAgent: 'code-agent',
+    });
+    approveControlTask(pushTask.id, actor);
+    const finishedPush = await runOneControlTask(pushTask.id);
+    if (!finishedPush || finishedPush.status !== 'COMPLETED') {
+      return res.json({ plan: approved, shipStatus: 'failed', shipDetail: `Push failed: ${finishedPush?.error ?? 'unknown error'}`, commitTaskId: commitTask.id, pushTaskId: pushTask.id });
+    }
+
+    recordControlAdminAction('code_agent.plan.shipped', planId, actor, { applyTaskId, stageTaskId: stageTask.id, commitTaskId: commitTask.id, pushTaskId: pushTask.id });
+    res.json({ plan: approved, shipStatus: 'shipped', shipDetail: `Plan #${planId} applied, validated, staged, committed, and pushed.` });
   });
 
   app.post('/api/control/code-agent/plans/:id/reject', requireAdmin, (req: any, res: any) => {
